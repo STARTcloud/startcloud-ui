@@ -1045,21 +1045,21 @@
         20px gutter.
       </div>
       <div class="callout">
-        <strong>One Shell, whatever opens it.</strong> The footer offers a Shell while the host in
-        focus lists one: "a shell via a pty, a shell via ssh, a shell via some other mechanism", the
-        mechanism the backend's own. The pane is written against a terminal source, the route that
-        starts the session, its WebSocket, its ticket and the route that stops it, never against one
-        kind of shell; today's source is the host shell behind <code>host-terminal</code>, as
-        hyperweaver's footer opens it, with Reconnect shell, Restart shell and Terminal preferences
-        in the toggle's drop-up. Reconnect shell opens a new socket to the same session, the session
-        left running; Restart shell stops the session and starts a new one; a closed socket is never
-        opened again on a clock. A terminal per machine and "a tabbed shell per vm" are later work.
+        <strong>One Consoles view, whatever opens it.</strong> The footer offers Consoles while the
+        host in focus lists a console: "a shell via a pty, a shell via ssh, a shell via some other
+        mechanism", the mechanism the backend's own. A terminal tab is written against a terminal
+        source, the route that starts the session, its WebSocket, its ticket and the route that
+        stops it, never against one kind of shell; the host shell behind <code>host-terminal</code>,
+        opened by Open host shell of the host's Controls menu, with Reconnect shell, Restart shell
+        and Terminal preferences in the toggle's drop-up. Reconnect shell opens a new socket to the
+        same session, the session left running; Restart shell stops the session and starts a new
+        one; a closed socket is never opened again on a clock.
       </div>
       <div class="callout">
         <strong>The pane's own menu.</strong> A right-click on the pane opens hyperweaver's menu at
-        the pointer, titled by the view: Reconnect shell, Restart shell and Terminal preferences on
-        the shell, Refresh on the tasks; Escape, a click away or a second right-click elsewhere
-        closes it.
+        the pointer, titled by the view: the active tab's Reconnect shell, Restart shell, Terminal
+        preferences, Send to machine page and Close on the consoles, Refresh on the tasks; Escape, a
+        click away or a second right-click elsewhere closes it.
       </div>
       <div class="callout">
         <strong>A task row opens its dialog.</strong> Details, progress, metadata, the output in
@@ -1069,8 +1069,8 @@
       </div>
       <div class="callout">
         <strong>Terminal preferences.</strong> Font size 6 to 32, scrollback to 200000, cursor
-        style, cursor blink, font family with suggestions, Reset to defaults; saving applies to the
-        open shell at once.
+        style, cursor blink, font family with suggestions, the broadcast newline, Reset to defaults;
+        saving applies to every open terminal at once.
       </div>
       <div class="callout">
         <strong>Scrolling.</strong> The page region above the row stays the one scroll container;
@@ -1090,7 +1090,7 @@
   <section class="state">
     <div class="state-label">
       the same tokens, no host in focus — the server role on its home route: every host's tasks
-      under a Host column, the shell waiting for a host
+      under a Host column, the consoles placed in the footer still drawn
     </div>
     <div class="frame">
       <div class="stage js-stage" data-scope="all">
@@ -1225,8 +1225,7 @@
 
   <section class="state">
     <div class="state-label">
-      later work, not this round — the tabbed shell: one tab per terminal, the host's and each
-      machine's
+      the Consoles pane: one tab per console, the host's shell and each machine's shell or display
     </div>
     <div class="frame">
       <div class="stage js-stage" data-tabs="1">
@@ -1305,43 +1304,53 @@
     <div class="try js-try"></div>
     <div class="callouts">
       <div class="callout">
-        <strong>Later work.</strong> Drawn so its shape is agreed before it is built; this round
-        builds the one Shell of the frames above, and "a tabbed shell per vm" follows in a round of
-        its own.
+        <strong>The strip.</strong> One row of tabs at the top of the Consoles pane, inside the
+        pane, drawn only while two or more consoles are open; a single console draws no strip. The
+        footer's row is the row of every other frame, the grip still the one handle, the Tasks view
+        unchanged. The active tab draws in the brand colour; a tab that accepts broadcasts carries
+        the brand bar along its top edge.
       </div>
       <div class="callout">
-        <strong>The strip.</strong> One row of tabs at the top of the shell pane, inside the pane,
-        on the shell view alone, drawn only while two or more terminals are open; a single shell
-        draws no strip and is the one Shell of the frames above. The footer's row is the row of
-        every other frame, the grip still the one handle, the Tasks view unchanged.
+        <strong>A tab is a console.</strong> Each tab is one console, the host shell, an SSH shell,
+        a zlogin terminal, a VNC display or an RDP display, named by its machine with its kind
+        beside it, the host for the host shell; switching shows another and the rest keep running;
+        the × closes the tab and stops its session. The host shell's and the SSH shell's terminal
+        and socket are held by the console store and follow the tab wherever it is drawn, because on
+        hyperweaver-agent the socket is the shell; the zlogin tab draws the zone terminal provider's
+        own terminal; a VNC tab draws the one display the machine shares with every viewer; an RDP
+        tab draws the client's own bridge, one socket a viewer.
       </div>
       <div class="callout">
-        <strong>A tab is a session.</strong> Each tab is one terminal with its own session and its
-        own WebSocket, named by its target with its kind beside it; switching shows another terminal
-        and the rest keep running; the × closes the tab and stops its session.
+        <strong>Opened from the Controls menu.</strong> No button on the strip opens a console: the
+        navbar's Controls menu carries the row, Open host shell under Host actions and one row a
+        console the host's row lists under Machine controls, beside the power rows. Nothing opened,
+        the placeholder.
       </div>
       <div class="callout">
-        <strong>Opened from the Controls menu.</strong> No button on the strip opens a terminal: the
-        navbar's Controls menu carries the row, Host actions for the host's shell and Machine
-        controls for the machine's terminal, beside the power rows. What the footer shows by default
-        is what the backend offers, the host terminal; nothing offered and nothing opened, nothing
-        shown.
+        <strong>Footer or page.</strong> The machine's row works as the logout row does: its glyph
+        is a toggle between the footer, where the console persists from page to page, and the
+        machine's page, where it ends when the page is left; a click on the glyph flips the place
+        and keeps the menu open, a click on the text opens the console there, the footer by default.
+        A tab's right-click menu carries Send to machine page or Send to zone page; a console on the
+        page carries Send to footer, and the page says which of its consoles sit in the footer with
+        Send to this page beside each; a move keeps the session. The placement of every console is
+        the browser's own under <code>console_tabs</code>, and on sign-in, when the hosts answer and
+        on the stream's fresh <code>ready</code> and <code>reset</code> the sessions the agents
+        still hold are re-attached where the person had them.
       </div>
       <div class="callout">
-        <strong>Footer or page.</strong> The row works as the logout row does: its icon is a toggle
-        between the footer's shell, which persists from page to page, and the page's own console
-        area, which ends when the page is left; a click on the icon flips the target and keeps the
-        menu open, a click on the text opens the terminal there. A page without a console area draws
-        no toggle and the row opens in the footer.
+        <strong>Broadcast.</strong> The Commands bar between the strip and the bodies while two or
+        more tabs are open: one field typed once, Send writing it to every tab marked Accept
+        broadcasts on its right-click menu, "just a dumb dump of the string into the shells", down a
+        terminal's own WebSocket and as keystrokes into a VNC or an RDP display, Enter after it
+        while the Terminal preferences' broadcast newline is on, which it is by default; the history
+        of what was sent beside the field; the count of the tabs that accept over every tab. The
+        backend is unchanged.
       </div>
       <div class="callout">
-        <strong>Broadcast, later still.</strong> One menu that sends the same string at once to
-        every open shell, or to the ones marked to receive it, "just a dumb dump of the string into
-        the shells": the UI writes it into each terminal's own WebSocket, the backend unchanged.
-      </div>
-      <div class="callout">
-        <strong>The drop-up and the pane's menu.</strong> Reconnect shell, Restart shell and
-        Terminal preferences, as in the one Shell, acting on the tab that shows.
+        <strong>The drop-up and the pane's menu.</strong> Reconnect shell, Restart shell, Terminal
+        preferences, Send to machine page and Close, acting on the tab that shows; Terminal
+        preferences alone while no tab is open.
       </div>
     </div>
   </section>
@@ -1445,8 +1454,10 @@
               zoneweaver-agent <code>StatusController.js</code>, <code>MachineRoutes.js</code>
             </td>
             <td>
-              the footer's Shell draws behind <code>host-terminal</code>, no new token; a terminal
-              per machine behind <code>ssh</code> and the console list is later work
+              the footer's Consoles draw behind <code>host-terminal</code> and the console tokens,
+              no new token; the host shell behind <code>host-terminal</code>, an SSH shell behind
+              <code>ssh</code>, a zlogin terminal, a VNC display and an RDP display behind the
+              console list
             </td>
           </tr>
           <tr>
@@ -1501,7 +1512,7 @@
             <td>
               zoneweaver-agent <code>WebSocketHandler.js</code>, <code>WsTicketController.js</code>
             </td>
-            <td>kept for the dialog's output and for the shell</td>
+            <td>kept for the dialog's output and for every console</td>
           </tr>
           <tr>
             <td>hyperweaver's left slot links to <code>/docs</code></td>
@@ -1523,7 +1534,7 @@
           <tr>
             <td>The test fixtures answer no WebSocket</td>
             <td><code>tests/features/support/fixtures.js</code></td>
-            <td>the shell and the output stream are proven by hand until the fixtures grow</td>
+            <td>the consoles and the output stream are proven by hand until the fixtures grow</td>
           </tr>
           <tr>
             <td>The easter egg is a script from another host</td>
@@ -1561,11 +1572,12 @@
         <tr>
           <td><code>host-terminal</code></td>
           <td>
-            the Shell toggle and the shell pane, today's terminal source: one xterm over the agent's
-            <code>POST /api/term/start</code> session, its <code>/term/{id}</code> WebSocket opened
-            with an unscoped ticket from <code>GET /api/ws-ticket</code>, fitted to the pane on
-            every drag, the PTY told its size, the session stopped at
-            <code>DELETE /api/term/sessions/{id}/stop</code> when the host changes
+            the Consoles toggle and the host shell tab of the Consoles pane: one xterm over the
+            agent's <code>POST /api/term/start</code> session, its <code>/term/{id}</code> WebSocket
+            opened with an unscoped ticket from <code>GET /api/ws-ticket</code>, fitted to the pane
+            on every drag, the PTY told its size, the session stopped at
+            <code>DELETE /api/term/sessions/{id}/stop</code> when the tab closes, the sessions the
+            agent holds listed from <code>GET /api/term/sessions</code> to re-attach
           </td>
         </tr>
         <tr>
@@ -1591,9 +1603,9 @@
             <code>footer_height</code>, <code>footer_open</code>, <code>footer_view</code> (<code
               >tasks</code
             >
-            | <code>shell</code>), <code>tasks_min_priority</code>, <code>tasks_columns</code>,
-            <code>terminal_prefs</code>, per origin beside <code>sidebar_width</code> in the session
-            contract's table
+            | <code>consoles</code>), <code>tasks_min_priority</code>, <code>tasks_columns</code>,
+            <code>terminal_prefs</code>, <code>console_tabs</code>, per origin beside
+            <code>sidebar_width</code> in the session contract's table
           </td>
         </tr>
         <tr>

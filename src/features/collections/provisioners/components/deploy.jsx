@@ -9,12 +9,7 @@ const PROVIDER = /^[a-z0-9_-]+$/u;
 const artifactUrl = (item, version) =>
   item.versions.find(entry => entry.version === version)?.artifacts[0]?.downloadUrl || '';
 
-const catalogUrl = item => {
-  const { origin } = window.location;
-  return item.isPublic === false && item.organization.uuid
-    ? `${origin}/api/private/${item.organization.uuid}/catalog`
-    : `${origin}/catalog.json`;
-};
+const catalogUrl = () => `${window.location.origin}/catalog.json`;
 
 const verified = ([provider, box]) =>
   PROVIDER.test(provider) &&
@@ -49,7 +44,8 @@ export const boxSeedOf = entry =>
 
 /**
  * The seed of one provisioner version: the family, the version, its
- * package URL, the catalog document the family came from and the
+ * package URL, the one catalog document of this site, which answers a
+ * private family to the host reading it as its member, and the
  * version's verified boxes.
  *
  * @param {{ item: Object, version: string }} pick - The item and the version
@@ -59,7 +55,7 @@ export const seedFor = ({ item, version }) => ({
   provisioner: `${item.organization.name}/${item.name}`,
   provisioner_version: version,
   provisioner_url: artifactUrl(item, version),
-  provisioner_catalog: catalogUrl(item),
+  provisioner_catalog: catalogUrl(),
   ...boxSeedOf(item.versions.find(entry => entry.version === version)),
 });
 

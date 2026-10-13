@@ -1,0 +1,96 @@
+{
+  "source": { "id": "boxvault", "name": "BoxVault", "url": "https://boxvault.example.com" },
+  "downloads": [
+    {
+      "organization": "STARTcloud",
+      "name": "domino",
+      "label": "HCL Domino",
+      "vendor": "HCL",
+      "family": "domino",
+      "releases": [
+        {
+          "version": "14.5",
+          "patches": [
+            {
+              "name": "GA",
+              "files": [
+                {
+                  "key": "linux-x64",
+                  "file_name": "Domino_14.5_Linux_English.tar",
+                  "kind": "installer",
+                  "platform": "linux",
+                  "architecture": "x64",
+                  "language": "en",
+                  "file_size": 1610612736,
+                  "checksum": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                  "checksum_type": "SHA256",
+                  "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                },
+                {
+                  "key": "windows-x64",
+                  "file_name": "Domino_14.5_Windows_English.exe",
+                  "kind": "installer",
+                  "platform": "windows",
+                  "architecture": "x64",
+                  "language": "en",
+                  "file_size": 1500000000,
+                  "checksum": "d41d8cd98f00b204e9800998ecf8427e",
+                  "checksum_type": "MD5",
+                  "sha256": ""
+                }
+              ]
+            },
+            {
+              "name": "FP1",
+              "files": [
+                {
+                  "key": "linux-x64",
+                  "file_name": "Domino_14.5_FP1_Linux.tar",
+                  "kind": "fixpack",
+                  "platform": "linux",
+                  "architecture": "x64",
+                  "language": "any",
+                  "file_size": 734003200,
+                  "checksum": "b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4",
+                  "checksum_type": "SHA256",
+                  "sha256": "b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "organization": "STARTcloud",
+      "name": "traveler",
+      "label": "HCL Traveler",
+      "vendor": "HCL",
+      "family": "traveler",
+      "releases": [
+        {
+          "version": "14.0",
+          "patches": [
+            {
+              "name": "IF2",
+              "files": [
+                {
+                  "key": "linux-x64",
+                  "file_name": "Traveler_14.0_IF2_Linux.tar",
+                  "kind": "interim-fix",
+                  "platform": "linux",
+                  "architecture": "x64",
+                  "language": "any",
+                  "file_size": 52428800,
+                  "checksum": "",
+                  "checksum_type": null,
+                  "sha256": ""
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

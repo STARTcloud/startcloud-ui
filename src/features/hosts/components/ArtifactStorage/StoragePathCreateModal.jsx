@@ -15,11 +15,14 @@ import ToolFormDialog from '../ToolFormDialog';
 const TYPE_KEYS = {
   iso: 'artifacts.storagePathCreateModal.isoFiles',
   image: 'artifacts.storagePathCreateModal.vmImages',
+  installer: 'artifacts.storagePathCreateModal.installerFiles',
+  fixpack: 'artifacts.storagePathCreateModal.fixpackFiles',
+  hotfix: 'artifacts.storagePathCreateModal.hotfixFiles',
 };
 
 /**
  * The dialog that makes a storage location, hyperweaver-ui's: the name,
- * the absolute path with Browse, the type, the enabled switch and the
+ * the absolute path with Browse, the type among the five kinds, the enabled switch and the
  * notes on what the agent does with it; Create sends
  * `POST artifacts/storage/paths` once.
  */

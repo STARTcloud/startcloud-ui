@@ -8,8 +8,8 @@ import {
   defaultPathOf,
   downloadBody,
   downloadProblem,
-  enabledPaths,
   extractFilenameFromUrl,
+  roleFreePaths,
 } from '../../utils/artifacts';
 import ToolFormDialog from '../ToolFormDialog';
 
@@ -158,18 +158,18 @@ ChecksumField.propTypes = {
 
 /**
  * The dialog that downloads a file from a URL into a storage location,
- * hyperweaver-ui's: the URL, the location among the enabled ones, the
- * one location chosen when there is exactly one, the file name
+ * hyperweaver-ui's: the URL, the location among the enabled ISO and
+ * image ones, the one location chosen when there is exactly one, the file name
  * suggested from the URL until typed, the checksum with its algorithm,
  * the overwrite switch, the chosen location's facts and the steps of
  * the download; a host with no enabled location is told so.
  */
 const ArtifactDownloadModal = ({ storagePaths, busy, onClose, onSubmit }) => {
   const { t } = useTranslation();
-  const paths = enabledPaths(storagePaths);
+  const paths = roleFreePaths(storagePaths);
   const [form, setForm] = useState(() => ({
     ...DOWNLOAD_FORM,
-    storage_path_id: defaultPathOf(storagePaths),
+    storage_path_id: defaultPathOf(paths),
   }));
   const [typedName, setTypedName] = useState(false);
   const problem = downloadProblem(form);

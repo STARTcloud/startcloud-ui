@@ -1,0 +1,31 @@
+{
+  "id": 1,
+  "username": "mark",
+  "email": "mark@m4kr.net",
+  "verified": true,
+  "roles": ["user"],
+  "organization": "STARTcloud",
+  "organizations": [
+    {
+      "uuid": "0d6b7e2a-2222-4c0a-9a1e-000000000001",
+      "name": "STARTcloud",
+      "display_name": "STARTcloud",
+      "roles": ["ADMIN"],
+      "primary": true,
+      "personal": false,
+      "logo_url": null,
+      "email_hash": ""
+    },
+    {
+      "uuid": "0d6b7e2a-3333-4c0a-9a1e-000000000002",
+      "name": "Moonshine",
+      "display_name": "Moonshine",
+      "roles": ["MEMBER"],
+      "primary": false,
+      "personal": false,
+      "logo_url": "https://moonshine.example.com/mark.svg",
+      "email_hash": ""
+    }
+  ],
+  "entitlements": [{ "value": "hyperweaver" }]
+}

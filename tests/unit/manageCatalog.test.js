@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ARTIFACT_TYPES,
   CATALOG_SOURCES,
+  FILE_SOURCES,
   TEMPLATE_SOURCES,
   artifactFiltersOf,
   artifactStatusOf,
@@ -18,6 +19,7 @@ import {
   importBody,
   importProblem,
   installedKeysOf,
+  knownHashOf,
   locationBody,
   locationNeedsRole,
   locationProblem,
@@ -25,7 +27,9 @@ import {
   matchesPackage,
   matchesProvisioner,
   matchesRecipe,
+  matchesRegistryFile,
   matchesTemplate,
+  missingSeedOf,
   packageActionBody,
   packageActionOf,
   packageBadgeOf,
@@ -41,6 +45,12 @@ import {
   recipesOf,
   referencingMachinesOf,
   registerBody,
+  registryDownloadBody,
+  registryFileMatches,
+  registryFilesOf,
+  registryGroupsOf,
+  registryKindOf,
+  registryProblem,
   roleOptionsOf,
   searchRowsOf,
   secretNamesOf,
@@ -107,7 +117,7 @@ describe('the installer files', () => {
     expect(artifactStatusOf({ file_exists: false }).key).toBe('missing');
     expect(
       artifactStatusOf({ checksum_verified: false, checksum: 'a', expected_sha256: 'b' })
-    ).toEqual({ key: 'mismatch', tone: 'danger', values: { checksum: 'a', expected: 'b' } });
+    ).toEqual({ key: 'mismatch', tone: 'warning', values: { checksum: 'a', expected: 'b' } });
     expect(artifactStatusOf({ checksum_verified: true }).key).toBe('verified');
     expect(artifactStatusOf({ checksum: null }).key).toBe('unhashed');
     expect(artifactStatusOf({ checksum: 'abc' }).key).toBe('hashed');
@@ -212,6 +222,178 @@ describe('the installer files', () => {
     expect(matchesArtifact(row, 'domino')).toBe(true);
     expect(matchesArtifact(row, 'hcl')).toBe(true);
     expect(matchesArtifact(row, 'iso')).toBe(false);
+  });
+
+  it('seeds a source dialog from a missing row by the sha256 it is known by', () => {
+    expect(FILE_SOURCES).toEqual(['registry', 'hcl', 'download', 'upload', 'register']);
+    expect(knownHashOf({ expected_sha256: 'e', checksum: 'c' })).toBe('e');
+    expect(knownHashOf({ checksum: 'c' })).toBe('c');
+    expect(knownHashOf({})).toBe('');
+    expect(
+      missingSeedOf({
+        filename: 'Domino_14.5_FP1_Linux.tar',
+        file_type: 'fixpack',
+        role: 'domino_fixpack',
+        checksum: 'b1',
+        storage_location_id: 'loc-installers',
+      })
+    ).toEqual({
+      locationId: 'loc-installers',
+      role: 'domino_fixpack',
+      kind: 'fixpack',
+      filename: 'Domino_14.5_FP1_Linux.tar',
+      checksum: 'b1',
+    });
+    expect(missingSeedOf({ storage_location: { id: 7 } })).toMatchObject({
+      locationId: '7',
+      kind: 'installer',
+    });
+  });
+});
+
+describe('the registry downloads', () => {
+  const answer = {
+    source: { id: 'boxvault', name: 'BoxVault', url: 'https://b' },
+    downloads: [
+      {
+        organization: 'STARTcloud',
+        name: 'domino',
+        label: 'HCL Domino',
+        releases: [
+          {
+            version: '14.5',
+            patches: [
+              {
+                name: 'GA',
+                files: [
+                  {
+                    key: 'linux-x64',
+                    file_name: 'Domino_14.5_Linux_English.tar',
+                    kind: 'installer',
+                    platform: 'linux',
+                    architecture: 'x64',
+                    file_size: 10,
+                    checksum: 'md5',
+                    checksum_type: 'MD5',
+                    sha256: 'ffff',
+                  },
+                ],
+              },
+              {
+                name: 'FP1',
+                files: [
+                  {
+                    key: 'linux-x64',
+                    file_name: 'Domino_14.5_FP1_Linux.tar',
+                    kind: 'interim-fix',
+                    platform: 'linux',
+                    architecture: 'x64',
+                    file_size: 5,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it('flattens the listing to rows and groups them by download, release and patch', () => {
+    const rows = registryFilesOf(answer);
+    expect(rows.map(row => row.key)).toEqual([
+      'domino/14.5/GA/linux-x64',
+      'domino/14.5/FP1/linux-x64',
+    ]);
+    expect(rows[0]).toMatchObject({
+      organization: 'STARTcloud',
+      download: 'domino',
+      label: 'HCL Domino',
+      release: '14.5',
+      patch: 'GA',
+      filename: 'Domino_14.5_Linux_English.tar',
+      kind: 'installer',
+      size: 10,
+      checksum: 'md5',
+      checksumType: 'MD5',
+      sha256: 'ffff',
+    });
+    expect(rows[1].sha256).toBe('');
+    expect(registryFilesOf(null)).toEqual([]);
+    const groups = registryGroupsOf(rows);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({ key: 'domino', label: 'HCL Domino' });
+    expect(groups[0].items).toHaveLength(2);
+    expect(groups[0].groups.map(group => group.label)).toEqual(['14.5']);
+    expect(groups[0].groups[0].groups.map(group => group.label)).toEqual(['GA', 'FP1']);
+    expect(groups[0].groups[0].groups[1].items.map(row => row.filename)).toEqual([
+      'Domino_14.5_FP1_Linux.tar',
+    ]);
+    expect(matchesRegistryFile(rows[0], 'windows')).toBe(false);
+    expect(matchesRegistryFile(rows[0], 'hcl')).toBe(true);
+    expect(matchesRegistryFile(rows[1], 'fp1')).toBe(true);
+  });
+
+  it('matches a missing row by its sha256 first and its name otherwise', () => {
+    const rows = registryFilesOf(answer);
+    expect(registryFileMatches(rows[0], { checksum: 'ffff', filename: 'x' })).toBe(true);
+    expect(registryFileMatches(rows[0], { checksum: 'eeee', filename: rows[0].filename })).toBe(
+      false
+    );
+    expect(registryFileMatches(rows[1], { checksum: '', filename: rows[1].filename })).toBe(true);
+    expect(registryFileMatches(rows[1], null)).toBe(false);
+  });
+
+  it('builds the download body with the kind an interim fix lands under', () => {
+    const rows = registryFilesOf(answer);
+    expect(registryKindOf('interim-fix')).toBe('hotfix');
+    expect(registryKindOf('fixpack')).toBe('fixpack');
+    expect(
+      registryDownloadBody(rows[0], {
+        source: 'boxvault',
+        role: ' domino_install ',
+        locationId: '',
+        overwrite: false,
+      })
+    ).toEqual({
+      source_name: 'boxvault',
+      organization: 'STARTcloud',
+      download: 'domino',
+      release: '14.5',
+      patch: 'GA',
+      filename: 'Domino_14.5_Linux_English.tar',
+      kind: 'installer',
+      role: 'domino_install',
+      overwrite_existing: false,
+      checksum: 'ffff',
+      checksum_algorithm: 'sha256',
+    });
+    expect(
+      registryDownloadBody(rows[1], {
+        source: 'boxvault',
+        role: 'domino_hotfix',
+        locationId: 'loc-installers',
+        overwrite: true,
+      })
+    ).toEqual({
+      source_name: 'boxvault',
+      organization: 'STARTcloud',
+      download: 'domino',
+      release: '14.5',
+      patch: 'FP1',
+      filename: 'Domino_14.5_FP1_Linux.tar',
+      kind: 'hotfix',
+      role: 'domino_hotfix',
+      overwrite_existing: true,
+      storage_path_id: 'loc-installers',
+    });
+    expect(registryProblem({ source: '', role: 'r' })).toBe(
+      'host.installerFilesModals.pickRegistry'
+    );
+    expect(registryProblem({ source: 'boxvault', role: ' ' })).toBe(
+      'host.installerFilesModals.roleRequired'
+    );
+    expect(registryProblem({ source: 'boxvault', role: 'r' })).toBe('');
   });
 });
 
@@ -443,13 +625,12 @@ describe('the templates', () => {
     });
   });
 
-  it('writes a catalog source under the catalog map with its authentication, the API key never', () => {
+  it('writes a catalog source under the catalog map with no credential, the API key never', () => {
     const catalogForm = {
       name: 'partner',
       displayName: 'Partner',
       url: 'https://p/catalog.json',
       isDefault: false,
-      auth: 'oidc',
       ca_file: '',
     };
     expect(sourceEntryPatch([], catalogForm, '', CATALOG_SOURCES)).toEqual({
@@ -459,7 +640,6 @@ describe('the templates', () => {
             display_name: 'Partner',
             url: 'https://p/catalog.json',
             default: false,
-            auth: 'oidc',
           },
         },
       },
@@ -550,13 +730,17 @@ describe('the templates', () => {
       sourceFieldErrorsOf(
         {
           fieldErrors: [
-            { pointer: '/catalog_sources/sources/partner/auth', rule: 'enum', params: {} },
+            {
+              pointer: '/catalog_sources/sources/partner/url',
+              rule: 'format',
+              params: { format: 'uri' },
+            },
           ],
         },
         'partner',
         CATALOG_SOURCES
       )
-    ).toEqual({ auth: { rule: 'enum', params: {} } });
+    ).toEqual({ url: { rule: 'format', params: { format: 'uri' } } });
     expect(sourceFieldErrorsOf(null, 'new', TEMPLATE_SOURCES)).toEqual({});
   });
 

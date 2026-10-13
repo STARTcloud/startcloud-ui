@@ -119,7 +119,7 @@ export const artifactStatusOf = artifact => {
   if (artifact.checksum_verified === false) {
     return {
       key: 'mismatch',
-      tone: 'danger',
+      tone: 'warning',
       values: { checksum: artifact.checksum, expected: artifact.expected_sha256 || '' },
     };
   }
@@ -272,6 +272,182 @@ export const hclProblem = form =>
   !form.role.trim() || !form.filename.trim() || !form.keyName.trim()
     ? 'host.installerFilesModals.hclFieldsRequired'
     : '';
+
+export const FILE_SOURCES = ['registry', 'hcl', 'download', 'upload', 'register'];
+
+const REGISTRY_KINDS = { 'interim-fix': 'hotfix' };
+
+const SHA256 = 'sha256';
+
+/**
+ * The sha256 an artifact's row is known by: the recorded expectation
+ * first, the file's own checksum otherwise, empty while it has neither.
+ *
+ * @param {Object} artifact - The row
+ * @returns {string} The sha256
+ */
+export const knownHashOf = artifact => artifact.expected_sha256 || artifact.checksum || '';
+
+/**
+ * What a missing artifact's row seeds a source dialog with: its
+ * location, its role, its kind, its file name and the sha256 it is
+ * known by.
+ *
+ * @param {Object} artifact - The row
+ * @returns {{ locationId: string, role: string, kind: string, filename: string, checksum: string }} The seed
+ */
+export const missingSeedOf = artifact => ({
+  locationId: String(artifact.storage_location_id ?? artifact.storage_location?.id ?? ''),
+  role: artifact.role || '',
+  kind: artifact.file_type || 'installer',
+  filename: artifact.filename || '',
+  checksum: knownHashOf(artifact),
+});
+
+/**
+ * The kind a registry file lands under: BoxVault's kind, an interim fix
+ * as a hotfix.
+ *
+ * @param {string} kind - The file's kind
+ * @returns {string} The kind
+ */
+export const registryKindOf = kind => REGISTRY_KINDS[kind] || kind;
+
+const registryFileOf = ({ download, release, patch, file }) => ({
+  key: `${download.name}/${release.version}/${patch.name}/${file.key || file.file_name}`,
+  organization: download.organization || '',
+  download: download.name || '',
+  label: download.label || download.name || '',
+  release: release.version || '',
+  patch: patch.name || '',
+  filename: file.file_name || '',
+  kind: file.kind || '',
+  platform: file.platform || '',
+  architecture: file.architecture || '',
+  size: Number(file.file_size) || 0,
+  checksum: file.checksum || '',
+  checksumType: file.checksum_type || '',
+  sha256: file.sha256 || '',
+});
+
+/**
+ * The files of a registry's downloads listing as rows, one a file, each
+ * carrying its download, release and patch.
+ *
+ * @param {Object|null} answer - The answer of `GET artifacts/registry/{source}/downloads`
+ * @returns {Array<Object>} The rows
+ */
+export const registryFilesOf = answer =>
+  (Array.isArray(answer?.downloads) ? answer.downloads : []).flatMap(download =>
+    (Array.isArray(download.releases) ? download.releases : []).flatMap(release =>
+      (Array.isArray(release.patches) ? release.patches : []).flatMap(patch =>
+        (Array.isArray(patch.files) ? patch.files : []).map(file =>
+          registryFileOf({ download, release, patch, file })
+        )
+      )
+    )
+  );
+
+const groupedBy = (rows, keyOf, labelOf) =>
+  [...new Map(rows.map(row => [keyOf(row), row])).keys()].map(key => {
+    const items = rows.filter(row => keyOf(row) === key);
+    return { key, label: labelOf(items[0]), items };
+  });
+
+/**
+ * The rows of `registryFilesOf` as the one table's groups, a download
+ * holding its releases and a release its patches, each patch holding
+ * its files.
+ *
+ * @param {Array<Object>} rows - The rows
+ * @returns {Array<Object>} The groups
+ */
+export const registryGroupsOf = rows =>
+  groupedBy(
+    rows,
+    row => row.download,
+    row => row.label
+  ).map(download => ({
+    ...download,
+    groups: groupedBy(
+      download.items,
+      row => `${row.download}/${row.release}`,
+      row => row.release
+    ).map(release => ({
+      ...release,
+      groups: groupedBy(
+        release.items,
+        row => `${row.download}/${row.release}/${row.patch}`,
+        row => row.patch
+      ),
+    })),
+  }));
+
+/**
+ * Whether a registry file is the one a missing row is known as, by its
+ * sha256 first and its file name otherwise.
+ *
+ * @param {Object} row - A row of `registryFilesOf`
+ * @param {Object|null} seed - The seed of `missingSeedOf`
+ * @returns {boolean} True while it is
+ */
+export const registryFileMatches = (row, seed) => {
+  if (!seed) {
+    return false;
+  }
+  if (seed.checksum) {
+    return row.sha256 === seed.checksum;
+  }
+  return Boolean(row.filename) && row.filename === seed.filename;
+};
+
+/**
+ * Why a registry download cannot be queued: a registry and a role.
+ *
+ * @param {Object} form - `{ source, role }`
+ * @returns {string} The locale key, or the empty string
+ */
+export const registryProblem = form => {
+  if (!form.source) {
+    return 'host.installerFilesModals.pickRegistry';
+  }
+  return form.role.trim() ? '' : 'host.installerFilesModals.roleRequired';
+};
+
+/**
+ * The body of `POST artifacts/registry-download`: the registry, the
+ * file's download, release, patch and name, its kind, the role, whether
+ * to overwrite, the location where picked, and the sha256 the registry
+ * lists where it lists one.
+ *
+ * @param {Object} row - A row of `registryFilesOf`
+ * @param {Object} form - `{ source, role, locationId, overwrite }`
+ * @returns {Object} The body
+ */
+export const registryDownloadBody = (row, form) => ({
+  source_name: form.source,
+  organization: row.organization,
+  download: row.download,
+  release: row.release,
+  patch: row.patch,
+  filename: row.filename,
+  kind: registryKindOf(row.kind),
+  role: form.role.trim(),
+  overwrite_existing: form.overwrite,
+  ...(form.locationId ? { storage_path_id: form.locationId } : {}),
+  ...(row.sha256 ? { checksum: row.sha256, checksum_algorithm: SHA256 } : {}),
+});
+
+export const matchesRegistryFile = matcher(row => [
+  row.label,
+  row.download,
+  row.release,
+  row.patch,
+  row.filename,
+  row.kind,
+  row.platform,
+  row.architecture,
+]);
 
 /**
  * The names of the secrets of one category, hyperweaver-ui's read of
@@ -667,11 +843,8 @@ export const CATALOG_SOURCE_FORM = {
   displayName: '',
   url: '',
   isDefault: false,
-  auth: 'none',
   ca_file: '',
 };
-
-export const CATALOG_AUTHS = ['none', 'oidc'];
 
 export const TEMPLATE_SOURCES = 'template_sources';
 
@@ -817,9 +990,9 @@ const undefaulted = (sources, keptId) =>
 
 /**
  * The patch that adds or edits one source, the agent's entry keys:
- * `display_name`, `url` and `default` from the form, `auth` where the
- * form carries one, the API key and the CA file where typed, a blank one
- * leaving the stored value untouched; an edit under a new id removes the
+ * `display_name`, `url` and `default` from the form, the API key and the
+ * CA file where typed, a blank one leaving the stored value untouched; an
+ * edit under a new id removes the
  * old entry with `null`; while the form makes it the default every other
  * default entry is unset.
  *
@@ -835,7 +1008,6 @@ export const sourceEntryPatch = (sources, form, editing, map) => {
     display_name: form.displayName.trim(),
     url: form.url.trim(),
     default: form.isDefault,
-    ...(form.auth ? { auth: form.auth } : {}),
     ...optionalText('auth_token', form.auth_token || ''),
     ...optionalText('ca_file', form.ca_file || ''),
   };
@@ -891,7 +1063,6 @@ const SOURCE_FIELDS = {
   display_name: 'displayName',
   url: 'url',
   default: 'isDefault',
-  auth: 'auth',
   auth_token: 'auth_token',
   ca_file: 'ca_file',
 };

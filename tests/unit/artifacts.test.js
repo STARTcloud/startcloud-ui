@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ARTIFACT_TYPES,
   DOWNLOAD_FORM,
+  ROLE_KEYED_TYPES,
   STORAGE_PATH_FORM,
   UPLOAD_FORM,
   artifactQuery,
@@ -19,6 +21,7 @@ import {
   matchesArtifact,
   matchesStoragePath,
   parseUsagePercentage,
+  roleFreePaths,
   storagePathBody,
   storagePathEditBody,
   storagePathEditProblem,
@@ -38,6 +41,17 @@ const paths = [
 ];
 
 describe('the artifact types', () => {
+  it('knows the five kinds and which of them store per role', () => {
+    expect(ARTIFACT_TYPES).toEqual(['iso', 'image', 'installer', 'fixpack', 'hotfix']);
+    expect(ROLE_KEYED_TYPES).toEqual(['installer', 'fixpack', 'hotfix']);
+    expect(
+      roleFreePaths([
+        ...paths,
+        { id: 'd', name: 'Installers', path: '/inst', type: 'installer', enabled: true },
+      ]).map(path => path.id)
+    ).toEqual(['a', 'b']);
+  });
+
   it('reads the type from the file type or the extension', () => {
     expect(artifactTypeOf('iso', '.iso')).toBe('iso');
     expect(artifactTypeOf('', '.ISO')).toBe('iso');

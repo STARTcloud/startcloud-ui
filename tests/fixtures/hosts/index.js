@@ -43,4 +43,12 @@ export default {
     status: 200,
     file: 'task-cancel-200.json',
   },
+  'GET /api/agents/1/ws-ticket': { status: 200, file: 'ws-ticket-200.json' },
+  'POST /api/agents/1/term/start': { status: 200, file: 'term-start-200.json' },
+  'GET /api/agents/1/term/sessions': { status: 200, file: 'term-sessions-200.json' },
+  'DELETE /api/agents/1/term/sessions/a1000000-0000-4000-8000-000000000001/stop': {
+    status: 200,
+    file: 'term-stop-200.json',
+  },
+  'GET /api/agents/1/ssh/sessions': { status: 200, file: 'ssh-sessions-200.json' },
 };

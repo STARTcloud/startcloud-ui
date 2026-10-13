@@ -356,10 +356,15 @@ const groupsOf = commands =>
     return [...groups, { key: command.group, header: command.header, commands: [command] }];
   }, []);
 
-const CommandRow = ({ command }) =>
-  command.note ? (
-    <PrivilegeLine />
-  ) : (
+const CommandRow = ({ command }) => {
+  if (command.note) {
+    return <PrivilegeLine />;
+  }
+  if (command.Row) {
+    const { Row } = command;
+    return <Row command={command} />;
+  }
+  return (
     <ActionRow
       icon={command.icon}
       tone={command.tone}
@@ -372,6 +377,7 @@ const CommandRow = ({ command }) =>
       onClick={command.run}
     />
   );
+};
 
 CommandRow.propTypes = {
   command: PropTypes.object.isRequired,
@@ -379,7 +385,8 @@ CommandRow.propTypes = {
 
 /**
  * The rows of the Controls menu from its commands, a divider before each
- * group after the first and a group's header above its rows.
+ * group after the first and a group's header above its rows; a command
+ * that names its own `Row` component draws through it.
  */
 export const CommandRows = ({ commands }) => {
   const { t } = useTranslation();

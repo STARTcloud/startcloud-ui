@@ -14,6 +14,7 @@ import ConsoleLaunchers from './ConsoleLaunchers';
 import ConsoleSwitchButtons from './ConsoleSwitchButtons';
 import RdpConnectionPanel from './RdpConnectionPanel';
 import RdpSessionHost from './RdpSessionHost';
+import SendToFooterButton from './SendToFooterButton';
 
 const PREFIX = 'console.rdpConsoleDisplay';
 
@@ -157,7 +158,8 @@ RdpSettingsDropdown.propTypes = {
  * the next connect and scale and clipboard live, Send clipboard,
  * Ctrl+Alt+Del, Open in new tab, the full-window page, the
  * switch-or-start buttons of the other consoles the host's row lists,
- * the launchers of a host that lists `host-launchers` and Stop RDP; the
+ * Send to footer, the launchers of a host that lists `host-launchers`
+ * and Stop RDP; the
  * session itself is `RdpSessionHost`, the target the start chose,
  * `console` for the hypervisor's remote display and `guest` for the
  * guest's own.
@@ -180,6 +182,7 @@ const RdpConsoleDisplay = ({
   hasVnc,
   hasZlogin,
   hasSsh,
+  sendToFooter = null,
 }) => {
   const { t } = useTranslation();
   const status = useStatus();
@@ -304,6 +307,9 @@ const RdpConsoleDisplay = ({
           >
             <FaExpand aria-hidden="true" />
           </button>
+          {sendToFooter ? (
+            <SendToFooterButton onSend={() => sendToFooter('rdp')} disabled={loading} />
+          ) : null}
           <ConsoleSwitchButtons
             prefix={PREFIX}
             server={server}
@@ -366,6 +372,7 @@ RdpConsoleDisplay.propTypes = {
   hasVnc: PropTypes.bool.isRequired,
   hasZlogin: PropTypes.bool.isRequired,
   hasSsh: PropTypes.bool.isRequired,
+  sendToFooter: PropTypes.func,
 };
 
 export default memo(RdpConsoleDisplay);

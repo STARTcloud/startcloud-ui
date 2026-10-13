@@ -1795,7 +1795,8 @@
       "expand": "Expandir",
       "resize": "Arrastra para cambiar el tamaño",
       "refresh": "Actualizar",
-      "resizeBoth": "Cambiar el tamaño de la barra lateral y del panel"
+      "resizeBoth": "Cambiar el tamaño de la barra lateral y del panel",
+      "consoles": "Consolas"
     },
     "terminal": {
       "title": "Preferencias del terminal",
@@ -1814,7 +1815,9 @@
       "fontFamily": "Familia de fuente (pila CSS)",
       "fontHint": "Cualquier fuente monoespaciada instalada sirve — la pila se recorre de izquierda a derecha.",
       "preview": "vista previa: ls -la /var/log | grep -i weaver 0123456789",
-      "applyNote": "El shell del host del pie de página se actualiza de inmediato; los demás terminales toman los nuevos valores la próxima vez que se abren."
+      "applyNote": "El shell del host del pie de página se actualiza de inmediato; los demás terminales toman los nuevos valores la próxima vez que se abren.",
+      "broadcastNewline": "Enviar Intro después de una difusión",
+      "broadcastNewlineHint": "Cada difusión termina con un salto de línea mientras esto está activado"
     },
     "tasks": {
       "priorityCritical": "CRÍTICA",
@@ -1879,6 +1882,32 @@
       "confirmCancel": "¿Cancelar esta tarea {{status}}?",
       "cancelFailed": "La cancelación falló: {{message}}",
       "streamClosed": "El flujo de salida se cerró."
+    },
+    "console": {
+      "hostShell": "Shell del host",
+      "ssh": "SSH",
+      "zlogin": "zlogin",
+      "vnc": "VNC",
+      "rdp": "RDP",
+      "noneOpen": "Ninguna consola abierta",
+      "openFromControls": "Abre una desde el menú Controles",
+      "close": "Cerrar, la sesión termina",
+      "accept": "Aceptar difusiones",
+      "sendToMachinePage": "Enviar a la página de la máquina",
+      "sendToZonePage": "Enviar a la página de la zona",
+      "sendToFooter": "Enviar al pie de página",
+      "sendToThisPage": "Enviar a esta página",
+      "inFooter": "La consola {{kind}} está en el pie de página",
+      "commands": "Comandos",
+      "commandPlaceholder": "Escribe una vez, se envía a cada pestaña resaltada",
+      "send": "Enviar",
+      "clear": "Limpiar",
+      "sentBefore": "Enviados antes",
+      "nothingSent": "Nada enviado todavía",
+      "acceptCount_one": "{{count}} de {{total}} pestañas aceptan",
+      "acceptCount_other": "{{count}} de {{total}} pestañas aceptan",
+      "sessionEnded": "La sesión de {{target}} terminó",
+      "restartFailed": "La sesión de {{target}} no se pudo reiniciar"
     },
     "operation": {
       "provisionerImport": "Importación de provisioner",
@@ -2267,6 +2296,11 @@
       "guestExecTitle": "Ejecuta un comando dentro del invitado",
       "displayResize": "Definir tamaño de pantalla",
       "displayResizeTitle": "Envía un tamaño de pantalla a la máquina en ejecución",
+      "openHostShell": "Abrir shell del host",
+      "terminalInFooter": "Se abre en el pie de página, haz clic para abrirlo en esta página",
+      "terminalOnPage": "Se abre en esta página, haz clic para abrirlo en el pie de página",
+      "targetFooter": "pie de página",
+      "targetPage": "esta página",
       "done": {
         "start": "{{name}} se está iniciando.",
         "shutdown": "{{name}} se está apagando.",
@@ -2789,7 +2823,10 @@
         "type": {
           "iso": "ISO",
           "image": "Imagen",
-          "file": "Archivo"
+          "file": "Archivo",
+          "installer": "Instalador",
+          "fixpack": "Fixpack",
+          "hotfix": "Hotfix"
         },
         "checksum": {
           "verified": "Verificado",
@@ -2919,9 +2956,6 @@
       "catalog": {
         "sourceFailed": "No se pudo agregar la fuente del catálogo: {{message}}",
         "sourceUrl": "URL del catálogo",
-        "sourceAuth": "Autenticación",
-        "authNone": "Ninguna",
-        "authOidc": "Iniciar sesión con SSO",
         "makeDefault": "Hacer este el catálogo predeterminado",
         "sourceUpdated": "Fuente de catálogo {{name}} actualizada",
         "sourceRemoved": "Fuente de catálogo {{name}} eliminada",
@@ -2943,7 +2977,14 @@
         "deleteVersion": "Eliminar {{version}}",
         "moveVersion": "Mover {{version}}…",
         "noVersion": "No hay ninguna versión listada",
-        "sourceRefused": "Una fuente de catálogo rechazó el inicio de sesión de este host: {{sources}}"
+        "sourceRefused": "Una fuente de catálogo rechazó el inicio de sesión de este host: {{sources}}",
+        "createMachine": "Crear una máquina",
+        "handoffTitle": "Instalar {{name}} {{version}}",
+        "handoffInstall": "¿Instalar {{name}} {{version}} desde {{source}} en este host?",
+        "handoffHeld": "{{name}} {{version}} ya está instalado en este host.",
+        "family": "Familia",
+        "catalog": "Catálogo",
+        "architecture": "Arquitectura"
       },
       "sources": {
         "key": "Clave",
@@ -4099,9 +4140,6 @@
       "tierWhen": "{{tier}} cuando se midió {{version}}",
       "download": "Descargar {{version}}",
       "all": "Todas las versiones ({{count}})"
-    },
-    "errors": {
-      "accessDenied": "Acceso denegado por la puerta del catálogo."
     }
   },
   "codeInput": {
@@ -4651,7 +4689,10 @@
       "activeFiltersLabel": "Filtros activos:",
       "searchFilter": "Búsqueda: \"{{search}}\"",
       "typeFilter": "Tipo: {{type}}",
-      "locationFilter": "Ubicación: {{location}}"
+      "locationFilter": "Ubicación: {{location}}",
+      "installerFiles": "Instaladores",
+      "fixpackFiles": "Fixpacks",
+      "hotfixFiles": "Hotfixes"
     },
     "artifactTable": {
       "loadingText": "Cargando artefactos...",
@@ -4854,7 +4895,10 @@
       "importantHeading": "Importante:",
       "importantNote1": "La ruta especificada debe existir y el sistema OmniOS debe tener permisos de escritura sobre ella",
       "importantNote2": "Asegúrate de que haya suficiente espacio en disco disponible para el almacenamiento de artefactos",
-      "importantNote3": "La ruta se validará al crear la ubicación de almacenamiento"
+      "importantNote3": "La ruta se validará al crear la ubicación de almacenamiento",
+      "installerFiles": "Instaladores",
+      "fixpackFiles": "Fixpacks",
+      "hotfixFiles": "Hotfixes"
     },
     "storagePathEditModal": {
       "title": "Editar ruta de almacenamiento",
@@ -4878,7 +4922,10 @@
       "totalSizeLabel": "Tamaño total",
       "diskUsageLabel": "Uso de disco",
       "disableWarningHeading": "Advertencia:",
-      "disableWarningMessage": "Esta ubicación de almacenamiento contiene {{count}} archivo(s). Deshabilitarla hará que estos artefactos sean de solo lectura e impedirá nuevas subidas o descargas a esta ubicación."
+      "disableWarningMessage": "Esta ubicación de almacenamiento contiene {{count}} archivo(s). Deshabilitarla hará que estos artefactos sean de solo lectura e impedirá nuevas subidas o descargas a esta ubicación.",
+      "installerFiles": "Instaladores",
+      "fixpackFiles": "Fixpacks",
+      "hotfixFiles": "Hotfixes"
     }
   },
   "auth": {
@@ -8171,7 +8218,9 @@
       "deleteEntriesFiles": "Eliminar entradas + archivos",
       "deleteEntries": "Eliminar entradas",
       "deleteEntriesHelp": "¿Eliminar las entradas del registro seleccionadas? Sin el interruptor de abajo, los archivos permanecen en disco y un escaneo posterior los vuelve a registrar.",
-      "alsoDeleteFiles": "Eliminar también los archivos del disco"
+      "alsoDeleteFiles": "Eliminar también los archivos del disco",
+      "fromBoxVault": "Desde BoxVault",
+      "fetchMissing": "Falta {{filename}}. Obtenlo de una fuente"
     },
     "installerFilesModals": {
       "storageLocation": "Ubicación de almacenamiento",
@@ -8213,7 +8262,22 @@
       "hclFilename": "Nombre de archivo (debe coincidir EXACTAMENTE con el catálogo HCL)",
       "hclPortalKey": "Clave del portal HCL",
       "hclKeyPlaceholder": "nombre del secreto hcl_download_portal_api_keys",
-      "hclKeyHelp": "El sha256 del catálogo es la autoridad — se convierte en la expectativa de la entrada y la descarga debe reproducirlo. El token de actualización del portal rota al usarse; el agente persiste la rotación automáticamente."
+      "hclKeyHelp": "El sha256 del catálogo es la autoridad — se convierte en la expectativa de la entrada y la descarga debe reproducirlo. El token de actualización del portal rota al usarse; el agente persiste la rotación automáticamente.",
+      "missingFile": "{{filename}} falta en la caché. Obtenlo de:",
+      "downloadFromRegistry": "Descargar desde BoxVault",
+      "registry": "Registro",
+      "pickRegistry": "Elige un registro.",
+      "kindsOwnLocation": "La ubicación propia del tipo",
+      "registryReadFailed": "No se pudo leer el registro: {{message}}",
+      "registryEmpty": "Este registro no ofrece archivos de descarga a tu alcance.",
+      "registryDownloadQueued": "Descarga de {{filename}} en cola.",
+      "filesCount_one": "{{count}} archivo",
+      "filesCount_other": "{{count}} archivos",
+      "seedMatch": "Coincide con el archivo que falta",
+      "platform": "Plataforma",
+      "architecture": "Arquitectura",
+      "checksum": "Suma de verificación",
+      "download": "Descargar"
     },
     "machineManager": {
       "management": "Gestión de {{singular}}",
@@ -10741,7 +10805,9 @@
       "networkTitle": "Red",
       "rxSeries": "RX",
       "txSeries": "TX",
-      "diskTitle": "Disco"
+      "diskTitle": "Disco",
+      "readSeries": "Lectura",
+      "writeSeries": "Escritura"
     }
   },
   "machineEdit": {
@@ -11180,7 +11246,11 @@
       "selectVersionOrNone": "Selecciona una versión para el aprovisionador elegido — o vuelve a establecerlo en Ninguno.",
       "fixHighlightedFields": "Corrige el campo de configuración resaltado: {{names}}.",
       "fixHighlightedFields_plural": "Corrige los campos de configuración resaltados: {{names}}.",
-      "templateDownloadQueued": "La box {{box}} se descarga primero; la máquina se crea cuando llegue."
+      "templateDownloadQueued": "La box {{box}} se descarga primero; la máquina se crea cuando llegue.",
+      "createWaiting": "Crear · espera {{count}} descargas",
+      "downloadQueued": "Descarga de {{filename}} en cola; Crear esperará a que termine",
+      "downloadFailed": "Una descarga falló: {{message}}",
+      "safeIdUploadFailed": "La subida de la ID segura falló: {{message}}"
     },
     "hardwareSections": {
       "cpu": "CPU",
@@ -11363,7 +11433,6 @@
       "manifestPredatesDslMiddle": ") — no genera formulario de configuración. Los valores igual viajan en el",
       "manifestPredatesDslTail": "del documento.",
       "roles": "Roles",
-      "safeIdPath": "Ruta de ID segura (archivo en el host del agente)",
       "packageSettingOverrides": "Sobrescrituras de configuración del paquete",
       "packageOverridesHint": "Los valores de la plantilla del paquete son predeterminados — define un campo para sobrescribirlo en el documento generado; en blanco conserva el predeterminado del paquete.",
       "providerType": "Tipo de proveedor",
@@ -11407,6 +11476,8 @@
       "noneValue": "(ninguno)",
       "confirmSyncMethod": "Método de sincronización",
       "confirmStartAfterCreate": "Iniciar después de crear",
+      "confirmWaitFor": "Espera descargas",
+      "confirmWaitForValue": "{{count}}",
       "yesValue": "sí",
       "noValue": "no",
       "exactlyWhatWillBeSent": "Esto es exactamente lo que se enviará — usa Atrás para cambiar algo.",
@@ -11614,7 +11685,40 @@
       "roleNameAriaLabel": "Nombre del rol",
       "roleNameRule": "Nombres de rol: letras, números, guiones bajos — segmentos unidos por puntos.",
       "customRoleNameAriaLabel": "Nombre de rol personalizado",
-      "addButton": "Agregar"
+      "addButton": "Agregar",
+      "changedChip": "Cambiado respecto al predeterminado del aprovisionador",
+      "changedBanner": "Esta máquina se ejecuta fuera de lo que el aprovisionador pretende: {{count}} roles cambiados ({{names}}). Aun así se construye.",
+      "templateDefaults": "Predeterminados de la plantilla",
+      "onCount": "{{count}} activados",
+      "dependencyOff": "— está desactivado",
+      "needsAnswer": "Este rol necesita una respuesta o un archivo que aún no está en este host",
+      "onByDefault": "Activado por el predeterminado del aprovisionador",
+      "offByDefault": "Desactivado por el predeterminado del aprovisionador",
+      "switchAriaLabel": "Ejecutar {{name}}",
+      "filesHeading": "Archivos",
+      "kind": {
+        "installer": "Instalador",
+        "fixpack": "Fixpack",
+        "hotfix": "Hotfix"
+      },
+      "noFileKnown": "No se conoce ningún archivo para este rol",
+      "none": {
+        "fixpack": "Sin fixpack",
+        "hotfix": "Sin hotfix"
+      },
+      "onThisHost": "En este host",
+      "downloadable": "Descargable",
+      "via": {
+        "boxvault": "vía BoxVault",
+        "hcl": "vía HCL",
+        "custom": "vía recurso personalizado",
+        "none": "sin origen"
+      },
+      "downloadQueued": "Descarga en cola como tarea {{task}} — Crear espera a que termine y monta el archivo en cuanto llegue",
+      "notOnHost": "Aún no está en este host — descargable {{source}}",
+      "fetchTitle": "Descargar a la caché del host",
+      "downloadFailed": "La descarga falló: {{message}}",
+      "downloadQueuedNotice": "Descarga de {{filename}} en cola"
     },
     "provisioningVarRows": {
       "notSetOption": "sin definir",
@@ -11756,18 +11860,21 @@
       "errPatternDefault": "No coincide con el patrón requerido",
       "errRequired": "{{label}} es obligatorio"
     },
-    "provisionerFormFields": {
-      "installerLabel": "Instalador",
-      "installerHashLabel": "SHA-256 del instalador",
-      "installerVersionLabel": "Versión del instalador",
-      "fixpackLabel": "Fixpack",
-      "fixpackHashLabel": "SHA-256 del Fixpack",
-      "fixpackVersionLabel": "Versión del Fixpack",
-      "hotfixLabel": "Hotfix",
-      "hotfixHashLabel": "SHA-256 del Hotfix",
-      "hotfixVersionLabel": "Versión del Hotfix",
-      "noRolesDeclared": "Esta versión del aprovisionador no declara roles.",
-      "fileCacheWarning": "Las referencias de archivo se resuelven contra la caché de archivos del host al iniciar — los archivos ausentes, sin hash o con hash no coincidente HACEN FALLAR el arranque de la máquina."
+    "safeId": {
+      "label": "ID segura del usuario",
+      "doorCache": "Caché del host",
+      "doorUpload": "Subir",
+      "doorPath": "Host del agente",
+      "pickAriaLabel": "ID segura en la caché del host",
+      "pickNone": "Elige una ID segura…",
+      "chooseFile": "Elige un archivo…",
+      "pickTitle": "Elige el archivo de ID segura",
+      "sourcePath": "Un archivo en el host del agente, copiado al crear dentro de id-files como {{name}}",
+      "sourcePathNone": "Escribe o navega la ruta de una ID segura en el host del agente",
+      "sourceUploaded": "{{name}} subido a la caché del host como ID segura, colocado en id-files al crear",
+      "sourceUploadNone": "Una subida llega a la caché del host como ID segura; aún no se ha subido nada",
+      "sourceCacheNone": "Ninguna ID segura elegida de la caché del host",
+      "sourceCache": "De la caché del host: {{name}} · sha256 {{hash}} · colocado en id-files al crear"
     }
   },
   "settings": {

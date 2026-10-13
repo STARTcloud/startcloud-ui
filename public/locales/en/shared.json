@@ -1795,7 +1795,8 @@
       "expand": "Expand",
       "resize": "Drag to resize",
       "refresh": "Refresh",
-      "resizeBoth": "Resize the sidebar and the pane"
+      "resizeBoth": "Resize the sidebar and the pane",
+      "consoles": "Consoles"
     },
     "terminal": {
       "title": "Terminal preferences",
@@ -1814,7 +1815,9 @@
       "fontFamily": "Font family (CSS stack)",
       "fontHint": "Any installed monospace font works — the stack falls through left to right.",
       "preview": "preview: ls -la /var/log | grep -i weaver 0123456789",
-      "applyNote": "The footer host shell updates immediately; other terminals pick the new values up when they are next opened."
+      "applyNote": "The footer host shell updates immediately; other terminals pick the new values up when they are next opened.",
+      "broadcastNewline": "Send Enter after a broadcast",
+      "broadcastNewlineHint": "Every broadcast ends with a line break while this is on"
     },
     "tasks": {
       "priorityCritical": "CRITICAL",
@@ -1879,6 +1882,32 @@
       "confirmCancel": "Cancel this {{status}} task?",
       "cancelFailed": "Cancel failed: {{message}}",
       "streamClosed": "The output stream closed."
+    },
+    "console": {
+      "hostShell": "Host shell",
+      "ssh": "SSH",
+      "zlogin": "zlogin",
+      "vnc": "VNC",
+      "rdp": "RDP",
+      "noneOpen": "No console open",
+      "openFromControls": "Open one from the Controls menu",
+      "close": "Close, the session ends",
+      "accept": "Accept broadcasts",
+      "sendToMachinePage": "Send to machine page",
+      "sendToZonePage": "Send to zone page",
+      "sendToFooter": "Send to footer",
+      "sendToThisPage": "Send to this page",
+      "inFooter": "The {{kind}} console is in the footer",
+      "commands": "Commands",
+      "commandPlaceholder": "Type once, sent to every highlighted tab",
+      "send": "Send",
+      "clear": "Clear",
+      "sentBefore": "Sent before",
+      "nothingSent": "Nothing sent yet",
+      "acceptCount_one": "{{count}} of {{total}} tabs accept",
+      "acceptCount_other": "{{count}} of {{total}} tabs accept",
+      "sessionEnded": "The session of {{target}} ended",
+      "restartFailed": "The session of {{target}} could not be restarted"
     },
     "operation": {
       "provisionerImport": "Provisioner Import",
@@ -2267,6 +2296,11 @@
       "guestExecTitle": "Run a command inside the guest",
       "displayResize": "Set display size",
       "displayResizeTitle": "Send a display size to the running machine",
+      "openHostShell": "Open host shell",
+      "terminalInFooter": "Opens in the footer, click to open on this page",
+      "terminalOnPage": "Opens on this page, click to open in the footer",
+      "targetFooter": "footer",
+      "targetPage": "this page",
       "done": {
         "start": "{{name}} is starting.",
         "shutdown": "{{name}} is shutting down.",
@@ -2789,7 +2823,10 @@
         "type": {
           "iso": "ISO",
           "image": "Image",
-          "file": "File"
+          "file": "File",
+          "installer": "Installer",
+          "fixpack": "Fixpack",
+          "hotfix": "Hotfix"
         },
         "checksum": {
           "verified": "Verified",
@@ -2919,9 +2956,6 @@
       "catalog": {
         "sourceFailed": "The catalog source could not be added: {{message}}",
         "sourceUrl": "Catalog URL",
-        "sourceAuth": "Authentication",
-        "authNone": "None",
-        "authOidc": "Sign in with SSO",
         "makeDefault": "Make this the default catalog",
         "sourceUpdated": "Catalog source {{name}} updated",
         "sourceRemoved": "Catalog source {{name}} removed",
@@ -2943,7 +2977,14 @@
         "deleteVersion": "Delete {{version}}",
         "moveVersion": "Move {{version}}…",
         "noVersion": "No version is listed",
-        "sourceRefused": "A catalog source refused this host's sign-in: {{sources}}"
+        "sourceRefused": "A catalog source refused this host's sign-in: {{sources}}",
+        "createMachine": "Create a machine",
+        "handoffTitle": "Install {{name}} {{version}}",
+        "handoffInstall": "Install {{name}} {{version}} from {{source}} on this host?",
+        "handoffHeld": "{{name}} {{version}} is already installed on this host.",
+        "family": "Family",
+        "catalog": "Catalog",
+        "architecture": "Architecture"
       },
       "sources": {
         "key": "Key",
@@ -4099,9 +4140,6 @@
       "tierWhen": "{{tier}} when {{version}} was measured",
       "download": "Download {{version}}",
       "all": "All versions ({{count}})"
-    },
-    "errors": {
-      "accessDenied": "Access denied by the catalog gate."
     }
   },
   "codeInput": {
@@ -4651,7 +4689,10 @@
       "activeFiltersLabel": "Active Filters:",
       "searchFilter": "Search: \"{{search}}\"",
       "typeFilter": "Type: {{type}}",
-      "locationFilter": "Location: {{location}}"
+      "locationFilter": "Location: {{location}}",
+      "installerFiles": "Installers",
+      "fixpackFiles": "Fixpacks",
+      "hotfixFiles": "Hotfixes"
     },
     "artifactTable": {
       "loadingText": "Loading artifacts...",
@@ -4854,7 +4895,10 @@
       "importantHeading": "Important:",
       "importantNote1": "The specified path must exist and be writable by the OmniOS system",
       "importantNote2": "Ensure adequate disk space is available for artifact storage",
-      "importantNote3": "Path validation will be performed when creating the storage location"
+      "importantNote3": "Path validation will be performed when creating the storage location",
+      "installerFiles": "Installers",
+      "fixpackFiles": "Fixpacks",
+      "hotfixFiles": "Hotfixes"
     },
     "storagePathEditModal": {
       "title": "Edit Storage Path",
@@ -4878,7 +4922,10 @@
       "totalSizeLabel": "Total Size",
       "diskUsageLabel": "Disk Usage",
       "disableWarningHeading": "Warning:",
-      "disableWarningMessage": "This storage location contains {{count}} file(s). Disabling it will make these artifacts read-only and prevent new uploads or downloads to this location."
+      "disableWarningMessage": "This storage location contains {{count}} file(s). Disabling it will make these artifacts read-only and prevent new uploads or downloads to this location.",
+      "installerFiles": "Installers",
+      "fixpackFiles": "Fixpacks",
+      "hotfixFiles": "Hotfixes"
     }
   },
   "auth": {
@@ -8171,7 +8218,9 @@
       "deleteEntriesFiles": "Delete Entries + Files",
       "deleteEntries": "Delete Entries",
       "deleteEntriesHelp": "Delete the selected registry entries? Without the switch below the files stay on disk and a later scan re-registers them.",
-      "alsoDeleteFiles": "Also delete the files from disk"
+      "alsoDeleteFiles": "Also delete the files from disk",
+      "fromBoxVault": "From BoxVault",
+      "fetchMissing": "{{filename}} is missing. Fetch it from a source"
     },
     "installerFilesModals": {
       "storageLocation": "Storage Location",
@@ -8213,7 +8262,22 @@
       "hclFilename": "Filename (must match the HCL catalog EXACTLY)",
       "hclPortalKey": "HCL Portal Key",
       "hclKeyPlaceholder": "hcl_download_portal_api_keys secret name",
-      "hclKeyHelp": "The catalog's sha256 is authoritative — it becomes the entry's expectation and the download must reproduce it. The portal refresh token rotates on use; the agent persists the rotation automatically."
+      "hclKeyHelp": "The catalog's sha256 is authoritative — it becomes the entry's expectation and the download must reproduce it. The portal refresh token rotates on use; the agent persists the rotation automatically.",
+      "missingFile": "{{filename}} is missing from the cache. Fetch it from:",
+      "downloadFromRegistry": "Download from BoxVault",
+      "registry": "Registry",
+      "pickRegistry": "Pick a registry.",
+      "kindsOwnLocation": "The kind's own location",
+      "registryReadFailed": "The registry could not be read: {{message}}",
+      "registryEmpty": "This registry offers no download files you can reach.",
+      "registryDownloadQueued": "Download of {{filename}} queued.",
+      "filesCount_one": "{{count}} file",
+      "filesCount_other": "{{count}} files",
+      "seedMatch": "Matches the missing file",
+      "platform": "Platform",
+      "architecture": "Architecture",
+      "checksum": "Checksum",
+      "download": "Download"
     },
     "machineManager": {
       "management": "{{singular}} Management",
@@ -10741,7 +10805,9 @@
       "networkTitle": "Network",
       "rxSeries": "RX",
       "txSeries": "TX",
-      "diskTitle": "Disk"
+      "diskTitle": "Disk",
+      "readSeries": "Read",
+      "writeSeries": "Write"
     }
   },
   "machineEdit": {
@@ -11180,7 +11246,11 @@
       "selectVersionOrNone": "Select a version for the chosen provisioner — or set it back to None.",
       "fixHighlightedFields": "Fix the highlighted configuration field: {{names}}.",
       "fixHighlightedFields_plural": "Fix the highlighted configuration fields: {{names}}.",
-      "templateDownloadQueued": "The box {{box}} is downloaded first; the machine is built when it lands."
+      "templateDownloadQueued": "The box {{box}} is downloaded first; the machine is built when it lands.",
+      "createWaiting": "Create · waits on {{count}} downloads",
+      "downloadQueued": "Download of {{filename}} queued; Create will wait on it",
+      "downloadFailed": "A download failed: {{message}}",
+      "safeIdUploadFailed": "The safe ID upload failed: {{message}}"
     },
     "hardwareSections": {
       "cpu": "CPU",
@@ -11363,7 +11433,6 @@
       "manifestPredatesDslMiddle": ") — it renders no configuration form. Values still ride the document's",
       "manifestPredatesDslTail": ".",
       "roles": "Roles",
-      "safeIdPath": "Safe ID Path (file on the agent host)",
       "packageSettingOverrides": "Package Setting Overrides",
       "packageOverridesHint": "The package's template values are defaults — set a field to override it in the rendered document; blank keeps the package default.",
       "providerType": "Provider Type",
@@ -11407,6 +11476,8 @@
       "noneValue": "(none)",
       "confirmSyncMethod": "Sync method",
       "confirmStartAfterCreate": "Start after create",
+      "confirmWaitFor": "Waits on downloads",
+      "confirmWaitForValue": "{{count}}",
       "yesValue": "yes",
       "noValue": "no",
       "exactlyWhatWillBeSent": "This is exactly what will be sent — use Back to change anything.",
@@ -11614,7 +11685,40 @@
       "roleNameAriaLabel": "Role name",
       "roleNameRule": "Role names: letters, numbers, underscores — segments joined by dots.",
       "customRoleNameAriaLabel": "Custom role name",
-      "addButton": "Add"
+      "addButton": "Add",
+      "changedChip": "Changed from the provisioner's default",
+      "changedBanner": "This machine runs outside what the provisioner intends: {{count}} roles changed ({{names}}). It still builds.",
+      "templateDefaults": "Template defaults",
+      "onCount": "{{count}} on",
+      "dependencyOff": "— it is off",
+      "needsAnswer": "This role needs an answer or a file that is not on this host yet",
+      "onByDefault": "On by the provisioner's default",
+      "offByDefault": "Off by the provisioner's default",
+      "switchAriaLabel": "Run {{name}}",
+      "filesHeading": "Files",
+      "kind": {
+        "installer": "Installer",
+        "fixpack": "Fixpack",
+        "hotfix": "Hotfix"
+      },
+      "noFileKnown": "No file known for this role",
+      "none": {
+        "fixpack": "No fixpack",
+        "hotfix": "No hotfix"
+      },
+      "onThisHost": "On this host",
+      "downloadable": "Downloadable",
+      "via": {
+        "boxvault": "via BoxVault",
+        "hcl": "via HCL",
+        "custom": "via custom resource",
+        "none": "no source"
+      },
+      "downloadQueued": "Download queued as task {{task}} — Create waits on it and mounts the file the moment it lands",
+      "notOnHost": "Not on this host yet — downloadable {{source}}",
+      "fetchTitle": "Download into the host's cache",
+      "downloadFailed": "The download failed: {{message}}",
+      "downloadQueuedNotice": "Download of {{filename}} queued"
     },
     "provisioningVarRows": {
       "notSetOption": "not set",
@@ -11756,18 +11860,21 @@
       "errPatternDefault": "Does not match the required pattern",
       "errRequired": "{{label}} is required"
     },
-    "provisionerFormFields": {
-      "installerLabel": "Installer",
-      "installerHashLabel": "Installer SHA-256",
-      "installerVersionLabel": "Installer Version",
-      "fixpackLabel": "Fixpack",
-      "fixpackHashLabel": "Fixpack SHA-256",
-      "fixpackVersionLabel": "Fixpack Version",
-      "hotfixLabel": "Hotfix",
-      "hotfixHashLabel": "Hotfix SHA-256",
-      "hotfixVersionLabel": "Hotfix Version",
-      "noRolesDeclared": "This provisioner version declares no roles.",
-      "fileCacheWarning": "File references resolve against the host's file cache at start — absent, unhashed, or hash-mismatched files FAIL the machine start."
+    "safeId": {
+      "label": "User Safe ID",
+      "doorCache": "Host cache",
+      "doorUpload": "Upload",
+      "doorPath": "Agent host",
+      "pickAriaLabel": "Safe ID in the host's cache",
+      "pickNone": "Pick a safe ID…",
+      "chooseFile": "Choose a file…",
+      "pickTitle": "Pick the safe ID file",
+      "sourcePath": "A file on the agent host, copied at create into id-files as {{name}}",
+      "sourcePathNone": "Type or browse the path of a safe ID on the agent host",
+      "sourceUploaded": "{{name}} uploaded into the host's cache as a safe ID, placed in id-files at create",
+      "sourceUploadNone": "An upload lands in the host's cache as a safe ID; nothing uploaded yet",
+      "sourceCacheNone": "No safe ID picked from the host's cache",
+      "sourceCache": "From the host's cache: {{name}} · sha256 {{hash}} · placed in id-files at create"
     }
   },
   "settings": {

@@ -27,8 +27,9 @@ import NetworksEditor from './NetworksEditor';
 import { PathInput } from './PathPicker';
 import PickOrType from './PickOrType';
 import DslConfigForm from './ProvisionerFieldDsl';
-import { RolesEditor } from './ProvisionerFormFields';
 import ProvisionerInstallCard from './ProvisionerInstallCard';
+import ProvisioningRolesTab from './ProvisioningRolesTab';
+import SafeIdControl from './SafeIdControl';
 
 const BOOT_SOURCES = ['template', 'scratch', 'existing', 'none'];
 const BOOT_ORDER_DEVICES = ['disk', 'dvd', 'net', 'floppy', 'none'];
@@ -3058,6 +3059,7 @@ const VersionFields = ({
   roles,
   inventory,
   advanced,
+  omit,
   loading,
 }) => {
   const { t } = useTranslation();
@@ -3073,6 +3075,7 @@ const VersionFields = ({
           inventory={inventory}
           showAdvanced={advanced}
           idPrefix="prov-field"
+          omit={omit}
           disabled={loading}
         />
       </div>
@@ -3105,6 +3108,7 @@ VersionFields.propTypes = {
   roles: PropTypes.array.isRequired,
   inventory: PropTypes.object,
   advanced: PropTypes.bool,
+  omit: PropTypes.instanceOf(Set),
   loading: PropTypes.bool,
 };
 
@@ -3113,9 +3117,11 @@ VersionFields.propTypes = {
  * does not hold, `install` the state of `useProvisionerInstall`; the
  * provisioner family, none by default, its version and the sync method;
  * while a family is picked, whether the provisioning transport is removed
- * when the pipeline ends; the version's field DSL, its roles, the Safe ID
- * path where the manifest declares id files, and under Advanced the
- * package setting overrides.
+ * when the pipeline ends; the version's field DSL less the fields the
+ * role pickers answer; the one roles editor over the manifest's roles,
+ * the host's artifact rows and the queued downloads; the Safe ID control
+ * where the manifest declares id files; and under Advanced the package
+ * setting overrides.
  */
 export const ProvisioningStep = ({
   install = null,
@@ -3135,18 +3141,29 @@ export const ProvisioningStep = ({
   answers,
   fieldErrors,
   onAnswerChange,
+  onAnswers,
   inventory,
   roles,
   onRolesChange,
+  manifestRoles,
+  roleSpecs = null,
+  roleHints = null,
   artifacts,
+  queued,
+  onFetch,
+  makeRoleRow,
   syncMethod,
   setSyncMethod,
   syncMethodOptions = null,
   removeTransport,
   setRemoveTransport,
   removeTransportDefault = null,
-  safeIdPath,
-  setSafeIdPath,
+  safeId,
+  setSafeId,
+  onSafeIdUpload,
+  safeIdUploading = false,
+  host,
+  omit = null,
   advanced,
   loading,
 }) => {
@@ -3205,37 +3222,42 @@ export const ProvisioningStep = ({
           roles={roles}
           inventory={inventory}
           advanced={advanced}
+          omit={omit}
           loading={loading}
         />
       ) : null}
       {roles.length > 0 || (version && !versionPending) ? (
         <>
           <h6 className="fw-bold">{t('machineEdit.createWizardSteps.roles')}</h6>
-          <div className="mb-3">
-            <RolesEditor
+          <div className="mb-3" data-panel="wizard-roles">
+            <ProvisioningRolesTab
               roles={roles}
-              onRolesChange={onRolesChange}
-              loading={loading}
+              specs={roleSpecs}
+              hints={roleHints}
+              disabled={loading}
+              onChange={onRolesChange}
+              makeRow={makeRoleRow}
+              manifest={manifestRoles}
               artifacts={artifacts}
+              queued={queued}
+              onAnswers={onAnswers}
+              onFetch={onFetch}
             />
           </div>
         </>
       ) : null}
       {showSafeId ? (
-        <div className="row g-3">
-          <div className="col-12 col-md-8">
-            <label className="form-label" htmlFor="machine-setting-safe-id">
-              {t('machineEdit.createWizardSteps.safeIdPath')}
-            </label>
-            <input
-              id="machine-setting-safe-id"
-              className="form-control"
-              type="text"
-              value={safeIdPath}
-              onChange={event => setSafeIdPath(event.target.value)}
-              disabled={loading}
-            />
-          </div>
+        <div className="mb-3">
+          <span className="form-label d-block">{t('provisioning.safeId.label')}</span>
+          <SafeIdControl
+            value={safeId}
+            onChange={setSafeId}
+            artifacts={artifacts}
+            host={host}
+            onUpload={onSafeIdUpload}
+            uploading={safeIdUploading}
+            disabled={loading}
+          />
         </div>
       ) : null}
       {version && advanced ? (
@@ -3268,18 +3290,29 @@ ProvisioningStep.propTypes = {
   answers: PropTypes.object.isRequired,
   fieldErrors: PropTypes.object,
   onAnswerChange: PropTypes.func.isRequired,
+  onAnswers: PropTypes.func.isRequired,
   inventory: PropTypes.object,
   roles: PropTypes.array.isRequired,
   onRolesChange: PropTypes.func.isRequired,
+  manifestRoles: PropTypes.array.isRequired,
+  roleSpecs: PropTypes.object,
+  roleHints: PropTypes.object,
   artifacts: PropTypes.array,
+  queued: PropTypes.object.isRequired,
+  onFetch: PropTypes.func.isRequired,
+  makeRoleRow: PropTypes.func.isRequired,
   syncMethod: PropTypes.string.isRequired,
   setSyncMethod: PropTypes.func.isRequired,
   syncMethodOptions: PropTypes.arrayOf(PropTypes.string),
   removeTransport: PropTypes.string.isRequired,
   setRemoveTransport: PropTypes.func.isRequired,
   removeTransportDefault: PropTypes.bool,
-  safeIdPath: PropTypes.string.isRequired,
-  setSafeIdPath: PropTypes.func.isRequired,
+  safeId: PropTypes.object.isRequired,
+  setSafeId: PropTypes.func.isRequired,
+  onSafeIdUpload: PropTypes.func.isRequired,
+  safeIdUploading: PropTypes.bool,
+  host: PropTypes.shape(hostShape).isRequired,
+  omit: PropTypes.instanceOf(Set),
   advanced: PropTypes.bool,
   loading: PropTypes.bool,
 };
@@ -3410,6 +3443,17 @@ export const confirmRowsOf = (spec, t) => [
         .map(role => role.name)
         .join(', ') || t('machineEdit.createWizardSteps.noneValue'),
   },
+  ...(Array.isArray(spec.wait_for) && spec.wait_for.length > 0
+    ? [
+        {
+          key: 'wait_for',
+          label: t('machineEdit.createWizardSteps.confirmWaitFor'),
+          value: t('machineEdit.createWizardSteps.confirmWaitForValue', {
+            count: spec.wait_for.length,
+          }),
+        },
+      ]
+    : []),
   {
     key: 'sync_method',
     label: t('machineEdit.createWizardSteps.confirmSyncMethod'),

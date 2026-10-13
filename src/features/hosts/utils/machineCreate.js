@@ -2,6 +2,8 @@ import { hostHasFeature } from './capabilities';
 import { withAddressing, cdromEntry, filesystemEntries } from './machineHelpers';
 import { CATALOG_SOURCE_FORM, SOURCE_FORM } from './manageCatalog';
 import { canCreateMachines } from './permissions';
+import { manifestRoleOf, stripTag } from './provisioning';
+import { waitForOf } from './roleFiles';
 
 export const CREATE_STEPS = [
   'general',
@@ -452,27 +454,20 @@ export const templateSourceFormOf = boxUrl => {
 
 /**
  * The body of `POST provisioning/catalog/sources` for a handed catalog:
- * its host as the display name, the URL as given, and `auth` `oidc` for an
- * organization's private catalog, `none` otherwise.
+ * its host as the display name and the URL as given; the host reads the
+ * source as the signed-in person whenever it holds their token.
  *
  * @param {string} url - The handed `provisioner_catalog`
- * @returns {{ display_name: string, url: string, auth: string }} The body
+ * @returns {{ display_name: string, url: string }} The body
  */
-export const catalogSourceBody = url => {
-  const parsed = new URL(url);
-  return {
-    display_name: parsed.host,
-    url,
-    auth: parsed.pathname.startsWith('/api/private/') ? 'oidc' : 'none',
-  };
-};
+export const catalogSourceBody = url => ({ display_name: new URL(url).host, url });
 
 /**
  * The catalog source form that adds the catalog a handed URL names, the
  * shape the Provisioners page's source form hands up: the id its host
  * lowercased with every run of other characters as one underscore, the
- * display name its host, the URL as given, not the default, and `auth`
- * as `catalogSourceBody` picks it; null while the URL is no URL.
+ * display name its host, the URL as given and not the default; null while
+ * the URL is no URL.
  *
  * @param {string} url - The handed `provisioner_catalog`
  * @returns {Object|null} The form, the shape of `CATALOG_SOURCE_FORM`
@@ -488,8 +483,7 @@ export const catalogSourceSeedOf = url => {
   if (!name) {
     return null;
   }
-  const body = catalogSourceBody(url);
-  return { ...CATALOG_SOURCE_FORM, name, displayName: body.display_name, url, auth: body.auth };
+  return { ...CATALOG_SOURCE_FORM, name, displayName: parsed.host, url };
 };
 
 /**
@@ -781,6 +775,57 @@ const tagsOf = tagsInput =>
     .map(tag => tag.trim())
     .filter(Boolean);
 
+const withoutBlank = map =>
+  Object.fromEntries(
+    Object.entries(map || {}).filter(([, value]) => value !== '' && value !== undefined)
+  );
+
+/**
+ * The `roles` of the create spec, the editor's rows in their drawn
+ * order, every role present with its `name`, its `enabled`, the
+ * `collection` and `tags` the manifest declares where the row names
+ * none, its `files` with the blank members dropped and its `vars`.
+ *
+ * @param {Array<Object>} rows - The editor's role rows
+ * @param {Array<Object>} manifestRoles - The manifest's roles
+ * @returns {Array<Object>} The roles on the wire
+ */
+export const roleRowsOf = (rows, manifestRoles) =>
+  (Array.isArray(rows) ? rows : []).map(row => {
+    const declared = manifestRoleOf(manifestRoles || [], row.name);
+    const plain = stripTag(row);
+    const files = withoutBlank(plain.files);
+    const vars = withoutBlank(plain.vars);
+    return {
+      ...plain,
+      enabled: plain.enabled !== false,
+      ...(declared?.collection && !plain.collection && { collection: declared.collection }),
+      ...(declared?.tags && !plain.tags && { tags: declared.tags }),
+      files,
+      vars,
+    };
+  });
+
+/**
+ * The safe id members of the create spec: `safe_id_path` for a file on
+ * the agent host, `safe_id` with the artifact's id and name for a file of
+ * the host's cache or one uploaded into it, nothing while the package
+ * declares no id files or nothing is picked.
+ *
+ * @param {Object} form - The wizard's state
+ * @returns {Object} The members
+ */
+export const safeIdMembersOf = form => {
+  if (!form.needsSafeId || !form.safeId) {
+    return {};
+  }
+  const { source, artifact_id: artifactId, name, path } = form.safeId;
+  if (source === 'path') {
+    return trimmed(path) ? { safe_id_path: trimmed(path) } : {};
+  }
+  return artifactId ? { safe_id: { artifact_id: artifactId, name: name || '' } } : {};
+};
+
 /**
  * The body of `POST machines`, the create spec the Confirm step draws and
  * Create sends, exactly as hyperweaver-ui built it: the `name` where
@@ -788,10 +833,12 @@ const tagsOf = tagsInput =>
  * is picked, the `settings` the wizard edited with the box fields on a
  * template boot alone, the `disks`, the `filesystems` and `zones` of a
  * bhyve host, the `vbox` section of a VirtualBox host, `cloud_init`,
- * `tags`, `notes`, `networks`, `roles`, `properties` with the hidden
- * fields pruned, `sync_method`, `remove_transport_on_completion` where
- * chosen, `safe_id_path` where the package declares id files, `org_uuid`
- * where chosen and `start_after_create`.
+ * `tags`, `notes`, `networks`, `roles` in their drawn order through
+ * `roleRowsOf`, `properties` with the hidden fields pruned, `sync_method`,
+ * `remove_transport_on_completion` where chosen, `safe_id` or
+ * `safe_id_path` where the package declares id files through
+ * `safeIdMembersOf`, `wait_for` with the task ids of the queued
+ * downloads while any, `org_uuid` where chosen and `start_after_create`.
  *
  * @param {Object} form - The wizard's state with `hardwarePayload` and `properties` already built
  * @returns {Object} The spec
@@ -808,6 +855,7 @@ export const buildSpec = form => {
     : {};
   const vboxSection = vboxSectionOf(form);
   const tags = tagsOf(form.tagsInput);
+  const waitFor = waitForOf(form.downloads);
   return {
     ...(trimmed(name) && { name: trimmed(name) }),
     ...(machineHypervisor && { hypervisor: machineHypervisor }),
@@ -823,14 +871,15 @@ export const buildSpec = form => {
     ...(tags.length > 0 && { tags }),
     ...(trimmed(form.notes) && { notes: trimmed(form.notes) }),
     networks: cleanNetworks(form.networks),
-    roles: form.roles,
+    roles: roleRowsOf(form.roles, form.manifestRoles),
     properties: form.properties,
     sync_method: form.syncMethod,
     ...(familyName &&
       form.removeTransport !== '' && {
         remove_transport_on_completion: form.removeTransport === 'true',
       }),
-    ...(form.needsSafeId && trimmed(form.safeIdPath) && { safe_id_path: trimmed(form.safeIdPath) }),
+    ...safeIdMembersOf(form),
+    ...(waitFor.length > 0 && { wait_for: waitFor }),
     ...(form.orgUuid && { org_uuid: form.orgUuid }),
     start_after_create: form.startAfterCreate,
   };

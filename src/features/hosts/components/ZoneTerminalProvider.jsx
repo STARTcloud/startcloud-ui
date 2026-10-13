@@ -8,7 +8,14 @@ import { socketUrl, wsTicket } from '../api/terminal';
 import { ZoneTerminalContext } from '../hooks/useZoneTerminal';
 import { loadTerminalPrefs } from '../utils/terminalPrefs';
 
-const zoneKeyOf = (id, zoneName) => (id && zoneName ? `${id}:${zoneName}` : null);
+/**
+ * The key one zone's terminal is held under, the host and the zone.
+ *
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} zoneName - The zone name
+ * @returns {string|null} The key, null while either is missing
+ */
+export const zoneKeyOf = (id, zoneName) => (id && zoneName ? `${id}:${zoneName}` : null);
 
 let ready = null;
 

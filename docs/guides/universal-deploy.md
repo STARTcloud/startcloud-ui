@@ -85,9 +85,10 @@ each key at most once, the whole at most 2048 bytes.
 | `box_<provider>`      | the box the version is verified with on one provider               | the catalog  |
 
 `provisioner_catalog` is the document a host takes as a catalog source,
-fetched as given: `<catalog origin>/catalog.json` for the public catalog,
-`<catalog origin>/api/private/<organization uuid>/catalog` for an
-organization's private one.
+fetched as given, `<catalog origin>/catalog.json`, the one document of
+the catalog for a public family and a private one alike, because the
+catalog folds the private families of the reader's organizations into
+that document whenever the read carries the person's token.
 
 `box_<provider>` is one member per provider the catalog verified the
 version with, `<provider>` the provider's name in lowercase letters,
@@ -270,12 +271,12 @@ A host takes a word while its own row lists the word's token, checked
 strictly, and the word lands on the page of the host that does it, the
 query and its seed kept on the route until the page has used them:
 
-| Word          | Token                                                                           | Landing                                         | What opens                                                                         |
-| ------------- | ------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `machine`     | `machines` and `machine-create`                                                 | `/hosts/<id>?<query>`, the host's page          | the create wizard                                                                  |
-| `provisioner` | `provisioner-registry`                                                          | `/hosts/<id>/provisioning/provisioners?<query>` | the handed family's card marked, its version selected, Install one press away      |
-| `template`    | `templates`                                                                     | `/hosts/<id>/provisioning/templates?<query>`    | the handed box's card marked, Install one press away                               |
-| `source`      | `provisioner-registry` for a `provisioner_catalog`, `templates` for a `box_url` | the Provisioners page or the Templates page     | the Sources modal, or the Registries modal, open with its form filled from the URL |
+| Word          | Token                                                                           | Landing                                         | What opens                                                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `machine`     | `machines` and `machine-create`                                                 | `/hosts/<id>?<query>`, the host's page          | the create wizard                                                                                                                                         |
+| `provisioner` | `provisioner-registry`                                                          | `/hosts/<id>/provisioning/provisioners?<query>` | the handed family's card marked, its version selected, and the confirmation dialog naming the family, the version and the catalog, Install one press away |
+| `template`    | `templates`                                                                     | `/hosts/<id>/provisioning/templates?<query>`    | the handed box's card marked, and the confirmation dialog naming the box, the version, the architecture and the registry, Install one press away          |
+| `source`      | `provisioner-registry` for a `provisioner_catalog`, `templates` for a `box_url` | the Provisioners page or the Templates page     | the Sources modal, or the Registries modal, open with its form filled from the URL                                                                        |
 
 The banner on the hosts page is one notice of the banner tier, keyed, the
 word's glyph, the title naming what was handed, Deploy, Install, Pull or
@@ -295,35 +296,51 @@ banner's dismiss drops the hand-off from the route.
 
 **`provisioner`** lands on the host's Provisioners page with the handed
 family's card marked, scrolled into view, its Versions fold open and the
-handed version selected, drawn whatever the panel's Installed group says;
-Install on that version sends `POST provisioning/catalog/install` as a
-person's own press sends it and drops the hand-off from the route. A
+handed version selected, drawn whatever the panel's Installed group says,
+and one confirmation dialog over the listing, opened once the host's
+families answered, naming the family, the version and the catalog it
+comes from, with Install and Cancel: Install sends
+`POST provisioning/catalog/install` as a person's own press sends it, the
+notice carrying View task, and drops the hand-off from the route; Cancel
+drops the hand-off; a family the host already holds at that version is
+told so and offered no Install, because a hand-off that lands on a card
+alone asks nothing and installs nothing. Install on the marked card's
+version sends the same request and drops the hand-off the same way. A
 family no source of the host lists draws the Install card of the create
-wizard's Provisioning step over the listing, Add source and install
-adding the handed catalog first, the same chain and the same words.
+wizard's Provisioning step over the listing instead of the dialog, Add
+source and install adding the handed catalog first, the same chain and
+the same words.
 
 **`template`** lands on the host's Templates page with the handed box's
 card marked with the handed version, scrolled into view and drawn
 whatever the panel's Installed group says, every registry's catalog read
 as the person, the forwarded person's token first, or on the agent's own
 UI the federated account the agent's session was signed in with, the
-host's bound account's token second and the registry's own key last;
-Install on that
-card sends `POST templates/pull` with the handed version and architecture
-on the box's registry as a person's own press sends it and drops the
-hand-off from the route. A host that holds no such registry draws the
-Add registry and continue card over the listing, whose press writes the
-registry through the host's `PUT config/storage` as the create wizard
-writes it and reads the registries again, so the listing reads the new
-registry and marks the card.
+host's bound account's token second and the registry's own key last, and
+one confirmation dialog over the listing, opened once the host's
+templates answered, naming the box, the version, the architecture and
+the registry it comes from, with Install and Cancel: Install sends
+`POST templates/pull` with the handed version and architecture on the
+box's registry as a person's own press sends it, the notice carrying
+View task, and drops the hand-off from the route; Cancel drops the
+hand-off; a box the host already holds at that version is told so and
+offered no Install. Install on the marked card sends the same request
+and drops the hand-off the same way. A host that holds no such registry
+draws the Add registry and continue card over the listing instead of the
+dialog, whose press writes the registry through the host's
+`PUT config/storage` as the create wizard writes it and reads the
+registries again, so the listing reads the new registry, marks the card
+and opens the dialog.
 
 **`source`** with a `provisioner_catalog` lands on the host's
 Provisioners page with the Sources modal open and its form filled under
 the table, the catalog's host lowercased as its id, its host as the
-display name, the URL as given and the authentication, `oidc` for an
-organization's private catalog and `none` otherwise; Save is the one
-merge patch of `PUT config/storage` over `/catalog_sources/sources` the
-Provisioners page writes, and the sources are read again. With a
+display name and the URL as given, no credential on it, because the host
+reads every catalog source as the signed-in person whenever it holds
+their token, anonymously otherwise, the way it reads every registry; Save
+is the one merge patch of `PUT config/storage` over
+`/catalog_sources/sources` the Provisioners page writes, and the sources
+are read again. With a
 `box_url` it lands on the host's Templates page with the Registries modal
 open and its form filled, the registry's host lowercased as its id, its
 host as the display name and its origin as the URL; Save is the one merge
@@ -350,15 +367,18 @@ Update to.
   while the host holds the newest. Beside it a chevron opens the menu
   headed by the newest version, plain entries, the fetch entries over a
   divider and the delete entries under it, and no entry a version. A
-  provisioner offers Install while missing or Update to while behind,
+  provisioner offers Create a machine first while the host holds it and
+  creates machines, the create wizard's door with the family and its
+  newest held version, Install while missing or Update to while behind,
   Install an older version while the host lacks one under the newest,
-  Update from source while the family came from git or a folder, Add
-  this catalog as a source, then Delete family while held. A box offers
-  Install while missing or Update to while behind, Install an older
-  version while the host lacks one under the newest, Add this registry as
-  a source, Move of each held version, then Delete while held, which
-  removes every held version of the box. Every delete waits behind one
-  typed confirmation, and a refused provisioner delete names the
+  Update from source while the family came from git or a folder, then
+  Delete family while held. A box offers Create a machine first while
+  the host holds it and creates machines, the create wizard's door with
+  the box and its newest held version, Install while missing or Update
+  to while behind, Install an older version while the host lacks one
+  under the newest, Move of each held version, then Delete while held,
+  which removes every held version of the box. Every delete waits behind
+  one typed confirmation, and a refused provisioner delete names the
   machines that reference it.
 - **The Versions fold** of a card lists every version with its date and
   two square outlined buttons: on a version the host lacks the download
@@ -393,9 +413,11 @@ Update to.
   Key, URL, Default and Enabled, each row's Make default, Enable or
   Disable, Edit and Remove, and under the table the one source form
   while Add or Edit is pressed, so no dialog opens over the modal. The
-  form is the id, the display name, the URL, the default switch, the
-  credential, a registry's API key or a catalog source's authentication,
-  None or OIDC, and the CA file with Browse; every write of either modal
+  form is the id, the display name, the URL, the default switch, a
+  registry's API key, and the CA file with Browse; a catalog source
+  carries no credential, because the host reads every catalog source as
+  the signed-in person whenever it holds their token, anonymously
+  otherwise, the way it reads every registry; every write of either modal
   is one merge patch of `PUT config/storage`, over
   `/template_sources/sources` for a registry and `/catalog_sources/sources`
   for a catalog source, `null` removing an entry, Remove behind the typed
@@ -412,6 +434,28 @@ Update to.
   refusing the host's sign-in, lists nothing and is named with the
   agent's message in one warning banner, the other sources drawn whole,
   never logged as an error, because an expected refusal is an answer.
+- **The installer files.** A provisioner's role names the files a build
+  needs, an installer, a fixpack or a hotfix, each known by its sha256,
+  and the host resolves every one through its cache under the role and
+  the kind, `GET artifacts`. A file the cache lacks is offered from six
+  sources, in this order: the host's own cache; the download files of
+  the host's enabled box registries the person can reach, read as the
+  person, the forwarded person's token first, the host's bound account's
+  token second and the registry's own key last, exactly as a template is
+  pulled; the HCL portal through the person's portal key in the host's
+  secrets; a URL; a URL with the credentials of a custom resource in the
+  host's secrets; and the person's own upload or a path registered on
+  the host, taken with a warning that nothing is guaranteed. A pick from
+  the registry, the portal or a URL queues the host's own fetch into the
+  kind's location under the role with the checksum, the page follows the
+  task and the file lands as a cache entry every later build resolves,
+  because the host does every fetch itself and the browser never mints a
+  download link and never carries bytes. The shipped registry's known
+  files the cache lacks draw as missing with their sha256 and are offered
+  from every source that can supply them; a file whose hash is unknown
+  or differs from its expectation is marked with a warning and never
+  refused, because a person who overrides a file is told what they gave
+  up and not stopped.
 
 **`machine`** lands on the host's page, which opens the create wizard over
 itself while the host offers a create, the query's members seeding the
@@ -447,9 +491,10 @@ while the host's task events reach the page:
   the family and the version;
 - **Add source and install** while none does and `provisioner_catalog`
   names a catalog the host does not hold; the press first adds it through
-  `POST provisioning/catalog/sources` with its `display_name`, its `url`
-  and `auth`, `oidc` for an organization's private catalog and `none`
-  otherwise;
+  `POST provisioning/catalog/sources` with its `display_name` and its
+  `url`, the host reading every catalog source as the signed-in person
+  whenever it holds their token, anonymously otherwise, the way it reads
+  every registry;
 - **Sign in with SSO to continue** while the host answers the private
   catalog `401` with the `authentication` problem, the agent's SSO sign-in
   continuing the same chain;

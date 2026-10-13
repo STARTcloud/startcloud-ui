@@ -1,4 +1,4 @@
-import { publicItemsFrom } from '../../collections/provisioners';
+import { catalogItemsFrom } from '../../collections/provisioners';
 import { fetchCatalog, fetchCatalogHealth, fetchRemoteTemplates } from '../api/provisioning';
 
 import { remoteBoxItemsOf, sourceKeyOf } from './boxCatalog';
@@ -44,13 +44,15 @@ const withRefused = answers => {
  * The adapter the host's Provisioners page lists through, the catalog
  * site's items read from what the host relays of every enabled catalog
  * source, the default source first: `GET provisioning/catalog` and
- * `GET provisioning/catalog/health` with each source's id, a source that
- * publishes no health drawing its families unrated, a source that
- * answers nothing drawing none, a source that answers 401 drawing none
- * and naming itself with the agent's message in the items' `notice`, a
- * family two sources list drawn once from the first; each item carries
- * its source as `extras.source`, `{ key, url }`. No watches, no bulk
- * actions and no item pages.
+ * `GET provisioning/catalog/health` with each source's id, the host
+ * reading each as the signed-in person whenever it holds their token, a
+ * private entry the folded document carries drawn under its own
+ * organization, a source that publishes no health drawing its families
+ * unrated, a source that answers nothing drawing none, a source that
+ * answers 401 drawing none and naming itself with the agent's message in
+ * the items' `notice`, a family two sources list drawn once from the
+ * first; each item carries its source as `extras.source`, `{ key, url }`.
+ * No watches, no bulk actions and no item pages.
  *
  * @param {Object} options - The host and its sources
  * @param {Object} options.status - The payload from `probeStatus`
@@ -67,7 +69,7 @@ export const hostCatalogAdapter = ({ status, id, sources }) => {
           fetchCatalogHealth(status, id, source.id).catch(() => null),
         ])
           .then(([catalog, health]) => ({
-            items: withSource(publicItemsFrom({ catalog, health }), {
+            items: withSource(catalogItemsFrom({ catalog, health }), {
               key: source.id,
               url: source.url,
             }),

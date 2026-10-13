@@ -13,9 +13,10 @@ import XTerm from './XTerm';
  * holds for the zone, the socket attached through them, read-only or
  * interactive, fitted to its box as it mounts and on every resize of the
  * box; while the context holds no open socket for the zone the
- * connecting card draws in its place.
+ * connecting card draws in its place; `onTerminal` is handed the
+ * terminal once it is made.
  */
-const ZoneShell = memo(({ id, zoneName, readOnly = false, className = '' }) => {
+const ZoneShell = memo(({ id, zoneName, readOnly = false, className = '', onTerminal = null }) => {
   const { t } = useTranslation();
   const { getZoneAddons, getZoneOptions, fitZoneTerminal } = useZoneTerminal();
   const containerRef = useRef(null);
@@ -55,7 +56,12 @@ const ZoneShell = memo(({ id, zoneName, readOnly = false, className = '' }) => {
 
   return (
     <div ref={containerRef} className={`hw-zone-shell-container ${className}`} data-viewer="zlogin">
-      <XTerm className="hw-zone-shell-terminal h-100 w-100" addons={addons} options={options} />
+      <XTerm
+        className="hw-zone-shell-terminal h-100 w-100"
+        addons={addons}
+        options={options}
+        onTerminal={onTerminal}
+      />
     </div>
   );
 });
@@ -67,6 +73,7 @@ ZoneShell.propTypes = {
   zoneName: PropTypes.string.isRequired,
   readOnly: PropTypes.bool,
   className: PropTypes.string,
+  onTerminal: PropTypes.func,
 };
 
 export default ZoneShell;

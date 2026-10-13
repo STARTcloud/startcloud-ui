@@ -26,6 +26,9 @@ const NO_ROWS = [];
 const TYPE_KEYS = {
   iso: 'artifacts.artifactFilters.isoFiles',
   image: 'artifacts.artifactFilters.vmImages',
+  installer: 'artifacts.artifactFilters.installerFiles',
+  fixpack: 'artifacts.artifactFilters.fixpackFiles',
+  hotfix: 'artifacts.artifactFilters.hotfixFiles',
 };
 
 /**

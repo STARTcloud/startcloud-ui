@@ -1,0 +1,41 @@
+{
+  "provisioners": [
+    {
+      "name": "hcl-domino",
+      "repo": "STARTcloud/hcl-domino-provisioner",
+      "description": "HCL Domino on Debian",
+      "versions": [
+        {
+          "version": "2.0.0",
+          "released_at": "2026-09-01T10:00:00Z",
+          "artifacts": [
+            {
+              "url": "https://catalog.example.com/hcl-domino-2.0.0.tar.gz",
+              "checksum": "abc123",
+              "checksum_type": "sha256"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "moonshine_portal",
+      "repo": "moonshine/moonshine_portal",
+      "description": "The Moonshine portal",
+      "versions": [
+        {
+          "version": "1.4.0",
+          "released_at": "2026-09-20T10:00:00Z",
+          "artifacts": [
+            {
+              "url": "https://catalog.example.com/moonshine_portal-1.4.0.tar.gz",
+              "checksum": "def456",
+              "checksum_type": "sha256"
+            }
+          ]
+        }
+      ],
+      "organization": { "uuid": "0d6b7e2a-3333-4c0a-9a1e-000000000002", "name": "Moonshine" }
+    }
+  ]
+}

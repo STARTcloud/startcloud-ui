@@ -440,11 +440,11 @@ Feature: hosts
     When I open "/"
     Then the footer's name links to "/about"
 
-  Scenario: On a host's route the Tasks toggle opens the pane over /api/agents/{id}/tasks and the Shell toggle draws behind host-terminal
+  Scenario: On a host's route the Tasks toggle opens the pane over /api/agents/{id}/tasks and the Consoles toggle draws behind host-terminal
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1"
-    Then the footer holds the "shell" toggle
+    Then the footer holds the "consoles" toggle
     When I press the footer's "tasks" toggle
     Then the host was sent GET to "/api/agents/1/tasks"
     And the tasks pane lists 3 tasks
@@ -453,7 +453,7 @@ Feature: hosts
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1"
-    Then the footer holds the "shell" toggle
+    Then the footer holds the "consoles" toggle
     When I press the footer's "chevron" toggle
     Then the tasks pane lists 3 tasks
 
@@ -517,6 +517,8 @@ Feature: hosts
     Then the host was sent GET to "/api/agents/1/tasks/7f3a1c02-5b90-4e4d-8c21-d7a660e55b9f"
     And the host was sent GET to "/api/agents/1/tasks/7f3a1c02-5b90-4e4d-8c21-d7a660e55b9f/output"
     And I see "Booting dev-2"
+    And the task dialog's header carries the progress "62%" and Cancel task as a glyph
+    And the task dialog draws its details as one table above the output
 
   Scenario: Cancel task sends DELETE /api/tasks/{id} behind a confirmation
     Given the host answers the hosts fixture
@@ -528,11 +530,11 @@ Feature: hosts
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/1/tasks/7f3a1c02-5b90-4e4d-8c21-d7a660e55b9f"
 
-  Scenario: With no host in the route the server role draws every host's tasks under a Host column and no Shell toggle
+  Scenario: With no host in the route the server role draws every host's tasks under a Host column and no Consoles toggle
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/"
-    Then the footer holds no "shell" toggle
+    Then the footer holds no "consoles" toggle
     When I press the footer's "tasks" toggle
     Then the host was sent GET to "/api/agents/1/tasks"
     And the tasks pane draws the "host" column

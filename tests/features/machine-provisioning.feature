@@ -58,6 +58,27 @@ Feature: machine provisioning
     And the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
     And the host was sent GET to "/api/agents/1/machines/dev-1/provision/status" 2 times
 
+  Scenario: Provisioning page: the Roles tab is the wizard's roles editor, each card a switch and the manifest's label with the role name as its tooltip, a role on against the provisioner's default drawing the warning banner, the switch off clearing it and Store sending enabled
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-provisioning fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/provisioning"
+    And I pick the editor tab "roles"
+    Then the roles list reads "domino,traveler"
+    And the role "domino" is on
+    And the role "traveler" is on
+    And the role "domino" is titled "startcloud.hcl_roles.domino"
+    And the roles editor notes "roles-changed"
+    And I see "HCL Traveler"
+    When I flip the role "traveler"
+    Then the role "traveler" is off
+    And the roles editor notes no "roles-changed"
+    When I press the machine page's "document-store" action
+    Then the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "false" at "/provisioner/roles/1/enabled"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying nothing at "/provisioner/roles/0/enabled"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" 1 times
+
   Scenario: Provisioning page: a write one request and one notice, Store refuses a role name that is no name and sends nothing
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture

@@ -14,7 +14,7 @@ import {
 
 import { useCssVar } from '../../../../hooks/useCssVar';
 import { formatFileSize } from '../../../../utils/formatFileSize';
-import { getDiskUsageColor, parseUsagePercentage } from '../../utils/artifacts';
+import { ARTIFACT_TYPES, getDiskUsageColor, parseUsagePercentage } from '../../utils/artifacts';
 import { formatTaskDate } from '../../utils/tasks';
 
 const TYPE_GLYPHS = { iso: FaCompactDisc, image: FaHardDrive };
@@ -22,7 +22,14 @@ const TYPE_GLYPHS = { iso: FaCompactDisc, image: FaHardDrive };
 const TYPE_KEYS = {
   iso: 'hosts.manage.artifacts.type.iso',
   image: 'hosts.manage.artifacts.type.image',
+  installer: 'hosts.manage.artifacts.type.installer',
+  fixpack: 'hosts.manage.artifacts.type.fixpack',
+  hotfix: 'hosts.manage.artifacts.type.hotfix',
 };
+
+const TYPE_TONES = { iso: 'info', image: 'warning' };
+
+const typeTone = type => TYPE_TONES[type] || 'secondary';
 
 const typeWord = (type, t) => (TYPE_KEYS[type] ? t(TYPE_KEYS[type]) : String(type || ''));
 
@@ -94,7 +101,7 @@ UsageBar.propTypes = {
 
 /**
  * The columns of the storage locations table, hyperweaver-ui's: the
- * name, a button opening the location's artifacts, the path, the type,
+ * name, a button opening the location's artifacts, the path, the type among the five kinds,
  * whether it is enabled, its file count, its size, its last scan and
  * its disk usage as a bar.
  */
@@ -125,11 +132,7 @@ export const STORAGE_PATH_COLUMNS = [
     value: (row, ctx) => typeWord(String(row.type || '').toLowerCase(), ctx.t),
     render: (row, ctx) => {
       const type = String(row.type || '').toLowerCase();
-      return (
-        <span className={`badge text-bg-${type === 'iso' ? 'info' : 'warning'}`}>
-          {typeWord(type, ctx.t)}
-        </span>
-      );
+      return <span className={`badge text-bg-${typeTone(type)}`}>{typeWord(type, ctx.t)}</span>;
     },
   },
   {
@@ -189,7 +192,7 @@ export const STORAGE_PATH_FILTERS = [
     key: 'type',
     labelKey: 'artifacts.storagePathTable.typeHeader',
     values: row => [String(row.type || '').toLowerCase()],
-    order: ['iso', 'image'],
+    order: ARTIFACT_TYPES,
     activeClass: 'bg-primary',
     labelFor: (value, t) => typeWord(value, t),
   },

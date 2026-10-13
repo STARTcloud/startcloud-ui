@@ -219,11 +219,21 @@ const ViewToggle = ({ view, pane, menu, onMenu }) => {
         <Icon />
       </Dropdown.Toggle>
       <Dropdown.Menu>
-        {view.dropUp.map(row => (
-          <Dropdown.Item as="button" type="button" key={row.key} onClick={row.onClick}>
-            <MenuRow row={row} />
-          </Dropdown.Item>
-        ))}
+        {view.dropUp.map(row =>
+          row.divider ? (
+            <Dropdown.Divider key={row.key} />
+          ) : (
+            <Dropdown.Item
+              as="button"
+              type="button"
+              key={row.key}
+              data-menu-row={row.key}
+              onClick={row.onClick}
+            >
+              <MenuRow row={row} />
+            </Dropdown.Item>
+          )
+        )}
       </Dropdown.Menu>
     </Dropdown>
   );

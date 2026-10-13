@@ -6,32 +6,28 @@
       "name": "STARTcloud",
       "url": "https://provisioner-catalog.startcloud.com/catalog.json",
       "enabled": true,
-      "default": true,
-      "auth": "none"
+      "default": true
     },
     {
       "id": "staging",
       "name": "STARTcloud staging",
       "url": "https://provisioner-catalog-staging.startcloud.com/catalog.json",
       "enabled": true,
-      "default": false,
-      "auth": "none"
+      "default": false
     },
     {
       "id": "partner",
       "name": "Partner catalog",
       "url": "https://catalog.partner.example/catalog.json",
       "enabled": false,
-      "default": false,
-      "auth": "oidc"
+      "default": false
     },
     {
       "id": "probe",
       "name": "Probe catalog",
-      "url": "https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog",
+      "url": "https://provisioner-catalog.example.com/catalog.json",
       "enabled": true,
-      "default": false,
-      "auth": "oidc"
+      "default": false
     }
   ]
 }

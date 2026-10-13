@@ -32,7 +32,13 @@ import {
 } from '../../utils/machineCreate';
 import { CATALOG_SOURCES, referencingMachinesOf, secretNamesOf } from '../../utils/manageCatalog';
 import { HeldListing, useSameRows, useSourceWrites, useSourcesPanel } from '../HeldListing';
-import { PaneButton, heldProvisionerCollection } from '../HostCatalogInstall';
+import {
+  HandoffInstallDialog,
+  PaneButton,
+  SourceWords,
+  handoffInstallOf,
+  heldProvisionerCollection,
+} from '../HostCatalogInstall';
 import { DeleteProvisionerConfirm, ImportModal } from '../ProvisionerDialogs';
 import ProvisionerInstallCard from '../ProvisionerInstallCard';
 import RefreshButton from '../RefreshButton';
@@ -88,6 +94,21 @@ const installCardOf = install =>
   ) : null;
 
 /**
+ * The words the hand-off's confirmation names the catalog by: the
+ * source's name while the host lists the source the item was read from,
+ * else the source's URL, and the URL beside the name.
+ *
+ * @param {Object|null} source - The item's `extras.source`, `{ key, url }`
+ * @param {Array<Object>} rows - The rows of `GET provisioning/catalog/sources`
+ * @returns {{ name: string, url: string }} The words
+ */
+const catalogWordsOf = (source, rows) => {
+  const row = rows.find(entry => entry.id === source?.key) || null;
+  const url = source?.url || '';
+  return { name: row?.name || url, url };
+};
+
+/**
  * The Provisioners page of a host: every family the host's enabled
  * catalog sources list, drawn as the catalog site draws its provisioners,
  * cards by default and the table as the toggle, each family's
@@ -119,20 +140,28 @@ const installCardOf = install =>
  * task and the families read again at the task's end on `task-updated`
  * and on the answer. The sources are one read,
  * `GET provisioning/catalog/sources`, every configured source with its
- * `enabled` and `auth`: the listing reads the enabled ones once each per
- * load, a source that answers 401 drawing no family and named with the
+ * `enabled`, each read by the host as the signed-in person whenever it
+ * holds their token and anonymously otherwise: the listing reads the
+ * enabled ones once each per load, a private entry drawn under its own
+ * organization, a source that answers 401 drawing no family and named with the
  * agent's message in one warning banner, the modal lists them all, and
  * every write of a source is one merge patch of `PUT config/storage`
  * over the `/catalog_sources/sources` map keyed by each source's id,
  * `null` removing an entry, the sources read again on success and a
  * refused form drawing each `errors[]` pointer on the field it names.
  * The route's `create=provisioner` hand-off draws the handed family's
- * card marked whatever the group says, its version selected, and a
+ * card marked whatever the group says, its version selected, and, once
+ * the host's families answered, the confirmation dialog over the listing
+ * naming the family, the version and the catalog it comes from, Install
+ * sending the same `POST provisioning/catalog/install` the glyph sends
+ * and Cancel dropping the hand-off, a family the host already holds at
+ * that version told so with no Install; a
  * family missing from every source draws the Add source and install card
- * of `useProvisionerInstall` over the listing; `create=source` with a
+ * of `useProvisionerInstall` over the listing instead; `create=source`
+ * with a
  * `provisioner_catalog` opens the Sources modal with the form filled; the
- * hand-off leaves the route when its form closes or the handed version's
- * Install is pressed.
+ * hand-off leaves the route when its form closes, its dialog closes or
+ * the handed version's Install is pressed.
  */
 const ProvisionersPage = ({ id, server, context, section, onRefresh }) => {
   const { t } = useTranslation();
@@ -148,6 +177,8 @@ const ProvisionersPage = ({ id, server, context, section, onRefresh }) => {
     dropHandoff,
   });
   const [dialog, setDialog] = useState(null);
+  const [handedItem, setHandedItem] = useState(null);
+  const onHanded = useCallback(item => setHandedItem(item), []);
   const catalog = useManageCatalogData({ id, server, only: ['provisioners'] });
   const sources = useManageRead(
     useCallback(() => fetchCatalogSources(status, id), [status, id]),
@@ -316,7 +347,14 @@ const ProvisionersPage = ({ id, server, context, section, onRefresh }) => {
         }),
     },
     handed,
+    onHanded,
   };
+
+  const confirm =
+    handed && handedItem && handedItem.name === handed.name && catalog.reads.provisioners.loaded
+      ? handoffInstallOf(handedItem, listingContext)
+      : null;
+  const confirmWords = confirm ? catalogWordsOf(confirm.source, sourceRows) : null;
 
   const pane = (
     <>
@@ -349,6 +387,34 @@ const ProvisionersPage = ({ id, server, context, section, onRefresh }) => {
       >
         {installCardOf(install)}
       </HeldListing>
+      {confirm ? (
+        <HandoffInstallDialog
+          rows={[
+            {
+              key: 'family',
+              label: t('hosts.manage.held.family'),
+              value: `${handedItem.organization.name}/${handedItem.name}`,
+            },
+            {
+              key: 'version',
+              label: t('host.templatesManagement.version'),
+              value: confirm.version,
+            },
+            {
+              key: 'catalog',
+              label: t('hosts.manage.held.catalog'),
+              value: <SourceWords words={confirmWords} />,
+            },
+          ]}
+          name={`${handedItem.organization.name}/${handedItem.name}`}
+          version={confirm.version}
+          source={confirmWords.name}
+          held={confirm.held}
+          busy={busy}
+          onInstall={() => onInstall(handedItem, confirm.version)}
+          onClose={dropHandoff}
+        />
+      ) : null}
       {panel.open ? (
         <HeldSourcesModal
           variant="catalog"

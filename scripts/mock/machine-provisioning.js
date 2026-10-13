@@ -17,6 +17,83 @@ const HOOK_REASON =
 const NO_DOCUMENT = 'Machine has no provisioner configuration';
 const ROLE_NAMES = ['domino', 'traveler', 'nomadweb', 'leap'];
 const VERSIONS = ['0.1.27', '0.1.26'];
+const MANIFEST_ROLES = [
+  {
+    name: 'networking',
+    label: 'Networking',
+    description: 'Configures the guest network',
+    collection: 'startcloud.startcloud_roles',
+    tags: 'always',
+    default_enabled: true,
+    required: true,
+  },
+  {
+    name: 'domino',
+    label: 'Domino Server',
+    description: 'Installs HCL Domino from the installer the role names',
+    collection: 'startcloud.hcl_roles',
+    default_enabled: true,
+    installer_dir: 'domino',
+    files: {
+      installer: {
+        answers: {
+          name: 'DOMINO_INSTALLER',
+          hash: 'DOMINO_HASH',
+          major: 'DOMINO_INSTALLER_MAJOR_VERSION',
+          minor: 'DOMINO_INSTALLER_MINOR_VERSION',
+          patch: 'DOMINO_INSTALLER_PATCH_VERSION',
+        },
+      },
+      fixpack: {
+        answers: {
+          name: 'DOMINO_INSTALLER_FIXPACK',
+          hash: 'DOMINO_FP_HASH',
+          version: 'DOMINO_INSTALLER_FIXPACK_VERSION',
+          install: 'DOMINO_INSTALLER_FIXPACK_INSTALL',
+        },
+      },
+      hotfix: {
+        answers: {
+          name: 'DOMINO_INSTALLER_HOTFIX',
+          hash: 'DOMINO_HF_HASH',
+          version: 'DOMINO_INSTALLER_HOTFIX_VERSION',
+          install: 'DOMINO_INSTALLER_HOTFIX_INSTALL',
+        },
+      },
+    },
+  },
+  {
+    name: 'traveler',
+    label: 'HCL Traveler',
+    description: 'Installs HCL Traveler on a Domino server',
+    collection: 'startcloud.hcl_roles',
+    default_enabled: false,
+    depends_on: ['domino'],
+  },
+  {
+    name: 'nomadweb',
+    label: 'HCL Nomad Web',
+    description: 'Installs HCL Nomad Web',
+    collection: 'startcloud.hcl_roles',
+    default_enabled: false,
+    depends_on: ['domino'],
+  },
+  {
+    name: 'leap',
+    label: 'HCL Leap',
+    description: 'Installs HCL Leap',
+    collection: 'startcloud.hcl_roles',
+    default_enabled: false,
+    depends_on: ['domino'],
+    installer_dir: 'leap',
+    files: {
+      installer: {
+        answers: { name: 'LEAP_INSTALLER', hash: 'LEAP_HASH', version: 'LEAP_INSTALLER_VERSION' },
+      },
+    },
+  },
+];
+const ID_FILES = { safe_id_dir: 'user-safe-ids', keep_original_name: false };
 const ROLE_SPECS = {
   domino: {
     collection: 'startcloud.hcl_roles',
@@ -51,16 +128,11 @@ const ROLE_SPECS = {
     options: {},
   },
 };
-const ROLE_HINTS = {
-  domino: [],
-  traveler: ['domino'],
-  nomadweb: ['domino'],
-  leap: ['domino'],
-  networking: [],
-};
 const CONFIGURATION = {
   groups: [
     { name: 'domino', label: 'Domino', show_if: { domino_enabled: true } },
+    { name: 'installers', label: 'Installer Archives', advanced: true },
+    { name: 'proxy', label: 'Download Proxy', advanced: true },
     { name: 'advanced', label: 'Advanced', advanced: true },
   ],
   fields: [
@@ -80,6 +152,135 @@ const CONFIGURATION = {
       type: 'password',
       group: 'domino',
       generate: { length: 24 },
+    },
+    {
+      name: 'DOMINO_INSTALLER',
+      label: 'Domino Server Installer Archive',
+      type: 'text',
+      group: 'installers',
+      default: 'Domino_14.0_Linux_English.tar',
+    },
+    {
+      name: 'DOMINO_HASH',
+      label: 'Domino Installer SHA256 Hash',
+      type: 'text',
+      group: 'installers',
+    },
+    {
+      name: 'DOMINO_INSTALLER_MAJOR_VERSION',
+      label: 'Domino Major Version',
+      type: 'number',
+      group: 'installers',
+      default: 14,
+    },
+    {
+      name: 'DOMINO_INSTALLER_MINOR_VERSION',
+      label: 'Domino Minor Version',
+      type: 'number',
+      group: 'installers',
+      default: 0,
+    },
+    {
+      name: 'DOMINO_INSTALLER_PATCH_VERSION',
+      label: 'Domino Patch Version',
+      type: 'number',
+      group: 'installers',
+      default: 0,
+    },
+    {
+      name: 'DOMINO_INSTALLER_FIXPACK_INSTALL',
+      label: 'Install a Domino Fixpack',
+      type: 'checkbox',
+      group: 'installers',
+      default: false,
+    },
+    {
+      name: 'DOMINO_INSTALLER_FIXPACK',
+      label: 'Domino Fixpack Archive',
+      type: 'text',
+      group: 'installers',
+      show_if: { DOMINO_INSTALLER_FIXPACK_INSTALL: true },
+    },
+    {
+      name: 'DOMINO_INSTALLER_FIXPACK_VERSION',
+      label: 'Domino Fixpack Version',
+      type: 'text',
+      group: 'installers',
+      show_if: { DOMINO_INSTALLER_FIXPACK_INSTALL: true },
+    },
+    {
+      name: 'DOMINO_FP_HASH',
+      label: 'Domino Fixpack SHA256 Hash',
+      type: 'text',
+      group: 'installers',
+      show_if: { DOMINO_INSTALLER_FIXPACK_INSTALL: true },
+    },
+    {
+      name: 'DOMINO_INSTALLER_HOTFIX_INSTALL',
+      label: 'Install a Domino Hotfix',
+      type: 'checkbox',
+      group: 'installers',
+      default: false,
+    },
+    {
+      name: 'DOMINO_INSTALLER_HOTFIX',
+      label: 'Domino Hotfix Archive',
+      type: 'text',
+      group: 'installers',
+      show_if: { DOMINO_INSTALLER_HOTFIX_INSTALL: true },
+    },
+    {
+      name: 'DOMINO_INSTALLER_HOTFIX_VERSION',
+      label: 'Domino Hotfix Version',
+      type: 'text',
+      group: 'installers',
+      show_if: { DOMINO_INSTALLER_HOTFIX_INSTALL: true },
+    },
+    {
+      name: 'DOMINO_HF_HASH',
+      label: 'Domino Hotfix SHA256 Hash',
+      type: 'text',
+      group: 'installers',
+      show_if: { DOMINO_INSTALLER_HOTFIX_INSTALL: true },
+    },
+    {
+      name: 'LEAP_INSTALLER',
+      label: 'Leap Installer Archive',
+      type: 'text',
+      group: 'installers',
+      default: 'hcl.dleap-1.1.9.36.zip',
+    },
+    {
+      name: 'LEAP_INSTALLER_VERSION',
+      label: 'Leap Version',
+      type: 'text',
+      group: 'installers',
+      default: '1.1.9',
+    },
+    { name: 'LEAP_HASH', label: 'Leap Installer SHA256 Hash', type: 'text', group: 'installers' },
+    {
+      name: 'USE_PROXY',
+      label: 'Use HTTP Proxy for Downloads',
+      type: 'checkbox',
+      group: 'proxy',
+      default: false,
+    },
+    {
+      name: 'PROXY_SERVER',
+      label: 'Proxy Server',
+      type: 'text',
+      group: 'proxy',
+      required: true,
+      show_if: { USE_PROXY: true },
+    },
+    {
+      name: 'PROXY_PORT',
+      label: 'Proxy Port',
+      type: 'number',
+      group: 'proxy',
+      default: 3128,
+      show_if: { USE_PROXY: true },
+      validate: { min: 1, max: 65535 },
     },
     { name: 'debug', label: 'Debug', type: 'checkbox', group: 'advanced' },
     {
@@ -412,14 +613,11 @@ const version = ctx => {
       name,
       version: wanted,
       description: 'The STARTcloud provisioner, generic edition',
+      id_files: ID_FILES,
       metadata: {
         label: 'STARTcloud',
         description: 'The STARTcloud provisioner, generic edition',
-        roles: Object.keys(ROLE_SPECS).map(role => ({
-          name: role,
-          depends_on: ROLE_HINTS[role],
-          defaultEnabled: role === 'domino' || role === 'networking',
-        })),
+        roles: MANIFEST_ROLES,
         configuration: CONFIGURATION,
       },
     },
@@ -443,9 +641,12 @@ const version = ctx => {
  * whole document as YAML, 403 to a person who is no admin, a refused
  * YAML naming its `line` and `column`. Behind `provisioner-registry`:
  * `GET provisioning/provisioners` and one version's detail, the whole
- * provisioner.yml nested under `metadata` as both agents nest it, its own
- * `metadata.roles` and `metadata.configuration` inside, beside
- * `role_specs` and `playbook_candidates`.
+ * provisioner.yml nested under `metadata` as both agents nest it, its
+ * `id_files`, its own `metadata.roles` in template order with `label`,
+ * `description`, `collection`, `tags`, `default_enabled`, `required`,
+ * `installer_dir` and `files` with the answers each pick fills, and
+ * `metadata.configuration` inside, beside `role_specs` and
+ * `playbook_candidates`.
  *
  * @param {Function} agentRoute - The router's `agentRoute`
  * @returns {void}

@@ -5,6 +5,7 @@ import {
   SCROLLBACK_BOUNDS,
   TERMINAL_PREF_DEFAULTS,
   boundPrefs,
+  terminalOptionsOf,
 } from '../../src/features/hosts/utils/terminalPrefs.js';
 
 describe('boundPrefs', () => {
@@ -15,8 +16,15 @@ describe('boundPrefs', () => {
       scrollback: 5000,
       cursorStyle: 'bar',
       cursorBlink: false,
+      broadcastNewline: true,
     };
     expect(boundPrefs(prefs)).toEqual(prefs);
+  });
+
+  it('holds the broadcast newline as a boolean, on by default', () => {
+    expect(TERMINAL_PREF_DEFAULTS.broadcastNewline).toBe(true);
+    expect(boundPrefs({ broadcastNewline: 'yes' }).broadcastNewline).toBe(false);
+    expect(boundPrefs({ broadcastNewline: true }).broadcastNewline).toBe(true);
   });
 
   it('holds the font size between 6 and 32 and answers 12 for no number', () => {
@@ -39,5 +47,17 @@ describe('boundPrefs', () => {
     expect(boundPrefs({ cursorStyle: 'beam' }).cursorStyle).toBe('block');
     expect(boundPrefs({ cursorBlink: 'yes' }).cursorBlink).toBe(false);
     expect(boundPrefs({ cursorBlink: true }).cursorBlink).toBe(true);
+  });
+});
+
+describe('terminalOptionsOf', () => {
+  it('answers the xterm options alone, the broadcast newline left out', () => {
+    expect(terminalOptionsOf({ ...TERMINAL_PREF_DEFAULTS, broadcastNewline: false })).toEqual({
+      fontSize: TERMINAL_PREF_DEFAULTS.fontSize,
+      fontFamily: TERMINAL_PREF_DEFAULTS.fontFamily,
+      scrollback: TERMINAL_PREF_DEFAULTS.scrollback,
+      cursorStyle: TERMINAL_PREF_DEFAULTS.cursorStyle,
+      cursorBlink: TERMINAL_PREF_DEFAULTS.cursorBlink,
+    });
   });
 });

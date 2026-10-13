@@ -2,7 +2,10 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { publicItemsFrom } from '../../src/features/collections/provisioners/api/adapter.js';
+import {
+  catalogItemsFrom,
+  setMemberships,
+} from '../../src/features/collections/provisioners/api/adapter.js';
 import { QualityPanel } from '../../src/features/collections/provisioners/components/Quality.jsx';
 import {
   boxLabelOf,
@@ -92,8 +95,85 @@ describe('the quality of a rules document', () => {
   });
 });
 
+const MOONSHINE = '0d6b7e2a-3333-4c0a-9a1e-000000000002';
+
+const FOLDED = {
+  catalog: {
+    provisioners: [
+      ...DATA.catalog.provisioners,
+      {
+        name: 'moonshine_portal',
+        repo: 'moonshine/moonshine_portal',
+        description: 'The Moonshine portal',
+        versions: [{ version: '1.4.0', released_at: '2026-09-20T00:00:00Z', artifacts: [] }],
+        organization: { uuid: MOONSHINE, name: 'Moonshine' },
+      },
+    ],
+  },
+  health: {
+    provisioners: {
+      ...DATA.health.provisioners,
+      moonshine_portal: {
+        tier: 'bronze',
+        rules: RULES,
+        failed_rules: [],
+        presentation: { label: 'Moonshine portal' },
+        health: { downloads: 3, versions: { '1.4.0': { providers: ['virtualbox'] } } },
+        organization: { uuid: MOONSHINE, name: 'Moonshine' },
+      },
+    },
+  },
+};
+
+describe('the folded catalog items', () => {
+  it('draws a public entry under its repository owner and a private entry under the organization it carries, the owner logo while no membership is held', () => {
+    setMemberships([], '1');
+    const [owned, moonshine] = catalogItemsFrom(FOLDED);
+    expect(owned).toMatchObject({
+      id: 'STARTcloud/startcloud_generic_provisioner',
+      isPublic: true,
+      organization: { name: 'STARTcloud', logo: 'https://github.com/STARTcloud.png?size=64' },
+    });
+    expect(owned.organization).not.toHaveProperty('uuid');
+    expect(moonshine).toMatchObject({
+      id: 'Moonshine/moonshine_portal',
+      isPublic: false,
+      label: 'Moonshine portal',
+      organization: {
+        name: 'Moonshine',
+        uuid: MOONSHINE,
+        logo: 'https://github.com/Moonshine.png?size=64',
+        description: '',
+      },
+      extras: { tier: 'bronze' },
+    });
+  });
+
+  it('draws a private entry with the logo and the description of the matching membership', () => {
+    setMemberships(
+      [
+        {
+          uuid: MOONSHINE.toUpperCase(),
+          name: 'Moonshine',
+          logo: 'https://moonshine.example.com/mark.svg',
+          description: 'Moonshine, Inc.',
+        },
+      ],
+      '1'
+    );
+    const [, moonshine] = catalogItemsFrom(FOLDED);
+    expect(moonshine.organization).toEqual({
+      name: 'Moonshine',
+      uuid: MOONSHINE,
+      logo: 'https://moonshine.example.com/mark.svg',
+      description: 'Moonshine, Inc.',
+    });
+    setMemberships([], '');
+  });
+});
+
 describe('the catalog items carry the rules and the per-version quality', () => {
-  const [item] = publicItemsFrom(DATA);
+  const [item] = catalogItemsFrom(DATA);
 
   it('carries the family rules and each version tier, rules, failed rules and boxes', () => {
     expect(item.extras.rules).toEqual(RULES);
@@ -144,7 +224,7 @@ describe('the provisioner card body', () => {
   const render = item => renderToStaticMarkup(createElement(host.slots.CardBody, { item, ctx }));
 
   it('draws the strip with both checks and the newest providers, the two folds folded, one line a version with Delete on the held one, and Update in the links line', () => {
-    const [item] = publicItemsFrom(DATA);
+    const [item] = catalogItemsFrom(DATA);
     const markup = render(item);
     expect(markup).toContain('data-check="artifacts" data-ok="true"');
     expect(markup).toContain('data-check="sidecars" data-ok="true"');
@@ -175,7 +255,7 @@ describe('the provisioner card body', () => {
   });
 
   it('draws a failing strip in plain danger text', () => {
-    const [item] = publicItemsFrom({
+    const [item] = catalogItemsFrom({
       ...DATA,
       health: {
         provisioners: {

@@ -91,6 +91,26 @@ Feature: deploy target
     And the Deploy glyph links to "https://hw.example.com/?create=machine&provisioner=STARTcloud%2Fhcl-domino&provisioner_version=2.0.0&provisioner_url=https%3A%2F%2Fcatalog.example.com%2Fhcl-domino-2.0.0.tar.gz&provisioner_catalog=http%3A%2F%2F127.0.0.1%3A4173%2Fcatalog.json"
     And the Deploy glyph opens in a new tab
 
+  Scenario: Deploy: a signed-in person's one catalog read carries their token and answers the folded document, the organization's private provisioners drawn under that organization beside the public ones with no per-organization read
+    Given the host answers the deploy-target-catalog fixture
+    And the host answers the catalog-private fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"access_token\":\"t\"}"
+    When I open "/"
+    Then I see "hcl-domino"
+    And the card "hcl-domino" draws under "STARTcloud"
+    And the card "moonshine_portal" draws under "Moonshine"
+    And the host was sent GET to "/api/catalog" 1 times
+    And the host was sent GET to "/api/catalog/health" 1 times
+    And the GET to "/api/catalog" carried the header "x-access-token"
+    And the GET to "/api/catalog/health" carried the header "x-access-token"
+    And the host was not sent GET to "/api/private/0d6b7e2a-3333-4c0a-9a1e-000000000002/catalog"
+    And the host was not sent GET to "/api/private/0d6b7e2a-3333-4c0a-9a1e-000000000002/health"
+    When I open "/Moonshine"
+    Then the card "moonshine_portal" draws under "Moonshine"
+    And I do not see "hcl-domino"
+    And the host was sent GET to "/api/catalog" 2 times
+    And the host was not sent GET to "/api/private/0d6b7e2a-3333-4c0a-9a1e-000000000002/catalog"
+
   Scenario: Deploy: the chevron beside a box's glyph opens the box words, Deploy a machine, Pull as a template and Add this registry as a source, each a link of the target rule
     Given the host answers the deploy-target fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"access_token\":\"t\"}"

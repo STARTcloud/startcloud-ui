@@ -257,10 +257,10 @@ snapshot event: a connecting client reads
 `GET /api/admin/brute-force/count` once, and the stream carries every
 change after.
 
-### Hyperweaver family: topics `tasks`, `hosts` and `monitoring`
+### Hyperweaver family: topics `tasks`, `hosts`, `monitoring` and `sessions`
 
 The UI backends whose `role` is `hyperweaver-server`, `hyperweaver-agent`
-or `zoneweaver-agent` stream three app topics. An agent sends the events of
+or `zoneweaver-agent` stream four app topics. An agent sends the events of
 its own host; the server sends every registered agent's events on its one
 stream and adds `agent_id` to the data of each, the registry id
 `GET /api/servers` answers for that agent, so a page tells the hosts
@@ -278,6 +278,8 @@ name the agent's REST routes use.
 | `monitoring` | `pool-io-sample`  | `{ "poolio": [sample] }`, one sample a pool as `GET /api/monitoring/storage/pool-io` answers them, sent by an agent that lists `zfs` when it took them                                | none; the client reads the history on connect and on `reset`      |
 | `monitoring` | `arc-sample`      | `{ "arc": [sample] }`, as `GET /api/monitoring/storage/arc` answers them, sent by an agent that lists `zfs` when it took them                                                         | none; the client reads the history on connect and on `reset`      |
 | `monitoring` | `disk-io-sample`  | `{ "diskio": [sample] }`, one sample a device as `GET /api/monitoring/storage/disk-io` answers them, sent by an agent that lists `zfs` when it took them                              | none; the client reads the history on connect and on `reset`      |
+| `sessions`   | `session-started` | `{ "kind", "id", "machine_name" }`, `kind` `host_shell`, `ssh` or `zlogin`, `machine_name` empty for the host shell, sent when a terminal session starts                              | none; the client lists the sessions on connect and on `reset`     |
+| `sessions`   | `session-ended`   | `{ "kind", "id", "machine_name" }`, sent when a terminal session ends, whoever ended it; the footer's Consoles pane closes the matching tab                                           | none                                                              |
 
 The `monitoring` topic carries what an agent's collector took, so a chart
 grows by push and no page asks on a timer. An agent sends each sample

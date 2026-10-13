@@ -1,28 +1,43 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaDownload } from 'react-icons/fa6';
 
+import SubTable from '../../../components/common/SubTable';
 import UploadProgress from '../../../components/common/UploadProgress';
 import { useStatus } from '../../../contexts/StatusContext';
+import { nextSort, sortItems } from '../../../utils/sort';
 import {
   downloadArtifact,
+  fetchRegistryDownloads,
   hclDownloadArtifact,
   prepareArtifactUpload,
   registerArtifact,
+  registryDownloadArtifact,
   uploadArtifactFile,
 } from '../api/provisioning';
+import { useManageRead } from '../hooks/useHostManage';
+import { pickDefaultSource, sourceKeyOf, sourceLabelOf } from '../utils/boxCatalog';
 import {
   ARTIFACT_TYPES,
+  FILE_SOURCES,
   HCL_KINDS,
   LOCATION_DELETE_OPTIONS,
   LOCATION_FORM,
+  ROLE_TYPES,
   downloadBody,
+  formatSize,
   hclBody,
   hclProblem,
   locationBody,
   locationNeedsRole,
   locationProblem,
   registerBody,
+  registryDownloadBody,
+  registryFileMatches,
+  registryFilesOf,
+  registryGroupsOf,
+  registryProblem,
   targetProblem,
   transferOptionsOf,
   uploadPrepareBody,
@@ -36,6 +51,70 @@ const senderShape = PropTypes.shape({
   follow: PropTypes.func.isRequired,
   busy: PropTypes.bool.isRequired,
 });
+
+const seedShape = PropTypes.shape({
+  locationId: PropTypes.string.isRequired,
+  role: PropTypes.string.isRequired,
+  kind: PropTypes.string.isRequired,
+  filename: PropTypes.string.isRequired,
+  checksum: PropTypes.string.isRequired,
+});
+
+const SOURCE_LABEL_KEYS = {
+  registry: 'host.installerFiles.fromBoxVault',
+  hcl: 'host.installerFiles.hclPortal',
+  download: 'host.installerFiles.downloadUrl',
+  upload: 'host.installerFiles.upload',
+  register: 'host.installerFiles.registerPath',
+};
+
+/**
+ * The note a seeded source dialog opens with: the missing file's name
+ * and the sha256 it is known by, and one button a source the host
+ * offers other than the open one, each handing its kind to `onSwitch`.
+ */
+const SourceSwitch = ({ seed, current, offered, onSwitch, disabled }) => {
+  const { t } = useTranslation();
+  if (!seed) {
+    return null;
+  }
+  return (
+    <div className="alert alert-warning py-2" role="status" data-note="missing-seed">
+      <p className="mb-1">
+        {t('host.installerFilesModals.missingFile', { filename: seed.filename })}
+      </p>
+      {seed.checksum ? (
+        <p className="small mb-2">
+          <code className="checksum">{seed.checksum}</code>
+        </p>
+      ) : null}
+      <div className="d-flex flex-wrap gap-1">
+        {offered
+          .filter(kind => kind !== current)
+          .map(kind => (
+            <button
+              key={kind}
+              type="button"
+              className="btn btn-sm btn-outline-secondary"
+              data-action={`source-${kind}`}
+              onClick={() => onSwitch(kind)}
+              disabled={disabled}
+            >
+              {t(SOURCE_LABEL_KEYS[kind])}
+            </button>
+          ))}
+      </div>
+    </div>
+  );
+};
+
+SourceSwitch.propTypes = {
+  seed: seedShape,
+  current: PropTypes.oneOf(FILE_SOURCES).isRequired,
+  offered: PropTypes.arrayOf(PropTypes.string).isRequired,
+  onSwitch: PropTypes.func.isRequired,
+  disabled: PropTypes.bool.isRequired,
+};
 
 const NameField = ({ id, labelKey, value, onChange, disabled, list = undefined }) => {
   const { t } = useTranslation();
@@ -160,12 +239,29 @@ LocationRoleFields.propTypes = {
  * The upload dialog, hyperweaver-ui's two steps: the location and the
  * role, the file, the expected checksum and the overwrite switch;
  * `POST artifacts/upload/prepare` answers the task the bytes go up
- * under, the bar drawn as they do, the task followed to its end.
+ * under, the bar drawn as they do, the task followed to its end. A
+ * `seed`, a missing row's, fills the location, the role and the checksum
+ * and draws the other sources over the fields.
  */
-export const UploadModal = ({ id, locations, roleOptions, sender, onClose, onDone }) => {
+export const UploadModal = ({
+  id,
+  locations,
+  roleOptions,
+  sender,
+  onClose,
+  onDone,
+  seed = null,
+  offered = FILE_SOURCES,
+  onSwitch = null,
+}) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const [form, setForm] = useState({ locationId: '', role: '', checksum: '', overwrite: false });
+  const [form, setForm] = useState({
+    locationId: seed?.locationId || '',
+    role: seed?.role || '',
+    checksum: seed?.checksum || '',
+    overwrite: false,
+  });
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(null);
   const [problem, setProblem] = useState('');
@@ -209,6 +305,15 @@ export const UploadModal = ({ id, locations, roleOptions, sender, onClose, onDon
       onClose={onClose}
       onSubmit={submit}
     >
+      {onSwitch ? (
+        <SourceSwitch
+          seed={seed}
+          current="upload"
+          offered={offered}
+          onSwitch={onSwitch}
+          disabled={sender.busy}
+        />
+      ) : null}
       <LocationRoleFields
         prefix="artifact-upload"
         locations={locations}
@@ -255,17 +360,37 @@ UploadModal.propTypes = {
   sender: senderShape.isRequired,
   onClose: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,
+  seed: seedShape,
+  offered: PropTypes.arrayOf(PropTypes.string),
+  onSwitch: PropTypes.func,
 };
 
 /**
  * The register dialog, hyperweaver-ui's: the location and the role, the
  * file's path on the agent host with the browse button and the move
- * switch; `POST artifacts/register`.
+ * switch; `POST artifacts/register`. A `seed`, a missing row's, fills
+ * the location and the role and draws the other sources over the fields.
  */
-export const RegisterModal = ({ id, server, locations, roleOptions, sender, onClose, onDone }) => {
+export const RegisterModal = ({
+  id,
+  server,
+  locations,
+  roleOptions,
+  sender,
+  onClose,
+  onDone,
+  seed = null,
+  offered = FILE_SOURCES,
+  onSwitch = null,
+}) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const [form, setForm] = useState({ locationId: '', role: '', path: '', move: false });
+  const [form, setForm] = useState({
+    locationId: seed?.locationId || '',
+    role: seed?.role || '',
+    path: '',
+    move: false,
+  });
   const [problem, setProblem] = useState('');
   const patch = changes => setForm(current => ({ ...current, ...changes }));
 
@@ -296,6 +421,15 @@ export const RegisterModal = ({ id, server, locations, roleOptions, sender, onCl
       onClose={onClose}
       onSubmit={submit}
     >
+      {onSwitch ? (
+        <SourceSwitch
+          seed={seed}
+          current="register"
+          offered={offered}
+          onSwitch={onSwitch}
+          disabled={sender.busy}
+        />
+      ) : null}
       <LocationRoleFields
         prefix="artifact-register"
         locations={locations}
@@ -341,7 +475,9 @@ RegisterModal.propTypes = {
  * URL, the file name, the expected checksum, the overwrite switch and
  * the mirror credentials, a select of the secrets' names while they
  * could be read and a typed name otherwise; `POST artifacts/download`,
- * a queued task followed to its end.
+ * a queued task followed to its end. A `seed`, a missing row's, fills
+ * the location, the role, the file name and the checksum and draws the
+ * other sources over the fields.
  */
 export const DownloadModal = ({
   id,
@@ -351,15 +487,18 @@ export const DownloadModal = ({
   sender,
   onClose,
   onDone,
+  seed = null,
+  offered = FILE_SOURCES,
+  onSwitch = null,
 }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [form, setForm] = useState({
-    locationId: '',
-    role: '',
+    locationId: seed?.locationId || '',
+    role: seed?.role || '',
     url: '',
-    filename: '',
-    checksum: '',
+    filename: seed?.filename || '',
+    checksum: seed?.checksum || '',
     overwrite: false,
     resourceName: '',
   });
@@ -394,6 +533,15 @@ export const DownloadModal = ({
       onClose={onClose}
       onSubmit={submit}
     >
+      {onSwitch ? (
+        <SourceSwitch
+          seed={seed}
+          current="download"
+          offered={offered}
+          onSwitch={onSwitch}
+          disabled={sender.busy}
+        />
+      ) : null}
       <LocationRoleFields
         prefix="artifact-download"
         locations={locations}
@@ -482,12 +630,28 @@ DownloadModal.propTypes = {
  * the file name as the portal names it and the portal key, a select of
  * the secrets' names while they could be read and a typed name
  * otherwise; `POST artifacts/hcl-download`, a queued task followed to
- * its end.
+ * its end. A `seed`, a missing row's, fills the role, the kind and the
+ * file name and draws the other sources over the fields.
  */
-export const HclDownloadModal = ({ id, roleOptions, hclKeyNames, sender, onClose, onDone }) => {
+export const HclDownloadModal = ({
+  id,
+  roleOptions,
+  hclKeyNames,
+  sender,
+  onClose,
+  onDone,
+  seed = null,
+  offered = FILE_SOURCES,
+  onSwitch = null,
+}) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const [form, setForm] = useState({ role: '', kind: 'installer', filename: '', keyName: '' });
+  const [form, setForm] = useState({
+    role: seed?.role || '',
+    kind: seed && HCL_KINDS.includes(seed.kind) ? seed.kind : 'installer',
+    filename: seed?.filename || '',
+    keyName: '',
+  });
   const [problem, setProblem] = useState('');
   const patch = changes => setForm(current => ({ ...current, ...changes }));
 
@@ -518,6 +682,15 @@ export const HclDownloadModal = ({ id, roleOptions, hclKeyNames, sender, onClose
       onClose={onClose}
       onSubmit={submit}
     >
+      {onSwitch ? (
+        <SourceSwitch
+          seed={seed}
+          current="hcl"
+          offered={offered}
+          onSwitch={onSwitch}
+          disabled={sender.busy}
+        />
+      ) : null}
       <div className="row g-3 mb-3">
         <div className="col-12 col-md-6">
           <label className="form-label" htmlFor="artifact-hcl-role">
@@ -607,6 +780,301 @@ HclDownloadModal.propTypes = {
   sender: senderShape.isRequired,
   onClose: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,
+  seed: seedShape,
+  offered: PropTypes.arrayOf(PropTypes.string),
+  onSwitch: PropTypes.func,
+};
+
+const NO_HIDDEN = new Set();
+
+const checksumOf = row => row.sha256 || row.checksum;
+
+const REGISTRY_COLUMNS = [
+  {
+    key: 'filename',
+    kind: 'name',
+    labelKey: 'host.installerFiles.colFilename',
+    value: row => row.filename,
+    render: (row, ctx) => (
+      <span className="d-inline-flex align-items-center gap-2 flex-wrap">
+        <code className="small">{row.filename}</code>
+        {registryFileMatches(row, ctx.seed) ? (
+          <span className="badge text-bg-primary" data-note="seed-match">
+            {ctx.t('host.installerFilesModals.seedMatch')}
+          </span>
+        ) : null}
+      </span>
+    ),
+  },
+  {
+    key: 'kind',
+    kind: 'word',
+    labelKey: 'host.installerFilesModals.kind',
+    value: row => row.kind,
+  },
+  {
+    key: 'platform',
+    kind: 'word',
+    labelKey: 'host.installerFilesModals.platform',
+    priority: 4,
+    value: row => row.platform,
+  },
+  {
+    key: 'architecture',
+    kind: 'word',
+    labelKey: 'host.installerFilesModals.architecture',
+    priority: 4,
+    value: row => row.architecture,
+  },
+  {
+    key: 'size',
+    kind: 'size',
+    labelKey: 'host.installerFiles.colSize',
+    value: row => row.size,
+    render: row => <span className="small">{formatSize(row.size)}</span>,
+  },
+  {
+    key: 'checksum',
+    kind: 'checksum',
+    labelKey: 'host.installerFilesModals.checksum',
+    priority: 5,
+    value: row => checksumOf(row),
+    render: row =>
+      checksumOf(row) ? (
+        <code className="checksum" title={row.sha256 ? 'sha256' : row.checksumType}>
+          {checksumOf(row)}
+        </code>
+      ) : (
+        '-'
+      ),
+  },
+];
+
+const RegistryRowActions = ({ row, busy, onDownload }) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className="btn btn-sm btn-outline-primary"
+      title={t('host.installerFilesModals.download')}
+      aria-label={t('host.installerFilesModals.download')}
+      data-action="registry-download"
+      data-file={row.key}
+      disabled={busy}
+      onClick={() => onDownload(row)}
+    >
+      <FaDownload aria-hidden="true" />
+    </button>
+  );
+};
+
+RegistryRowActions.propTypes = {
+  row: PropTypes.shape({ key: PropTypes.string.isRequired }).isRequired,
+  busy: PropTypes.bool.isRequired,
+  onDownload: PropTypes.func.isRequired,
+};
+
+/**
+ * The From BoxVault dialog: the registry among the host's enabled box
+ * registries, opening on the default one, its download files read once
+ * a registry is picked through `GET artifacts/registry/{source}/downloads`
+ * and drawn over the one table grouped by download, release and patch,
+ * each file its kind, platform, architecture, size and checksum; the
+ * role with its datalist, the location among the installer family's
+ * while one is picked and the kind's own otherwise, and the overwrite
+ * switch; a row's Download sends `POST artifacts/registry-download`, a
+ * queued task followed to its end. A `seed`, a missing row's, fills the
+ * role, marks the file it is known as and draws the other sources over
+ * the table.
+ */
+export const RegistryDownloadModal = ({
+  id,
+  locations,
+  sources,
+  roleOptions,
+  sender,
+  onClose,
+  onDone,
+  seed = null,
+  offered = FILE_SOURCES,
+  onSwitch = null,
+}) => {
+  const { t } = useTranslation();
+  const status = useStatus();
+  const registries = sources.filter(source => source.enabled !== false);
+  const [form, setForm] = useState({
+    source: sourceKeyOf(pickDefaultSource(registries)),
+    role: seed?.role || '',
+    locationId: '',
+    overwrite: false,
+  });
+  const [problem, setProblem] = useState('');
+  const [sort, setSort] = useState([]);
+  const [collapsed, setCollapsed] = useState({});
+  const patch = changes => setForm(current => ({ ...current, ...changes }));
+  const listing = useManageRead(
+    useCallback(() => fetchRegistryDownloads(status, id, form.source), [status, id, form.source]),
+    Boolean(form.source)
+  );
+  const ctx = useMemo(() => ({ t, seed }), [t, seed]);
+  const rows = useMemo(
+    () => sortItems(registryFilesOf(listing.data), sort, REGISTRY_COLUMNS, ctx),
+    [listing.data, sort, ctx]
+  );
+  const groups = useMemo(() => registryGroupsOf(rows), [rows]);
+  const roleLocations = locations.filter(
+    entry => entry.enabled !== false && ROLE_TYPES.includes(entry.type)
+  );
+
+  const download = async row => {
+    const why = registryProblem(form);
+    setProblem(why);
+    if (why) {
+      return;
+    }
+    const { answer, error } = await sender.send({
+      call: () => registryDownloadArtifact(status, id, registryDownloadBody(row, form)),
+      doneKey: 'host.installerFilesModals.registryDownloadQueued',
+      values: { filename: row.filename },
+      failKey: 'hosts.manage.installers.downloadFailed',
+    });
+    if (!error) {
+      sender.follow(answer);
+      onDone();
+    }
+  };
+
+  return (
+    <ToolFormDialog
+      dialog="artifact-registry"
+      title={t('host.installerFilesModals.downloadFromRegistry')}
+      problemKey={problem}
+      busy={sender.busy}
+      onClose={onClose}
+      onSubmit={() => undefined}
+    >
+      {onSwitch ? (
+        <SourceSwitch
+          seed={seed}
+          current="registry"
+          offered={offered}
+          onSwitch={onSwitch}
+          disabled={sender.busy}
+        />
+      ) : null}
+      <div className="row g-3 mb-3">
+        <div className="col-12 col-md-4">
+          <label className="form-label" htmlFor="artifact-registry-source">
+            {t('host.installerFilesModals.registry')}
+          </label>
+          <select
+            id="artifact-registry-source"
+            className="form-select"
+            value={form.source}
+            onChange={event => patch({ source: event.target.value })}
+            disabled={sender.busy || registries.length === 0}
+          >
+            {registries.length === 0 ? (
+              <option value="">{t('host.templatesManagement.noRegistriesConfiguredOption')}</option>
+            ) : null}
+            {registries.map(source => (
+              <option key={sourceKeyOf(source)} value={sourceKeyOf(source)}>
+                {sourceLabelOf(source)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-12 col-md-4">
+          <label className="form-label" htmlFor="artifact-registry-role">
+            {t('host.installerFilesModals.role')}
+          </label>
+          <input
+            id="artifact-registry-role"
+            className="form-control"
+            type="text"
+            list="artifact-registry-role-options"
+            value={form.role}
+            onChange={event => patch({ role: event.target.value })}
+            disabled={sender.busy}
+          />
+          <datalist id="artifact-registry-role-options">
+            {roleOptions.map(option => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
+        </div>
+        <div className="col-12 col-md-4">
+          <label className="form-label" htmlFor="artifact-registry-location">
+            {t('host.installerFilesModals.storageLocation')}
+          </label>
+          <select
+            id="artifact-registry-location"
+            className="form-select"
+            value={form.locationId}
+            onChange={event => patch({ locationId: event.target.value })}
+            disabled={sender.busy}
+          >
+            <option value="">{t('host.installerFilesModals.kindsOwnLocation')}</option>
+            {roleLocations.map(entry => (
+              <option key={entry.id} value={entry.id}>
+                {entry.name} ({entry.type})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <SwitchField
+        id="artifact-registry-overwrite"
+        labelKey="host.installerFilesModals.overwrite"
+        checked={form.overwrite}
+        onChange={overwrite => patch({ overwrite })}
+        disabled={sender.busy}
+      />
+      {listing.failed ? (
+        <div className="alert alert-danger py-2" role="alert" data-note="registry-failed">
+          {t('host.installerFilesModals.registryReadFailed', { message: listing.message })}
+        </div>
+      ) : null}
+      {form.source && !listing.loaded ? (
+        <p className="text-muted mb-0">{t('pages.loading')}</p>
+      ) : null}
+      <div data-table="registry-files" data-count={rows.length}>
+        <SubTable
+          columns={REGISTRY_COLUMNS}
+          rows={rows}
+          groups={groups.length > 0 ? groups : null}
+          collapsed={collapsed}
+          onToggleGroup={key => setCollapsed(current => ({ ...current, [key]: !current[key] }))}
+          countKey="host.installerFilesModals.filesCount"
+          rowKey={row => row.key}
+          RowActions={RegistryRowActions}
+          actionsProps={{ busy: sender.busy, onDownload: download }}
+          sort={sort}
+          onSort={(column, options) => setSort(current => nextSort(current, column, options))}
+          hiddenColumns={NO_HIDDEN}
+          ctx={ctx}
+          emptyText={t(
+            listing.loaded
+              ? 'host.installerFilesModals.registryEmpty'
+              : 'host.installerFilesModals.pickRegistry'
+          )}
+        />
+      </div>
+    </ToolFormDialog>
+  );
+};
+
+RegistryDownloadModal.propTypes = {
+  id: PropTypes.string.isRequired,
+  locations: PropTypes.array.isRequired,
+  sources: PropTypes.array.isRequired,
+  roleOptions: PropTypes.arrayOf(PropTypes.string).isRequired,
+  sender: senderShape.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onDone: PropTypes.func.isRequired,
+  seed: seedShape,
+  offered: PropTypes.arrayOf(PropTypes.string),
+  onSwitch: PropTypes.func,
 };
 
 /**

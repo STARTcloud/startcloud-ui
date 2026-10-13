@@ -104,6 +104,13 @@ Then('the Deploy glyph opens in a new tab', async ({ page }) => {
   await expect(glyphOf(page)).toHaveAttribute('target', '_blank');
 });
 
+Then('the card {string} draws under {string}', async ({ page }, name, organization) => {
+  const card = page.locator('.catalog-card').filter({
+    has: page.locator('[data-field="byline"] code', { hasText: new RegExp(`^${name}$`, 'u') }),
+  });
+  await expect(card.locator('[data-field="byline"]')).toContainText(organization);
+});
+
 Then('no Deploy glyph draws', async ({ page }) => {
   await expect(page.locator('.items-table-wrap, .card').first()).toBeVisible();
   await expect(page.locator('a[data-deploy]')).toHaveCount(0);

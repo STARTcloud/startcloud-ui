@@ -28,6 +28,8 @@ import {
   installOfferOf,
   nextServerIdOf,
   parseVboxPassthrough,
+  roleRowsOf,
+  safeIdMembersOf,
   seedBoxFor,
   seedBoxOf,
   seedFamilyOf,
@@ -66,11 +68,13 @@ const formOf = (more = {}) => ({
   notes: '',
   networks: [defaultExternalNetwork()],
   roles: [],
+  manifestRoles: [],
   properties: {},
+  downloads: {},
   syncMethod: 'rsync',
   removeTransport: '',
   needsSafeId: false,
-  safeIdPath: '',
+  safeId: { source: 'cache', artifact_id: '', name: '', path: '' },
   orgUuid: '',
   startAfterCreate: false,
   bhyve: false,
@@ -491,17 +495,15 @@ describe('the install of a handed family', () => {
     ).toBe('missing');
   });
 
-  it('adds a handed catalog under its host, oidc for an organization private catalog', () => {
+  it('adds a handed catalog under its host with no credential, another catalog alike', () => {
     expect(catalogSourceBody('https://provisioner-catalog.startcloud.com/catalog.json')).toEqual({
       display_name: 'provisioner-catalog.startcloud.com',
       url: 'https://provisioner-catalog.startcloud.com/catalog.json',
-      auth: 'none',
     });
-    expect(
-      catalogSourceBody(
-        'https://provisioner-catalog.startcloud.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog'
-      ).auth
-    ).toBe('oidc');
+    expect(catalogSourceBody('https://provisioner-catalog.example.com/catalog.json')).toEqual({
+      display_name: 'provisioner-catalog.example.com',
+      url: 'https://provisioner-catalog.example.com/catalog.json',
+    });
   });
 
   it('names the catalog install and the import as the task operations whose end reads the families again', () => {
@@ -511,22 +513,17 @@ describe('the install of a handed family', () => {
     ]);
   });
 
-  it('shapes the catalog source form from the handed URL, its host the id and the display name, the URL as given and the authentication picked', () => {
-    expect(
-      catalogSourceSeedOf(
-        'https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog'
-      )
-    ).toEqual({
+  it('shapes the catalog source form from the handed URL, its host the id and the display name, the URL as given and no credential', () => {
+    expect(catalogSourceSeedOf('https://provisioner-catalog.example.com/catalog.json')).toEqual({
       name: 'provisioner_catalog_example_com',
       displayName: 'provisioner-catalog.example.com',
-      url: 'https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog',
+      url: 'https://provisioner-catalog.example.com/catalog.json',
       isDefault: false,
-      auth: 'oidc',
       ca_file: '',
     });
     expect(
-      catalogSourceSeedOf('https://provisioner-catalog.startcloud.com/catalog.json').auth
-    ).toBe('none');
+      catalogSourceSeedOf('https://provisioner-catalog.startcloud.com/catalog.json')
+    ).not.toHaveProperty('auth');
     expect(catalogSourceSeedOf('not a url')).toBeNull();
     expect(catalogSourceSeedOf('')).toBeNull();
   });
@@ -776,7 +773,7 @@ describe('buildSpec', () => {
         versionKey: '0.1.27',
         removeTransport: 'true',
         needsSafeId: true,
-        safeIdPath: '/ids/safe.id',
+        safeId: { source: 'path', artifact_id: '', name: '', path: ' /ids/safe.id ' },
         orgUuid: 'org-1',
         vboxJson: '{"directives":{}}',
       })
@@ -790,11 +787,97 @@ describe('buildSpec', () => {
       org_uuid: 'org-1',
       vbox: { directives: {} },
     });
+    expect(spec).not.toHaveProperty('safe_id');
     const plain = buildSpec(
-      formOf({ removeTransport: 'true', safeIdPath: '/x', needsSafeId: false })
+      formOf({
+        removeTransport: 'true',
+        safeId: { source: 'path', artifact_id: '', name: '', path: '/x' },
+        needsSafeId: false,
+      })
     );
     expect(plain).not.toHaveProperty('remove_transport_on_completion');
     expect(plain).not.toHaveProperty('safe_id_path');
+    expect(plain).not.toHaveProperty('wait_for');
+  });
+
+  it('sends the safe id of the cache or an upload by its artifact, the path door by its path, nothing unpicked', () => {
+    expect(
+      safeIdMembersOf({
+        needsSafeId: true,
+        safeId: { source: 'cache', artifact_id: 'art-0105', name: 'SAFE.ids', path: '' },
+      })
+    ).toEqual({ safe_id: { artifact_id: 'art-0105', name: 'SAFE.ids' } });
+    expect(
+      safeIdMembersOf({
+        needsSafeId: true,
+        safeId: { source: 'upload', artifact_id: 'art-0200', name: 'mine.ids', path: '' },
+      })
+    ).toEqual({ safe_id: { artifact_id: 'art-0200', name: 'mine.ids' } });
+    expect(
+      safeIdMembersOf({
+        needsSafeId: true,
+        safeId: { source: 'cache', artifact_id: '', name: '', path: '' },
+      })
+    ).toEqual({});
+    expect(
+      safeIdMembersOf({
+        needsSafeId: true,
+        safeId: { source: 'path', artifact_id: '', name: '', path: '  ' },
+      })
+    ).toEqual({});
+  });
+
+  it('sends the roles in their drawn order, every role with enabled, the manifest collection and tags, the files and the vars, and wait_for while downloads are queued', () => {
+    const manifestRoles = [
+      { name: 'networking', collection: 'startcloud.startcloud_roles', tags: 'always' },
+      { name: 'domino_install', collection: 'startcloud.hcl_roles' },
+    ];
+    const rows = [
+      {
+        _ui_id: 7,
+        name: 'domino_install',
+        enabled: true,
+        files: { installer: 'Domino_14.0_Linux_English.tar', installer_hash: '', fixpack: '' },
+        vars: { domino_user: 'domino', domino_home_dir: '' },
+      },
+      { _ui_id: 8, name: 'networking', enabled: false, files: {}, vars: {} },
+      { _ui_id: 9, name: 'acme.extra.role', files: {}, vars: {}, tags: 'late' },
+    ];
+    expect(roleRowsOf(rows, manifestRoles)).toEqual([
+      {
+        name: 'domino_install',
+        enabled: true,
+        collection: 'startcloud.hcl_roles',
+        files: { installer: 'Domino_14.0_Linux_English.tar' },
+        vars: { domino_user: 'domino' },
+      },
+      {
+        name: 'networking',
+        enabled: false,
+        collection: 'startcloud.startcloud_roles',
+        tags: 'always',
+        files: {},
+        vars: {},
+      },
+      { name: 'acme.extra.role', enabled: true, tags: 'late', files: {}, vars: {} },
+    ]);
+    const spec = buildSpec(
+      formOf({
+        roles: rows,
+        manifestRoles,
+        downloads: {
+          'domino_install/installer': { task_id: 'c2', artifact_id: 'art-0102' },
+          'domino_install/fixpack': { task_id: 'c3', artifact_id: 'art-0103' },
+        },
+      })
+    );
+    expect(spec.roles.map(role => role.name)).toEqual([
+      'domino_install',
+      'networking',
+      'acme.extra.role',
+    ]);
+    expect(spec.roles[0]).not.toHaveProperty('_ui_id');
+    expect(spec.wait_for).toEqual(['c2', 'c3']);
   });
 });
 

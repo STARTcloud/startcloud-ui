@@ -1,10 +1,11 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaChevronDown, FaDownload, FaPlus, FaTrash } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
+import RecordRows from '../../../components/common/RecordRows';
 import { itemShape, sortVersionsNewestFirst } from '../../../utils/itemShape';
 import { boxes } from '../../collections/boxes';
 import { cardBodyWith } from '../../collections/boxes/components/BoxCard';
@@ -32,7 +33,8 @@ const entryShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   action: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
-  onClick: PropTypes.func.isRequired,
+  onClick: PropTypes.func,
+  to: PropTypes.string,
 });
 
 const heldCtxShape = PropTypes.shape({
@@ -50,6 +52,7 @@ const heldCtxShape = PropTypes.shape({
     organization: PropTypes.string,
     version: PropTypes.string,
   }),
+  onHanded: PropTypes.func,
 });
 
 const isHanded = (item, ctx) =>
@@ -96,6 +99,52 @@ const olderVersionsOf = (item, newest, held) =>
   sortVersionsNewestFirst(item.versions)
     .map(entry => entry.version)
     .filter(version => version !== newest && !held.includes(version));
+
+const newestHeldOf = held =>
+  sortVersionsNewestFirst(held.map(version => ({ version })))[0]?.version || '';
+
+/**
+ * The Create a machine entry of one item's menu: the create wizard's
+ * door with the item and the newest version the host holds of it, on an
+ * item the host holds while the host creates machines; null on an item
+ * the host holds none of and on a host that creates none.
+ *
+ * @param {Object} item - An item of the item shape
+ * @param {Object} ctx - The listing context carrying `held`
+ * @param {Function} t - The translator
+ * @returns {{ key: string, action: string, label: string, to: string }|null} The entry
+ */
+export const createEntryOf = (item, ctx, t) => {
+  const held = ctx.held.versionsOf(item);
+  if (held.length === 0 || !ctx.held.creates || !ctx.held.createRouteOf) {
+    return null;
+  }
+  return {
+    key: 'create',
+    action: 'held-create',
+    label: t('hosts.manage.held.createMachine'),
+    to: ctx.held.createRouteOf(item, newestHeldOf(held)),
+  };
+};
+
+/**
+ * What the hand-off's confirmation says of the handed item: `version`,
+ * the version the control acts on, the handed one while the source lists
+ * it and the newest otherwise; `held`, whether the host holds that
+ * version; and `source`, the source the item was read from.
+ *
+ * @param {Object} item - An item of the item shape
+ * @param {Object} ctx - The listing context carrying `held` and `handed`
+ * @returns {{ version: string, held: boolean, source: Object|null }} The reading
+ */
+export const handoffInstallOf = (item, ctx) => {
+  const version = fetchVersionOf(item, ctx);
+  return {
+    version,
+    held: Boolean(version) && ctx.held.versionsOf(item).includes(version),
+    source: item.extras?.source || null,
+  };
+};
 
 /**
  * The dialog of Install an older version: one select of the versions the
@@ -166,9 +215,11 @@ const fetchEntryOf = ({ item, ctx, state, newest, version, t }) => {
 
 const menuOf = ({ item, ctx, state, newest, held, version, t, onOlder }) => {
   const own = ctx.held.entriesOf ? ctx.held.entriesOf(item) : NO_ENTRIES;
+  const create = createEntryOf(item, ctx, t);
   const fetch = fetchEntryOf({ item, ctx, state, newest, version, t });
   return {
     fetch: [
+      ...(create ? [create] : []),
       ...(fetch ? [fetch] : []),
       ...(olderVersionsOf(item, version, held).length > 0
         ? [
@@ -186,17 +237,22 @@ const menuOf = ({ item, ctx, state, newest, held, version, t, onOlder }) => {
   };
 };
 
-const MenuEntry = ({ entry, busy }) => (
-  <Dropdown.Item
-    as="button"
-    type="button"
-    data-action={entry.action}
-    onClick={entry.onClick}
-    disabled={busy}
-  >
-    {entry.label}
-  </Dropdown.Item>
-);
+const MenuEntry = ({ entry, busy }) =>
+  entry.to ? (
+    <Dropdown.Item as={Link} to={entry.to} data-action={entry.action} disabled={busy}>
+      {entry.label}
+    </Dropdown.Item>
+  ) : (
+    <Dropdown.Item
+      as="button"
+      type="button"
+      data-action={entry.action}
+      onClick={entry.onClick}
+      disabled={busy}
+    >
+      {entry.label}
+    </Dropdown.Item>
+  );
 
 MenuEntry.propTypes = {
   entry: entryShape.isRequired,
@@ -268,27 +324,40 @@ SplitControl.propTypes = {
  * while the host holds none of the item, at full colour with a small
  * exclamation dot as the Update press while it holds an older version,
  * and greyed and disabled while it holds the newest; beside it the
- * chevron opening the menu headed by the newest version: Install while
+ * chevron opening the menu headed by the newest version: Create a
+ * machine on an item the host holds while the host creates machines,
+ * the create wizard's door with the newest held version, Install while
  * missing or Update to while behind, Install an older version while the
  * host lacks one under the newest, then the page's own fetch entries of
  * `ctx.held.entriesOf(item)`, a divider, and its delete entries. A press
  * hands the item and the version to `ctx.held.onFetch`, held while
  * `ctx.held.busy`. An item whose source lists no version draws the glyph
- * greyed, titled no version listed, and the chevron over the page's own
- * entries alone, because the agent's pull refuses an empty version.
+ * greyed, titled no version listed, and the chevron over Create a
+ * machine and the page's own entries alone, because the agent's pull
+ * refuses an empty version. The control of the item `ctx.handed` names
+ * hands that item to `ctx.onHanded` as it draws, so the page draws the
+ * hand-off's confirmation over the listing.
  */
 export const HeldControl = ({ item, ctx }) => {
   const { t } = useTranslation();
   const [picking, setPicking] = useState(false);
   const { state, newest, held } = heldStateOf(item, ctx);
   const version = fetchVersionOf(item, ctx);
+  const handedHere = isHanded(item, ctx);
+  const { onHanded } = ctx;
+  useEffect(() => {
+    if (handedHere && onHanded) {
+      onHanded(item);
+    }
+  }, [handedHere, onHanded, item]);
   if (!version) {
     const own = ctx.held.entriesOf ? ctx.held.entriesOf(item) : NO_ENTRIES;
+    const create = createEntryOf(item, ctx, t);
     return (
       <SplitControl
         glyph={<HeldGlyph title={t(WORDS.noVersion)} note="no-version" />}
         header={t(WORDS.noVersion)}
-        menu={own}
+        menu={{ fetch: [...(create ? [create] : []), ...own.fetch], remove: own.remove }}
         busy={ctx.held.busy}
       />
     );
@@ -353,6 +422,83 @@ export const HeldControl = ({ item, ctx }) => {
 HeldControl.propTypes = {
   item: itemShape.isRequired,
   ctx: heldCtxShape.isRequired,
+};
+
+const rowShape = PropTypes.shape({
+  key: PropTypes.string.isRequired,
+  label: PropTypes.node.isRequired,
+  value: PropTypes.node,
+});
+
+/**
+ * The words a hand-off's confirmation names a source by: its name, and
+ * its URL muted beside the name while the two differ.
+ */
+export const SourceWords = ({ words }) => (
+  <>
+    {words.name}
+    {words.url && words.url !== words.name ? (
+      <span className="text-body-secondary ms-2 text-break">{words.url}</span>
+    ) : null}
+  </>
+);
+
+SourceWords.propTypes = {
+  words: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    url: PropTypes.string.isRequired,
+  }).isRequired,
+};
+
+/**
+ * The confirmation a Deploy hand-off opens over a host's listing: the
+ * sentence asking to install `name` `version` from `source`, the `rows`
+ * naming what is handed, and Install and Cancel; while `held` the
+ * sentence says the host already holds that version and no Install is
+ * drawn. Install hands to `onInstall` and Cancel and the close to
+ * `onClose`. The dialog carries `handoff-install` as `data-dialog`.
+ */
+export const HandoffInstallDialog = ({
+  rows,
+  name,
+  version,
+  source,
+  held,
+  busy,
+  onInstall,
+  onClose,
+}) => {
+  const { t } = useTranslation();
+  return (
+    <ToolFormDialog
+      dialog="handoff-install"
+      title={t('hosts.manage.held.handoffTitle', { name, version })}
+      submitKey={held ? '' : 'host.provisionerManagement.install'}
+      busy={busy}
+      onClose={onClose}
+      onSubmit={onInstall}
+    >
+      <p className="mb-3" data-note={held ? 'handoff-held' : 'handoff-install'}>
+        {t(held ? 'hosts.manage.held.handoffHeld' : 'hosts.manage.held.handoffInstall', {
+          name,
+          version,
+          source,
+        })}
+      </p>
+      <RecordRows rows={rows} className="mb-0" />
+    </ToolFormDialog>
+  );
+};
+
+HandoffInstallDialog.propTypes = {
+  rows: PropTypes.arrayOf(rowShape).isRequired,
+  name: PropTypes.string.isRequired,
+  version: PropTypes.string.isRequired,
+  source: PropTypes.string.isRequired,
+  held: PropTypes.bool.isRequired,
+  busy: PropTypes.bool.isRequired,
+  onInstall: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 /**

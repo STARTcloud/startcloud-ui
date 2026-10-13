@@ -1,43 +1,42 @@
-import { AttachAddon } from '@xterm/addon-attach';
-import { FitAddon } from '@xterm/addon-fit';
 import PropTypes from 'prop-types';
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaPaste, FaShuffle, FaStop } from 'react-icons/fa6';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
-import { sshSocketPath, stopSshSession } from '../api/consoleAPI';
-import { socketUrl, wsTicket } from '../api/terminal';
-import { useXTerm } from '../hooks/useXTerm';
+import { useConsoleActions } from '../hooks/useOpenConsole';
+import { consolesHeld } from '../hooks/useTerminal';
 import { sshAddressesOf } from '../utils/consoles';
+import { pasteHeld } from '../utils/heldTerminals';
 import { isServerRole } from '../utils/hosts';
-import { loadTerminalPrefs } from '../utils/terminalPrefs';
+import { consoleKeyOf } from '../utils/terminals';
 
 import { startConsole, startSshPreview } from './consoleActions';
 import ConsoleLaunchers from './ConsoleLaunchers';
 import ConsoleSwitchButtons from './ConsoleSwitchButtons';
+import SendToFooterButton from './SendToFooterButton';
+import ShellTerminal from './ShellTerminal';
 
 const PREFIX = 'console.sshConsoleDisplay';
 
 const Busy = () => <span className="spinner-border spinner-border-sm" aria-hidden="true" />;
 
-const stopQuietly = (status, id, sessionId) =>
-  stopSshSession(status, id, sessionId).catch(error => {
-    log.api.warn('Error stopping the SSH session', { error: error.message });
-  });
-
 /**
  * The SSH console, hyperweaver-ui's third console beside VNC and zlogin
  * in the same section with the same header: Paste, the next-address
  * button of a multi-homed guest, the switch-or-start buttons of the
- * other consoles the host's row lists, the launchers of a host that
- * lists `host-launchers`, the native RDP client, the working directory
- * and the SFTP handler, and Stop SSH. The shell is an xterm attached to
- * `ssh/{sessionId}` at the path the role fixes, the socket opened with
- * a ticket bound to the machine, every fit sending the PTY its size as a
- * JSON `resize` frame; the session row comes from the start button's
- * `POST machines/{name}/ssh/start`.
+ * other consoles the host's row lists, Send to footer, the launchers of
+ * a host that lists `host-launchers`, the native RDP client, the working
+ * directory and the SFTP handler, and Stop SSH. The shell is the
+ * terminal the console store holds for the session, one xterm attached
+ * to `ssh/{sessionId}` at the path the role fixes, the socket opened
+ * with a ticket bound to the machine, every fit sending the PTY its
+ * size, held outside the page so Send to footer takes the socket with
+ * it; the session comes from the start button's
+ * `POST machines/{name}/ssh/start`, and the store takes the console as
+ * placed on this page the moment the session is known. Stop SSH stops
+ * the session and lets the terminal go.
  */
 const SshConsoleDisplay = ({
   id,
@@ -57,14 +56,15 @@ const SshConsoleDisplay = ({
   hasVnc,
   hasZlogin,
   hasRdp,
+  sendToFooter = null,
 }) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const { instance, ref } = useXTerm();
-  const wsRef = useRef(null);
+  const consoles = useConsoleActions();
   const isDirect = !isServerRole(status);
   const session = machineDetails.ssh_session;
   const sessionId = session?.id || '';
+  const consoleKey = consoleKeyOf({ kind: 'ssh', id, name });
   const starters = {
     status,
     id,
@@ -86,68 +86,22 @@ const SshConsoleDisplay = ({
     });
 
   useEffect(() => {
-    if (!instance || !sessionId) {
-      return undefined;
+    if (!sessionId || consolesHeld().some(entry => entry.key === consoleKey)) {
+      return;
     }
-    let cancelled = false;
-    let attachAddon = null;
-    Object.assign(instance.options, loadTerminalPrefs());
-    const fitAddon = new FitAddon();
-    instance.loadAddon(fitAddon);
-    instance.open(ref.current);
-    fitAddon.fit();
-
-    const sendResize = () => {
-      if (wsRef.current?.readyState === WebSocket.OPEN && instance.cols && instance.rows) {
-        wsRef.current.send(
-          JSON.stringify({ type: 'resize', cols: instance.cols, rows: instance.rows })
-        );
-      }
-    };
-    const resizeListener = instance.onResize(sendResize);
-    const handleWindowResize = () => fitAddon.fit();
-    window.addEventListener('resize', handleWindowResize);
-
-    wsTicket(status, id, name)
-      .then(({ ticket }) => {
-        if (cancelled) {
-          return;
-        }
-        const ws = new WebSocket(socketUrl(status, id, sshSocketPath(sessionId), ticket));
-        wsRef.current = ws;
-        ws.onopen = () => {
-          attachAddon = new AttachAddon(ws);
-          instance.loadAddon(attachAddon);
-          fitAddon.fit();
-          sendResize();
-          instance.focus();
-        };
-        ws.onclose = () => {
-          instance.writeln(`\r\n${t('console.sshConsoleDisplay.connectionClosed')}`);
-        };
-      })
+    consoles
+      .adopt({ kind: 'ssh', id, name, server, session, placed: 'page', accepts: false })
       .catch(error => {
-        log.api.error('Error opening the SSH socket', { error: error.message });
-        instance.writeln(`\r\n${t('console.sshConsoleDisplay.connectionClosed')}`);
+        log.api.error('Error holding the SSH terminal', { error: error.message });
       });
-
-    return () => {
-      cancelled = true;
-      resizeListener.dispose();
-      window.removeEventListener('resize', handleWindowResize);
-      attachAddon?.dispose();
-      wsRef.current?.close();
-      wsRef.current = null;
-    };
-  }, [instance, ref, status, id, name, sessionId, t]);
+  }, [sessionId, consoleKey, id, name, server, session, consoles]);
 
   const handlePaste = async () => {
     try {
-      if (navigator.clipboard?.readText && instance) {
+      if (navigator.clipboard?.readText) {
         const text = await navigator.clipboard.readText();
         if (text) {
-          instance.paste(text);
-          instance.focus();
+          pasteHeld(consoleKey, text);
         }
       }
     } catch (error) {
@@ -156,9 +110,7 @@ const SshConsoleDisplay = ({
   };
 
   const handleStop = async () => {
-    if (sessionId) {
-      await stopQuietly(status, id, sessionId);
-    }
+    await consoles.close(consoleKey);
     setMachineDetails(prev => ({ ...prev, ssh_session: null }));
     setActiveConsoleType(hasVnc ? 'vnc' : 'zlogin');
   };
@@ -166,9 +118,7 @@ const SshConsoleDisplay = ({
   const { ipCandidates, ipIndex, nextIndex } = sshAddressesOf(session);
 
   const handleNextAddress = async () => {
-    if (sessionId) {
-      await stopQuietly(status, id, sessionId);
-    }
+    await consoles.close(consoleKey);
     setMachineDetails(prev => ({ ...prev, ssh_session: null }));
     await startSshPreview({ ...starters, ipIndex: nextIndex });
   };
@@ -236,6 +186,9 @@ const SshConsoleDisplay = ({
             onSwitch={setActiveConsoleType}
             onStart={start}
           />
+          {sendToFooter ? (
+            <SendToFooterButton onSend={() => sendToFooter('ssh')} disabled={loading} />
+          ) : null}
           <ConsoleLaunchers
             prefix={PREFIX}
             server={server}
@@ -255,7 +208,7 @@ const SshConsoleDisplay = ({
         </div>
       </div>
       <div className="hw-console-content">
-        <div ref={ref} className="hw-zone-shell-terminal hw-console-canvas" data-viewer="ssh" />
+        <ShellTerminal consoleKey={consoleKey} kind="ssh" className="hw-console-canvas" />
       </div>
     </div>
   );
@@ -279,6 +232,7 @@ SshConsoleDisplay.propTypes = {
   hasVnc: PropTypes.bool.isRequired,
   hasZlogin: PropTypes.bool.isRequired,
   hasRdp: PropTypes.bool.isRequired,
+  sendToFooter: PropTypes.func,
 };
 
 export default memo(SshConsoleDisplay);

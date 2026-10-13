@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaBan, FaDownload, FaListCheck, FaUpload } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import CopyButton from '../../../components/common/CopyButton';
-import RecordRows from '../../../components/common/RecordRows';
+import SectionCard from '../../../components/common/SectionCard';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useCssVar } from '../../../hooks/useCssVar';
 import { useEventStream } from '../../../hooks/useEventStream';
@@ -27,7 +27,11 @@ import {
   transferProgressLine,
 } from '../utils/tasks';
 
+import { DialogTable } from './ManageTable';
+
 const SUBTASK_LIMIT = 100;
+
+const TASK_ROW = [{ key: 'task' }];
 
 const PRIORITY_BADGES = {
   critical: { labelKey: 'footer.task.priorityCritical', tone: 'text-bg-danger' },
@@ -113,47 +117,24 @@ PriorityBadge.propTypes = {
   priority: PropTypes.number,
 };
 
-const optionalRows = (row, t) =>
+const fact = (key, labelKey, text, value = text, kind = 'text') => ({
+  key,
+  labelKey,
+  kind,
+  text: String(text ?? ''),
+  value,
+});
+
+const optionalFacts = row =>
   [
     ['error', 'footer.task.labelError', row.error_message, 'text-danger'],
     ['dependsOn', 'footer.task.labelDependsOn', row.depends_on, ''],
     ['parent', 'footer.task.labelParentTask', row.parent_task_id, ''],
   ]
     .filter(([, , value]) => Boolean(value))
-    .map(([key, labelKey, value, tone]) => ({
-      key,
-      label: t(labelKey),
-      value: <span className={tone || undefined}>{value}</span>,
-    }));
-
-const factRows = (row, t) => [
-  { key: 'id', label: t('footer.task.labelId'), value: row.id },
-  {
-    key: 'operation',
-    label: t('footer.task.labelOperation'),
-    value: taskOperationLabel(row.operation, t),
-  },
-  { key: 'target', label: t('footer.task.labelTarget'), value: taskMachineOf(row) },
-  {
-    key: 'status',
-    label: t('footer.task.labelStatus'),
-    value: <StatusBadge status={row.status} />,
-  },
-  {
-    key: 'priority',
-    label: t('footer.task.labelPriority'),
-    value: <PriorityBadge priority={row.priority} />,
-  },
-  { key: 'createdBy', label: t('footer.task.labelCreatedBy'), value: row.created_by || '-' },
-  { key: 'created', label: t('footer.task.labelCreated'), value: formatTaskDate(row.created_at) },
-  { key: 'started', label: t('footer.task.labelStarted'), value: formatTaskDate(row.started_at) },
-  {
-    key: 'completed',
-    label: t('footer.task.labelCompleted'),
-    value: formatTaskDate(row.completed_at),
-  },
-  ...optionalRows(row, t),
-];
+    .map(([key, labelKey, value, tone]) =>
+      fact(key, labelKey, value, <span className={tone || undefined}>{value}</span>)
+    );
 
 const GuestStep = ({ info }) => {
   const { t } = useTranslation();
@@ -161,11 +142,11 @@ const GuestStep = ({ info }) => {
     ? ` — ${info.ansible_percent}% ${t('footer.task.inGuest')}`
     : '';
   return (
-    <p className="text-center small mb-1">
+    <span className="d-block small">
       <FaListCheck className="me-2" />
       {info.message}
       {guest ? <span className="text-body-secondary">{guest}</span> : null}
-    </p>
+    </span>
   );
 };
 
@@ -176,37 +157,105 @@ GuestStep.propTypes = {
   }).isRequired,
 };
 
-const ProgressCard = ({ row }) => {
-  const { t } = useTranslation();
-  const percent = row.progress_percent;
-  if (!percent || percent <= 0) {
-    return null;
-  }
-  const info = taskProgressInfo(row);
-  const transfer = transferProgressLine(row);
+const hasProgress = row => Boolean(row.progress_percent) && row.progress_percent > 0;
+
+const ProgressDetail = ({ info, transfer }) => {
   const TransferIcon = info?.status === 'uploading' ? FaUpload : FaDownload;
   return (
-    <div className="card mb-3">
-      <div className="card-body">
-        <h6 className="fw-bold">{t('footer.task.progress')}</h6>
-        <TaskProgress percent={percent} />
-        <p className="text-center mb-1">{formatPercent(percent)}</p>
-        {transfer ? (
-          <p className="text-center small mb-1">
-            <TransferIcon className="me-2" />
-            {transfer}
-          </p>
-        ) : null}
-        {info?.message ? <GuestStep info={info} /> : null}
-        {info && !info.message && !transfer ? (
-          <pre className="small mt-2 mb-0">{JSON.stringify(info, null, 2)}</pre>
-        ) : null}
-      </div>
-    </div>
+    <>
+      {transfer ? (
+        <span className="d-block small">
+          <TransferIcon className="me-2" />
+          {transfer}
+        </span>
+      ) : null}
+      {info?.message ? <GuestStep info={info} /> : null}
+      {info && !info.message && !transfer ? (
+        <pre className="small mb-0">{JSON.stringify(info, null, 2)}</pre>
+      ) : null}
+    </>
   );
 };
 
-ProgressCard.propTypes = {
+ProgressDetail.propTypes = {
+  info: PropTypes.object,
+  transfer: PropTypes.string.isRequired,
+};
+
+const progressFacts = row => {
+  if (!hasProgress(row)) {
+    return [];
+  }
+  const info = taskProgressInfo(row);
+  const transfer = transferProgressLine(row);
+  const text = transfer || info?.message || (info ? JSON.stringify(info) : '');
+  if (!text) {
+    return [];
+  }
+  const detail = <ProgressDetail info={info} transfer={transfer} />;
+  return [fact('progress', 'footer.task.progress', text, detail)];
+};
+
+const factsOf = (row, t) => [
+  fact('id', 'footer.task.labelId', row.id, row.id, 'name'),
+  fact('operation', 'footer.task.labelOperation', taskOperationLabel(row.operation, t)),
+  fact('target', 'footer.task.labelTarget', taskMachineOf(row)),
+  fact(
+    'status',
+    'footer.task.labelStatus',
+    row.status,
+    <StatusBadge status={row.status} />,
+    'badge'
+  ),
+  fact(
+    'priority',
+    'footer.task.labelPriority',
+    priorityKey(row.priority),
+    <PriorityBadge priority={row.priority} />,
+    'badge'
+  ),
+  fact('createdBy', 'footer.task.labelCreatedBy', row.created_by || '-'),
+  fact('created', 'footer.task.labelCreated', formatTaskDate(row.created_at)),
+  fact('started', 'footer.task.labelStarted', formatTaskDate(row.started_at)),
+  fact('completed', 'footer.task.labelCompleted', formatTaskDate(row.completed_at)),
+  ...progressFacts(row),
+  ...optionalFacts(row),
+];
+
+/**
+ * The columns of the task's details table, one a fact of the task, the
+ * fact's label the header and its value the one cell of the one row, so
+ * the details read across and fold under the row where the dialog is
+ * narrow.
+ *
+ * @param {Object} row - The task
+ * @param {Function} t - The translator
+ * @returns {Array<Object>} The columns
+ */
+const factColumns = (row, t) =>
+  factsOf(row, t).map(entry => ({
+    key: entry.key,
+    kind: entry.kind,
+    labelKey: entry.labelKey,
+    prose: entry.key === 'progress' || entry.key === 'error',
+    value: () => entry.text,
+    render: () => entry.value,
+  }));
+
+const HeaderProgress = ({ row }) => {
+  if (!hasProgress(row)) {
+    return null;
+  }
+  const percent = row.progress_percent;
+  return (
+    <span className="d-flex align-items-center gap-2 flex-grow-1" data-panel="task-progress">
+      <TaskProgress percent={percent} className="flex-grow-1" />
+      <span className="small">{formatPercent(percent)}</span>
+    </span>
+  );
+};
+
+HeaderProgress.propTypes = {
   row: PropTypes.object.isRequired,
 };
 
@@ -389,30 +438,38 @@ const useTaskDetail = ({ status, id, task }) => {
 
 /**
  * The task dialog a row of the tasks table opens, a list dialog of the
- * pages contract: Cancel task while the task is pending or running,
- * behind the typed confirmation, a failed cancel raised as a notice; the
- * task's details; its progress with the transfer line and the guest's
- * step; its metadata; its output in terminal colors with Copy; and its
- * subtasks, each opening a dialog of its own. The row, the output and
- * the subtasks are read once on open, then the output follows the
- * `/tasks/{id}/stream` WebSocket, an `output` frame appended and a
- * `status` frame reading the row and the subtasks once. A stream that
- * closed while the task is still active says so beside Refresh, which
- * reads again and opens a new stream; nothing polls.
+ * pages contract. Its header holds the title, the task's progress bar
+ * with its percent, and Cancel task as a glyph while the task is pending
+ * or running, behind the typed confirmation, a failed cancel raised as a
+ * notice. Its body holds the task's details as one row of the one table,
+ * a column a fact of the task, the transfer line and the guest's step
+ * among them, the columns folding under the row where the dialog is
+ * narrow and spreading as it widens;
+ * its output in terminal colors with Copy; its metadata as a fold under
+ * the output, folded until opened; and its subtasks, each opening a
+ * dialog of its own. The row, the output and the subtasks are read once
+ * on open, then the output follows the `/tasks/{id}/stream` WebSocket,
+ * an `output` frame appended and a `status` frame reading the row and
+ * the subtasks once. A stream that closed while the task is still active
+ * says so beside Refresh, which reads again and opens a new stream;
+ * nothing polls.
  */
 const TaskDialog = ({ status, id, task, onHide }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const notify = useNotify();
   const detail = useTaskDetail({ status, id, task });
   const stream = useTaskStream({ status, id, task, onStatus: detail.readStatus });
   const [child, setChild] = useState(null);
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [metadataFolded, setMetadataFolded] = useState(true);
+  const ctx = useMemo(() => ({ t, language: i18n.language }), [t, i18n.language]);
   const row = detail.row || task;
   const output = stream.frames || detail.output;
   const active = ACTIVE_TASK_STATUSES.includes(row.status);
   const metadata = metadataText(row.metadata);
   const subtaskCount = detail.subtasks.length;
+  const cancelLabel = t(cancelling ? 'footer.task.cancelling' : 'footer.task.cancelTask');
 
   const refresh = () => {
     detail.readAll();
@@ -439,21 +496,24 @@ const TaskDialog = ({ status, id, task, onHide }) => {
           <Modal.Title>
             {t('footer.task.taskTitle')}: {taskOperationLabel(row.operation, t)}
           </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {active ? (
-            <div className="d-flex justify-content-end mb-2">
+          <span className="d-flex align-items-center gap-2 flex-grow-1 ms-3 me-2 task-dialog-tools">
+            <HeaderProgress row={row} />
+            {active ? (
               <button
                 type="button"
-                className="btn btn-sm btn-outline-danger"
+                className="btn btn-sm btn-outline-danger btn-glyph"
+                title={cancelLabel}
+                aria-label={cancelLabel}
+                data-tool="cancel-task"
                 onClick={() => setConfirming(true)}
                 disabled={cancelling}
               >
-                <FaBan className="me-2" />
-                {t(cancelling ? 'footer.task.cancelling' : 'footer.task.cancelTask')}
+                <FaBan aria-hidden="true" />
               </button>
-            </div>
-          ) : null}
+            ) : null}
+          </span>
+        </Modal.Header>
+        <Modal.Body>
           {active && stream.state === 'closed' ? (
             <div className="alert alert-warning py-2 d-flex align-items-center gap-2" role="status">
               <span className="flex-grow-1">{t('footer.task.streamClosed')}</span>
@@ -462,22 +522,27 @@ const TaskDialog = ({ status, id, task, onHide }) => {
               </button>
             </div>
           ) : null}
-          <div className="card mb-3">
-            <div className="card-body">
-              <h6 className="fw-bold">{t('footer.task.details')}</h6>
-              <RecordRows rows={factRows(row, t)} className="mb-0" />
-            </div>
-          </div>
-          <ProgressCard row={row} />
+          <h6 className="fw-bold">{t('footer.task.details')}</h6>
+          <DialogTable
+            name="task-details"
+            columns={factColumns(row, t)}
+            rows={TASK_ROW}
+            rowKey={entry => entry.key}
+            ctx={ctx}
+            emptyText={t('pages.empty')}
+          />
+          <OutputCard output={output} active={active} />
           {metadata ? (
-            <div className="card mb-3">
-              <div className="card-body">
-                <h6 className="fw-bold">{t('footer.task.metadata')}</h6>
+            <div data-panel="task-metadata" data-folded={metadataFolded}>
+              <SectionCard
+                title={t('footer.task.metadata')}
+                folded={metadataFolded}
+                onFold={() => setMetadataFolded(current => !current)}
+              >
                 <pre className="small task-metadata mb-0">{metadata}</pre>
-              </div>
+              </SectionCard>
             </div>
           ) : null}
-          <OutputCard output={output} active={active} />
           <SubtasksCard subtasks={detail.subtasks} onSelect={setChild} />
         </Modal.Body>
       </Modal>

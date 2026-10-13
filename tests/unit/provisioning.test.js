@@ -3,9 +3,12 @@ import { describe, expect, it } from 'vitest';
 import {
   PIPELINE_ACTIONS,
   applyPatch,
+  changedRolesOf,
   clean,
   hookReasonOf,
   invalidNameProblems,
+  manifestRoleOf,
+  manifestRolesOf,
   needsHookConfirmation,
   pipelineOutcome,
   playbookListsOf,
@@ -183,25 +186,63 @@ describe('the variable text', () => {
 });
 
 describe('the roles of a version', () => {
-  it('seeds the roles editor from the manifest and reads the depends_on hints', () => {
-    const version = {
-      metadata: {
-        roles: [
-          { name: 'domino', defaultEnabled: true, depends_on: [] },
-          { name: 'traveler', depends_on: ['domino'] },
-          { name: 'leap', enabled: true },
-          null,
-        ],
-      },
-    };
-    expect(seedRoles(version)).toEqual([
-      { name: 'domino', enabled: true, files: {} },
-      { name: 'traveler', enabled: false, files: {} },
-      { name: 'leap', enabled: true, files: {} },
+  const version = {
+    metadata: {
+      roles: [
+        { name: 'domino', label: 'Domino Server', default_enabled: true, depends_on: [] },
+        { name: 'traveler', default_enabled: false, depends_on: ['domino'] },
+        { name: 'leap', enabled: true },
+        { name: 'networking', defaultEnabled: true },
+        null,
+      ],
+    },
+  };
+
+  it('lists the manifest roles in their order and finds one by its bare name', () => {
+    expect(manifestRolesOf(version).map(role => role.name)).toEqual([
+      'domino',
+      'traveler',
+      'leap',
+      'networking',
     ]);
-    expect(roleHintsOf(version)).toEqual({ domino: [], traveler: ['domino'], leap: [] });
+    expect(manifestRolesOf(null)).toEqual([]);
+    expect(manifestRoleOf(manifestRolesOf(version), 'startcloud.hcl_roles.domino')).toMatchObject({
+      label: 'Domino Server',
+    });
+    expect(manifestRoleOf(manifestRolesOf(version), 'other')).toBeNull();
+  });
+
+  it('seeds the roles editor from default_enabled alone, in manifest order, with no file and no variable', () => {
+    expect(seedRoles(version)).toEqual([
+      { name: 'domino', enabled: true, files: {}, vars: {} },
+      { name: 'traveler', enabled: false, files: {}, vars: {} },
+      { name: 'leap', enabled: false, files: {}, vars: {} },
+      { name: 'networking', enabled: false, files: {}, vars: {} },
+    ]);
+    expect(roleHintsOf(version)).toEqual({
+      domino: [],
+      traveler: ['domino'],
+      leap: [],
+      networking: [],
+    });
     expect(seedRoles(null)).toEqual([]);
     expect(roleHintsOf({ metadata: {} })).toBeNull();
+  });
+
+  it('names the rows whose switch differs from the provisioner default, a row without enabled reading as on', () => {
+    const manifest = manifestRolesOf(version);
+    expect(
+      changedRolesOf(
+        [
+          { name: 'domino', enabled: false },
+          { name: 'startcloud.hcl_roles.traveler' },
+          { name: 'leap', enabled: false },
+          { name: 'custom.role', enabled: true },
+        ],
+        manifest
+      ).map(row => row.name)
+    ).toEqual(['domino', 'startcloud.hcl_roles.traveler']);
+    expect(changedRolesOf([{ name: 'domino', enabled: true }], manifest)).toEqual([]);
   });
 });
 

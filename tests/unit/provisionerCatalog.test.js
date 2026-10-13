@@ -50,6 +50,8 @@ const {
   HeldControl,
   VersionHeld,
   addingOf,
+  createEntryOf,
+  handoffInstallOf,
   heldDeployColumn,
   heldProvisionerCollection,
   heldStatusColumn,
@@ -211,6 +213,45 @@ describe('the host catalog install', () => {
     expect(heldDeployColumn.value(item, ctxOf([]))).toBe('');
   });
 
+  it('offers Create a machine on a held item while the host creates, the wizard door with the newest held version, and nothing otherwise', () => {
+    const item = itemOf();
+    const t = key => key;
+    const createRouteOf = (entry, version) =>
+      `/hosts/1?create=machine&p=${entry.name}&v=${version}`;
+    const creating = held => ctxOf(held, { creates: true, createRouteOf });
+    expect(createEntryOf(item, creating(['0.1.26', '0.1.27']), t)).toEqual({
+      key: 'create',
+      action: 'held-create',
+      label: 'hosts.manage.held.createMachine',
+      to: '/hosts/1?create=machine&p=startcloud&v=0.1.27',
+    });
+    expect(createEntryOf(item, creating([]), t)).toBeNull();
+    expect(createEntryOf(item, ctxOf(['0.1.27'], { creates: false, createRouteOf }), t)).toBeNull();
+    expect(createEntryOf(item, ctxOf(['0.1.27'], { creates: true }), t)).toBeNull();
+  });
+
+  it('reads the hand-off confirmation of the handed item: the handed version while listed, the newest otherwise, whether the host holds it and the source it came from', () => {
+    const source = { key: 'startcloud', url: 'https://c/catalog.json' };
+    const item = { ...itemOf(), extras: { ...itemOf().extras, source } };
+    const handedCtx = (held, version) => ({
+      ...ctxOf(held),
+      handed: { name: 'startcloud', version },
+    });
+    expect(handoffInstallOf(item, handedCtx([], '0.1.28'))).toEqual({
+      version: '0.1.28',
+      held: false,
+      source,
+    });
+    expect(handoffInstallOf(item, handedCtx(['0.1.28'], '0.1.28')).held).toBe(true);
+    expect(handoffInstallOf(item, handedCtx(['0.1.27'], '9.9.9')).version).toBe('0.1.28');
+    expect(handoffInstallOf(itemOf(), handedCtx([], '0.1.28')).source).toBeNull();
+    expect(handoffInstallOf({ ...item, versions: [] }, handedCtx([], ''))).toEqual({
+      version: '',
+      held: false,
+      source,
+    });
+  });
+
   it('reads Add as the held group off and flips the group off and back on Installed', () => {
     expect(addingOf({ held: new Set(['held']) })).toBe(false);
     expect(addingOf({ held: new Set() })).toBe(true);
@@ -259,6 +300,34 @@ describe('hostCatalogAdapter', () => {
       version: '0.3.0',
       createdAt: '2026-09-26',
       providers: [{ name: 'virtualbox' }],
+    });
+  });
+
+  it('draws a private entry of a folded document under the organization it carries, with its uuid and the source it came from', async () => {
+    fetchCatalog.mockImplementationOnce(() =>
+      Promise.resolve({
+        provisioners: [
+          {
+            name: 'moonshine_portal',
+            repo: 'moonshine/moonshine_portal',
+            description: 'The Moonshine portal',
+            versions: [{ version: '1.4.0', released_at: '2026-09-20', artifacts: [] }],
+            organization: { uuid: '0d6b7e2a-3333-4c0a-9a1e-000000000002', name: 'Moonshine' },
+          },
+        ],
+      })
+    );
+    const items = await hostCatalogAdapter({
+      status: {},
+      id: '1',
+      sources: [{ id: 'main', url: 'https://c/catalog.json' }],
+    }).listAll();
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      id: 'Moonshine/moonshine_portal',
+      isPublic: false,
+      organization: { name: 'Moonshine', uuid: '0d6b7e2a-3333-4c0a-9a1e-000000000002' },
+      extras: { tier: 'unrated', source: { key: 'main', url: 'https://c/catalog.json' } },
     });
   });
 

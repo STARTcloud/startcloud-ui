@@ -1,49 +1,44 @@
 import { api } from './provisioners';
 
-let publicPromise = null;
-const privatePromises = new Map();
+let catalogPromise = null;
 let memberships = [];
+let personKey = '';
 
-export const setMemberships = list => {
+/**
+ * The person's memberships, the logos and descriptions a private entry's
+ * organization draws with, and the person the session holds; another
+ * person drops the cached catalog read, because the folded document the
+ * worker answers follows the token, while a session whose memberships
+ * arrive after its restore keeps the one read.
+ *
+ * @param {Array<Object>} list - The session's organizations
+ * @param {string} person - The session's user id, empty for none
+ */
+export const setMemberships = (list, person) => {
   memberships = list;
-  privatePromises.clear();
+  if (person !== personKey) {
+    personKey = person;
+    catalogPromise = null;
+  }
 };
 
 export const resetCatalogCache = () => {
-  publicPromise = null;
-  privatePromises.clear();
+  catalogPromise = null;
 };
 
 const membershipFor = name => memberships.find(org => org.name === name) || null;
 
-const fetchPublic = () => {
-  publicPromise ||= Promise.all([
+const sameUuid = (a, b) => String(a || '').toLowerCase() === String(b || '').toLowerCase();
+
+const membershipByUuid = uuid => memberships.find(org => sameUuid(org.uuid, uuid)) || null;
+
+const fetchCatalog = () => {
+  catalogPromise ||= Promise.all([
     api.catalog.public(),
     api.catalog.health().catch(() => null),
   ]).then(([catalog, health]) => ({ catalog, health }));
-  return publicPromise;
+  return catalogPromise;
 };
-
-const fetchOrg = uuid => {
-  if (!privatePromises.has(uuid)) {
-    privatePromises.set(
-      uuid,
-      Promise.all([
-        api.catalog.privateCatalog(uuid),
-        api.catalog.privateHealth(uuid).catch(() => null),
-      ]).then(([catalog, health]) => ({ catalog, health }))
-    );
-  }
-  return privatePromises.get(uuid);
-};
-
-const NOTICES = {
-  'errors.accessDenied': { type: 'warning', key: 'provisioners.errors.accessDenied' },
-};
-
-const noticeKeyOf = error => (NOTICES[error.messageKey] ? error.messageKey : '');
-
-const noticeFor = key => NOTICES[key];
 
 const ownerOf = repo => repo.split('/')[0];
 const ownerLogo = owner => `https://github.com/${owner}.png?size=64`;
@@ -100,9 +95,33 @@ const toVersion = (entry, health) => {
   };
 };
 
-const toItem = (provisioner, healthEntry, organization, isPrivate) => {
+const ownerOrganizationOf = provisioner => {
+  const owner = ownerOf(provisioner.repo);
+  return { name: owner, logo: ownerLogo(owner) };
+};
+
+const privateOrganizationOf = entry => {
+  const membership = membershipByUuid(entry.uuid);
+  return {
+    name: entry.name,
+    uuid: entry.uuid,
+    logo: membership?.logo || ownerLogo(entry.name),
+    description: membership?.description || '',
+  };
+};
+
+const isPrivateEntry = provisioner =>
+  Boolean(provisioner.organization) &&
+  typeof provisioner.organization === 'object' &&
+  typeof provisioner.organization.uuid === 'string';
+
+const toItem = (provisioner, healthEntry) => {
   const health = healthEntry?.health || {};
   const presentation = healthEntry?.presentation || {};
+  const isPrivate = isPrivateEntry(provisioner);
+  const organization = isPrivate
+    ? privateOrganizationOf(provisioner.organization)
+    : ownerOrganizationOf(provisioner);
   return {
     id: `${organization.name}/${provisioner.name}`,
     organization,
@@ -137,88 +156,25 @@ const toItem = (provisioner, healthEntry, organization, isPrivate) => {
   };
 };
 
-const itemsFrom = ({ catalog, health }, organizationFor, isPrivate) =>
-  (catalog?.provisioners || []).map(provisioner =>
-    toItem(
-      provisioner,
-      health?.provisioners?.[provisioner.name],
-      organizationFor(provisioner),
-      isPrivate
-    )
-  );
-
 /**
- * The items of one public catalog document and its health document, each
- * family under the owner of its repository as its organization, the shape
- * every provisioners listing draws.
+ * The items of one catalog document and its health document, the shape
+ * every provisioners listing draws: a provisioner carrying `organization`
+ * a private item of that organization, its uuid and name from the entry,
+ * its logo and description from the matching membership where one is held
+ * and the owner logo otherwise; a provisioner carrying none a public item
+ * under the owner of its repository.
  *
  * @param {{ catalog: Object|null, health: Object|null }} data - The catalog and its health
  * @returns {Array<Object>} The items
  */
-export const publicItemsFrom = data =>
-  itemsFrom(
-    data,
-    provisioner => {
-      const owner = ownerOf(provisioner.repo);
-      return { name: owner, logo: ownerLogo(owner) };
-    },
-    false
+export const catalogItemsFrom = ({ catalog, health }) =>
+  (catalog?.provisioners || []).map(provisioner =>
+    toItem(provisioner, health?.provisioners?.[provisioner.name])
   );
 
-const publicItems = async () => publicItemsFrom(await fetchPublic());
+const listAll = async () => catalogItemsFrom(await fetchCatalog());
 
-const organizationOf = (org, membership) =>
-  membership
-    ? {
-        name: org,
-        uuid: membership.uuid,
-        logo: membership.logo || ownerLogo(org),
-        description: membership.description || '',
-      }
-    : { name: org, logo: ownerLogo(org) };
-
-const privateItemsFor = async membership => {
-  try {
-    const data = await fetchOrg(membership.uuid);
-    const organization = organizationOf(membership.name, membership);
-    return { items: itemsFrom(data, () => organization, true), noticeKey: '' };
-  } catch (error) {
-    return { items: [], noticeKey: noticeKeyOf(error) };
-  }
-};
-
-const listAll = async () => {
-  const [ownItems, privateResults] = await Promise.all([
-    publicItems(),
-    Promise.all(memberships.map(privateItemsFor)),
-  ]);
-  const items = [...privateResults.flatMap(result => result.items), ...ownItems];
-  const failed = privateResults.find(result => result.noticeKey);
-  if (failed) {
-    items.notice = noticeFor(failed.noticeKey);
-  }
-  return items;
-};
-
-const listOrg = async org => {
-  const ownItems = (await publicItems()).filter(item => item.organization.name === org);
-  const membership = membershipFor(org);
-  if (!membership) {
-    return ownItems;
-  }
-  let data;
-  try {
-    data = await fetchOrg(membership.uuid);
-  } catch (error) {
-    const noticeKey = noticeKeyOf(error);
-    if (noticeKey) {
-      ownItems.notice = noticeFor(noticeKey);
-    }
-    return ownItems;
-  }
-  const organization = organizationOf(org, membership);
-  return [...itemsFrom(data, () => organization, true), ...ownItems];
-};
+const listOrg = async org => (await listAll()).filter(item => item.organization.name === org);
 
 const getItem = async (org, name) => {
   const items = await listOrg(org);
@@ -242,6 +198,16 @@ const getProvider = async (org, name, version, provider) => {
   const entry = await getVersion(org, name, version);
   return { name: provider, description: '', architectures: entry.artifacts };
 };
+
+const organizationOf = (org, membership) =>
+  membership
+    ? {
+        name: org,
+        uuid: membership.uuid,
+        logo: membership.logo || ownerLogo(org),
+        description: membership.description || '',
+      }
+    : { name: org, logo: ownerLogo(org) };
 
 const getOrganization = org => Promise.resolve(organizationOf(org, membershipFor(org)));
 

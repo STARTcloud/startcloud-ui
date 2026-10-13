@@ -341,7 +341,7 @@ Then('the open dialog draws the field {string}', async ({ page }, id) => {
 });
 
 Then('the open dialog draws no field {string}', async ({ page }, id) => {
-  await expect(dialogOf(page).locator('.modal-footer')).toBeVisible();
+  await expect(dialogOf(page).locator('[data-dialog]').first()).toBeVisible();
   await expect(dialogOf(page).locator(`[id="${id}"]`)).toHaveCount(0);
 });
 

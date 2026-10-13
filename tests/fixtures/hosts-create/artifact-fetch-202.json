@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "task_id": "c2000000-0000-4000-8000-000000000041",
+  "operation": "artifact_download",
+  "status": "pending",
+  "message": "Download task queued",
+  "artifact_id": "art-0102",
+  "filename": "Domino_14.5_Linux_English.tar",
+  "source": "boxvault"
+}

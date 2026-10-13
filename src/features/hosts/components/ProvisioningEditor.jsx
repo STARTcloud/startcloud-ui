@@ -1,20 +1,26 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCheck } from 'react-icons/fa6';
 
 import TabStrip from '../../../components/common/TabStrip';
+import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import {
+  fetchArtifacts,
+  fetchMissingArtifact,
   fetchProvisionerVersion,
   fetchProvisioners,
   saveProvisionerDocument,
 } from '../api/provisioning';
+import { useTaskFollow } from '../hooks/useHostManage';
 import { useHostRow } from '../hooks/useHostRow';
 import { hostHasFeature } from '../utils/capabilities';
+import { queuedTaskOf } from '../utils/machineTools';
 import {
   clean,
   invalidNameProblems,
+  manifestRolesOf,
   playbookListsOf,
   roleHintsOf,
   stripTag,
@@ -44,7 +50,9 @@ const TABS = [
 
 const JSON_ROWS = 16;
 
-const NO_VERSION = { specs: null, hints: null, candidates: null };
+const NO_VERSION = { specs: null, hints: null, manifest: [], candidates: null };
+
+const NO_DOWNLOADS = {};
 
 const jsonOf = doc => JSON.stringify(clean(doc), null, 2);
 
@@ -62,11 +70,27 @@ const withKey = (map, key, value) => {
 
 const listOf = value => (Array.isArray(value) ? value : []);
 
-const useRegistry = ({ status, id, offered, provName, provVersion }) => {
+const useRegistry = ({ status, id, offered, cached, provName, provVersion }) => {
   const [packages, setPackages] = useState({ key: '', rows: null });
   const [version, setVersion] = useState({ key: '', ...NO_VERSION });
+  const [artifacts, setArtifacts] = useState({ key: '', rows: null });
   const packagesKey = offered ? String(id) : '';
   const versionKey = offered && provName && provVersion ? `${id}|${provName}|${provVersion}` : '';
+  const artifactsKey = cached ? String(id) : '';
+
+  const loadArtifacts = useCallback(() => {
+    if (!artifactsKey) {
+      return Promise.resolve(null);
+    }
+    return fetchArtifacts(status, id).then(
+      answer => setArtifacts({ key: artifactsKey, rows: listOf(answer?.artifacts) }),
+      () => setArtifacts({ key: artifactsKey, rows: null })
+    );
+  }, [status, id, artifactsKey]);
+
+  useEffect(() => {
+    loadArtifacts();
+  }, [loadArtifacts]);
 
   useEffect(() => {
     if (!packagesKey) {
@@ -100,7 +124,8 @@ const useRegistry = ({ status, id, offered, provName, provVersion }) => {
           setVersion({
             key: versionKey,
             specs: answer?.role_specs?.roles || null,
-            hints: roleHintsOf(answer),
+            hints: roleHintsOf(answer?.metadata),
+            manifest: manifestRolesOf(answer?.metadata),
             candidates: Array.isArray(answer?.playbook_candidates)
               ? answer.playbook_candidates
               : null,
@@ -122,11 +147,69 @@ const useRegistry = ({ status, id, offered, provName, provVersion }) => {
     packages: packagesKey && packages.key === packagesKey ? packages.rows : null,
     specs: held.specs,
     hints: held.hints,
+    manifest: held.manifest,
     candidates: held.candidates,
+    artifacts: artifactsKey && artifacts.key === artifactsKey ? artifacts.rows : null,
+    loadArtifacts,
   };
 };
 
-const EditorTab = ({ tab, doc, busy, registry, edit }) => {
+const useDownloads = ({ status, id, onLanded }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [queued, setQueued] = useState(NO_DOWNLOADS);
+  const follow = useTaskFollow({
+    id,
+    onEnd: row => {
+      setQueued(current =>
+        Object.fromEntries(
+          Object.entries(current).filter(([, entry]) => String(entry.task_id) !== String(row.id))
+        )
+      );
+      if (row.status === 'completed') {
+        onLanded();
+        return;
+      }
+      notify(
+        'danger',
+        t('provisioning.provisioningRolesTab.downloadFailed', {
+          message: row.error_message || row.status,
+        })
+      );
+    },
+  });
+  const fetch = useCallback(
+    (artifact, key) =>
+      fetchMissingArtifact(status, id, artifact.id).then(
+        answer => {
+          const row = queuedTaskOf(answer, '');
+          setQueued(current => ({
+            ...current,
+            [key]: {
+              task_id: String(row?.id || answer?.task_id || ''),
+              artifact_id: String(artifact.id),
+            },
+          }));
+          follow(answer);
+          notify(
+            'success',
+            t('provisioning.provisioningRolesTab.downloadQueuedNotice', {
+              filename: artifact.filename,
+            })
+          );
+        },
+        error =>
+          notify(
+            'danger',
+            t('provisioning.provisioningRolesTab.downloadFailed', { message: error.message })
+          )
+      ),
+    [status, id, follow, notify, t]
+  );
+  return { queued, fetch };
+};
+
+const EditorTab = ({ tab, doc, busy, registry, edit, downloads }) => {
   const { t } = useTranslation();
   const provName = typeof doc.provisioner_name === 'string' ? doc.provisioner_name : undefined;
   const provVersion =
@@ -190,6 +273,10 @@ const EditorTab = ({ tab, doc, busy, registry, edit }) => {
         packageName={provName}
         packageVersion={provVersion}
         onPackagePicked={edit.pickPackage}
+        manifest={registry.manifest}
+        artifacts={registry.artifacts}
+        queued={downloads.queued}
+        onFetch={downloads.fetch}
       />
     );
   }
@@ -223,13 +310,19 @@ EditorTab.propTypes = {
     packages: PropTypes.array,
     specs: PropTypes.object,
     hints: PropTypes.object,
+    manifest: PropTypes.array.isRequired,
     candidates: PropTypes.array,
+    artifacts: PropTypes.array,
   }).isRequired,
   edit: PropTypes.shape({
     update: PropTypes.func.isRequired,
     provisioning: PropTypes.func.isRequired,
     settings: PropTypes.func.isRequired,
     pickPackage: PropTypes.func.isRequired,
+  }).isRequired,
+  downloads: PropTypes.shape({
+    queued: PropTypes.object.isRequired,
+    fetch: PropTypes.func.isRequired,
   }).isRequired,
 };
 
@@ -270,12 +363,16 @@ JsonTab.propTypes = {
  * editor: the stored document, a Hosts.yml host entry, edited structured
  * across the Folders, Variables, Scripts, Playbooks, Roles, Hooks and
  * Transport tabs with Raw JSON the escape hatch, keys no tab covers
- * riding untouched; the Roles catalog reads the package registry while
- * the host lists `provisioner-registry`; Store sends the one request,
- * `PUT machines/{name}` with `provisioner`, refusing only unapplied JSON
- * and names that would break the run, and hands the agent's message to
- * `onSaved`; Discard reseeds from the stored document, which the editor
- * takes again whenever the store's content changes.
+ * riding untouched; the Roles tab is the one roles editor the create
+ * wizard draws, its catalog, the manifest's roles, their defaults and
+ * their argument specs read from the package registry while the host
+ * lists `provisioner-registry`, the host's artifact rows read while it
+ * lists `artifacts` and read again when a queued download of a missing
+ * file ends; Store sends the one request, `PUT machines/{name}` with
+ * `provisioner`, refusing only unapplied JSON and names that would break
+ * the run, and hands the agent's message to `onSaved`; Discard reseeds
+ * from the stored document, which the editor takes again whenever the
+ * store's content changes.
  */
 const ProvisioningEditor = ({ id, name, document = null, onSaved }) => {
   const { t } = useTranslation();
@@ -304,9 +401,11 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved }) => {
     status,
     id,
     offered: hostHasFeature(server, 'provisioner-registry'),
+    cached: hostHasFeature(server, 'artifacts'),
     provName: typeof doc.provisioner_name === 'string' ? doc.provisioner_name : '',
     provVersion: typeof doc.provisioner_version === 'string' ? doc.provisioner_version : '',
   });
+  const downloads = useDownloads({ status, id, onLanded: registry.loadArtifacts });
 
   const update = next => {
     setDoc(next);
@@ -387,7 +486,14 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved }) => {
       {tab === 'json' ? (
         <JsonTab text={jsonText} busy={busy} onChange={setJsonText} onApply={applyJson} />
       ) : (
-        <EditorTab tab={tab} doc={doc} busy={busy} registry={registry} edit={edit} />
+        <EditorTab
+          tab={tab}
+          doc={doc}
+          busy={busy}
+          registry={registry}
+          edit={edit}
+          downloads={downloads}
+        />
       )}
 
       <div className="d-flex gap-2 mt-3 border-top pt-3">

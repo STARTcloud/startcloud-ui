@@ -17,20 +17,13 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { nextSort, sortItems } from '../../../utils/sort';
 import { messageFor } from '../../../utils/validation';
 import { sourceDisplayNameOf, sourceKeyOf, sourceLabelOf } from '../utils/boxCatalog';
-import {
-  CATALOG_AUTHS,
-  CATALOG_SOURCE_FORM,
-  SOURCE_FORM,
-  sourceProblem,
-} from '../utils/manageCatalog';
+import { CATALOG_SOURCE_FORM, SOURCE_FORM, sourceProblem } from '../utils/manageCatalog';
 
 import { PathInput } from './PathPicker';
 
 const NO_HIDDEN = new Set();
 
 const OFFERS = { default: true, toggle: true, edit: true, remove: true };
-
-const AUTH_KEYS = { none: 'hosts.manage.catalog.authNone', oidc: 'hosts.manage.catalog.authOidc' };
 
 const VARIANTS = {
   registry: {
@@ -343,7 +336,6 @@ const seedFormOf = (variant, editing, seed) => {
       displayName: sourceDisplayNameOf(editing),
       url: editing.url || '',
       isDefault: Boolean(editing.default),
-      ...(variant.form.auth ? { auth: editing.auth || 'none' } : {}),
     };
   }
   return seed || variant.form;
@@ -351,28 +343,8 @@ const seedFormOf = (variant, editing, seed) => {
 
 const CredentialField = ({ variant, form, patch, busy, editing, error }) => {
   const { t } = useTranslation();
-  if (variant.form.auth) {
-    return (
-      <>
-        <label className="form-label" htmlFor="source-auth">
-          {t('hosts.manage.catalog.sourceAuth')}
-        </label>
-        <select
-          id="source-auth"
-          className="form-select"
-          value={form.auth}
-          onChange={event => patch({ auth: event.target.value })}
-          disabled={busy}
-        >
-          {CATALOG_AUTHS.map(auth => (
-            <option key={auth} value={auth}>
-              {t(AUTH_KEYS[auth])}
-            </option>
-          ))}
-        </select>
-        <FieldError id="source-auth" labelKey="hosts.manage.catalog.sourceAuth" error={error} />
-      </>
-    );
+  if (!('auth_token' in variant.form)) {
+    return null;
   }
   return (
     <>
@@ -407,9 +379,10 @@ CredentialField.propTypes = {
  * box registry, `variant` `registry`, or of a catalog source, `variant`
  * `catalog`: the id, the agent's map key, seeded on an edit from the
  * row's key, the display name, the URL, the default switch, the
- * credential, the registry's API key or the catalog's authentication,
- * None or OIDC, and the CA file with the browse button, a blank key or
- * CA file keeping the stored one on an edit; the submit hands the form
+ * registry's API key, and the CA file with the browse button, a blank key
+ * or CA file keeping the stored one on an edit; a catalog source carries
+ * no credential, the host reading it as the signed-in person whenever it
+ * holds their token; the submit hands the form
  * up, `errors`, the refusal's entries by form field, draws each under the
  * field it names, and `seed`, the form of a handed URL, fills a new
  * source's fields.
@@ -508,7 +481,7 @@ export const SourceForm = ({
             patch={patch}
             busy={busy}
             editing={editing}
-            error={errors.auth || errors.auth_token || null}
+            error={errors.auth_token || null}
           />
         </div>
         <div className="col-12 col-md-6">

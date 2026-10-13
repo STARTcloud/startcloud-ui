@@ -9,7 +9,7 @@ import {
   ARTIFACT_EXTENSIONS,
   UPLOAD_FORM,
   defaultPathOf,
-  enabledPaths,
+  roleFreePaths,
   uploadProblem,
 } from '../../utils/artifacts';
 import ToolFormDialog from '../ToolFormDialog';
@@ -77,7 +77,7 @@ Picked.propTypes = {
 
 /**
  * The dialog that uploads files into a storage location,
- * hyperweaver-ui's: the location among the enabled ones, the drop zone
+ * hyperweaver-ui's: the location among the enabled ISO and image ones, the drop zone
  * and the file input, the files picked with their sizes, each with the
  * estate's progress block while it goes up and its outcome after, the
  * checksum with its algorithm, and the chosen location's facts; the
@@ -86,10 +86,10 @@ Picked.propTypes = {
  */
 const ArtifactUploadModal = ({ storagePaths, busy, progress, onClose, onSubmit }) => {
   const { t } = useTranslation();
-  const paths = enabledPaths(storagePaths);
+  const paths = roleFreePaths(storagePaths);
   const [form, setForm] = useState(() => ({
     ...UPLOAD_FORM,
-    storage_path_id: defaultPathOf(storagePaths),
+    storage_path_id: defaultPathOf(paths),
   }));
   const [picked, setPicked] = useState([]);
   const [over, setOver] = useState(false);

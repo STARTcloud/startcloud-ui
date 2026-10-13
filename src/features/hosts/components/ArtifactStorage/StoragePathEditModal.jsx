@@ -9,6 +9,9 @@ import ToolFormDialog from '../ToolFormDialog';
 const TYPE_KEYS = {
   iso: 'artifacts.storagePathEditModal.isoFiles',
   image: 'artifacts.storagePathEditModal.vmImages',
+  installer: 'artifacts.storagePathEditModal.installerFiles',
+  fixpack: 'artifacts.storagePathEditModal.fixpackFiles',
+  hotfix: 'artifacts.storagePathEditModal.hotfixFiles',
 };
 
 const Stat = ({ labelKey, value }) => {

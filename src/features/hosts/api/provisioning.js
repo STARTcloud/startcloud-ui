@@ -126,7 +126,7 @@ export const fetchCatalogHealth = (status, id, source = '') =>
 
 /**
  * Add a catalog source, `POST provisioning/catalog/sources`, the body
- * `{ display_name, url, auth }`; answered 201 `{ success, source }`, or
+ * `{ display_name, url }`; answered 201 `{ success, source }`, or
  * 409 with the `source` of that URL already held; a `401` never ends the
  * session.
  *
@@ -568,6 +568,49 @@ export const downloadArtifact = (status, id, body) =>
  */
 export const hclDownloadArtifact = (status, id, body) =>
   client.post(agentPath(status, id, 'artifacts/hcl-download'), body);
+
+/**
+ * The download files one box registry offers the calling person,
+ * `GET artifacts/registry/{source}/downloads`, read through the host as
+ * the person, the bound account next and the registry's own key last;
+ * answered `{ source: { id, name, url }, downloads }`, each download
+ * `{ organization, name, label, vendor, family, releases }`, each release
+ * `{ version, patches }`, each patch `{ name, files }` and each file
+ * `{ key, file_name, kind, platform, architecture, language, file_size,
+ * checksum, checksum_type, sha256 }`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} source - The registry's key
+ * @returns {Promise<Object>} The listing
+ */
+export const fetchRegistryDownloads = (status, id, source) =>
+  client.get(agentPath(status, id, `artifacts/registry/${encodeURIComponent(source)}/downloads`));
+
+/**
+ * Download one file of a box registry's downloads into the installer
+ * cache, `POST artifacts/registry-download`, the host fetching it as the
+ * person; the body of `registryDownloadBody`, a queued task.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The download
+ * @returns {Promise<Object>} The queued task
+ */
+export const registryDownloadArtifact = (status, id, body) =>
+  client.post(agentPath(status, id, 'artifacts/registry-download'), body);
+
+/**
+ * Fetch a known-but-missing artifact into the host's cache from the
+ * source its row names, `POST artifacts/{id}/fetch`, a queued task.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} artifactId - The artifact's id
+ * @returns {Promise<Object>} The queued task
+ */
+export const fetchMissingArtifact = (status, id, artifactId) =>
+  client.post(agentPath(status, id, `artifacts/${encodeURIComponent(artifactId)}/fetch`));
 
 /**
  * Prepare an upload, `POST artifacts/upload/prepare`, answered with the

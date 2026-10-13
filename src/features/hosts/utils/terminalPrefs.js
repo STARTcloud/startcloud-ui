@@ -6,6 +6,7 @@ export const TERMINAL_PREF_DEFAULTS = {
   scrollback: 10000,
   cursorStyle: 'block',
   cursorBlink: true,
+  broadcastNewline: true,
 };
 
 export const TERMINAL_FONT_SUGGESTIONS = [
@@ -32,11 +33,12 @@ const within = (value, { min, max }) => Math.min(max, Math.max(min, value));
  * The terminal preferences held to their bounds: the font size between 6
  * and 32, 12 for a value that is no number, the scrollback between 0 and
  * 200000, the cursor style one of block, underline and bar, the cursor
- * blink a boolean and the font family trimmed, the default one while it
- * is empty.
+ * blink a boolean, the font family trimmed, the default one while it
+ * is empty, and the broadcast newline a boolean, Enter after every
+ * broadcast while it is on.
  *
  * @param {Object} prefs - The preferences as the dialog holds them
- * @returns {Object} `{ fontSize, fontFamily, scrollback, cursorStyle, cursorBlink }`
+ * @returns {Object} `{ fontSize, fontFamily, scrollback, cursorStyle, cursorBlink, broadcastNewline }`
  */
 export const boundPrefs = prefs => ({
   fontSize: within(Number(prefs.fontSize) || TERMINAL_PREF_DEFAULTS.fontSize, FONT_SIZE_BOUNDS),
@@ -46,6 +48,22 @@ export const boundPrefs = prefs => ({
     ? prefs.cursorStyle
     : TERMINAL_PREF_DEFAULTS.cursorStyle,
   cursorBlink: prefs.cursorBlink === true,
+  broadcastNewline: prefs.broadcastNewline === true,
+});
+
+/**
+ * The xterm options among the preferences, the members a terminal takes
+ * through `terminal.options`, the broadcast newline left out.
+ *
+ * @param {Object} prefs - The preferences of `loadTerminalPrefs`
+ * @returns {Object} `{ fontSize, fontFamily, scrollback, cursorStyle, cursorBlink }`
+ */
+export const terminalOptionsOf = prefs => ({
+  fontSize: prefs.fontSize,
+  fontFamily: prefs.fontFamily,
+  scrollback: prefs.scrollback,
+  cursorStyle: prefs.cursorStyle,
+  cursorBlink: prefs.cursorBlink,
 });
 
 /**

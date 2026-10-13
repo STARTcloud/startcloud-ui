@@ -190,7 +190,12 @@ MultiselectInput.propTypes = {
   disabled: PropTypes.bool,
 };
 
-const DslFieldInput = ({ field, fieldId, value, error, onChange, inventory, disabled }) => {
+/**
+ * One field of the field DSL as its type draws it: a switch for a
+ * checkbox, a select, inline checkboxes for a multiselect, a password
+ * with its generate button, a textarea, a number and a text input.
+ */
+export const DslFieldInput = ({ field, fieldId, value, error, onChange, inventory, disabled }) => {
   const { t } = useTranslation();
   const invalid = error ? 'is-invalid' : '';
 
@@ -320,8 +325,9 @@ const groupHidden = (group, members, showAdvanced, errors) =>
  * The form a provisioner package's `metadata.configuration` describes,
  * hyperweaver-ui's field DSL renderer: groups in declared order with the
  * ungrouped fields first, advanced groups behind the caller's one
- * toggle, and the conditionals evaluated live against the answers and
- * the role-enable flags.
+ * toggle, the conditionals evaluated live against the answers and the
+ * role-enable flags, and the fields named in `omit` never drawn, the
+ * ones a role's file picks answer.
  */
 const DslConfigForm = ({
   config,
@@ -333,6 +339,7 @@ const DslConfigForm = ({
   showAdvanced,
   idPrefix,
   disabled,
+  omit = null,
 }) => {
   const visible = visibility(config, answers, roles);
   const groupsInOrder = [{ name: '', label: '' }, ...config.groups];
@@ -346,7 +353,10 @@ const DslConfigForm = ({
           return null;
         }
         const members = config.fields.filter(
-          field => bucketOf(field) === group.name && visible.fields.has(field.name)
+          field =>
+            bucketOf(field) === group.name &&
+            visible.fields.has(field.name) &&
+            !(omit && omit.has(field.name))
         );
         if (members.length === 0 || groupHidden(group, members, showAdvanced, errors)) {
           return null;
@@ -404,6 +414,7 @@ DslConfigForm.propTypes = {
   showAdvanced: PropTypes.bool,
   idPrefix: PropTypes.string.isRequired,
   disabled: PropTypes.bool,
+  omit: PropTypes.instanceOf(Set),
 };
 
 export default DslConfigForm;

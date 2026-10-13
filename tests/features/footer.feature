@@ -27,3 +27,83 @@ Feature: footer pane
     And I press the footer's "tasks" toggle
     Then the tasks pane lists 3 tasks
     And the tasks pane does not scroll sideways
+
+  Scenario: Consoles pane: the Consoles toggle opens on no console, and Open host shell of the host's Controls menu starts the session once, asks one unscoped ticket and draws the shell as the one tab
+    Given the host answers the hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    And the browser records its requests
+    When I open "/hosts/1"
+    And I press the footer's "consoles" toggle
+    Then the footer pane draws no console
+    And the host was not sent POST to "/api/agents/1/term/start"
+    When I click "Host actions"
+    And I press the Controls menu's "host-shell" row
+    Then the host was sent POST to "/api/agents/1/term/start" 1 times
+    And the host was sent GET to "/api/agents/1/ws-ticket" 1 times
+    And the footer pane draws the "host_shell" console of "Desk"
+    And the footer pane draws the "host_shell" viewer
+    And the footer pane draws 0 tabs
+    And the footer pane draws no commands bar
+    And the stored "console_tabs" holds 1 entries
+    When I press the footer's "consoles" toggle
+    And I press the footer drop-up's "restart" row
+    Then the host was sent DELETE to "/api/agents/1/term/sessions/a1000000-0000-4000-8000-000000000001/stop" 1 times
+    And the host was sent POST to "/api/agents/1/term/start" 2 times
+    When I press the footer's "consoles" toggle
+    And I press the footer drop-up's "close" row
+    Then the footer pane draws no console
+    And the host was sent DELETE to "/api/agents/1/term/sessions/a1000000-0000-4000-8000-000000000001/stop" 2 times
+    And the stored "console_tabs" holds 0 entries
+
+  Scenario: Consoles pane: a placement the browser holds re-attaches to the session the agent still lists, without a second start, and drops the one it no longer holds
+    Given the host answers the hosts fixture
+    And the host answers the hosts-consoles-live fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    And the browser holds "console_tabs" as "{\"a1000000-0000-4000-8000-000000000001\":{\"kind\":\"host_shell\",\"id\":\"1\",\"name\":\"\",\"target\":\"\",\"placed\":\"footer\",\"accepts\":true},\"a1000000-0000-4000-8000-000000000009\":{\"kind\":\"host_shell\",\"id\":\"1\",\"name\":\"\",\"target\":\"\",\"placed\":\"footer\",\"accepts\":false}}"
+    When I open "/"
+    Then the host was sent GET to "/api/agents/1/term/sessions" 1 times
+    And the footer holds the "consoles" toggle
+    And the footer pane draws the "host_shell" console of "Desk"
+    And the host was not sent POST to "/api/agents/1/term/start"
+    And the host was sent GET to "/api/agents/1/ws-ticket"
+    And the stored "console_tabs" holds 1 entries
+
+  Scenario: Consoles pane: with two tabs the Commands bar draws, Accept broadcasts on a tab's menu marks it, the sent string lands in the history and the newline is a Terminal preference on by default
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1"
+    And I click "Host actions"
+    And I press the Controls menu's "host-shell" row
+    Then the footer pane draws the "host_shell" console of "Desk"
+    When I click "dev-1"
+    Then the path is "/hosts/1/machines/dev-1"
+    When I click "Machine controls"
+    Then the Controls menu's "console-ssh" row opens in the "footer"
+    When I press the Controls menu's "console-ssh" row
+    Then the host was sent POST to "/api/agents/1/machines/dev-1/ssh/start" 1 times
+    And the footer pane draws 2 tabs
+    And the footer tab "dev-1" is active
+    And the footer pane draws the commands bar
+    And the commands bar says "0 of 2 tabs accept"
+    And the console panel says the "ssh" console is in the footer
+    When I right-click the footer tab "dev-1"
+    Then the footer tab menu offers "accept"
+    And the footer tab menu offers "send-to-page"
+    And the footer tab menu offers "restart"
+    And the footer tab menu offers "close"
+    When I press the footer tab menu's "accept" row
+    Then the footer tab "dev-1" accepts broadcasts
+    And the footer tab "Desk" accepts no broadcasts
+    And the commands bar says "1 of 2 tabs accept"
+    When I send the command "uptime"
+    And I open the commands history
+    Then the commands history lists "uptime"
+    When I press "Escape"
+    And I press the footer's "consoles" toggle
+    And I press the footer drop-up's "preferences" row
+    Then the terminal preferences switch "broadcast-newline" is on
+    When I turn the terminal preferences switch "broadcast-newline" off
+    And I send the open dialog
+    Then the stored "terminal_prefs" carries "broadcastNewline" as "false"

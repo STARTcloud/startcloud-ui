@@ -219,9 +219,8 @@ const HEALTH = {
     ),
   },
 };
-const PRIVATE_URL =
-  'https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog';
-const PRIVATE_CATALOG = {
+const ACME_URL = 'https://provisioner-catalog.example.com/catalog.json';
+const ACME_CATALOG = {
   name: 'Acme private catalog',
   format_version: 1,
   updated: '2026-09-20T00:00:00.000Z',
@@ -240,7 +239,7 @@ const DOCUMENTS = {
     catalog: CATALOG,
     health: HEALTH,
   },
-  [PRIVATE_URL]: { catalog: PRIVATE_CATALOG, health: null },
+  [ACME_URL]: { catalog: ACME_CATALOG, health: null },
 };
 const CATALOG_SOURCES = [
   {
@@ -248,14 +247,12 @@ const CATALOG_SOURCES = [
     name: 'STARTcloud',
     url: 'https://provisioner-catalog.startcloud.com/catalog.json',
     default: true,
-    auth: 'none',
   },
   {
     id: 'staging',
     name: 'STARTcloud staging',
     url: 'https://provisioner-catalog-staging.startcloud.com/catalog.json',
     default: false,
-    auth: 'none',
   },
 ];
 const SOURCE_ID = /^[a-z0-9_]+$/u;
@@ -817,7 +814,6 @@ const addedSource = ctx => {
     name: body.display_name.trim(),
     url: body.url,
     default: false,
-    auth: body.auth === 'oidc' ? 'oidc' : 'none',
   };
   store.catalogSources = [...store.catalogSources, source];
   return ok({ success: true, source: sourceRow(source) }, 201);

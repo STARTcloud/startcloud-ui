@@ -8,14 +8,18 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { startVncSession as startVncSessionCall } from '../api/consoleAPI';
 import { useHostRow } from '../hooks/useHostRow';
+import { useConsoleActions } from '../hooks/useOpenConsole';
+import { consolesHeld, dropConsole, useConsoles, usePageConsoles } from '../hooks/useTerminal';
 import { useVncSession } from '../hooks/useVncSession';
 import { useZloginSession } from '../hooks/useZloginSession';
 import { useZoneTerminal } from '../hooks/useZoneTerminal';
 import { hostHasConsole } from '../utils/capabilities';
 import { consoleParamOf, hostHasConsoles } from '../utils/consoles';
+import { consoleKeyOf, isHeldKind } from '../utils/terminals';
 
 import { startRdpPreview, startSshPreview, startVncPreview } from './consoleActions';
 import ConsoleDisplay from './ConsoleDisplay';
+import FooterConsoleNotes from './FooterConsoleNotes';
 import ZloginModal from './ZloginModal';
 
 const VncModal = lazy(() => import('./VncModal'));
@@ -23,6 +27,54 @@ const VncModal = lazy(() => import('./VncModal'));
 const FOLD = 'machine-console';
 
 const NO_SESSIONS = {};
+
+const CLEARED = {
+  ssh: { ssh_session: null },
+  zlogin: { zlogin_session: null, active_zlogin_session: false },
+  vnc: { active_vnc_session: false, vnc_session_info: null },
+  rdp: { rdp_session: null },
+};
+
+/**
+ * The console state a page console of the store draws as: its session
+ * under the member the display of its kind reads.
+ *
+ * @param {Object} entry - The console of the store
+ * @returns {Object} The patch of the console state
+ */
+export const sessionPatchOf = entry => {
+  if (entry.kind === 'ssh') {
+    return { ssh_session: entry.session };
+  }
+  if (entry.kind === 'zlogin') {
+    return { zlogin_session: entry.session, active_zlogin_session: true };
+  }
+  if (entry.kind === 'vnc') {
+    return { active_vnc_session: true, vnc_session_info: entry.session };
+  }
+  return { rdp_session: { target: entry.target || 'console', ...(entry.session || {}) } };
+};
+
+/**
+ * The session a display of one kind holds in the console state, the one
+ * a move to the footer takes with it; null while it holds none.
+ *
+ * @param {Object} details - The console state
+ * @param {string} kind - `ssh`, `zlogin`, `vnc` or `rdp`
+ * @returns {Object|null} The session
+ */
+export const pageSessionOf = (details, kind) => {
+  if (kind === 'ssh') {
+    return details.ssh_session?.id ? details.ssh_session : null;
+  }
+  if (kind === 'zlogin') {
+    return details.zlogin_session?.id ? details.zlogin_session : null;
+  }
+  if (kind === 'vnc') {
+    return details.active_vnc_session ? details.vnc_session_info || {} : null;
+  }
+  return details.rdp_session || null;
+};
 
 /**
  * The console type the section should show after the sessions moved,
@@ -71,7 +123,15 @@ export const consoleTypeAfter = (details, current) => {
  * `zlogin`; SSH and RDP sessions are the console's own, no agent list
  * holding them. Nothing reads on a clock, hyperweaver-ui's
  * thirty-second read not carried over. A host whose row lists no
- * console token draws the placard saying no console is available.
+ * console token draws the placard saying no console is available. A
+ * console of this machine placed in the footer's Consoles view draws
+ * one line here with Send to this page, which brings it back with its
+ * session; a console placed on this page by the footer's Send to the
+ * machine's page is drawn as the display of its kind over the session
+ * it carries; every live display's Send to footer takes its session to
+ * the footer; and a page console ends with the page, the SSH session
+ * stopped and the VNC and RDP viewers let go, the zlogin terminal kept
+ * by the zone terminal provider as it is.
  */
 const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = null, folds }) => {
   const { t } = useTranslation();
@@ -123,6 +183,81 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
     setSeen({ scope, sessions });
     setActiveConsoleType(current => consoleTypeAfter(sessions, current));
   }
+
+  const consoles = useConsoleActions();
+  const pageConsoles = usePageConsoles(id, name);
+  const every = useConsoles();
+  const inFooter = every.filter(
+    entry => entry.placed === 'footer' && entry.id === id && entry.name === name
+  );
+  const drawn = useRef(new Set());
+  const consolesRef = useRef(consoles);
+
+  useEffect(() => {
+    consolesRef.current = consoles;
+  });
+
+  useEffect(() => {
+    const present = new Set(pageConsoles.map(entry => entry.key));
+    drawn.current.forEach(key => {
+      if (!present.has(key)) {
+        drawn.current.delete(key);
+      }
+    });
+    const fresh = pageConsoles.filter(entry => !drawn.current.has(entry.key));
+    if (fresh.length === 0) {
+      return;
+    }
+    fresh.forEach(entry => drawn.current.add(entry.key));
+    setSessions(prev =>
+      fresh.reduce((state, entry) => ({ ...state, ...sessionPatchOf(entry) }), prev)
+    );
+    setActiveConsoleType(fresh[fresh.length - 1].kind);
+  }, [pageConsoles]);
+
+  useEffect(
+    () => () => {
+      consolesHeld()
+        .filter(entry => entry.placed === 'page' && entry.id === id && entry.name === name)
+        .forEach(entry => {
+          if (isHeldKind(entry.kind)) {
+            consolesRef.current.close(entry.key);
+          } else {
+            dropConsole(entry.key);
+          }
+        });
+    },
+    [id, name]
+  );
+
+  const sendToFooter = useCallback(
+    async kind => {
+      const session = pageSessionOf(sessions, kind);
+      if (!session) {
+        return;
+      }
+      const key = consoleKeyOf({ kind, id, name, target: session.target || '' });
+      drawn.current.delete(key);
+      setSessions(prev => ({ ...prev, ...CLEARED[kind] }));
+      if (consolesHeld().some(entry => entry.key === key)) {
+        consoles.move(key, 'footer');
+        return;
+      }
+      await consoles.adopt({
+        kind,
+        id,
+        name,
+        target: session.target || '',
+        server,
+        session,
+        placed: 'footer',
+        accepts: false,
+      });
+    },
+    [sessions, id, name, server, consoles]
+  );
+
+  const sendToPage = useCallback(key => consoles.move(key, 'page'), [consoles]);
 
   useEffect(() => {
     if (vncOffered) {
@@ -204,6 +339,9 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
         folded={folds.folded(FOLD)}
         onFold={() => folds.toggle(FOLD)}
       >
+        {inFooter.length > 0 ? (
+          <FooterConsoleNotes consoles={inFooter} onSendToPage={sendToPage} />
+        ) : null}
         {offered ? (
           <ConsoleDisplay
             id={id}
@@ -214,6 +352,7 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
             turn={turn}
             machineDetails={machineDetails}
             activeConsoleType={activeConsoleType}
+            sendToFooter={sendToFooter}
             loading={loading}
             loadingVnc={vnc.loadingVnc}
             previewReadOnly={previewReadOnly}

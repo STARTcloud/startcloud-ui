@@ -77,14 +77,63 @@ const ISO_ARTIFACTS = [
 const ROLE_ARTIFACTS = [
   {
     id: 'art-0101',
-    filename: 'Domino_14.5_Linux_English.tar',
-    path: '/var/lib/hyperweaver/artifacts/installer/Domino_14.5_Linux_English.tar',
+    filename: 'Domino_14.0_Linux_English.tar',
+    path: '/var/lib/hyperweaver/artifacts/installers/domino/archives/Domino_14.0_Linux_English.tar',
     size: 1610612736,
     file_type: 'installer',
     extension: 'tar',
-    role: 'domino_install',
-    expected_sha256: 'a1b2c3d4e5f6',
-    version: '14.5',
+    role: 'domino',
+    expected_sha256: '5fd08b71e946f11308232170553aaca6f4c60c8bb8d91ef6fb89e3f171bad9a5',
+    version: { major: '14', minor: '0', patch: '0', fix_pack: '', full_version: '14.0.0' },
+    file_exists: true,
+  },
+  {
+    id: 'art-0102',
+    filename: 'Domino_14.5_Linux_English.tar',
+    path: '/var/lib/hyperweaver/artifacts/installers/domino/archives/Domino_14.5_Linux_English.tar',
+    size: 0,
+    file_type: 'installer',
+    extension: 'tar',
+    role: 'domino',
+    expected_sha256: '6775d563e826114702fc4aacf20f5f086459bd151c3bf01a9e659eaff47ebe79',
+    version: { major: '14', minor: '5', patch: '0', fix_pack: '', full_version: '14.5.0' },
+    file_exists: false,
+    source: 'boxvault',
+  },
+  {
+    id: 'art-0103',
+    filename: 'Domino_1400FP3_Linux.tar',
+    path: '/var/lib/hyperweaver/artifacts/installers/domino/archives/Domino_1400FP3_Linux.tar',
+    size: 0,
+    file_type: 'fixpack',
+    extension: 'tar',
+    role: 'domino',
+    expected_sha256: '48752551f21fd2da0a56f0ec0ab3fc13beac17542f8d89e68cecb52c91e28598',
+    version: { major: '14', minor: '0', patch: '0', fix_pack: 'FP3', full_version: '14.0fp3' },
+    file_exists: false,
+    source: 'hcl',
+  },
+  {
+    id: 'art-0104',
+    filename: 'hcl.dleap-1.1.9.36.zip',
+    path: '/var/lib/hyperweaver/artifacts/installers/leap/archives/hcl.dleap-1.1.9.36.zip',
+    size: 536870912,
+    file_type: 'installer',
+    extension: 'zip',
+    role: 'leap',
+    expected_sha256: 'cf30726e3df0edaefd0a6b389832373884a75f27605ae2f3e7b69cab8ed28238',
+    version: { major: '1', minor: '1', patch: '9', fix_pack: '', full_version: '1.1.9' },
+    file_exists: true,
+  },
+  {
+    id: 'art-0105',
+    filename: 'SAFE.ids',
+    path: '/var/lib/hyperweaver/artifacts/id-files/SAFE.ids',
+    size: 4096,
+    file_type: 'safe_id',
+    extension: 'ids',
+    checksum: '3f9c1b2e7a4d5c6b8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d',
+    checksum_algorithm: 'sha256',
     file_exists: true,
   },
 ];
@@ -349,9 +398,63 @@ const remote = ctx => {
   return ok(discovered());
 };
 
-const artifacts = () => {
-  const rows = [...ISO_ARTIFACTS, ...ROLE_ARTIFACTS];
+const roleStores = new Map();
+
+const roleArtifactsOf = host => {
+  if (!roleStores.has(host.id)) {
+    roleStores.set(
+      host.id,
+      ROLE_ARTIFACTS.map(row => ({ ...row }))
+    );
+  }
+  return roleStores.get(host.id);
+};
+
+const artifacts = ctx => {
+  const rows = [...ISO_ARTIFACTS, ...roleArtifactsOf(ctx.host)];
   return ok({ artifacts: rows, pagination: { total: rows.length, limit: 50, offset: 0 } });
+};
+
+const fetched = ctx => {
+  const { host, person, params } = ctx;
+  const row = roleArtifactsOf(host).find(entry => entry.id === params.artifact);
+  if (!row) {
+    return refusal(404, 'Artifact not found');
+  }
+  if (row.file_exists !== false) {
+    return refusal(409, `${row.filename} is already on this host`);
+  }
+  if (!row.source) {
+    return refusal(400, `${row.filename} names no source to fetch it from`);
+  }
+  const task = queue({
+    host,
+    by: person.username,
+    operation: 'artifact_download',
+    target: 'artifact',
+    metadata: { artifact_id: row.id, filename: row.filename, source: row.source },
+  });
+  return ok(
+    {
+      success: true,
+      task_id: task.id,
+      operation: 'artifact_download',
+      status: 'pending',
+      message: 'Download task queued',
+      artifact_id: row.id,
+      filename: row.filename,
+      source: row.source,
+    },
+    202
+  );
+};
+
+const afterFetch = (host, task) => {
+  const row = roleArtifactsOf(host).find(entry => entry.id === task.metadata?.artifact_id);
+  if (row) {
+    row.file_exists = true;
+    row.size = 1610612736;
+  }
 };
 
 const isoArtifacts = () => ok({ artifacts: ISO_ARTIFACTS, total: ISO_ARTIFACTS.length });
@@ -642,8 +745,11 @@ const downloadLink = ctx => {
  * without VirtualBox on the hyperweaver kind), `machines/ids/next`,
  * `templates` and `templates/remote/{source}` behind `templates` (the
  * mirror registry unreachable, BoxVault answering its discover shape),
- * `artifacts` and `artifacts/iso` behind `artifacts`, `media` on the
- * hyperweaver kind, `storage/pools` and `storage/datasets` behind `zfs`,
+ * `artifacts` and `artifacts/iso` behind `artifacts`, the installer rows
+ * under the role's `installer_dir` with one known-but-missing row that
+ * names its source and `artifacts/{id}/fetch` queuing its download as
+ * one `artifact_download` task that lands the file when it completes,
+ * `media` on the hyperweaver kind, `storage/pools` and `storage/datasets` behind `zfs`,
  * `provisioning/bridged-interfaces` and `network/ip-suggestions`; the
  * unattended install's `machines/unattended/detect` and
  * `machines/{name}/unattended` on the hyperweaver kind; and on the
@@ -657,7 +763,9 @@ export const mountMachineCreate = ({ sessionRoute, agentRoute }) => {
   settles('machine_create_orchestration', afterCreate);
   settles('zone_create_orchestration', afterCreate);
   settles('machine_unattended_install', afterInstall);
+  settles('artifact_download', afterFetch);
   agentRoute('POST', 'machines', behind('machine-create', created));
+  agentRoute('POST', 'artifacts/:artifact/fetch', behind('artifacts', fetched));
   agentRoute('GET', 'machines/defaults', defaults);
   agentRoute('GET', 'machines/ostypes', ostypes);
   agentRoute('GET', 'machines/ids/next', nextId);

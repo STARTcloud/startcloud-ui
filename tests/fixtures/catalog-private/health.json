@@ -1,0 +1,29 @@
+{
+  "provisioners": {
+    "hcl-domino": {
+      "tier": "silver",
+      "rules": {},
+      "failed_rules": [],
+      "presentation": { "label": "HCL Domino" },
+      "health": {
+        "downloads": 12,
+        "artifacts_ok": true,
+        "sidecars_ok": true,
+        "versions": { "2.0.0": { "providers": ["virtualbox"] } }
+      }
+    },
+    "moonshine_portal": {
+      "tier": "bronze",
+      "rules": {},
+      "failed_rules": [],
+      "presentation": { "label": "Moonshine portal" },
+      "health": {
+        "downloads": 3,
+        "artifacts_ok": true,
+        "sidecars_ok": true,
+        "versions": { "1.4.0": { "providers": ["virtualbox"] } }
+      },
+      "organization": { "uuid": "0d6b7e2a-3333-4c0a-9a1e-000000000002", "name": "Moonshine" }
+    }
+  }
+}

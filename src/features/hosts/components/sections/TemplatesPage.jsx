@@ -13,7 +13,7 @@ import { useManageSend, useTaskFollow } from '../../hooks/useHostManage';
 import { useManageCatalogData } from '../../hooks/useManageCatalogData';
 import { useTemplateSource } from '../../hooks/useTemplateSource';
 import { sectionTitle } from '../../pages';
-import { firstArchitectureOf } from '../../utils/boxCatalog';
+import { firstArchitectureOf, sourceKeyOf, sourceLabelOf } from '../../utils/boxCatalog';
 import { heldBoxTemplatesOf, heldBoxVersionsOf, remoteBoxesAdapter } from '../../utils/hostCatalog';
 import {
   createRouteOf,
@@ -26,7 +26,13 @@ import { exportBody } from '../../utils/machineTools';
 import { TEMPLATE_SOURCES, pullBody } from '../../utils/manageCatalog';
 import BoxSourceCard from '../BoxSourceCard';
 import { HeldListing, useSameRows, useSourceWrites, useSourcesPanel } from '../HeldListing';
-import { PaneButton, heldBoxesCollection } from '../HostCatalogInstall';
+import {
+  HandoffInstallDialog,
+  PaneButton,
+  SourceWords,
+  handoffInstallOf,
+  heldBoxesCollection,
+} from '../HostCatalogInstall';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
 import { TemplateDialogsOf, pullFormOfSeed } from '../TemplateDialogs';
@@ -82,6 +88,21 @@ const versionLabelOf = (row, rows) =>
 const firstAnswerOf = answers => (answers.length === 1 ? answers[0] : null);
 
 /**
+ * The words the hand-off's confirmation names the registry by: the
+ * registry's label while the host lists the registry the item was read
+ * from, else its URL, and the URL beside the label.
+ *
+ * @param {Object|null} source - The item's `extras.source`, `{ key, url }`
+ * @param {Array<Object>} rows - The rows of `GET templates/sources`
+ * @returns {{ name: string, url: string }} The words
+ */
+const registryWordsOf = (source, rows) => {
+  const row = rows.find(entry => sourceKeyOf(entry) === source?.key) || null;
+  const url = source?.url || '';
+  return { name: (row && sourceLabelOf(row)) || url, url };
+};
+
+/**
  * The Templates page of a host: every box the host's enabled registries
  * list, BoxVault's boxes collection drawn by the one listing over
  * `GET templates/remote/{source}` of each, read once per registry per
@@ -117,12 +138,19 @@ const firstAnswerOf = answers => (answers.length === 1 ? answers[0] : null);
  * each registry's key, `null` removing an entry, the registries read
  * again on success and a refused form drawing each `errors[]` pointer on
  * the field it names. The route's `create=template` hand-off lands with
- * the handed box's card marked whatever the group says, Install sending
- * the handed version and architecture, and a host that holds no such
- * registry drawing the Add registry and continue card over the listing,
+ * the handed box's card marked whatever the group says and, once the
+ * host's templates answered, the confirmation dialog over the listing
+ * naming the box, the version, the architecture and the registry it
+ * comes from, Install sending the same `POST templates/pull` the glyph
+ * sends with the handed version and architecture and Cancel dropping the
+ * hand-off, a box the host already holds at that version told so with no
+ * Install; a host that holds no such
+ * registry draws the Add registry and continue card over the listing
+ * instead,
  * whose press writes the registry; `create=source` with a `box_url`
  * opens the Registries modal with the form filled; the hand-off leaves
- * the route when its form closes or the handed box's Install is pressed.
+ * the route when its form closes, its dialog closes or the handed box's
+ * Install is pressed.
  */
 const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
   const { t } = useTranslation();
@@ -131,6 +159,8 @@ const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
   const handoff = templatesHandoffOf(searchParams);
   const [asked, setAsked] = useState('');
   const [dialog, setDialog] = useState(null);
+  const [handedItem, setHandedItem] = useState(null);
+  const onHanded = useCallback(item => setHandedItem(item), []);
   const dropHandoff = useCallback(
     () => setSearchParams(current => withoutCreateSeed(current), { replace: true }),
     [setSearchParams]
@@ -302,7 +332,21 @@ const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
         }),
     },
     handed,
+    onHanded,
   };
+
+  const confirm =
+    handed &&
+    handedItem &&
+    handedItem.name === handed.name &&
+    handedItem.organization.name === handed.organization &&
+    catalog.reads.templates.loaded
+      ? handoffInstallOf(handedItem, listingContext)
+      : null;
+  const confirmWords = confirm ? registryWordsOf(confirm.source, sources) : null;
+  const confirmArchitecture = confirm
+    ? box.box_arch || firstArchitectureOf(handedItem, confirm.version)
+    : '';
 
   const pane = (
     <>
@@ -351,6 +395,39 @@ const TemplatesPage = ({ id, server, context, section, onRefresh }) => {
       >
         <BoxSourceCard source={boxSource} />
       </HeldListing>
+      {confirm ? (
+        <HandoffInstallDialog
+          rows={[
+            {
+              key: 'box',
+              label: t('host.templatesManagement.boxName'),
+              value: `${handedItem.organization.name}/${handedItem.name}`,
+            },
+            {
+              key: 'version',
+              label: t('host.templatesManagement.version'),
+              value: confirm.version,
+            },
+            {
+              key: 'architecture',
+              label: t('hosts.manage.held.architecture'),
+              value: confirmArchitecture,
+            },
+            {
+              key: 'registry',
+              label: t('host.templatesManagement.registry'),
+              value: <SourceWords words={confirmWords} />,
+            },
+          ]}
+          name={`${handedItem.organization.name}/${handedItem.name}`}
+          version={confirm.version}
+          source={confirmWords.name}
+          held={confirm.held}
+          busy={busy}
+          onInstall={() => onPull(handedItem, confirm.version)}
+          onClose={dropHandoff}
+        />
+      ) : null}
       <TemplateDialogsOf
         id={id}
         server={server}

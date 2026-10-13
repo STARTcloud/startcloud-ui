@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { FaEye, FaPlus, FaPowerOff, FaRotate } from 'react-icons/fa6';
+import { FaEye, FaPlus, FaPowerOff, FaRotate, FaTerminal } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 
 import { useHostActions } from '../hooks/useHostActions';
 import { useHostStats } from '../hooks/useHostStats';
+import { useConsoleActions } from '../hooks/useOpenConsole';
 import { HOST_PAGES, hostPagePath } from '../pages';
 import { hostHasFeature } from '../utils/capabilities';
 import { createRouteOf, hostCreates } from '../utils/machineCreate';
@@ -17,7 +18,9 @@ const [OVERVIEW] = HOST_PAGES.find(group => group.key === 'overview').pages;
 
 /**
  * The commands of the Controls menu on a host's routes: Share link, View
- * host details and New machine while `hostCreates` offers it; Restart host
+ * host details and New machine while `hostCreates` offers it; Open host
+ * shell while the host lists `host-terminal`, opening the host's shell in
+ * the footer's Consoles view through the console store; Restart host
  * and Power off host while `powered`, each behind `HostPowerDialogs`, the
  * host's stats read again after a success; the bulk commands over this
  * host's machines while `bulk`; the privilege line for a role short of
@@ -41,6 +44,7 @@ export const useHostCommands = ({ status, id, powered, bulk, server, user }) => 
   const servers = useMemo(() => (server ? [server] : []), [server]);
   const share = useShareCommand();
   const bulkCommands = useBulkCommands({ status, servers, scope: 'host', user });
+  const consoles = useConsoleActions();
 
   const commands = [
     share,
@@ -63,6 +67,19 @@ export const useHostCommands = ({ status, id, powered, bulk, server, user }) => 
             labelKey: 'navbar.navbar.newMachine',
             action: 'new-machine',
             run: () => navigate(createRouteOf(id)),
+          },
+        ]
+      : []),
+    ...(hostHasFeature(server, 'host-terminal')
+      ? [
+          {
+            key: 'host-shell',
+            group: 'console',
+            icon: FaTerminal,
+            tone: 'text-info',
+            labelKey: 'hosts.controls.openHostShell',
+            action: 'host-shell',
+            run: () => consoles.open({ kind: 'host_shell', id, server, placed: 'footer' }),
           },
         ]
       : []),

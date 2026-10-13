@@ -13,16 +13,19 @@ import {
   fetchIpSuggestions,
   fetchIsoArtifacts,
   fetchMediaList,
+  fetchMissingArtifact,
   fetchNextServerId,
   fetchProvisioners,
   fetchProvisionerVersion,
   fetchRemoteTemplates,
   fetchTemplates,
+  prepareArtifactUpload,
+  uploadArtifactFile,
 } from '../api/provisioning';
 import { fetchTemplateSources } from '../api/templates';
 import { getZfsDatasets, getZfsPools } from '../api/zfsAPI';
 import { HostMachinesContext } from '../hooks/useHostMachines';
-import { useManageRead, useTaskEnds } from '../hooks/useHostManage';
+import { useManageRead, useTaskEnds, useTaskFollow } from '../hooks/useHostManage';
 import { useHostRow } from '../hooks/useHostRow';
 import { useMachineTools } from '../hooks/useMachineTools';
 import { useProvisionerInstall } from '../hooks/useProvisionerInstall';
@@ -52,7 +55,9 @@ import {
 } from '../utils/machineCreate';
 import { flattenBridgedInterfaces, isoFilenames } from '../utils/machineHelpers';
 import { nounKeyOf } from '../utils/machines';
-import { resourceIssuesOf } from '../utils/machineTools';
+import { queuedTaskOf, resourceIssuesOf } from '../utils/machineTools';
+import { manifestRolesOf, roleHintsOf, seedRoles, stripTag, tagRow } from '../utils/provisioning';
+import { answeredFieldNames, seedRolePicks } from '../utils/roleFiles';
 
 import BoxVaultPickerModal from './BoxVaultPickerModal';
 import {
@@ -67,13 +72,17 @@ import {
 } from './CreateWizardSteps';
 import { buildHardwarePayload, buildPortsPayload } from './HardwareEditor';
 import { dslConfiguration, pruneHidden, seedAnswers, validateAnswers } from './ProvisionerFieldDsl';
-import { seedRoles } from './ProvisionerFormFields';
 import ResourceIssues from './ResourceIssues';
+import { SAFE_ID_KIND, emptySafeId } from './SafeIdControl';
 import TaskDialog from './TaskDialog';
 
 const NO_ORGS = [];
 
 const NO_FAMILIES = [];
+
+const NO_ROLES = [];
+
+const seededRows = manifest => seedRoles(manifest).map(tagRow);
 
 const listOf = value => (Array.isArray(value) ? value : []);
 
@@ -270,6 +279,16 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     [refreshProvisioners]
   );
 
+  const loadArtifacts = useCallback(() => {
+    if (!cached) {
+      return Promise.resolve(null);
+    }
+    return settle(fetchArtifacts(status, id)).then(data => {
+      patch({ artifacts: data ? listOf(data.artifacts) : null });
+      return data;
+    });
+  }, [cached, status, id, patch]);
+
   useEffect(() => {
     settle(fetchMachineDefaults(status, id)).then(data => patch({ agentDefaults: data }));
     settle(fetchMachineOsTypes(status, id)).then(data => {
@@ -286,16 +305,14 @@ const useCreateFeeds = ({ status, id, server, t }) => {
       loadCatalogs();
     }
     if (cached) {
-      settle(fetchArtifacts(status, id)).then(data =>
-        patch({ artifacts: data ? listOf(data.artifacts) : null })
-      );
+      loadArtifacts();
       settle(fetchIsoArtifacts(status, id)).then(data =>
         patch({ isoOptions: data ? isoFilenames(data) : [] })
       );
     }
     loadZfs();
     loadMedia();
-  }, [status, id, templated, cached, patch, loadCatalogs, loadZfs, loadMedia]);
+  }, [status, id, templated, cached, patch, loadCatalogs, loadArtifacts, loadZfs, loadMedia]);
 
   return {
     ...feeds,
@@ -305,6 +322,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
       ? t('machineEdit.machineCreateModal.failedToLoadProvisioners', { message: held.message })
       : '',
     loadProvisioners,
+    loadArtifacts,
     loadCatalogs,
     loadZfs,
     loadMedia,
@@ -339,9 +357,10 @@ const useCreateForm = () => {
     networks: [defaultExternalNetwork()],
     roles: [],
     properties: {},
+    downloads: {},
     syncMethod: 'rsync',
     removeTransport: '',
-    safeIdPath: '',
+    safeId: emptySafeId(),
     startAfterCreate: false,
     sourceFilter: '',
     boxPickCustom: false,
@@ -449,7 +468,7 @@ const useProvisionerPick = ({ status, id, form, set, provisioners }) => {
     fetchSeq.current += 1;
     setVersionDetail(null);
     setVersionPending(false);
-    set({ familyName: value, versionKey: '', roles: [], properties: {} });
+    set({ familyName: value, versionKey: '', roles: [], properties: {}, downloads: {} });
   };
 
   const changeVersion = value => {
@@ -457,8 +476,9 @@ const useProvisionerPick = ({ status, id, form, set, provisioners }) => {
       family?.versions?.find(entry => entry.version === value || entry.dir === value) || null;
     set({
       versionKey: value,
-      roles: seedRoles(next),
+      roles: seededRows(next),
       properties: seedAnswers(dslConfiguration(next)),
+      downloads: {},
     });
     fetchSeq.current += 1;
     const seq = fetchSeq.current;
@@ -478,8 +498,8 @@ const useProvisionerPick = ({ status, id, form, set, provisioners }) => {
         if (!manifest) {
           return;
         }
-        setVersionDetail(manifest);
-        set({ roles: seedRoles(manifest), properties: seedAnswers(dslConfiguration(manifest)) });
+        setVersionDetail(data);
+        set({ roles: seededRows(manifest), properties: seedAnswers(dslConfiguration(manifest)) });
       }
     );
   };
@@ -487,7 +507,8 @@ const useProvisionerPick = ({ status, id, form, set, provisioners }) => {
   return {
     family,
     version,
-    versionInfo: versionDetail || version,
+    versionInfo: versionDetail?.metadata || version,
+    roleSpecs: versionDetail?.role_specs?.roles || null,
     versionPending,
     changeFamily,
     changeVersion,
@@ -499,6 +520,7 @@ const ProvisioningBody = ({ wizard }) => {
     form,
     feeds,
     set,
+    update,
     setter,
     setSetting,
     showAdvanced,
@@ -509,6 +531,13 @@ const ProvisioningBody = ({ wizard }) => {
     needsSafeId,
     fieldInventory,
     install,
+    host,
+    manifestRoles,
+    roleHints,
+    omit,
+    fetchArtifact,
+    uploadSafeId,
+    safeIdUploading,
   } = wizard;
   return (
     <ProvisioningStep
@@ -529,10 +558,23 @@ const ProvisioningBody = ({ wizard }) => {
       answers={form.properties}
       fieldErrors={fieldErrors}
       onAnswerChange={(key, value) => set({ properties: { ...form.properties, [key]: value } })}
+      onAnswers={answers =>
+        update(current => ({ properties: { ...current.properties, ...answers } }))
+      }
       inventory={fieldInventory}
       roles={form.roles}
       onRolesChange={setter('roles')}
+      manifestRoles={manifestRoles}
+      roleSpecs={picked.roleSpecs}
+      roleHints={roleHints}
       artifacts={feeds.artifacts}
+      queued={form.downloads}
+      onFetch={fetchArtifact}
+      makeRoleRow={(roleName, copyFrom) =>
+        copyFrom
+          ? tagRow(stripTag(copyFrom))
+          : tagRow({ name: roleName || '', enabled: true, files: {}, vars: {} })
+      }
       syncMethod={form.syncMethod}
       setSyncMethod={setter('syncMethod')}
       syncMethodOptions={feeds.agentDefaults?.knob_values?.['settings.sync_method'] || null}
@@ -541,8 +583,12 @@ const ProvisioningBody = ({ wizard }) => {
       removeTransportDefault={
         feeds.agentDefaults?.knob_defaults?.['transport.remove_on_completion'] ?? null
       }
-      safeIdPath={form.safeIdPath}
-      setSafeIdPath={setter('safeIdPath')}
+      safeId={form.safeId}
+      setSafeId={setter('safeId')}
+      onSafeIdUpload={uploadSafeId}
+      safeIdUploading={safeIdUploading}
+      host={host}
+      omit={omit}
       advanced={showAdvanced}
       loading={busy}
     />
@@ -774,6 +820,100 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   const picked = useProvisionerPick({ status, id, form, set, provisioners: feeds.provisioners });
   const fieldConfig = useMemo(() => dslConfiguration(picked.versionInfo), [picked.versionInfo]);
   const needsSafeId = Boolean(picked.versionInfo?.id_files);
+  const manifestRoles = useMemo(
+    () => (picked.versionInfo ? manifestRolesOf(picked.versionInfo) : NO_ROLES),
+    [picked.versionInfo]
+  );
+  const roleHints = useMemo(() => roleHintsOf(picked.versionInfo), [picked.versionInfo]);
+  const omit = useMemo(() => answeredFieldNames(manifestRoles), [manifestRoles]);
+  const [safeIdUploading, setSafeIdUploading] = useState(false);
+  const { artifacts, loadArtifacts } = feeds;
+
+  useEffect(() => {
+    if (manifestRoles.length === 0 || !Array.isArray(artifacts)) {
+      return;
+    }
+    update(current => {
+      const seeded = seedRolePicks(current.roles, manifestRoles, artifacts);
+      return { roles: seeded.roles, properties: { ...current.properties, ...seeded.answers } };
+    });
+  }, [manifestRoles, artifacts, update]);
+
+  const follow = useTaskFollow({
+    id,
+    onEnd: row => {
+      update(current => ({
+        downloads: Object.fromEntries(
+          Object.entries(current.downloads).filter(
+            ([, entry]) => String(entry.task_id) !== String(row.id)
+          )
+        ),
+      }));
+      if (row.status === 'completed') {
+        loadArtifacts();
+        return;
+      }
+      notify(
+        'danger',
+        t('machineEdit.machineCreateModal.downloadFailed', {
+          message: row.error_message || row.status,
+        })
+      );
+    },
+  });
+
+  const fetchArtifact = (artifact, key) =>
+    fetchMissingArtifact(status, id, artifact.id).then(
+      answer => {
+        const row = queuedTaskOf(answer, '');
+        const taskId = String(row?.id || answer?.task_id || '');
+        update(current => ({
+          downloads: {
+            ...current.downloads,
+            [key]: { task_id: taskId, artifact_id: String(artifact.id) },
+          },
+        }));
+        follow(answer);
+        notify(
+          'success',
+          t('machineEdit.machineCreateModal.downloadQueued', { filename: artifact.filename })
+        );
+      },
+      error =>
+        notify(
+          'danger',
+          t('machineEdit.machineCreateModal.downloadFailed', { message: error.message })
+        )
+    );
+
+  const uploadSafeId = async file => {
+    setSafeIdUploading(true);
+    try {
+      const prepared = await prepareArtifactUpload(status, id, {
+        filename: file.name,
+        size: file.size,
+        kind: SAFE_ID_KIND,
+      });
+      const landed = await uploadArtifactFile(status, id, prepared.task_id, file);
+      const row = landed?.artifact || {};
+      set({
+        safeId: {
+          source: 'upload',
+          artifact_id: String(row.id || ''),
+          name: row.filename || file.name,
+          path: '',
+        },
+      });
+      loadArtifacts();
+    } catch (error) {
+      notify(
+        'danger',
+        t('machineEdit.machineCreateModal.safeIdUploadFailed', { message: error.message })
+      );
+    } finally {
+      setSafeIdUploading(false);
+    }
+  };
   const seeded = useRef(false);
   const provisionerSeeded = useRef('');
   const seedFamily = seedFamilyOf(seed?.provisioner);
@@ -932,6 +1072,7 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
       properties: pruneHidden(fieldConfig, form.properties, form.roles),
       hardwarePayload,
       needsSafeId,
+      manifestRoles,
       bhyve,
       vbox,
     });
@@ -1015,6 +1156,7 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
     form,
     feeds,
     set,
+    update,
     setter,
     setSetting,
     setZone,
@@ -1039,7 +1181,14 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
     openBoxVault: () => setBoxVaultOpen(true),
     source,
     seedBox,
+    manifestRoles,
+    roleHints,
+    omit,
+    fetchArtifact,
+    uploadSafeId,
+    safeIdUploading,
   };
+  const downloadsQueued = Object.keys(form.downloads).length;
 
   const submit = event => {
     event.preventDefault();
@@ -1101,12 +1250,21 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
                 {t('machineEdit.machineCreateModal.advanced')}
               </label>
             </div>
-            <button type="submit" className="btn btn-primary" data-action="submit" disabled={busy}>
-              {t(
-                stepId === 'confirm'
-                  ? 'machineEdit.machineCreateModal.create'
-                  : 'machineEdit.machineCreateModal.next'
-              )}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              data-action="submit"
+              data-waits={stepId === 'confirm' && downloadsQueued > 0 ? downloadsQueued : undefined}
+              disabled={busy}
+            >
+              {stepId !== 'confirm'
+                ? t('machineEdit.machineCreateModal.next')
+                : t(
+                    downloadsQueued > 0
+                      ? 'machineEdit.machineCreateModal.createWaiting'
+                      : 'machineEdit.machineCreateModal.create',
+                    { count: downloadsQueued }
+                  )}
             </button>
           </Modal.Footer>
         </form>

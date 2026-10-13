@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  FaBoxOpen,
   FaCloudArrowDown,
   FaFileImport,
   FaMagnifyingGlass,
@@ -23,10 +24,14 @@ import {
   scanArtifacts,
   updateArtifactStoragePath,
 } from '../api/provisioning';
-import { useManageSend, useTaskFollow } from '../hooks/useHostManage';
+import { fetchTemplateSources } from '../api/templates';
+import { useManageRead, useManageSend, useTaskFollow } from '../hooks/useHostManage';
+import { hostHasFeature } from '../utils/capabilities';
 import {
   ARTIFACT_PAGE_SIZE,
+  FILE_SOURCES,
   TABLE_STATE_KEYS,
+  missingSeedOf,
   roleOptionsOf,
   secretNamesOf,
   tableStateOf,
@@ -40,6 +45,7 @@ import {
   LocationDeleteModal,
   LocationFormModal,
   RegisterModal,
+  RegistryDownloadModal,
   TransferModal,
   UploadModal,
 } from './InstallerFilesModals';
@@ -47,9 +53,12 @@ import TaskDialog from './TaskDialog';
 
 const rowKey = row => String(row.id);
 
+const NO_SOURCES = [];
+
 const OPENERS = [
   ['upload', FaUpload, 'host.installerFiles.upload', 'primary'],
   ['register', FaFileImport, 'host.installerFiles.registerPath', 'primary'],
+  ['registry', FaBoxOpen, 'host.installerFiles.fromBoxVault', 'info'],
   ['download', FaCloudArrowDown, 'host.installerFiles.downloadUrl', 'info'],
   ['hcl', FaCloudArrowDown, 'host.installerFiles.hclPortal', 'info'],
 ];
@@ -63,9 +72,17 @@ const saveBlob = (blob, filename) => {
   URL.revokeObjectURL(url);
 };
 
-const InstallerDialogs = ({ dialog, id, server, rows, reads, sender, count, on }) => {
+const InstallerDialogs = ({ dialog, id, server, rows, reads, sender, count, offered, on }) => {
   const roleOptions = roleOptionsOf(rows.installers);
-  const entry = { id, sender, onClose: on.close, onDone: on.done };
+  const entry = {
+    id,
+    sender,
+    onClose: on.close,
+    onDone: on.done,
+    seed: dialog?.seed || null,
+    offered,
+    onSwitch: on.switchSource,
+  };
   switch (dialog?.kind) {
     case 'upload':
       return <UploadModal {...entry} locations={rows.locations} roleOptions={roleOptions} />;
@@ -75,6 +92,15 @@ const InstallerDialogs = ({ dialog, id, server, rows, reads, sender, count, on }
           {...entry}
           server={server}
           locations={rows.locations}
+          roleOptions={roleOptions}
+        />
+      );
+    case 'registry':
+      return (
+        <RegistryDownloadModal
+          {...entry}
+          locations={rows.locations}
+          sources={rows.sources}
           roleOptions={roleOptions}
         />
       );
@@ -150,9 +176,11 @@ InstallerDialogs.propTypes = {
   reads: PropTypes.object.isRequired,
   sender: PropTypes.object.isRequired,
   count: PropTypes.number.isRequired,
+  offered: PropTypes.arrayOf(PropTypes.string).isRequired,
   on: PropTypes.shape({
     close: PropTypes.func.isRequired,
     done: PropTypes.func.isRequired,
+    switchSource: PropTypes.func.isRequired,
     saveLocation: PropTypes.func.isRequired,
     deleteLocation: PropTypes.func.isRequired,
     transfer: PropTypes.func.isRequired,
@@ -162,9 +190,13 @@ InstallerDialogs.propTypes = {
 
 /**
  * The installer files of a host: the storage locations card, the Upload,
- * Register path, Download URL and HCL portal dialogs, Scan all, and the
- * artifacts table with its selection, row actions and Load more, every
- * queued task followed to its end.
+ * Register path, From BoxVault, Download URL and HCL portal dialogs,
+ * From BoxVault while the host lists `templates`, its registries read
+ * through `GET templates/sources`, Scan all, and the artifacts table with
+ * its selection, row actions and Load more, a missing file's glyph
+ * opening the Download URL dialog seeded with the file, its role, its
+ * kind and the sha256 it is known by and offering every other source,
+ * every queued task followed to its end.
  */
 const InstallerFilesSection = ({
   id,
@@ -184,6 +216,13 @@ const InstallerFilesSection = ({
   const [dialog, setDialog] = useState(null);
   const [verify, setVerify] = useState(false);
   const [saving, setSaving] = useState(false);
+  const registries = hostHasFeature(server, 'templates');
+  const sources = useManageRead(
+    useCallback(() => fetchTemplateSources(status, id), [status, id]),
+    registries
+  );
+  const offered = registries ? FILE_SOURCES : FILE_SOURCES.filter(kind => kind !== 'registry');
+  const openers = OPENERS.filter(([kind]) => offered.includes(kind));
   const selection = useSelection(table.rows, { keyOf: rowKey, labelOf: row => row.filename });
   const reread = () => {
     reads.locations.refresh();
@@ -193,6 +232,10 @@ const InstallerFilesSection = ({
   const sender = { send, follow, busy };
   const state = tableStateOf({ ...reads.installers, filtering, rows: table.rows.length });
   const pagination = reads.installers.data?.pagination || null;
+  const onMissing = useCallback(artifact => {
+    setDialog({ kind: 'download', seed: missingSeedOf(artifact) });
+  }, []);
+  const tableCtx = { ...ctx, onMissing };
 
   const write = async ({ call, doneKey, values = {}, failKey, followed = true }) => {
     const { answer, error } = await send({ call, doneKey, values, failKey });
@@ -304,7 +347,7 @@ const InstallerFilesSection = ({
       />
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div className="d-flex flex-wrap gap-2">
-          {OPENERS.map(([kind, Icon, labelKey, tone]) => (
+          {openers.map(([kind, Icon, labelKey, tone]) => (
             <button
               key={kind}
               type="button"
@@ -384,7 +427,7 @@ const InstallerFilesSection = ({
           hiddenColumns={table.hiddenColumns}
           widths={table.widths}
           onResize={table.setColumnWidth}
-          ctx={ctx}
+          ctx={tableCtx}
           emptyText={t(TABLE_STATE_KEYS[state] || 'host.installerFiles.emptyArtifacts')}
         />
       </div>
@@ -405,16 +448,18 @@ const InstallerFilesSection = ({
         dialog={dialog}
         id={id}
         server={server}
-        rows={rows}
+        rows={{ ...rows, sources: Array.isArray(sources.data) ? sources.data : NO_SOURCES }}
         reads={reads}
         sender={sender}
         count={selection.selected.size}
+        offered={offered}
         on={{
           close: () => setDialog(null),
           done: () => {
             setDialog(null);
             reread();
           },
+          switchSource: kind => setDialog(current => ({ kind, seed: current?.seed || null })),
           saveLocation,
           deleteLocation: options =>
             write({

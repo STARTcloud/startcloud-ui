@@ -2,7 +2,9 @@ export const ARTIFACT_EXTENSIONS = ['.iso', '.img', '.vmdk', '.vhd', '.vhdx', '.
 
 const IMAGE_EXTENSIONS = ['.vmdk', '.vhd', '.vhdx', '.qcow2', '.img'];
 
-export const ARTIFACT_TYPES = ['iso', 'image'];
+export const ARTIFACT_TYPES = ['iso', 'image', 'installer', 'fixpack', 'hotfix'];
+
+export const ROLE_KEYED_TYPES = ['installer', 'fixpack', 'hotfix'];
 
 export const CHECKSUM_ALGORITHMS = ['md5', 'sha1', 'sha256'];
 
@@ -385,6 +387,16 @@ export const destinationsOf = (storagePaths, artifact) =>
  * @returns {Array<Object>} The enabled ones
  */
 export const enabledPaths = storagePaths => storagePaths.filter(path => path.enabled);
+
+/**
+ * The enabled storage locations that take a file without a role, the
+ * ones the ISO and image dialogs offer.
+ *
+ * @param {Array<Object>} storagePaths - The locations
+ * @returns {Array<Object>} The enabled ones outside the installer family
+ */
+export const roleFreePaths = storagePaths =>
+  enabledPaths(storagePaths).filter(path => !ROLE_KEYED_TYPES.includes(path.type));
 
 /**
  * The location a form opens on, the one enabled location when there is

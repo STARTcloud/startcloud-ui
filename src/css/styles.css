@@ -4153,6 +4153,11 @@ a.stat-card:focus-visible {
   height: 0.5rem;
 }
 
+.task-dialog-tools .task-progress {
+  flex: 1 1 8rem;
+  min-width: 6rem;
+}
+
 .task-metadata {
   max-height: 200px;
   overflow: auto;
@@ -4279,6 +4284,155 @@ a.stat-card:focus-visible {
 .terminal-preview {
   font-family: var(--terminal-preview-font, monospace);
   font-size: var(--terminal-preview-size, 12px);
+}
+
+.footer-consoles {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #1b1e22;
+  color: #e6edf3;
+}
+
+.footer-consoles-tabs {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 4px 8px 0;
+  background: var(--bs-tertiary-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.footer-consoles-tabs .nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  color: var(--bs-body-color);
+}
+
+.footer-consoles-tabs .nav-link.active {
+  background: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: var(--bs-white);
+}
+
+[data-brand] .footer-consoles-tabs .nav-link.active {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+
+.footer-consoles-tabs .nav-link.accepts {
+  box-shadow: inset 0 4px 0 var(--bs-primary);
+}
+
+[data-brand] .footer-consoles-tabs .nav-link.accepts {
+  box-shadow: inset 0 4px 0 var(--brand-primary);
+}
+
+.footer-consoles-tabs .nav-link.accepts.active {
+  box-shadow: inset 0 4px 0 var(--bs-white);
+}
+
+[data-brand] .footer-consoles-tabs .nav-link.accepts.active {
+  box-shadow: inset 0 4px 0 var(--brand-on-primary);
+}
+
+.footer-consoles-tabs .tab-detail {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.footer-consoles-tabs .tab-close {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.footer-consoles-tabs .tab-close:hover,
+.footer-consoles-tabs .tab-close:focus-visible {
+  background: var(--bs-danger);
+  color: var(--bs-white);
+}
+
+.console-commands {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--bs-tertiary-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+  color: var(--bs-body-color);
+}
+
+.console-commands-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+
+.console-commands-field {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--bs-font-monospace);
+}
+
+.console-commands-count {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.footer-consoles-bodies {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.footer-consoles-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--bs-secondary-color);
+}
+
+.console-body {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.console-body.shown {
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.console-body .footer-shell,
+.console-body .hw-console-content,
+.console-body .hw-zone-shell-container,
+.console-body .hw-vnc-container {
+  height: 100%;
+}
+
+.console-rdp-body {
+  position: relative;
+}
+
+.console-body .terminal.xterm {
+  width: 100%;
+  height: 100%;
 }
 
 .chart {
@@ -4935,6 +5089,56 @@ a.stat-card:focus-visible {
 .hw-var-row .btn {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+.hw-file-pickers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.hw-file-picker {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(14rem, 1fr) auto;
+  gap: 0.25rem 0.625rem;
+  align-items: center;
+}
+
+.hw-file-picker .hw-file-kind {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--bs-body-color);
+}
+
+.hw-file-picker select {
+  min-width: 0;
+}
+
+.hw-file-picker .hw-file-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  font-size: 0.72rem;
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
+
+.hw-file-picker .hw-file-meta code {
+  font-size: 0.68rem;
+}
+
+.hw-file-picker .hw-file-line {
+  grid-column: 2 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.78rem;
+}
+
+.hw-safe-id-path {
+  min-width: 18rem;
 }
 
 .hw-val-preview {

@@ -92,8 +92,24 @@ Then('the open menu offers no {string}', async ({ page }, action) => {
   await expect(openMenuOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);
 });
 
+Then('the open menu entry {string} links to {string}', async ({ page }, action, href) => {
+  await expect(openMenuOf(page).locator(`[data-action="${action}"]`).first()).toHaveAttribute(
+    'href',
+    href
+  );
+});
+
 Then('the catalog dialog {string} draws', async ({ page }, name) => {
   await expect(namedDialogOf(page, name)).toBeVisible();
+});
+
+Then('the catalog dialog {string} reads {string}', async ({ page }, name, text) => {
+  await expect(namedDialogOf(page, name)).toContainText(text);
+});
+
+Then('the catalog dialog {string} offers no submit', async ({ page }, name) => {
+  await expect(namedDialogOf(page, name)).toBeVisible();
+  await expect(namedDialogOf(page, name).locator('[data-action="submit"]')).toHaveCount(0);
 });
 
 Then('the catalog dialog {string} is gone', async ({ page }, name) => {
@@ -140,6 +156,47 @@ Then(
 Then('the open dialog draws the panel {string}', async ({ page }, name) => {
   await expect(dialogOf(page).locator(`[data-panel="${name}"]`)).toBeVisible();
 });
+
+const dialogTableOf = (page, name) => dialogOf(page).locator(`[data-table="${name}"]`);
+
+const dialogRowOf = (page, name, text) =>
+  dialogTableOf(page, name)
+    .locator('tbody tr:not(.table-group-row)')
+    .filter({ hasText: text })
+    .first();
+
+Then('the dialog table {string} lists {int} rows', async ({ page }, name, count) => {
+  await expect(dialogTableOf(page, name)).toBeVisible();
+  await expect(dialogTableOf(page, name).locator('tbody tr:not(.table-group-row)')).toHaveCount(
+    count
+  );
+});
+
+Then('the dialog table {string} draws {int} groups', async ({ page }, name, count) => {
+  await expect(dialogTableOf(page, name).locator('tbody tr.table-group-row')).toHaveCount(count);
+});
+
+When(
+  'I press {string} on the row {string} of the dialog table {string}',
+  async ({ page }, action, text, name) => {
+    await dialogRowOf(page, name, text).locator(`[data-action="${action}"]`).click();
+  }
+);
+
+Then(
+  'the row {string} of the dialog table {string} notes {string}',
+  async ({ page }, text, name, note) => {
+    await expect(dialogRowOf(page, name, text).locator(`[data-note="${note}"]`)).toBeVisible();
+  }
+);
+
+Then(
+  'the row {string} of the {string} table of the section page carries a {string} badge',
+  async ({ page }, text, name, tone) => {
+    await expect(rowOf(page, name, text)).toBeVisible();
+    await expect(rowOf(page, name, text).locator(`.badge.text-bg-${tone}`)).toHaveCount(1);
+  }
+);
 
 const hostCatalogOf = page => tableOf(page, 'provisioner-catalog');
 

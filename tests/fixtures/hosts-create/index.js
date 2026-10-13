@@ -47,6 +47,14 @@ export default {
     status: 200,
     file: 'artifacts-iso-200.json',
   },
+  'POST /api/agents/1/artifacts/art-0102/fetch': {
+    status: 202,
+    file: 'artifact-fetch-202.json',
+  },
+  'POST /api/agents/1/artifacts/art-0103/fetch': {
+    status: 202,
+    file: 'artifact-fetch-fixpack-202.json',
+  },
   'GET /api/agents/1/media': {
     status: 200,
     file: 'media-200.json',

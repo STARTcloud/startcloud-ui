@@ -11,8 +11,11 @@
       "description": "An additional HCL Domino server beside an existing one",
       "roles": [
         {
-          "name": "startcloud.hcl_roles.domino_additional",
-          "defaultEnabled": true
+          "name": "domino_additional",
+          "label": "Domino additional server",
+          "description": "Joins an existing Domino domain as an additional server",
+          "collection": "startcloud.hcl_roles",
+          "default_enabled": true
         }
       ],
       "configuration": {

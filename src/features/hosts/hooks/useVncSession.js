@@ -21,6 +21,28 @@ const readClipboard = async ref => {
 };
 
 /**
+ * Whether the VNC session of one machine is ready, one read of
+ * `GET machines/{name}/vnc/info`: ready with the session's info while the
+ * agent says a session is active, not ready with the reason otherwise.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} machineName - The machine name
+ * @returns {Promise<{ ready: boolean, sessionInfo?: Object, reason?: string }>} The readiness
+ */
+export const readVncReadiness = async (status, id, machineName) => {
+  try {
+    const info = await fetchVncSessionInfo(status, id, machineName);
+    if (info?.active_vnc_session) {
+      return { ready: true, sessionInfo: info.vnc_session_info || {} };
+    }
+    return { ready: false, reason: 'The VNC session is not active.' };
+  } catch (error) {
+    return { ready: false, reason: error.message };
+  }
+};
+
+/**
  * The VNC session state of one machine, hyperweaver-ui's `useVncSession`:
  * the dialog's open and full-screen state, the load-error state with its
  * direct-console fallback, the viewer's settings, quality, compression,
@@ -74,17 +96,7 @@ export const useVncSession = ({ id, setMachineDetails, previewVncRef, modalVncRe
   };
 
   const waitForVncSessionReady = useCallback(
-    async machineName => {
-      try {
-        const info = await fetchVncSessionInfo(status, id, machineName);
-        if (info?.active_vnc_session) {
-          return { ready: true, sessionInfo: info.vnc_session_info || {} };
-        }
-        return { ready: false, reason: 'The VNC session is not active.' };
-      } catch (error) {
-        return { ready: false, reason: error.message };
-      }
-    },
+    machineName => readVncReadiness(status, id, machineName),
     [status, id]
   );
 

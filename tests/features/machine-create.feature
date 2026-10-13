@@ -284,6 +284,32 @@ Feature: machine create
     And the host was sent POST to "/api/agents/1/provisioning/catalog/install" 1 times
     And the host was not sent POST to "/api/agents/1/machines"
 
+  Scenario: Create wizard: Create a machine in the chevron menu of a held family on the Provisioners page opens the wizard on the host's page with the family and its newest held version picked
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the host answers the deploy-intents-hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/provisioning/provisioners"
+    Then the section page "provisioners" draws
+    When I open the menu of the card "startcloud" of the provisioner catalog
+    Then the open menu offers "held-create"
+    When I press the menu entry "held-create"
+    Then the path is "/hosts/1?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.startcloud.com%2Fcatalog.json"
+    And the "machine-create" dialog is open
+    When I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    Then the wizard is on the step "provisioning"
+    And the field "machine-create-provisioner" reads "startcloud"
+    And the field "machine-create-version" reads "0.1.27"
+    And the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.27" 1 times
+
   Scenario: Create wizard: the deep link of the catalog, a family no source of the host lists adds the handed catalog as a source on Add source and install, then installs from it
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
@@ -292,7 +318,7 @@ Feature: machine create
     And the host answers the hosts-events fixture
     And the stream holds the catalog-install frames
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1?create=machine&provisioner=acme%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.example.com%2Fapi%2Fprivate%2F0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11%2Fcatalog"
+    When I open "/hosts/1?create=machine&provisioner=acme%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.example.com%2Fcatalog.json"
     And I type "web-3" into the field "machine-setting-hostname"
     And I type "example.com" into the field "machine-setting-domain"
     And I send the open dialog
@@ -304,10 +330,10 @@ Feature: machine create
     Then the wizard's provisioner card reads "add"
     When the host answers the hosts-create-catalogued fixture
     And I press the open dialog's "provisioner-add-source" action
-    Then the host was sent POST to "/api/agents/1/provisioning/catalog/sources" carrying "https://provisioner-catalog.example.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog" at "/url"
-    And the host was sent POST to "/api/agents/1/provisioning/catalog/sources" carrying "oidc" at "/auth"
+    Then the host was sent POST to "/api/agents/1/provisioning/catalog/sources" carrying "https://provisioner-catalog.example.com/catalog.json" at "/url"
+    And the host was sent POST to "/api/agents/1/provisioning/catalog/sources" carrying nothing at "/auth"
     And the host was sent POST to "/api/agents/1/provisioning/catalog/sources" carrying "provisioner-catalog.example.com" at "/display_name"
-    And the host was sent POST to "/api/agents/1/provisioning/catalog/install" carrying "provisioner_catalog_example_com_api_private_0b7c1d52_6f0e_4c0a_9a54_3c1f6f2a9e11_catalog" at "/source_name"
+    And the host was sent POST to "/api/agents/1/provisioning/catalog/install" carrying "provisioner_catalog_example_com_catalog_json" at "/source_name"
     And the wizard's provisioner card reads "installing"
 
   Scenario: Create wizard: the deep link of the catalog, a source add the host refuses says the provisioner was not found at its catalog with the agent's word and Retry, and nothing installs
@@ -318,7 +344,7 @@ Feature: machine create
     And the host answers the hosts-events fixture
     And the host refuses the next POST to "/api/agents/1/provisioning/catalog/sources"
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1?create=machine&provisioner=acme%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.example.com%2Fapi%2Fprivate%2F0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11%2Fcatalog"
+    When I open "/hosts/1?create=machine&provisioner=acme%2Fhcl_domino_additional_provisioner&provisioner_version=0.3.0&provisioner_catalog=https%3A%2F%2Fprovisioner-catalog.example.com%2Fcatalog.json"
     And I type "web-3" into the field "machine-setting-hostname"
     And I type "example.com" into the field "machine-setting-domain"
     And I send the open dialog
@@ -699,6 +725,145 @@ Feature: machine create
     And the "machine-create" dialog is open
     And the field "machine-setting-box" reads "startcloud/debian13"
     And the field "machine-setting-box_version" reads "13.1.0"
+
+  Scenario: Create wizard: the Provisioning step draws every manifest role in manifest order with its default, a changed switch draws the warning banner and Template defaults clears it, the proxy fields follow their checkbox and the Installer Archives fields are not drawn
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27"
+    And I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I check the field "machine-create-advanced"
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    Then the wizard is on the step "provisioning"
+    And the roles list reads "networking,docker,domino_install,domino_leap"
+    And the role "networking" is on
+    And the role "docker" is off
+    And the role "domino_install" is on
+    And the role "domino_leap" is off
+    And the role "networking" is titled "networking"
+    And the roles editor notes no "roles-changed"
+    And the open dialog draws the field "prov-field-guest_user"
+    And the open dialog draws no field "prov-field-DOMINO_INSTALLER"
+    And the open dialog draws no field "prov-field-DOMINO_HASH"
+    And the open dialog draws no field "prov-field-PROXY_SERVER"
+    When I check the field "prov-field-USE_PROXY"
+    Then the open dialog draws the field "prov-field-PROXY_SERVER"
+    And the open dialog draws the field "prov-field-PROXY_PORT"
+    When I flip the role "networking"
+    Then the role "networking" is off
+    And the roles editor notes "roles-changed"
+    When I press the roles editor's "roles-defaults" action
+    Then the role "networking" is on
+    And the roles editor notes no "roles-changed"
+    When I drag the role "domino_leap" onto the role "docker"
+    Then the roles list reads "networking,domino_leap,docker,domino_install"
+    And the Safe ID source reads "cache"
+    When I choose "art-0105" in the field "machine-setting-safe-id"
+    And I type "proxy.example.com" into the field "prov-field-PROXY_SERVER"
+    And I send the open dialog
+    Then the wizard is on the step "confirm"
+    When I send the open dialog
+    Then the host was sent POST to "/api/agents/1/machines" carrying "networking" at "/roles/0/name"
+    And the host was sent POST to "/api/agents/1/machines" carrying "true" at "/roles/0/enabled"
+    And the host was sent POST to "/api/agents/1/machines" carrying "startcloud.startcloud_roles" at "/roles/0/collection"
+    And the host was sent POST to "/api/agents/1/machines" carrying "always" at "/roles/0/tags"
+    And the host was sent POST to "/api/agents/1/machines" carrying "domino_leap" at "/roles/1/name"
+    And the host was sent POST to "/api/agents/1/machines" carrying "false" at "/roles/1/enabled"
+    And the host was sent POST to "/api/agents/1/machines" carrying "domino_install" at "/roles/3/name"
+    And the host was sent POST to "/api/agents/1/machines" carrying "Domino_14.0_Linux_English.tar" at "/roles/3/files/installer"
+    And the host was sent POST to "/api/agents/1/machines" carrying "14.0.0" at "/roles/3/files/installer_version"
+    And the host was sent POST to "/api/agents/1/machines" carrying "Domino_14.0_Linux_English.tar" at "/properties/DOMINO_INSTALLER"
+    And the host was sent POST to "/api/agents/1/machines" carrying "5fd08b71e946f11308232170553aaca6f4c60c8bb8d91ef6fb89e3f171bad9a5" at "/properties/DOMINO_HASH"
+    And the host was sent POST to "/api/agents/1/machines" carrying "14" at "/properties/DOMINO_INSTALLER_MAJOR_VERSION"
+    And the host was sent POST to "/api/agents/1/machines" carrying "proxy.example.com" at "/properties/PROXY_SERVER"
+    And the host was sent POST to "/api/agents/1/machines" carrying "art-0105" at "/safe_id/artifact_id"
+    And the host was sent POST to "/api/agents/1/machines" carrying "SAFE.ids" at "/safe_id/name"
+    And the host was sent POST to "/api/agents/1/machines" carrying nothing at "/safe_id_path"
+    And the host was sent POST to "/api/agents/1/machines" carrying nothing at "/wait_for"
+    And the host was sent POST to "/api/agents/1/machines" 1 times
+
+  Scenario: Create wizard: a known-but-missing installer picked draws the warning and the download glyph, the glyph queues the download the create waits on, and its end on the stream reads the artifacts again and frees Create
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the host answers the hosts-events fixture
+    And the stream holds the artifact-fetch frames
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27"
+    And I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    Then the wizard is on the step "provisioning"
+    And the role "domino_install" notes no "role-attention"
+    When I open the role "domino_install"
+    And I pick "Domino_14.5_Linux_English.tar" as the "installer" file of the role "domino_install"
+    Then the "installer" file of the role "domino_install" reads "missing"
+    And the role "domino_install" notes "role-attention"
+    And the host was not sent POST to "/api/agents/1/artifacts/art-0102/fetch"
+    When I press the fetch glyph of the "installer" file of the role "domino_install"
+    Then the host was sent POST to "/api/agents/1/artifacts/art-0102/fetch" 1 times
+    And the "installer" file of the role "domino_install" reads "queued"
+    And the role "domino_install" notes no "role-attention"
+    And the page raised 1 success notice
+    When I send the open dialog
+    Then the wizard is on the step "confirm"
+    And the Create button waits on 1 downloads
+    And the wizard's confirm rows include "domino_install"
+    When the stream releases its frames
+    Then the host was sent GET to "/api/agents/1/artifacts" 2 times
+    And the Create button waits on no download
+    When I send the open dialog
+    Then the host was sent POST to "/api/agents/1/machines" carrying "Domino_14.5_Linux_English.tar" at "/properties/DOMINO_INSTALLER"
+    And the host was sent POST to "/api/agents/1/machines" carrying "5" at "/properties/DOMINO_INSTALLER_MINOR_VERSION"
+    And the host was sent POST to "/api/agents/1/machines" carrying "Domino_14.5_Linux_English.tar" at "/roles/2/files/installer"
+    And the host was sent POST to "/api/agents/1/machines" carrying nothing at "/wait_for"
+    And the host was sent POST to "/api/agents/1/machines" 1 times
+
+  Scenario: Create wizard: a queued download still running when Create is pressed rides in wait_for, and the Safe ID path door sends safe_id_path
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the host answers the hosts-events fixture
+    And the stream holds the artifact-fetch frames
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine&provisioner=STARTcloud%2Fstartcloud&provisioner_version=0.1.27"
+    And I type "web-3" into the field "machine-setting-hostname"
+    And I type "example.com" into the field "machine-setting-domain"
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I send the open dialog
+    And I open the role "domino_install"
+    And I pick "Domino_1400FP3_Linux.tar" as the "fixpack" file of the role "domino_install"
+    Then the "fixpack" file of the role "domino_install" reads "missing"
+    When I press the fetch glyph of the "fixpack" file of the role "domino_install"
+    Then the "fixpack" file of the role "domino_install" reads "queued"
+    When I pick the Safe ID door "path"
+    And I type "/local/ids/SAFE.ids" into the field "machine-setting-safe-id"
+    Then the Safe ID source reads "path"
+    When I send the open dialog
+    Then the Create button waits on 1 downloads
+    When I send the open dialog
+    Then the host was sent POST to "/api/agents/1/machines" carrying "c2000000-0000-4000-8000-000000000041" at "/wait_for/0"
+    And the host was sent POST to "/api/agents/1/machines" carrying "Domino_1400FP3_Linux.tar" at "/properties/DOMINO_INSTALLER_FIXPACK"
+    And the host was sent POST to "/api/agents/1/machines" carrying "true" at "/properties/DOMINO_INSTALLER_FIXPACK_INSTALL"
+    And the host was sent POST to "/api/agents/1/machines" carrying "14.0fp3" at "/roles/2/files/fixpack_version"
+    And the host was sent POST to "/api/agents/1/machines" carrying "/local/ids/SAFE.ids" at "/safe_id_path"
+    And the host was sent POST to "/api/agents/1/machines" carrying nothing at "/safe_id"
 
   Scenario: Controls menu: the tool rows by their tokens, Install OS draws on a VirtualBox host for a machine that is off and sends the ISO, the user and the password
     Given the host answers the hosts fixture

@@ -35,10 +35,36 @@ const statusTitle = (state, t) => {
   return t(titleKey, values);
 };
 
+const MissingGlyph = ({ row, ctx }) => {
+  const label = ctx.t('host.installerFiles.fetchMissing', { filename: row.filename });
+  return (
+    <button
+      type="button"
+      className="btn btn-link btn-sm p-0 text-warning"
+      title={label}
+      aria-label={label}
+      data-action="artifact-fetch"
+      onClick={() => ctx.onMissing(row)}
+    >
+      <FaTriangleExclamation aria-hidden="true" />
+    </button>
+  );
+};
+
+MissingGlyph.propTypes = {
+  row: PropTypes.shape({ filename: PropTypes.string }).isRequired,
+  ctx: PropTypes.shape({
+    t: PropTypes.func.isRequired,
+    onMissing: PropTypes.func.isRequired,
+  }).isRequired,
+};
+
 /**
- * The columns of the artifacts table, hyperweaver-ui's: the type, the
- * location, the role, the file name, the version, the size and the
- * status as a badge in its tone with its tooltip.
+ * The columns of the artifacts table, hyperweaver-ui's: the file name,
+ * a warning glyph before it on a missing file that opens the sources
+ * through `ctx.onMissing`, the type, the location, the role, the
+ * version, the size and the status as a badge in its tone with its
+ * tooltip.
  */
 export const ARTIFACT_COLUMNS = [
   {
@@ -46,7 +72,12 @@ export const ARTIFACT_COLUMNS = [
     kind: 'name',
     labelKey: 'host.installerFiles.colFilename',
     value: row => row.filename || '',
-    render: row => <code className="small">{row.filename}</code>,
+    render: (row, ctx) => (
+      <span className="d-inline-flex align-items-center gap-2">
+        {row.file_exists === false && ctx.onMissing ? <MissingGlyph row={row} ctx={ctx} /> : null}
+        <code className="small">{row.filename}</code>
+      </span>
+    ),
   },
   {
     key: 'file_type',

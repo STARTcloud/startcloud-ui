@@ -118,6 +118,26 @@ When('I open the account menu', async ({ page }) => {
   await expect(page.locator('.user-menu .dropdown-menu.show')).toBeVisible();
 });
 
+Then(
+  "the task dialog's header carries the progress {string} and Cancel task as a glyph",
+  async ({ page }, percent) => {
+    const header = dialogOf(page).locator('.modal-header');
+    await expect(header.locator('[data-panel="task-progress"] .task-progress')).toBeVisible();
+    await expect(header.locator('[data-panel="task-progress"]')).toContainText(percent);
+    await glyphOnly(header.locator('[data-tool="cancel-task"]'));
+    await expect(dialogOf(page).locator('.modal-body [data-tool="cancel-task"]')).toHaveCount(0);
+  }
+);
+
+Then('the task dialog draws its details as one table above the output', async ({ page }) => {
+  const details = dialogOf(page).locator('[data-table="task-details"] table');
+  await expect(details).toBeVisible();
+  const detailsTop = await sizeOf(page, '[data-table="task-details"] table', 'top');
+  await expect
+    .poll(() => sizeOf(page, '.modal.show .task-output', 'top'))
+    .toBeGreaterThan(detailsTop);
+});
+
 When('I confirm the open dialog', async ({ page }) => {
   const dialog = page.getByRole('dialog').last();
   const field = dialog.getByRole('textbox');

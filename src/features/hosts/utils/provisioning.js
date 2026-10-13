@@ -328,25 +328,66 @@ export const structureOf = text => {
 };
 
 /**
- * The roles the roles editor opens with from a version's `metadata.roles`,
- * one row a role with its toggle seeded from the manifest's own hint.
+ * The roles a version's manifest declares, `metadata.roles`, in the
+ * manifest's order, the rows that carry a name.
  *
- * @param {Object|null} version - The provisioner version
- * @returns {Array<{ name: string, enabled: boolean, files: Object }>} The rows
+ * @param {Object|null} version - The provisioner version's manifest
+ * @returns {Array<Object>} The manifest's roles
  */
-export const seedRoles = version => {
+export const manifestRolesOf = version => {
   const list = version?.metadata?.roles;
   if (!Array.isArray(list)) {
     return [];
   }
-  return list
-    .filter(role => role && typeof role === 'object' && role.name)
-    .map(role => ({
-      name: role.name,
-      enabled: Boolean(role.defaultEnabled ?? role.default_enabled ?? role.enabled ?? false),
-      files: {},
-    }));
+  return list.filter(role => isObject(role) && typeof role.name === 'string' && role.name);
 };
+
+/**
+ * The manifest's role of one name, matched on the bare name, null for a
+ * name the manifest does not declare.
+ *
+ * @param {Array<Object>} manifestRoles - The manifest's roles
+ * @param {string} name - The role name, dotted or bare
+ * @returns {Object|null} The manifest's role
+ */
+export const manifestRoleOf = (manifestRoles, name) => {
+  const bare = String(name || '')
+    .split('.')
+    .pop();
+  return manifestRoles.find(role => role.name.split('.').pop() === bare) || null;
+};
+
+/**
+ * The roles the roles editor opens with, one row a manifest role in the
+ * manifest's order, on where its `default_enabled` is true, with no file
+ * picked and no variable set.
+ *
+ * @param {Object|null} version - The provisioner version's manifest
+ * @returns {Array<{ name: string, enabled: boolean, files: Object, vars: Object }>} The rows
+ */
+export const seedRoles = version =>
+  manifestRolesOf(version).map(role => ({
+    name: role.name,
+    enabled: role.default_enabled === true,
+    files: {},
+    vars: {},
+  }));
+
+/**
+ * The roles whose switch differs from the provisioner's default: a role
+ * the manifest enables turned off, or one it leaves off turned on, a row
+ * without `enabled` reading as on and a role the manifest does not
+ * declare never counted.
+ *
+ * @param {Array<Object>} rows - The role rows
+ * @param {Array<Object>} manifestRoles - The manifest's roles
+ * @returns {Array<Object>} The rows that changed
+ */
+export const changedRolesOf = (rows, manifestRoles) =>
+  rows.filter(row => {
+    const declared = manifestRoleOf(manifestRoles, row.name);
+    return declared !== null && (row.enabled !== false) !== (declared.default_enabled === true);
+  });
 
 /**
  * The registry's ordering hints, a role's bare name to the roles it

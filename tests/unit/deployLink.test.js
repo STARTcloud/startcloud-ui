@@ -195,15 +195,14 @@ describe('deployHref', () => {
     );
   });
 
-  it('keeps the query under the agent limit for the two seeds, a private catalog URL and two boxes included', () => {
+  it('keeps the query under the agent limit for the two seeds, the catalog URL and two boxes included', () => {
     expect(deployHref('local', boxSeed).length).toBeLessThan(2048);
     expect(
       deployHref('local', {
         ...provisionerSeed,
         provisioner_url:
           'https://github.com/STARTcloud/hcl_domino_additional_provisioner/releases/download/v0.3.0/hcl_domino_additional_provisioner-0.3.0.tar.gz',
-        provisioner_catalog:
-          'https://provisioner-catalog.startcloud.com/api/private/0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11/catalog',
+        provisioner_catalog: 'https://provisioner-catalog.startcloud.com/catalog.json',
         box_virtualbox:
           'STARTcloud/debian13@13.1.0@amd64@https://boxvault.startcloud.com/STARTcloud/debian13/13.1.0/virtualbox',
         box_zone:

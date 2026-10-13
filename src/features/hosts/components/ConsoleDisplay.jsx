@@ -45,7 +45,8 @@ export const consoleShown = ({ hasVnc, hasZlogin, hasSsh, hasRdp, activeConsoleT
  * `consoleShown`, or the inactive display with the start buttons; the
  * RDP display and the VNC display are each loaded only when their
  * console opens, the RDP client's WASM and the VNC viewer never with the
- * page.
+ * page; every live display carries Send to footer over `sendToFooter`
+ * where the panel hands one.
  */
 const ConsoleDisplay = ({
   id,
@@ -84,6 +85,7 @@ const ConsoleDisplay = ({
   handleVncShowDotChange,
   handleVncClipboardPaste,
   setShowZloginConsole,
+  sendToFooter = null,
 }) => {
   const { t } = useTranslation();
   const previewVncRef = useRef(null);
@@ -127,12 +129,26 @@ const ConsoleDisplay = ({
     );
     return (
       <Suspense fallback={fallback}>
-        <RdpConsoleDisplay {...common} hasVnc={hasVnc} hasZlogin={hasZlogin} hasSsh={hasSsh} />
+        <RdpConsoleDisplay
+          {...common}
+          hasVnc={hasVnc}
+          hasZlogin={hasZlogin}
+          hasSsh={hasSsh}
+          sendToFooter={sendToFooter}
+        />
       </Suspense>
     );
   }
   if (shown === 'ssh') {
-    return <SshConsoleDisplay {...common} hasVnc={hasVnc} hasZlogin={hasZlogin} hasRdp={hasRdp} />;
+    return (
+      <SshConsoleDisplay
+        {...common}
+        hasVnc={hasVnc}
+        hasZlogin={hasZlogin}
+        hasRdp={hasRdp}
+        sendToFooter={sendToFooter}
+      />
+    );
   }
   if (shown === 'zlogin') {
     return (
@@ -148,6 +164,7 @@ const ConsoleDisplay = ({
         hasVnc={hasVnc}
         hasSsh={hasSsh}
         hasRdp={hasRdp}
+        sendToFooter={sendToFooter}
       />
     );
   }
@@ -182,6 +199,7 @@ const ConsoleDisplay = ({
           hasZlogin={hasZlogin}
           hasSsh={hasSsh}
           hasRdp={hasRdp}
+          sendToFooter={sendToFooter}
         />
       </Suspense>
     );
@@ -226,6 +244,7 @@ ConsoleDisplay.propTypes = {
   handleVncShowDotChange: PropTypes.func.isRequired,
   handleVncClipboardPaste: PropTypes.func.isRequired,
   setShowZloginConsole: PropTypes.func.isRequired,
+  sendToFooter: PropTypes.func,
 };
 
 export default memo(ConsoleDisplay);

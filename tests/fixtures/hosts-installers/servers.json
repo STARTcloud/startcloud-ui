@@ -16,7 +16,7 @@
         "arch": "x86_64",
         "version": "0.2.3",
         "hostname": "zone-1",
-        "features": ["tasks", "artifacts", "provisioner-registry"]
+        "features": ["tasks", "artifacts", "provisioner-registry", "templates"]
       },
       "last_used": "2026-09-27T00:00:00.000Z",
       "created_at": "2026-09-01T00:00:00.000Z",

@@ -11,7 +11,8 @@ const FIRST_FIELD = 'input:not([disabled]), select:not([disabled]), textarea:not
  * on open unless a person has already put the focus in one of them
  * while the dialog was still fading in, and in the footer Cancel and
  * the primary action, `submitKey`
- * its own word, both held while a request is in flight; `problemKey`,
+ * its own word, both held while a request is in flight, Cancel alone
+ * while `submitKey` is empty; `problemKey`,
  * where given, is the sentence that says why the form cannot be sent,
  * drawn over the fields. The form carries `dialog` as `data-dialog`;
  * `variant` is the primary action's Bootstrap variant, `danger` on a
@@ -21,7 +22,7 @@ const FIRST_FIELD = 'input:not([disabled]), select:not([disabled]), textarea:not
 const ToolFormDialog = ({
   dialog,
   title,
-  submitKey,
+  submitKey = '',
   problemKey = '',
   variant = 'primary',
   disabled = false,
@@ -63,14 +64,16 @@ const ToolFormDialog = ({
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
             {t('pages.confirm.cancel')}
           </button>
-          <button
-            type="submit"
-            className={`btn btn-${variant}`}
-            data-action="submit"
-            disabled={busy || disabled}
-          >
-            {t(submitKey)}
-          </button>
+          {submitKey ? (
+            <button
+              type="submit"
+              className={`btn btn-${variant}`}
+              data-action="submit"
+              disabled={busy || disabled}
+            >
+              {t(submitKey)}
+            </button>
+          ) : null}
         </Modal.Footer>
       </form>
     </Modal>
@@ -80,7 +83,7 @@ const ToolFormDialog = ({
 ToolFormDialog.propTypes = {
   dialog: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
-  submitKey: PropTypes.string.isRequired,
+  submitKey: PropTypes.string,
   problemKey: PropTypes.string,
   variant: PropTypes.string,
   disabled: PropTypes.bool,

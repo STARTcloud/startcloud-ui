@@ -105,7 +105,7 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
 | `discover`         | `/organizations/discover` and the cluster's Discover compass                                                          |
 | `invitations`      | the Invitations tab in the org console                                                                                |
 | `uploads`          | ISO upload zone, box file upload, the upload slots                                                                    |
-| `private-catalogs` | `/api/private/<uuid>/...` per membership, the access-denied banner                                                    |
+| `private-catalogs` | private entries of the `/api/catalog` read drawn with their organization                                              |
 | `watches`          | watch stars and the Watched filter                                                                                    |
 | `deploy`           | the Deploy button and glyph (still needs the hyperweaver entitlement and `/api/config`)                               |
 | `rebuild`          | the Rebuild catalog data menu row (still needs `ROLE_ADMIN`)                                                          |

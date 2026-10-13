@@ -1,16 +1,19 @@
 import PropTypes from 'prop-types';
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCircle, FaExpand, FaPaste } from 'react-icons/fa6';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
+import { useZoneTerminal } from '../hooks/useZoneTerminal';
 import { captureFileName, consoleAdmin, saveBlob } from '../utils/consoles';
 
 import { startConsole } from './consoleActions';
 import ConsoleSwitchButtons from './ConsoleSwitchButtons';
+import SendToFooterButton from './SendToFooterButton';
 import ZloginActionsDropdown from './ZloginActionsDropdown';
 import ZoneShell from './ZoneShell';
+import { zoneKeyOf } from './ZoneTerminalProvider';
 
 const PREFIX = 'console.zloginConsoleDisplay';
 
@@ -19,8 +22,10 @@ const PREFIX = 'console.zloginConsoleDisplay';
  * the header with the session's id and start, the zlogin actions menu,
  * Paste down the zone's socket while interactive, Expand into the
  * dialog, and the switch-or-start buttons of the other consoles the
- * host's row lists, VNC, SSH and RDP; under it the zone's terminal with
- * the live-or-offline chip in its corner.
+ * host's row lists, VNC, SSH and RDP, and Send to footer while a session
+ * is live; under it the zone's terminal with the live-or-offline chip in
+ * its corner, the history the provider kept of the zone restored as the
+ * terminal is made.
  */
 const ZloginConsoleDisplay = ({
   id,
@@ -47,10 +52,16 @@ const ZloginConsoleDisplay = ({
   forceZoneSessionCleanup,
   pasteTextToZone,
   handleZloginConsole,
+  sendToFooter = null,
 }) => {
   const { t } = useTranslation();
   const status = useStatus();
+  const { restoreZoneHistory } = useZoneTerminal();
   const session = machineDetails.zlogin_session;
+  const restore = useCallback(
+    terminal => restoreZoneHistory(zoneKeyOf(id, name), terminal),
+    [restoreZoneHistory, id, name]
+  );
   const starters = {
     status,
     id,
@@ -151,6 +162,9 @@ const ZloginConsoleDisplay = ({
           >
             <FaExpand aria-hidden="true" />
           </button>
+          {sendToFooter && session ? (
+            <SendToFooterButton onSend={() => sendToFooter('zlogin')} disabled={loading} />
+          ) : null}
           <ConsoleSwitchButtons
             prefix={PREFIX}
             server={server}
@@ -170,6 +184,7 @@ const ZloginConsoleDisplay = ({
           zoneName={name}
           readOnly={previewReadOnly}
           className="hw-console-zone-shell"
+          onTerminal={restore}
         />
         <div className="hw-console-status-overlay" data-note={session ? 'live' : 'offline'}>
           <FaCircle
@@ -212,6 +227,7 @@ ZloginConsoleDisplay.propTypes = {
   forceZoneSessionCleanup: PropTypes.func.isRequired,
   pasteTextToZone: PropTypes.func.isRequired,
   handleZloginConsole: PropTypes.func.isRequired,
+  sendToFooter: PropTypes.func,
 };
 
 export default memo(ZloginConsoleDisplay);

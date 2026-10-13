@@ -10,6 +10,7 @@ import { ServersContext } from '../hooks/useServers';
 import { isServerRole, selfServer } from '../utils/hosts';
 import { visibleRows } from '../utils/organizations';
 
+import ConsolesKeeper from './ConsolesKeeper';
 import HostApplicationsProvider from './HostApplicationsProvider';
 import HostMachinesProvider from './HostMachinesProvider';
 import HostReadingsProvider from './HostReadingsProvider';
@@ -43,7 +44,8 @@ const answered = (epoch, patch) => current =>
  * feature's command list and whether the Controls menu is open; and
  * inside it the providers of the stats,
  * machine rows, machine detail, host applications, readings, series,
- * snapshots, restores and zone terminals.
+ * snapshots, restores and zone terminals, and the keeper of the console
+ * store beside the children.
  */
 const ServersProvider = ({ signedIn, organization, children }) => {
   const status = useStatus();
@@ -124,7 +126,10 @@ const ServersProvider = ({ signedIn, organization, children }) => {
                   <MachineSnapshotsProvider signedIn={signedIn}>
                     <MachineSeriesProvider signedIn={signedIn}>
                       <MachineRestoreProvider signedIn={signedIn}>
-                        <ZoneTerminalProvider signedIn={signedIn}>{children}</ZoneTerminalProvider>
+                        <ZoneTerminalProvider signedIn={signedIn}>
+                          <ConsolesKeeper signedIn={signedIn} />
+                          {children}
+                        </ZoneTerminalProvider>
                       </MachineRestoreProvider>
                     </MachineSeriesProvider>
                   </MachineSnapshotsProvider>

@@ -14,6 +14,7 @@ Feature: navbar search
     Then the navbar search count reads "1 / 1"
     And I see "hcl-domino"
     And the host was not sent GET to "/api/userinfo/claims"
+    And no GET to "/api/catalog" carried the header "x-access-token"
 
   Scenario: Search: the login page draws no search icon
     Given the host answers the identity fixture

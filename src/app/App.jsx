@@ -96,7 +96,8 @@ const persistThemeOf = apiKey =>
 
 const persistMotion = value => session.savePreferences({ motion: value === 'auto' ? null : value });
 
-const adoptMemberships = next => setMemberships(next?.organizations || []);
+const adoptMemberships = next =>
+  setMemberships(next?.organizations || [], String(next?.user?.id ?? ''));
 
 const createRuntimeAdapters = status => ({
   notifications: createNotificationsAdapter({ status, client, hubClient }),

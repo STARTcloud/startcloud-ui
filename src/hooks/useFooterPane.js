@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const OPEN_KEY = 'footer_open';
 const VIEW_KEY = 'footer_view';
@@ -51,9 +51,11 @@ const persistView = key => localStorage.setItem(VIEW_KEY, key);
  * and opens the pane as it is dragged up, closing again when released
  * at 100px or under; `mounted` is the
  * views that have shown since the page loaded, so a view keeps what it
- * holds while another one shows or the pane is collapsed.
+ * holds while another one shows or the pane is collapsed; a view whose
+ * `opened` count rises is shown, the pane opened for it, the way a
+ * feature asks the pane to show what it just opened.
  *
- * @param {Array<Object>} views - The views the feature answers, `[{ key, first?, ... }]`
+ * @param {Array<Object>} views - The views the feature answers, `[{ key, first?, opened?, ... }]`
  * @returns {Object} `{ open, view, shown, height, limits, mounted, show, expand, collapse, grip, edge }`
  */
 export const useFooterPane = views => {
@@ -92,6 +94,21 @@ export const useFooterPane = views => {
       expand();
     }
   };
+
+  const asked = views.map(entry => `${entry.key}:${entry.opened || 0}`).join('|');
+  const askedRef = useRef(asked);
+
+  useEffect(() => {
+    if (askedRef.current === asked) {
+      return;
+    }
+    const before = new Map(askedRef.current.split('|').map(part => part.split(':')));
+    askedRef.current = asked;
+    const risen = views.find(entry => (entry.opened || 0) > Number(before.get(entry.key) || 0));
+    if (risen) {
+      show(risen.key);
+    }
+  });
 
   const settle = next => {
     if (next > CLOSE_HEIGHT) {

@@ -11,12 +11,19 @@
       "description": "The STARTcloud provisioner, generic edition",
       "roles": [
         {
-          "name": "startcloud.startcloud_roles.networking",
-          "defaultEnabled": true
+          "name": "networking",
+          "label": "Networking",
+          "description": "Network post boot configurations",
+          "collection": "startcloud.startcloud_roles",
+          "default_enabled": true,
+          "required": true
         },
         {
-          "name": "startcloud.startcloud_roles.docker",
-          "defaultEnabled": false
+          "name": "docker",
+          "label": "Docker",
+          "description": "Installs the Docker engine",
+          "collection": "startcloud.startcloud_roles",
+          "default_enabled": false
         }
       ],
       "configuration": {

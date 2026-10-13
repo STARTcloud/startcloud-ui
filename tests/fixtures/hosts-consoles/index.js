@@ -11,6 +11,13 @@ export default {
     status: 200,
     file: 'ssh-stop-200.json',
   },
+  'GET /api/agents/1/ssh/sessions': { status: 200, file: 'ssh-sessions-200.json' },
+  'POST /api/agents/1/term/start': { status: 200, file: 'term-start-200.json' },
+  'GET /api/agents/1/term/sessions': { status: 200, file: 'term-sessions-200.json' },
+  'DELETE /api/agents/1/term/sessions/a1000000-0000-4000-8000-000000000001/stop': {
+    status: 200,
+    file: 'term-stop-200.json',
+  },
   'GET /api/agents/1/machines/dev-1/rdp': { status: 200, file: 'rdp-200.json' },
   'GET /api/agents/1/machines/dev-1/ftp': { status: 200, file: 'ftp-200.json' },
 };

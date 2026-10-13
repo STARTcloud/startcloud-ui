@@ -129,6 +129,18 @@ const PrefsForm = ({ onHide }) => {
             <Preview fontFamily={draft.fontFamily} fontSize={draft.fontSize} />
           </div>
           <div className="col-12">
+            <span className="form-label d-block">{t('footer.terminal.broadcastNewline')}</span>
+            <Form.Check
+              type="switch"
+              id="terminal-prefs-broadcast-newline"
+              className="mt-2"
+              label={t(draft.broadcastNewline ? 'footer.terminal.on' : 'footer.terminal.off')}
+              checked={draft.broadcastNewline === true}
+              onChange={event => setField('broadcastNewline', event.target.checked)}
+            />
+            <span className="form-text">{t('footer.terminal.broadcastNewlineHint')}</span>
+          </div>
+          <div className="col-12">
             <span className="form-text">{t('footer.terminal.applyNote')}</span>
           </div>
         </div>
@@ -156,9 +168,11 @@ PrefsForm.propTypes = {
  * The terminal preferences dialog, a list dialog of the pages contract:
  * the font size (6 to 32), the scrollback (to 200000), the cursor style,
  * the cursor blink and the font family with its suggestions, a preview
- * line in the font chosen, Reset to defaults, Cancel and Save. The
- * preferences are kept in the browser under `terminal_prefs`, held to
- * their bounds on save and applied to the open terminal at once.
+ * line in the font chosen, the broadcast newline switch, Enter sent
+ * after every broadcast while it is on, Reset to defaults, Cancel and
+ * Save. The preferences are kept in the browser under `terminal_prefs`,
+ * held to their bounds on save and applied to every open terminal at
+ * once.
  */
 const TerminalPrefsDialog = ({ show, onHide }) => (
   <Modal show={show} onHide={onHide} dialogClassName="list-modal" scrollable>

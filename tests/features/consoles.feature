@@ -264,6 +264,95 @@ Feature: consoles
     When I open "/hosts/self/machines/dev-1/console/vnc"
     Then the console page says no console is available
 
+  Scenario: Console placement: the SSH row of the Controls menu opens in the footer, the page says so, Send to this page brings the session back over the same socket and Send to footer takes it there again
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1"
+    And I click "Machine controls"
+    And I press the Controls menu's "console-ssh" row
+    Then the host was sent POST to "/api/agents/1/machines/dev-1/ssh/start" 1 times
+    And the footer pane draws the "ssh" console of "dev-1"
+    And the footer pane draws the "ssh" viewer
+    And the console panel draws the "inactive" display
+    And the console panel says the "ssh" console is in the footer
+    When I press the console panel's "send-to-page" action
+    Then the console panel draws the "ssh" display
+    And the console panel draws the "ssh" viewer
+    And I see "vagrant@dev-1"
+    And the console panel says no console is in the footer
+    And the footer pane draws no "ssh" console of "dev-1"
+    And the host was sent POST to "/api/agents/1/machines/dev-1/ssh/start" 1 times
+    And the host was sent GET to "/api/agents/1/ws-ticket" 1 times
+    When I press the console panel's "send-to-footer" action
+    Then the footer pane draws the "ssh" console of "dev-1"
+    And the console panel says the "ssh" console is in the footer
+    And the host was sent GET to "/api/agents/1/ws-ticket" 1 times
+    When I press the console panel's "send-to-page" action
+    And I press the console panel's "console-stop" action
+    Then the host was sent DELETE to "/api/agents/1/ssh/sessions/c1000000-0000-4000-8000-000000000001/stop" 1 times
+    And the console panel draws the "inactive" display
+
+  Scenario: Console placement: the scope glyph flips the SSH row to the page, where it opens as today, and the VNC row sent to the footer draws the viewer there over the shared display
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    And the browser records its requests
+    When I open "/hosts/1/machines/dev-1"
+    And I click "Machine controls"
+    And I press the Controls menu's "console-ssh" scope glyph
+    Then the Controls menu's "console-ssh" row opens in the "this page"
+    When I press the Controls menu's "console-ssh" row
+    Then the console panel draws the "ssh" display
+    And the console panel says no console is in the footer
+    When I click "Machine controls"
+    And I press the Controls menu's "console-vnc" scope glyph
+    Then the Controls menu's "console-vnc" row opens in the "footer"
+    When I press the Controls menu's "console-vnc" row
+    Then the host was sent GET to "/api/agents/1/machines/dev-1/vnc" 1 times
+    And the host was not sent POST to "/api/agents/1/machines/dev-1/vnc/start"
+    And the footer pane draws the "vnc" console of "dev-1"
+    And the footer pane draws the "vnc" viewer
+    And the host was asked "/api/agents/1/ws-ticket" with "machine" as "dev-1"
+    And the console panel says the "vnc" console is in the footer
+    When I press the footer's "consoles" toggle
+    Then the footer drop-up offers "reconnect"
+    And the footer drop-up offers no "restart"
+    And the footer drop-up offers no "preferences"
+    When I press the footer drop-up's "send-to-page" row
+    Then the console panel draws the "vnc" display
+    And the console panel draws the "vnc" viewer
+
+  Scenario: Console placement: the zlogin row of a zone's Controls menu opens in the footer through the zone terminal provider, Send to zone page brings it back and the page's zlogin flows stay as they are
+    Given the host answers the zones fixture
+    And the host answers the zones-machines fixture
+    And the host answers the zones-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/web-1"
+    Then the console panel draws the "inactive" display
+    When I click "Zone controls"
+    And I press the Controls menu's "console-zlogin" row
+    Then the host was sent POST to "/api/machines/web-1/zlogin/start" 1 times
+    And the host was sent GET to "/api/ws-ticket" 1 times
+    And the footer pane draws the "zlogin" console of "web-1"
+    And the console panel says the "zlogin" console is in the footer
+    When I press the footer's "consoles" toggle
+    Then the footer drop-up offers "send-to-page"
+    And the footer drop-up offers "restart"
+    And the footer drop-up offers "preferences"
+    And the footer drop-up offers no "reconnect"
+    When I press "Escape"
+    And I press the console panel's "send-to-page" action
+    Then the console panel draws the "zlogin" display
+    And the console panel draws the "zlogin" viewer
+    And the host was sent POST to "/api/machines/web-1/zlogin/start" 1 times
+    And the host was sent GET to "/api/ws-ticket" 1 times
+    When I open the console panel's "zlogin-actions" menu
+    Then the console panel offers "zlogin-capture"
+    And the console panel offers "zlogin-kill"
+
   Scenario: Console section: the placeholder draws the chosen pack's mark and falls back to brand.logo_url when that mark fails to load
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture

@@ -1,53 +1,95 @@
 {
   "name": "startcloud",
   "version": "0.1.27",
+  "dir": "startcloud/0.1.27",
   "metadata": {
-    "label": "STARTcloud",
-    "roles": [
-      { "name": "domino", "depends_on": [], "defaultEnabled": true },
-      { "name": "traveler", "depends_on": ["domino"] },
-      { "name": "nomadweb", "depends_on": ["domino"] },
-      { "name": "leap", "depends_on": ["domino"] },
-      { "name": "networking", "depends_on": [], "defaultEnabled": true }
-    ],
-    "configuration": {
-      "groups": [
-        { "name": "domino", "label": "Domino", "show_if": { "domino_enabled": true } },
-        { "name": "advanced", "label": "Advanced", "advanced": true }
-      ],
-      "fields": [
-        { "name": "hostname", "label": "Hostname", "type": "fqdn", "required": true },
+    "name": "startcloud",
+    "version": "0.1.27",
+    "description": "The STARTcloud provisioner, generic edition",
+    "metadata": {
+      "label": "STARTcloud",
+      "roles": [
         {
-          "name": "server_id",
-          "label": "Server id",
-          "type": "number",
-          "validate": { "min": 1, "max": 9999 }
+          "name": "domino",
+          "label": "Domino Server",
+          "description": "Installs HCL Domino from the installer the role names",
+          "collection": "startcloud.hcl_roles",
+          "depends_on": [],
+          "default_enabled": true
         },
         {
-          "name": "domino_organization",
-          "label": "Organization",
-          "type": "text",
-          "group": "domino",
-          "default": "STARTcloud",
+          "name": "traveler",
+          "label": "HCL Traveler",
+          "description": "Installs HCL Traveler on a Domino server",
+          "collection": "startcloud.hcl_roles",
+          "depends_on": ["domino"],
+          "default_enabled": false
+        },
+        {
+          "name": "nomadweb",
+          "label": "HCL Nomad Web",
+          "description": "Installs HCL Nomad Web",
+          "collection": "startcloud.hcl_roles",
+          "depends_on": ["domino"],
+          "default_enabled": false
+        },
+        {
+          "name": "leap",
+          "label": "HCL Leap",
+          "description": "Installs HCL Leap",
+          "collection": "startcloud.hcl_roles",
+          "depends_on": ["domino"],
+          "default_enabled": false
+        },
+        {
+          "name": "networking",
+          "label": "Networking",
+          "description": "Configures the guest network",
+          "collection": "startcloud.startcloud_roles",
+          "depends_on": [],
+          "default_enabled": true,
           "required": true
-        },
-        {
-          "name": "domino_admin_notes_id_password",
-          "label": "Admin password",
-          "type": "password",
-          "group": "domino",
-          "generate": { "length": 24 }
-        },
-        { "name": "debug", "label": "Debug", "type": "checkbox", "group": "advanced" },
-        {
-          "name": "communicator",
-          "label": "Communicator",
-          "type": "select",
-          "group": "advanced",
-          "options": ["ssh", "winrm"],
-          "default": "ssh"
         }
-      ]
+      ],
+      "configuration": {
+        "groups": [
+          { "name": "domino", "label": "Domino", "show_if": { "domino_enabled": true } },
+          { "name": "advanced", "label": "Advanced", "advanced": true }
+        ],
+        "fields": [
+          { "name": "hostname", "label": "Hostname", "type": "fqdn", "required": true },
+          {
+            "name": "server_id",
+            "label": "Server id",
+            "type": "number",
+            "validate": { "min": 1, "max": 9999 }
+          },
+          {
+            "name": "domino_organization",
+            "label": "Organization",
+            "type": "text",
+            "group": "domino",
+            "default": "STARTcloud",
+            "required": true
+          },
+          {
+            "name": "domino_admin_notes_id_password",
+            "label": "Admin password",
+            "type": "password",
+            "group": "domino",
+            "generate": { "length": 24 }
+          },
+          { "name": "debug", "label": "Debug", "type": "checkbox", "group": "advanced" },
+          {
+            "name": "communicator",
+            "label": "Communicator",
+            "type": "select",
+            "group": "advanced",
+            "options": ["ssh", "winrm"],
+            "default": "ssh"
+          }
+        ]
+      }
     }
   },
   "role_specs": {

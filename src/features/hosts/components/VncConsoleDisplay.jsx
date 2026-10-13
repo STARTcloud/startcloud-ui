@@ -14,6 +14,7 @@ import { captureFileName, consoleAdmin, saveBlob } from '../utils/consoles';
 
 import { startConsole } from './consoleActions';
 import ConsoleSwitchButtons from './ConsoleSwitchButtons';
+import SendToFooterButton from './SendToFooterButton';
 import VncActionsDropdown from './VncActionsDropdown';
 import VncViewerReact from './VncViewerReact';
 
@@ -24,7 +25,8 @@ const PREFIX = 'console.vncConsoleDisplay';
  * header with the session's web port and start, the VNC actions menu,
  * Paste from the browser's clipboard while interactive, Expand into the
  * dialog, and the switch-or-start buttons of the other consoles the
- * host's row lists, zlogin, SSH and RDP; under it the viewer over the
+ * host's row lists, zlogin, SSH and RDP, and Send to footer while a
+ * session is active; under it the viewer over the
  * session, or, while no session is active, one frame of the screen on a
  * host that lists `machine-screenshot` and the placeholder otherwise.
  */
@@ -58,6 +60,7 @@ const VncConsoleDisplay = ({
   handleVncResizeChange,
   handleVncShowDotChange,
   handleVncClipboardPaste,
+  sendToFooter = null,
 }) => {
   const { t } = useTranslation();
   const status = useStatus();
@@ -211,6 +214,9 @@ const VncConsoleDisplay = ({
           >
             <FaExpand aria-hidden="true" />
           </button>
+          {sendToFooter && session ? (
+            <SendToFooterButton onSend={() => sendToFooter('vnc')} disabled={loadingVnc} />
+          ) : null}
           <ConsoleSwitchButtons
             prefix={PREFIX}
             server={server}
@@ -258,6 +264,7 @@ VncConsoleDisplay.propTypes = {
   handleVncResizeChange: PropTypes.func.isRequired,
   handleVncShowDotChange: PropTypes.func.isRequired,
   handleVncClipboardPaste: PropTypes.func.isRequired,
+  sendToFooter: PropTypes.func,
 };
 
 export default memo(VncConsoleDisplay);

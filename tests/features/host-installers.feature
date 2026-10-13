@@ -130,6 +130,103 @@ Feature: host installer files and provisioners
     Then the host was sent DELETE to "/api/agents/3/artifacts/files" carrying "delete_files" as "true"
     And the host was sent DELETE to "/api/agents/3/artifacts/files" carrying "artifact_ids" as "12,14"
 
+  Scenario: Installer files: From BoxVault lists the download files the host's registry offers the person, grouped by download, release and patch, and a row's Download sends the host's fetch into the kind's location under the role with the registry's sha256
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/installers"
+    And I press the section page's "artifact-registry" action
+    Then the catalog dialog "artifact-registry" draws
+    And the host was sent GET to "/api/agents/3/templates/sources"
+    And the host was sent GET to "/api/agents/3/artifacts/registry/boxvault/downloads"
+    And the dialog table "registry-files" lists 4 rows
+    And the dialog table "registry-files" draws 7 groups
+    When I press "registry-download" on the row "Domino_14.5_FP1_Linux.tar" of the dialog table "registry-files"
+    Then the catalog dialog "artifact-registry" says why it cannot be sent
+    And the host was not sent POST to "/api/agents/3/artifacts/registry-download"
+    When I type "domino_fixpack" into the field "artifact-registry-role"
+    And I press "registry-download" on the row "Domino_14.5_FP1_Linux.tar" of the dialog table "registry-files"
+    Then the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "source_name" as "boxvault"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "download" as "domino"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "release" as "14.5"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "patch" as "FP1"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "filename" as "Domino_14.5_FP1_Linux.tar"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "kind" as "fixpack"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "role" as "domino_fixpack"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "checksum" as "b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "checksum_algorithm" as "sha256"
+    And the page raised 1 success notice
+    And the catalog dialog "artifact-registry" is gone
+
+  Scenario: Installer files: an interim fix of the registry lands as a hotfix, and a file the registry lists no sha256 for is sent with no checksum
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/installers"
+    And I press the section page's "artifact-registry" action
+    And I type "traveler_hotfix" into the field "artifact-registry-role"
+    And I pick "loc-installers" in the catalog dialog select "artifact-registry-location"
+    And I press "registry-download" on the row "Traveler_14.0_IF2_Linux.tar" of the dialog table "registry-files"
+    Then the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "kind" as "hotfix"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying "storage_path_id" as "loc-installers"
+    And the host was sent POST to "/api/agents/3/artifacts/registry-download" carrying nothing at "/checksum"
+
+  Scenario: Installer files: a missing file's glyph opens the download dialog seeded with the file, its role and the sha256 it is known by, every other source one press away and the registry marking the file it lists
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/installers"
+    Then the row "Domino_14.5_FP1_Linux.tar" of the "installers" table of the section page offers "artifact-fetch"
+    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers no "artifact-fetch"
+    When I press "artifact-fetch" on the row "Domino_14.5_FP1_Linux.tar" of the "installers" table of the section page
+    Then the catalog dialog "artifact-download" draws
+    And the open dialog notes "missing-seed"
+    And the field "artifact-download-filename" reads "Domino_14.5_FP1_Linux.tar"
+    And the field "artifact-download-sha" reads "b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4"
+    And the field "artifact-download-role" reads "domino_fixpack"
+    And the field "artifact-download-location" reads "loc-installers"
+    When I press the open dialog's "source-hcl" action
+    Then the catalog dialog "artifact-hcl" draws
+    And the catalog dialog "artifact-download" is gone
+    And the field "artifact-hcl-filename" reads "Domino_14.5_FP1_Linux.tar"
+    And the field "artifact-hcl-kind" reads "fixpack"
+    And the field "artifact-hcl-role" reads "domino_fixpack"
+    When I press the open dialog's "source-registry" action
+    Then the catalog dialog "artifact-registry" draws
+    And the open dialog notes "missing-seed"
+    And the field "artifact-registry-role" reads "domino_fixpack"
+    And the row "Domino_14.5_FP1_Linux.tar" of the dialog table "registry-files" notes "seed-match"
+    When I press the open dialog's "source-upload" action
+    Then the catalog dialog "artifact-upload" draws
+    And the field "artifact-upload-checksum" reads "b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4"
+    And the field "artifact-upload-location" reads "loc-installers"
+
+  Scenario: Installer files: a file whose hash is unknown or mismatched carries a warning badge and keeps its row actions, never a refusal
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/installers"
+    Then the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page carries a "warning" badge
+    And the row "Win11_24H2_English_x64.iso" of the "installers" table of the section page carries a "warning" badge
+    And the row "debian-13.1.0-amd64-netinst.iso" of the "installers" table of the section page carries a "success" badge
+    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers "download"
+    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers "move"
+
+  Scenario: Installer files: the storage location dialogs of the artifacts section offer every kind, an installer family location made with its type
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/installers"
+    And I press the section page's "storage-path-create" action
+    Then the "storage-path-create" dialog is open
+    And the catalog dialog select "storage-path-type" offers 5 options
+    When I type "Fixpacks" into the field "storage-path-name"
+    And I type "/rpool/fixpacks" into the field "storage-path-path"
+    And I choose "fixpack" in the field "storage-path-type"
+    And I send the open dialog
+    Then the host was sent POST to "/api/agents/3/artifacts/storage/paths" carrying "type" as "fixpack"
+    And the host was sent POST to "/api/agents/3/artifacts/storage/paths" carrying "path" as "/rpool/fixpacks"
+
   Scenario: Installer files: Move offers the locations of the artifact's own type alone and sends the destination as a queued task
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
@@ -223,7 +320,7 @@ Feature: host installer files and provisioners
     Then the host was sent DELETE to "/api/agents/3/provisioning/provisioners/startcloud/versions/0.1.27"
     And the host was sent GET to "/api/agents/3/provisioning/provisioners" 2 times
 
-  Scenario: Provisioners: the chevron of a held family opens Update to, Update from source and Delete family, Update from source queuing a re-import and the delete waiting behind the typed confirmation
+  Scenario: Provisioners: the chevron of a held family opens Update to, Update from source and Delete family, no Create a machine on a host that creates none, Update from source queuing a re-import and the delete waiting behind the typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -232,6 +329,7 @@ Feature: host installer files and provisioners
     Then the open menu offers "held-update"
     And the open menu offers "refresh-source"
     And the open menu offers no "held-add-source"
+    And the open menu offers no "held-create"
     And the open menu offers "delete-family"
     And the open menu offers no "delete-version"
     When I press the menu entry "refresh-source"
@@ -301,7 +399,7 @@ Feature: host installer files and provisioners
     When I press the open dialog's "catalog-source-add" action
     Then the catalog dialog "catalog-source" draws
 
-  Scenario: Provisioners: a catalog source's edit opens the form under the modal's table on its id, its display name and its authentication, and saves as one merge patch of the storage file under its id
+  Scenario: Provisioners: a catalog source's edit opens the form under the modal's table on its id and its display name with no credential, the host reading the source as the signed-in person, and saves as one merge patch of the storage file under its id
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -310,12 +408,12 @@ Feature: host installer files and provisioners
     And I press the action "source-edit" of the catalog source "staging"
     Then the field "source-name" of the catalog dialog "catalog-source" reads "staging"
     And the field "source-display-name" of the catalog dialog "catalog-source" reads "STARTcloud staging"
-    And the field "source-auth" of the catalog dialog "catalog-source" reads "none"
+    And the open dialog draws no field "source-auth"
+    And the open dialog draws no field "source-token"
     When I type "Staging catalog" into the field "source-display-name"
-    And I pick "oidc" in the catalog dialog select "source-auth"
     And I submit the catalog dialog "catalog-source"
     Then the host was sent PUT to "/api/agents/3/config/storage" carrying "Staging catalog" at "/catalog_sources/sources/staging/display_name"
-    And the host was sent PUT to "/api/agents/3/config/storage" carrying "oidc" at "/catalog_sources/sources/staging/auth"
+    And the host was sent PUT to "/api/agents/3/config/storage" carrying nothing at "/catalog_sources/sources/staging/auth"
     And the host was sent PUT to "/api/agents/3/config/storage" carrying "https://provisioner-catalog-staging.startcloud.com/catalog.json" at "/catalog_sources/sources/staging/url"
     And the host was sent PUT to "/api/agents/3/config/storage" carrying nothing at "/catalog_sources/sources/startcloud"
     And the host was sent PUT to "/api/agents/3/config/storage" carrying nothing at "/catalog_sources/sources/staging/ca_file"

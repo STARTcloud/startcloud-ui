@@ -1,40 +1,31 @@
 import { lazy, useMemo } from 'react';
-import { FaListCheck, FaPlug, FaRotate, FaSliders, FaTerminal } from 'react-icons/fa6';
+import {
+  FaListCheck,
+  FaPlug,
+  FaRotate,
+  FaSliders,
+  FaTerminal,
+  FaWindowRestore,
+  FaXmark,
+} from 'react-icons/fa6';
 
 import { hasFeatureStrict } from '../../utils/capabilities';
 
 import { useFocus } from './hooks/useFocus';
+import { useConsoleActions } from './hooks/useOpenConsole';
 import { requestTasksRefresh } from './hooks/useTasks';
 import {
   openTerminalPrefs,
-  requestTerminalReconnect,
-  requestTerminalRestart,
+  useActiveConsole,
+  useConsoleOpens,
+  useConsoles,
 } from './hooks/useTerminal';
+import { consoleDoorsOf } from './utils/consoles';
+import { consoleOf, footerConsoles, isHeldKind } from './utils/terminals';
 
-const ShellPane = lazy(() => import('./components/ShellPane'));
+const ConsolesPane = lazy(() => import('./components/ConsolesPane'));
 const TasksPane = lazy(() => import('./components/TasksPane'));
 const TasksTools = lazy(() => import('./components/TasksTools'));
-
-const SHELL_ROWS = [
-  {
-    key: 'reconnect',
-    labelKey: 'footer.pane.reconnectShell',
-    icon: FaPlug,
-    onClick: requestTerminalReconnect,
-  },
-  {
-    key: 'restart',
-    labelKey: 'footer.pane.restartShell',
-    icon: FaRotate,
-    onClick: requestTerminalRestart,
-  },
-  {
-    key: 'preferences',
-    labelKey: 'footer.terminal.title',
-    icon: FaSliders,
-    onClick: openTerminalPrefs,
-  },
-];
 
 const TASKS_ROWS = [
   {
@@ -44,15 +35,6 @@ const TASKS_ROWS = [
     onClick: requestTasksRefresh,
   },
 ];
-
-const SHELL_VIEW = {
-  key: 'shell',
-  labelKey: 'footer.pane.shell',
-  icon: FaTerminal,
-  Component: ShellPane,
-  menu: SHELL_ROWS,
-  dropUp: SHELL_ROWS,
-};
 
 const TASKS_VIEW = {
   key: 'tasks',
@@ -66,28 +48,116 @@ const TASKS_VIEW = {
 
 const listsToken = (focus, token) => focus.kind === 'host' && focus.features.includes(token);
 
+const consoleRows = (entry, actions) => {
+  if (!entry) {
+    return [
+      {
+        key: 'preferences',
+        labelKey: 'footer.terminal.title',
+        icon: FaSliders,
+        onClick: openTerminalPrefs,
+      },
+    ];
+  }
+  return [
+    ...(entry.kind === 'zlogin'
+      ? []
+      : [
+          {
+            key: 'reconnect',
+            labelKey: 'footer.pane.reconnectShell',
+            icon: FaPlug,
+            onClick: () => actions.reconnect(entry.key),
+          },
+        ]),
+    ...(entry.kind === 'vnc' || entry.kind === 'rdp'
+      ? []
+      : [
+          {
+            key: 'restart',
+            labelKey: 'footer.pane.restartShell',
+            icon: FaRotate,
+            onClick: () => actions.restart(entry.key),
+          },
+        ]),
+    ...(isHeldKind(entry.kind) || entry.kind === 'zlogin'
+      ? [
+          {
+            key: 'preferences',
+            labelKey: 'footer.terminal.title',
+            icon: FaSliders,
+            onClick: openTerminalPrefs,
+          },
+        ]
+      : []),
+    { key: 'divider-place', divider: true },
+    ...(entry.name
+      ? [
+          {
+            key: 'send-to-page',
+            labelKey:
+              entry.noun === 'zone'
+                ? 'footer.console.sendToZonePage'
+                : 'footer.console.sendToMachinePage',
+            icon: FaWindowRestore,
+            onClick: () => actions.move(entry.key, 'page'),
+          },
+        ]
+      : []),
+    {
+      key: 'close',
+      labelKey: 'footer.console.close',
+      icon: FaXmark,
+      tone: 'text-danger',
+      onClick: () => actions.close(entry.key),
+    },
+  ];
+};
+
 /**
  * The views the footer's pane offers for the host in focus, in the order
- * the row draws their toggles: the shell view while the focus is one
- * host that lists `host-terminal`, its rows Reconnect shell, a new
- * socket to the same session, Restart shell, a new session, and Terminal
- * preferences on the right-click menu and on the toggle's drop-up alike,
- * and the tasks view while the focus lists `tasks` or, with every host
- * in focus, while any host does, its tools Refresh, the priority
- * filter and the Columns picker and its menu row Refresh. The tasks view
- * is marked `first`, the view a pane with no saved view opens on, as
- * hyperweaver-ui's footer does. An empty list means no pane.
+ * the row draws their toggles: the Consoles view while the focus is one
+ * host that lists `host-terminal` or any console of `CONSOLE_DOORS`, and
+ * while any console is placed in the footer whatever the route, its
+ * rows acting on the active tab, Reconnect, a new socket to the same
+ * session, Restart, a new session, Terminal preferences, then Send to
+ * the machine's or the zone's page and Close, on the right-click menu
+ * and on the toggle's drop-up alike, Terminal preferences alone while no
+ * tab is open, and `opened` the count of the times a console asked the
+ * pane to show the view; and the tasks view while the focus lists
+ * `tasks` or, with every host in focus, while any host does, its tools
+ * Refresh, the priority filter and the Columns picker and its menu row
+ * Refresh. The tasks view is marked `first`, the view a pane with no
+ * saved view opens on, as hyperweaver-ui's footer does. An empty list
+ * means no pane.
  *
- * @returns {Array<Object>} The views, `[{ key, labelKey, icon, Component, first?, tools?, menu?, dropUp? }]`
+ * @returns {Array<Object>} The views, `[{ key, labelKey, icon, Component, first?, tools?, menu?, dropUp?, opened? }]`
  */
 export const useFooterViews = () => {
   const focus = useFocus();
-  const shell = listsToken(focus, 'host-terminal');
+  const consoles = useConsoles();
+  const activeKey = useActiveConsole();
+  const opened = useConsoleOpens();
+  const actions = useConsoleActions();
+  const offered =
+    listsToken(focus, 'host-terminal') ||
+    (focus.kind === 'host' && consoleDoorsOf(focus.server).length > 0) ||
+    footerConsoles(consoles).length > 0;
   const tasks = focus.kind === 'all' ? focus.hosts.length > 0 : listsToken(focus, 'tasks');
-  return useMemo(
-    () => [...(shell ? [SHELL_VIEW] : []), ...(tasks ? [TASKS_VIEW] : [])],
-    [shell, tasks]
-  );
+  const active = consoleOf(consoles, activeKey);
+  return useMemo(() => {
+    const rows = consoleRows(active, actions);
+    const consolesView = {
+      key: 'consoles',
+      labelKey: 'footer.pane.consoles',
+      icon: FaTerminal,
+      Component: ConsolesPane,
+      menu: rows,
+      dropUp: rows,
+      opened,
+    };
+    return [...(offered ? [consolesView] : []), ...(tasks ? [TASKS_VIEW] : [])];
+  }, [offered, tasks, active, actions, opened]);
 };
 
 /**
