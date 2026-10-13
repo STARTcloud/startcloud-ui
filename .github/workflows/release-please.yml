@@ -13,14 +13,21 @@ permissions:
   security-events: write
   packages: read
 
+# Every feature push to main runs the full suite here before release-please
+# refreshes its PR. The merge of that PR is a push to main too, but its code
+# is the main that just passed plus the changelog, the version and the
+# manifest, so the suite skips on the release merge commit and release-please
+# runs on a passed or a skipped CI alike.
 jobs:
   ci-checks:
     name: CI Checks
+    if: "${{ !startsWith(github.event.head_commit.message, 'chore(main): release') }}"
     uses: ./.github/workflows/ci.yml
 
   release-please:
     name: Release Please
     needs: ci-checks
+    if: ${{ !cancelled() && (needs.ci-checks.result == 'success' || needs.ci-checks.result == 'skipped') }}
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
