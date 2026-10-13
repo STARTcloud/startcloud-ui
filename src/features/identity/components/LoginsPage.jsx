@@ -127,12 +127,14 @@ const LoginsPage = () => {
     placeholderKey: 'admin.activity.logins.search',
     groups: groupsOf({ state, t }),
     onClearFilters: state.clear,
-    action: {
-      key: 'export',
-      labelKey: 'admin.activity.export',
-      icon: FaDownload,
-      onRun: state.doExport,
-    },
+    actions: [
+      {
+        key: 'export',
+        labelKey: 'admin.activity.export',
+        icon: FaDownload,
+        onRun: state.doExport,
+      },
+    ],
     matched: state.data?.total || 0,
     rows,
     columns,

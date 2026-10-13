@@ -198,11 +198,27 @@ const sidebarMatchFor = ({
   if (!showSidebar) {
     return [];
   }
+  const parented = routeCrumbParent ? routeCrumbParent(pathname) : null;
+  const whole = parented?.crumbs
+    ? pageCrumbsFor({
+        groups,
+        parented,
+        organizations,
+        activeOrgUuid,
+        pageName,
+        pageNoun,
+        status,
+        t,
+      })
+    : [];
+  if (whole.length > 0) {
+    return whole;
+  }
   const lists = [
     sidebarCrumbs({ groups, pathname, t }),
     pageCrumbsFor({
       groups,
-      parented: routeCrumbParent ? routeCrumbParent(pathname) : null,
+      parented,
       organizations,
       activeOrgUuid,
       pageName,
@@ -229,9 +245,64 @@ const useRouteCrumbs = ({ pathname, reserved, collections, signedIn, orgs, hostO
     />
   );
   return {
-    crumbs: signedIn ? buildRouteCrumbs({ route, t, orgIcon, hostOrg }) : [],
+    crumbs: buildRouteCrumbs({ route, t, orgIcon, hostOrg }),
     reserved: !route,
   };
+};
+
+/**
+ * The crumbs the header draws for the route, the one reading of the
+ * route parser, the sidebar rows and the route table's entries the shell
+ * makes, in the order the component's own description names.
+ *
+ * @param {Object} options - The route, the host, the sidebar groups, the route table's resolvers, the memberships, the page's name and noun and `t`
+ * @returns {Array} The crumbs
+ */
+const useShellCrumbs = ({
+  pathname,
+  reserved,
+  collections,
+  signedIn,
+  orgs,
+  status,
+  showSidebar,
+  sidebar,
+  routeCrumbParent,
+  routeTitleKey,
+  organizations,
+  activeOrgUuid,
+  pageName,
+  pageNoun,
+  t,
+}) => {
+  const route = useRouteCrumbs({
+    pathname,
+    reserved,
+    collections,
+    signedIn,
+    orgs,
+    hostOrg: status.organization || '',
+    t,
+  });
+  return shellCrumbs({
+    showSidebar,
+    sidebarMatch: sidebarMatchFor({
+      showSidebar,
+      groups: sidebar,
+      pathname,
+      routeCrumbParent,
+      organizations,
+      activeOrgUuid,
+      pageName,
+      pageNoun,
+      status,
+      t,
+    }),
+    routeCrumbs: route.crumbs,
+    reservedRoute: route.reserved,
+    titleKey: routeTitleKey ? routeTitleKey(pathname) : '',
+    t,
+  });
 };
 
 const useSessionEndedBanner = ended => {
@@ -504,11 +575,13 @@ const zoomModalOnHeaderDoubleClick = event => {
  * the mounted features' `shortcuts` rows, the Keyboard Shortcuts modal
  * opened by `?` and the user menu's Keyboard shortcuts row.
  *
- * The crumbs come from the route. With a column: the crumbs of the
- * sidebar row the route matches, else the crumbs `routeCrumbParent`
- * answers for the route, else the route parser's crumbs on a catalog
- * route, else the title `routeTitleKey` names on a reserved route.
- * Without a column: the route parser's crumbs alone.
+ * The crumbs come from the route. With a column: the whole trail a
+ * `routeCrumbParent` entry resolves for the route while it answers one,
+ * else the crumbs of the sidebar row the route matches, else the parent
+ * row's crumbs `routeCrumbParent` answers with the page's name, else the
+ * route parser's crumbs on a catalog route, else the title
+ * `routeTitleKey` names on a reserved route. Without a column: the route
+ * parser's crumbs alone.
  *
  * The column and the app section are hidden on the bare routes, the
  * auth routes and the device activation page, and Sign in is hidden on
@@ -577,32 +650,21 @@ const AppShell = ({
   const overlay = useSidebarOverlay(pathname);
   const sidebarSize = useSidebarSize();
   const badges = useSidebarBadges({ status, entries: showSidebar ? sidebar : [] });
-  const route = useRouteCrumbs({
+  const crumbs = useShellCrumbs({
     pathname,
     reserved,
     collections,
     signedIn,
     orgs,
-    hostOrg: status.organization || '',
-    t,
-  });
-  const crumbs = shellCrumbs({
+    status,
     showSidebar,
-    sidebarMatch: sidebarMatchFor({
-      showSidebar,
-      groups: sidebar,
-      pathname,
-      routeCrumbParent,
-      organizations,
-      activeOrgUuid,
-      pageName,
-      pageNoun,
-      status,
-      t,
-    }),
-    routeCrumbs: route.crumbs,
-    reservedRoute: route.reserved,
-    titleKey: routeTitleKey ? routeTitleKey(pathname) : '',
+    sidebar,
+    routeCrumbParent,
+    routeTitleKey,
+    organizations,
+    activeOrgUuid,
+    pageName,
+    pageNoun,
     t,
   });
   useSessionEndedBanner(Boolean(account.sessionEnded) && !signedIn && !anonymous);

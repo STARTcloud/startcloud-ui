@@ -1,0 +1,9 @@
+retry: 3000
+id: 1760259600000-0
+event: ready
+data: {"id":"1760259600000-0","topics":["fleet","health"]}
+
+id: 1760259600100-0
+event: vm-updated
+data: {"instance_id":"i-0a1b2c3e","hostname":"ACCT-VDI-02","status":"active","ip_address":"10.20.1.12","mac_address":"00:50:56:aa:bb:02","os_version":"Windows 11 Enterprise 23H2","uptime_seconds":3700,"last_boot_time":"2026-10-12T08:00:00Z","agent_version":"1.4.0","startup_agent_version":"1.4.0","last_checkin":"2026-10-12T09:00:30Z","last_user_checkin":null,"last_startup_checkin":"2026-10-12T09:00:30Z","user":null,"drives":[],"desktop":{"status":"n_a","icon_count":0},"timings_ms":{"total_cycle":205},"uds":{"pool_name":"Accounting","cache_level":1,"uds_in_use":false,"publication_id":7,"stale_image":false}}
+

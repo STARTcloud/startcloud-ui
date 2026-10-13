@@ -1,0 +1,124 @@
+{
+  "timestamp": "2026-10-12T09:00:00Z",
+  "total_vms": 3,
+  "summary": { "healthy": 2, "cifs_broken": 1 },
+  "vms": [
+    {
+      "instance_id": "i-0a1b2c3d",
+      "hostname": "ACCT-VDI-01",
+      "status": "active",
+      "ip_address": "10.20.1.11",
+      "mac_address": "00:50:56:aa:bb:01",
+      "os_version": "Windows 11 Enterprise 23H2",
+      "uptime_seconds": 90000,
+      "last_boot_time": "2026-10-11T08:00:00Z",
+      "agent_version": "1.4.0",
+      "startup_agent_version": "1.4.0",
+      "last_checkin": "2026-10-12T08:59:30Z",
+      "last_user_checkin": "2026-10-12T08:59:30Z",
+      "last_startup_checkin": "2026-10-12T08:58:00Z",
+      "user": {
+        "username": "ACME\\jlee",
+        "display_name": "Jordan Lee",
+        "first_name": "Jordan",
+        "last_name": "Lee",
+        "session_state": "active"
+      },
+      "drives": [
+        { "letter": "H", "status": "healthy", "unc_path": "\\\\files\\home\\jlee" },
+        { "letter": "S", "status": "healthy", "unc_path": "\\\\files\\shared" }
+      ],
+      "desktop": { "status": "ok", "icon_count": 12, "user_desktop_path": "H:\\Desktop" },
+      "timings_ms": { "total_cycle": 420, "drive_check": 120, "icon_check": 40 },
+      "uds": {
+        "pool_name": "Accounting",
+        "cache_level": 0,
+        "uds_in_use": true,
+        "publication_id": 7,
+        "stale_image": false,
+        "uds_username": "jlee",
+        "client_ip": "192.168.5.20"
+      }
+    },
+    {
+      "instance_id": "i-0a1b2c3e",
+      "hostname": "ACCT-VDI-02",
+      "status": "active",
+      "ip_address": "10.20.1.12",
+      "mac_address": "00:50:56:aa:bb:02",
+      "os_version": "Windows 11 Enterprise 23H2",
+      "uptime_seconds": 3600,
+      "last_boot_time": "2026-10-12T08:00:00Z",
+      "agent_version": "1.4.0",
+      "startup_agent_version": "1.4.0",
+      "last_checkin": "2026-10-12T08:59:00Z",
+      "last_user_checkin": null,
+      "last_startup_checkin": "2026-10-12T08:59:00Z",
+      "user": null,
+      "drives": [],
+      "desktop": { "status": "n_a", "icon_count": 0 },
+      "timings_ms": { "total_cycle": 210 },
+      "uds": {
+        "pool_name": "Accounting",
+        "cache_level": 1,
+        "uds_in_use": false,
+        "publication_id": 7,
+        "stale_image": false
+      }
+    },
+    {
+      "instance_id": "i-0a1b2c3f",
+      "hostname": "ENG-VDI-01",
+      "status": "active",
+      "ip_address": "10.20.2.11",
+      "mac_address": "00:50:56:aa:bb:03",
+      "os_version": "Windows 11 Enterprise 23H2",
+      "uptime_seconds": 7200,
+      "last_boot_time": "2026-10-12T07:00:00Z",
+      "agent_version": "1.4.0",
+      "startup_agent_version": "1.4.0",
+      "last_checkin": "2026-10-12T08:59:40Z",
+      "last_user_checkin": "2026-10-12T08:59:40Z",
+      "last_startup_checkin": "2026-10-12T08:58:40Z",
+      "user": {
+        "username": "ACME\\mgilbert",
+        "display_name": "Mark Gilbert",
+        "first_name": "Mark",
+        "last_name": "Gilbert",
+        "session_state": "idle"
+      },
+      "drives": [{ "letter": "H", "status": "broken", "unc_path": "\\\\files\\home\\mgilbert" }],
+      "desktop": { "status": "ok", "icon_count": 9, "user_desktop_path": "H:\\Desktop" },
+      "timings_ms": { "total_cycle": 1300 },
+      "uds": {
+        "pool_name": "Engineering",
+        "cache_level": 0,
+        "uds_in_use": true,
+        "publication_id": 3,
+        "stale_image": false,
+        "uds_username": "mgilbert"
+      }
+    }
+  ],
+  "pools": {
+    "Accounting": {
+      "total": 2,
+      "in_use": 1,
+      "available": 1,
+      "agent_health": 2,
+      "max_srvs": 10,
+      "current_pub_revision": 7,
+      "service_type": "LiveService",
+      "stale": 0
+    },
+    "Engineering": {
+      "total": 1,
+      "in_use": 1,
+      "agent_health": 1,
+      "max_srvs": 5,
+      "current_pub_revision": 3,
+      "service_type": "LiveService",
+      "stale": 0
+    }
+  }
+}

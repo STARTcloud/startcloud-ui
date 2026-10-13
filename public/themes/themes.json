@@ -70,5 +70,13 @@
     "description": "SwitchBoard's sky blue set in Poppins.",
     "brand": "switchboard",
     "logo": "/brand/switchboard/mark.svg"
+  },
+  {
+    "name": "vcc",
+    "css": "/themes/vcc/vcc.css",
+    "label": "VCC",
+    "description": "VCC's blue and gray on the chrome's own faces.",
+    "brand": "vcc",
+    "logo": "/brand/vcc/mark.svg"
   }
 ]

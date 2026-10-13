@@ -15,6 +15,12 @@ const groupSignature = group => {
   ];
 };
 
+const actionSignature = action => [
+  action.key,
+  action.labelKey,
+  (action.choices || []).map(choice => choice.key),
+];
+
 const bindingSignature = binding =>
   JSON.stringify([
     binding.query,
@@ -22,18 +28,18 @@ const bindingSignature = binding =>
     binding.matched,
     typeof binding.total === 'number' ? binding.total : null,
     binding.groups.map(groupSignature),
-    binding.action ? [binding.action.key, binding.action.labelKey] : null,
+    (binding.actions || []).map(actionSignature),
   ]);
 
 /**
  * Publishes a page's search and filter state to the navbar search box while
  * the calling component is mounted, notifying it when the query, counts,
- * groups or active values change; the box draws `matched / total`, or
+ * groups, active values or actions change; the box draws `matched / total`, or
  * `matched` alone as "N results" for a binding with no `total`, and calls
  * `onQueryChange(text, parsed)` with the typed text less its `type:` and
  * `org:` words and the `parseQuery` reading of the whole.
  *
- * @param {Object} binding - `{ query, onQueryChange, placeholder, matched, total?, groups, onClearFilters, action? }`
+ * @param {Object} binding - `{ query, onQueryChange, placeholder, matched, total?, groups, onClearFilters, actions? }`
  */
 export const useNavbarSearchBinding = binding => {
   const context = useContext(NavbarSearchContext);

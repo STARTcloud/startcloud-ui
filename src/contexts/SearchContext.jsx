@@ -69,11 +69,19 @@ const dateRangeGroupShape = PropTypes.shape({
 
 export const navbarSearchGroupShape = PropTypes.oneOfType([dateRangeGroupShape, pillGroupShape]);
 
-export const navbarSearchActionShape = PropTypes.shape({
+const navbarSearchChoiceShape = PropTypes.shape({
   key: PropTypes.string.isRequired,
   labelKey: PropTypes.string.isRequired,
   icon: PropTypes.elementType,
   onRun: PropTypes.func.isRequired,
+});
+
+export const navbarSearchActionShape = PropTypes.shape({
+  key: PropTypes.string.isRequired,
+  labelKey: PropTypes.string.isRequired,
+  icon: PropTypes.elementType,
+  onRun: PropTypes.func,
+  choices: PropTypes.arrayOf(navbarSearchChoiceShape),
 });
 
 export const navbarSearchBindingShape = PropTypes.shape({
@@ -84,7 +92,7 @@ export const navbarSearchBindingShape = PropTypes.shape({
   total: PropTypes.number,
   groups: PropTypes.arrayOf(navbarSearchGroupShape).isRequired,
   onClearFilters: PropTypes.func.isRequired,
-  action: navbarSearchActionShape,
+  actions: PropTypes.arrayOf(navbarSearchActionShape),
 });
 
 /**
@@ -94,7 +102,7 @@ export const navbarSearchBindingShape = PropTypes.shape({
  * @returns {boolean} Whether the panel has content
  */
 export const hasPanel = binding =>
-  Boolean(binding && (binding.groups.length > 0 || binding.action));
+  Boolean(binding && (binding.groups.length > 0 || (binding.actions || []).length > 0));
 
 /**
  * A held value with a version raised on each notify, read through

@@ -1,49 +1,33 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaCircle, FaCompress, FaEraser, FaExpand } from 'react-icons/fa6';
+import { FaCompress, FaDownload, FaEraser, FaExpand, FaFileCode, FaFileCsv } from 'react-icons/fa6';
+import { useLocation } from 'react-router-dom';
 
 import EmptyState from '../../../components/common/EmptyState';
 import { useStatus } from '../../../contexts/StatusContext';
-import { useEventStreamStatus } from '../../../hooks/useEventStream';
+import { usePageName } from '../../../hooks/usePageName';
 import { authMethod } from '../../../utils/capabilities';
 import { pageContextShape } from '../../../utils/itemShape';
-import { formatRelativeTime } from '../../../utils/relativeTime';
 import { useFleet } from '../hooks/useFleet';
 import { useFleetSearch } from '../hooks/useFleetSearch';
 import { useGrafana } from '../hooks/useGrafana';
+import { downloadText, exportCsv, exportJson } from '../utils/exportRows';
 import { vmKey } from '../utils/vmStatus';
 
-import ExportButtons from './ExportButtons';
 import FleetTable, { fleetColumns } from './FleetTable';
 import PoolCards from './PoolCards';
 import StatusCards from './StatusCards';
 
-const STREAM_CLASSES = {
-  live: 'text-success',
-  connecting: 'text-warning',
-  reconnecting: 'text-warning',
-  paused: 'text-secondary',
-  stopped: 'text-danger',
-};
+const EXPORT_NAME = 'vdi-health-export';
 
-const CountLine = ({ shown, total, lastEventAt }) => {
-  const { t, i18n } = useTranslation();
-  const stream = useEventStreamStatus();
+const CountLine = ({ shown, total }) => {
+  const { t } = useTranslation();
   return (
-    <div className="d-flex flex-wrap align-items-center gap-3 small text-body-secondary">
-      <span>
-        {shown < total
-          ? t('vdi.count.filtered', { count: shown, total })
-          : t('vdi.count.all', { count: total })}
-      </span>
-      <span className="d-inline-flex align-items-center gap-1">
-        <FaCircle className={`${STREAM_CLASSES[stream] || 'text-secondary'} small`} aria-hidden />
-        {t(`vdi.stream.${stream}`)}
-        {lastEventAt
-          ? ` · ${t('vdi.count.lastEvent', { time: formatRelativeTime(lastEventAt, i18n.language) })}`
-          : ''}
-      </span>
+    <div className="small text-body-secondary" data-note="fleet-count">
+      {shown < total
+        ? t('vdi.count.filtered', { count: shown, total })
+        : t('vdi.count.all', { count: total })}
     </div>
   );
 };
@@ -51,59 +35,57 @@ const CountLine = ({ shown, total, lastEventAt }) => {
 CountLine.propTypes = {
   shown: PropTypes.number.isRequired,
   total: PropTypes.number.isRequired,
-  lastEventAt: PropTypes.number,
 };
 
-const Toolbar = ({ rows, now, sort, onResetSort, onExpandAll, onCollapseAll }) => {
-  const { t } = useTranslation();
-  return (
-    <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
-      <ExportButtons rows={rows} now={now} />
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
-        onClick={onExpandAll}
-        title={t('vdi.toolbar.expandAll')}
-      >
-        <FaExpand aria-hidden />
-        {t('vdi.toolbar.expandAll')}
-      </button>
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
-        onClick={onCollapseAll}
-        title={t('vdi.toolbar.collapseAll')}
-      >
-        <FaCompress aria-hidden />
-        {t('vdi.toolbar.collapseAll')}
-      </button>
-      {sort.length > 0 ? (
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
-          onClick={onResetSort}
-          title={t('vdi.toolbar.resetSort')}
-        >
-          <FaEraser aria-hidden />
-          {t('vdi.toolbar.resetSort')}
-        </button>
-      ) : null}
-    </div>
-  );
-};
-
-Toolbar.propTypes = {
-  rows: PropTypes.array.isRequired,
-  now: PropTypes.number.isRequired,
-  sort: PropTypes.array.isRequired,
-  onResetSort: PropTypes.func.isRequired,
-  onExpandAll: PropTypes.func.isRequired,
-  onCollapseAll: PropTypes.func.isRequired,
-};
+/**
+ * The panel's actions of the fleet page over the narrowed rows: Export
+ * with JSON and CSV as its choices, Expand all, Collapse all and, while
+ * a person chose a sort, Reset sort.
+ *
+ * @param {Object} options - The rows, the sort state and the page's setters
+ * @returns {Array<Object>} The actions
+ */
+const fleetActions = ({ rows, sorted, resetSort, now, t, setExpanded }) => [
+  {
+    key: 'export',
+    labelKey: 'vdi.toolbar.export',
+    icon: FaDownload,
+    choices: [
+      {
+        key: 'json',
+        labelKey: 'vdi.toolbar.exportJson',
+        icon: FaFileCode,
+        onRun: () => downloadText(exportJson(rows), 'application/json', `${EXPORT_NAME}.json`),
+      },
+      {
+        key: 'csv',
+        labelKey: 'vdi.toolbar.exportCsv',
+        icon: FaFileCsv,
+        onRun: () => downloadText(exportCsv(rows, { t, now }), 'text/csv', `${EXPORT_NAME}.csv`),
+      },
+    ],
+  },
+  {
+    key: 'expand',
+    labelKey: 'vdi.toolbar.expandAll',
+    icon: FaExpand,
+    onRun: () => setExpanded(new Set(rows.map(vmKey))),
+  },
+  {
+    key: 'collapse',
+    labelKey: 'vdi.toolbar.collapseAll',
+    icon: FaCompress,
+    onRun: () => setExpanded(new Set()),
+  },
+  ...(sorted
+    ? [{ key: 'reset-sort', labelKey: 'vdi.toolbar.resetSort', icon: FaEraser, onRun: resetSort }]
+    : []),
+];
 
 const FleetBody = ({ context, mode }) => {
   const { t } = useTranslation();
-  const { vms, pools, now, loaded, failed, lastEventAt } = useFleet();
+  const { search: query } = useLocation();
+  const { vms, pools, now, loaded, failed } = useFleet();
   const grafana = useGrafana();
   const [expanded, setExpanded] = useState(() => new Set());
   const list = Object.values(vms);
@@ -112,7 +94,9 @@ const FleetBody = ({ context, mode }) => {
     now,
     columns: fleetColumns,
     prefsKey: `${context.prefsPrefix}_vdi`,
+    actionsOf: held => fleetActions({ ...held, now, t, setExpanded }),
   });
+  usePageName(new URLSearchParams(query).get('pool') || '');
 
   useEffect(() => {
     document.title = context.appName;
@@ -154,7 +138,7 @@ const FleetBody = ({ context, mode }) => {
   }
 
   return (
-    <div className="list row">
+    <div className="list row" data-page="fleet">
       {failed ? (
         <div className="alert alert-danger" role="alert">
           {t('vdi.fleet.loadError')}
@@ -172,14 +156,6 @@ const FleetBody = ({ context, mode }) => {
         onToggle={search.togglePools}
         filterState={search.filterState}
         onCycle={search.cycleFilter}
-      />
-      <Toolbar
-        rows={search.rows}
-        now={now}
-        sort={search.sort}
-        onResetSort={search.resetSort}
-        onExpandAll={() => setExpanded(new Set(search.rows.map(vmKey)))}
-        onCollapseAll={() => setExpanded(new Set())}
       />
       {list.length === 0 ? (
         <EmptyState title={t('vdi.empty.title')} body={t('vdi.empty.body')} />
@@ -200,7 +176,7 @@ const FleetBody = ({ context, mode }) => {
           filtering={search.filtering}
         />
       )}
-      <CountLine shown={search.rows.length} total={list.length} lastEventAt={lastEventAt} />
+      <CountLine shown={search.rows.length} total={list.length} />
     </div>
   );
 };
@@ -212,11 +188,13 @@ FleetBody.propTypes = {
 
 /**
  * The fleet page at `/` of a host that advertises `fleet`: the five status
- * cards, the pool cards, the toolbar (export, expand all, collapse all,
- * reset sort), the fleet table and the count line with the stream state,
- * everything live over `useFleet` and narrowed by the navbar binding of
- * `useFleetSearch` under `table_prefs_vdi`; a host that needs a session
- * shows the sign-in note until one exists and fetches nothing before.
+ * cards, the pool cards, the fleet table and the count line, everything
+ * live over `useFleet` and narrowed by the navbar binding of
+ * `useFleetSearch` under `table_prefs_vdi`, whose panel carries the page's
+ * actions, Export as JSON or CSV, Expand all, Collapse all and Reset sort
+ * while a sort was chosen; the route's `pool` named as the page's crumb;
+ * a host that needs a session shows the sign-in note until one exists and
+ * fetches nothing before.
  */
 const FleetPage = ({ context, mode }) => {
   const { t } = useTranslation();

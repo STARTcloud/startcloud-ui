@@ -1,0 +1,13 @@
+{
+  "instance_id": "i-0a1b2c3d",
+  "since": "24h",
+  "events": [
+    {
+      "id": 1201,
+      "timestamp": "2026-10-12T08:30:00Z",
+      "category": "session",
+      "event_type": "session_started",
+      "message": "jlee signed in"
+    }
+  ]
+}

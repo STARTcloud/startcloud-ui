@@ -2,11 +2,16 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useState } from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaCircle, FaHeartPulse } from 'react-icons/fa6';
+import { FaCircle, FaHeartPulse, FaTriangleExclamation } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
-import { useEventStream } from '../../hooks/useEventStream';
+import {
+  useEventStream,
+  useEventStreamLastEvent,
+  useEventStreamStatus,
+} from '../../hooks/useEventStream';
 import { useFooterPane } from '../../hooks/useFooterPane';
+import { formatRelativeTime } from '../../utils/relativeTime';
 
 import FooterPane, { FooterGrip, FooterHandles, FooterTools, sidebarSizeShape } from './FooterPane';
 
@@ -29,6 +34,115 @@ const statusColor = status => {
 };
 
 const OVERALL_COLORS = { ok: 'text-success', warning: 'text-warning', error: 'text-danger' };
+
+const STREAM_COLORS = {
+  live: 'text-success',
+  connecting: 'text-warning',
+  reconnecting: 'text-warning',
+  paused: 'text-secondary',
+  stopped: 'text-danger',
+};
+
+const NOTE_COLORS = { warning: 'text-warning', error: 'text-danger' };
+
+/**
+ * The stream line of the heart's popover on a host that streams: the
+ * connection's state with its dot and, once a named event has arrived,
+ * how long ago the last one did, read from the event hub and never from
+ * a page.
+ */
+const StreamLine = () => {
+  const { t, i18n } = useTranslation();
+  const stream = useEventStreamStatus();
+  const lastAt = useEventStreamLastEvent();
+  return (
+    <div className="mb-2" data-note="health-stream" data-stream={stream}>
+      <FaCircle className={`me-2 ${STREAM_COLORS[stream] || 'text-secondary'}`} />
+      {t(`footer.health.stream.${stream}`)}
+      {lastAt
+        ? ` · ${t('footer.health.lastEvent', { time: formatRelativeTime(lastAt, i18n.language) })}`
+        : ''}
+    </div>
+  );
+};
+
+const toolVersion = (tool, t) => {
+  if (!tool.installed) {
+    return t('footer.health.toolMissing');
+  }
+  return tool.version || t('footer.health.toolPresent');
+};
+
+/**
+ * The tools of the heart's popover, one row a detected prerequisite the
+ * host answers under `tools`, its name, its version or the word for a
+ * tool that is present with no version, greyed while it is missing.
+ */
+const ToolRows = ({ tools }) => {
+  const { t } = useTranslation();
+  if (tools.length === 0) {
+    return null;
+  }
+  return (
+    <div className="mt-2 pt-2 border-top" data-list="health-tools">
+      {tools.map(tool => (
+        <div
+          key={tool.name}
+          className={`mb-1 ${tool.installed ? '' : 'text-body-secondary'}`}
+          data-tool={tool.name}
+        >
+          <FaCircle className={`me-2 ${tool.installed ? 'text-success' : 'text-secondary'}`} />
+          {t(`footer.health.tools.${tool.name}`, { defaultValue: tool.name })}:{' '}
+          {toolVersion(tool, t)}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+ToolRows.propTypes = {
+  tools: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      installed: PropTypes.bool.isRequired,
+      version: PropTypes.string,
+    })
+  ).isRequired,
+};
+
+/**
+ * The notes of the heart's popover, one row a word of caution the host
+ * answers under `notes`, the triangle in the note's level.
+ */
+const NoteRows = ({ notes }) => {
+  if (notes.length === 0) {
+    return null;
+  }
+  return (
+    <div className="mt-2 pt-2 border-top" data-list="health-notes">
+      {notes.map(note => (
+        <div key={note.code} className="mb-1 d-flex gap-2" data-note-code={note.code}>
+          <FaTriangleExclamation
+            className={`mt-1 flex-shrink-0 ${NOTE_COLORS[note.level] || 'text-warning'}`}
+          />
+          <span>{note.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+NoteRows.propTypes = {
+  notes: PropTypes.arrayOf(
+    PropTypes.shape({
+      code: PropTypes.string.isRequired,
+      level: PropTypes.string.isRequired,
+      text: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+};
+
+const listOf = value => (Array.isArray(value) ? value : []);
 
 const HealthIndicator = ({ fetchHealth, streamed }) => {
   const { t } = useTranslation();
@@ -78,6 +192,7 @@ const HealthIndicator = ({ fetchHealth, streamed }) => {
           <FaCircle className={`me-2 ${statusColor(overall)}`} />
           {t(`footer.health.${overall}`, { defaultValue: overall })}
         </div>
+        {streamed ? <StreamLine /> : null}
         {Object.entries(health.services || {}).map(([service, status]) => (
           <div key={service} className="mb-1">
             <FaCircle className={`me-2 ${statusColor(status)}`} />
@@ -87,6 +202,8 @@ const HealthIndicator = ({ fetchHealth, streamed }) => {
             : {status}
           </div>
         ))}
+        <ToolRows tools={listOf(health.tools)} />
+        <NoteRows notes={listOf(health.notes)} />
       </Popover.Body>
     </Popover>
   );
@@ -309,7 +426,11 @@ PanedFooter.propTypes = {
  * footer draws, then while `streamed` read again when the tab's stream
  * opens fresh or answers `reset` and kept by its `health` event, an
  * in-ring reconnect replaying what was missed, and while not `streamed`
- * read again when the person opens the heart; no timer runs. While the
+ * read again when the person opens the heart; no timer runs. The
+ * heart's popover draws the overall word, while `streamed` the stream's
+ * state and the time of its last event, one row a service, then the
+ * `tools` the host answers, one row a prerequisite with its version, and
+ * the `notes` it answers, one row a caution with its triangle. While the
  * app hands a `pane`, the views hook a mounted feature exported, and the
  * hook answers at least one view, the center is the grip, the one drag
  * area of the row, the STARTcloud mark moves to the far left before the

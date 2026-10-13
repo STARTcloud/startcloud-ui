@@ -1,0 +1,23 @@
+{
+  "pools": {
+    "Accounting": {
+      "total": 2,
+      "in_use": 1,
+      "available": 1,
+      "agent_health": 2,
+      "max_srvs": 10,
+      "current_pub_revision": 7,
+      "service_type": "LiveService",
+      "stale": 0
+    },
+    "Engineering": {
+      "total": 1,
+      "in_use": 1,
+      "agent_health": 1,
+      "max_srvs": 5,
+      "current_pub_revision": 3,
+      "service_type": "LiveService",
+      "stale": 0
+    }
+  }
+}

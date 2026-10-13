@@ -335,17 +335,19 @@ const filtering = (needle, filters) =>
 /**
  * The fleet page's navbar binding and its narrowed, sorted rows: the
  * query, the Status and Pool tristate groups, Session, Cache, Drives,
- * Publication and Columns, every choice kept under `prefsKey`, and the
- * route's `pool` and `session` laid over the saved filters.
+ * Publication and Columns, the panel's actions the page answers for the
+ * narrowed rows, every choice kept under `prefsKey`, and the route's
+ * `pool` and `session` laid over the saved filters.
  *
  * @param {Object} options - The page's data
  * @param {Array<Object>} options.vms - Every vm object
  * @param {number} options.now - The reference epoch in milliseconds
  * @param {Array<Object>} options.columns - The fleet table's columns
  * @param {string} options.prefsKey - The localStorage key
+ * @param {Function} [options.actionsOf] - Answers the panel's actions for the narrowed rows and the sort stack
  * @returns {Object} `rows`, `total`, `filtering`, `sort`, `setSort`, `resetSort`, `hiddenColumns`, `widths`, `setColumnWidth`, `filterState`, `cycleFilter`, `poolsCollapsed`, `togglePools`
  */
-export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
+export const useFleetSearch = ({ vms, now, columns, prefsKey, actionsOf = null }) => {
   const { t } = useTranslation();
   const { search } = useLocation();
   const [query, setQuery] = useState('');
@@ -371,6 +373,7 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
   const stack = prefs.sort.length > 0 ? prefs.sort : DEFAULT_SORT;
   const rows = sortItems([...passing].sort(byHostname), stack, shown, { t });
   const counts = countValues(vms, now);
+  const resetSort = () => setPrefs(current => ({ ...current, sort: [] }));
 
   useNavbarSearchBinding({
     query,
@@ -388,6 +391,7 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
       t,
     }),
     onClearFilters: () => setPrefs(current => ({ ...current, filters: emptyFilters() })),
+    actions: actionsOf ? actionsOf({ rows, sorted: prefs.sort.length > 0, resetSort }) : [],
   });
 
   const filterState = (dimension, value) => {
@@ -405,7 +409,7 @@ export const useFleetSearch = ({ vms, now, columns, prefsKey }) => {
     sort: stack,
     setSort: (column, options) =>
       setPrefs(current => ({ ...current, sort: nextSort(current.sort, column, options) })),
-    resetSort: () => setPrefs(current => ({ ...current, sort: [] })),
+    resetSort,
     hiddenColumns: prefs.hiddenColumns,
     widths: prefs.widths,
     setColumnWidth: (column, pixels) =>

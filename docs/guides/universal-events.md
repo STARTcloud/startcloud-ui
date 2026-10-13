@@ -420,8 +420,11 @@ returns a stop function.
 
 `createEventHub()` is the tab's one subscription surface: `subscribe(name,
 handler)` for named events (`ready` and `reset` included), `connect` and
-`disconnect` over `openEventStream`, and `status()` with `onStatus` for
-the connection state. The runtime exports the hub as `eventHub`, and
+`disconnect` over `openEventStream`, `status()` with `onStatus` for
+the connection state, and `lastEventAt()` with `onEvent` for the time the
+last named event arrived, `ready` and `reset` never counted, the one
+clock the footer heart's stream line reads, so no page keeps a last-event
+time of its own. The runtime exports the hub as `eventHub`, and
 `connectEventStream(status)` opens the stream at `status.events.path`
 subscribed to every topic in `status.events.topics`, the session's
 headers on the request and a `401` ending the session on the bus;

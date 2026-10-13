@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="VCC">
+  <style>
+    .brand-mark-root { color-scheme: light dark; }
+    .vcc-blue { fill: #003d75; fill: light-dark(#003d75, #4f9ae0); }
+    .vcc-gray { fill: #8e9295; fill: light-dark(#8e9295, #a6aaad); }
+  </style>
+  <g class="brand-mark-root" transform="translate(41 53.14) scale(2.4294)">
+    <path class="vcc-blue" d="M45.2180605,0 L0,0 L49.0597917,127 C59.0419389,119.730324 70.4105585,112.66398 83,106.022576 L45.2180605,0 Z"/>
+    <path class="vcc-gray" d="M86.701543,114.557186 C74.1132953,119.473274 62.2203551,124.777474 51,130.329068 L65.2765272,167 L108.817322,167 L137,98 C120.664817,102.482583 105.061298,107.584783 90.3257768,113.206737"/>
+    <path class="vcc-blue" d="M177,0 L133.198389,0 L95,100 C109.937355,92.9012697 126.324096,86.3861217 143.945329,80.757745 L177,0 Z"/>
+  </g>
+</svg>

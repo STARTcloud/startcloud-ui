@@ -1776,7 +1776,27 @@
       "pages": "Public catalog",
       "store": "Private store",
       "uds": "UDS database",
-      "events": "Event stream"
+      "events": "Event stream",
+      "stream": {
+        "connecting": "Connecting…",
+        "live": "Live",
+        "reconnecting": "Reconnecting…",
+        "paused": "Paused",
+        "stopped": "Disconnected"
+      },
+      "lastEvent": "last event {{time}}",
+      "toolMissing": "not installed",
+      "toolPresent": "present",
+      "tools": {
+        "vagrant": "Vagrant",
+        "virtualbox": "VirtualBox",
+        "git": "Git",
+        "ansible": "Ansible",
+        "rsync": "rsync",
+        "scp": "scp",
+        "builtin_sync": "Built-in sync",
+        "utm": "UTM"
+      }
     },
     "pane": {
       "priorityAll": "All",
@@ -2033,21 +2053,14 @@
       "exportCsv": "Export CSV",
       "expandAll": "Expand all",
       "collapseAll": "Collapse all",
-      "resetSort": "Reset sort"
+      "resetSort": "Reset sort",
+      "export": "Export"
     },
     "count": {
       "all_one": "{{count}} VM",
       "all_other": "{{count}} VMs",
       "filtered_one": "{{count}} / {{total}} VM",
-      "filtered_other": "{{count}} / {{total}} VMs",
-      "lastEvent": "last event {{time}}"
-    },
-    "stream": {
-      "connecting": "Connecting…",
-      "live": "Live",
-      "reconnecting": "Reconnecting…",
-      "paused": "Paused",
-      "stopped": "Disconnected"
+      "filtered_other": "{{count}} / {{total}} VMs"
     },
     "table": {
       "hostname": "Hostname",

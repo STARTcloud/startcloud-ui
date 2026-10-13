@@ -24,7 +24,7 @@ const perPageGroup = ({ size, setPrefs, t }) => ({
 /**
  * The navbar search binding of a paged list the server answers: the
  * page's query and request groups, the client-side groups, Per page and
- * Columns, the page's one action, and `matched` with no `total`.
+ * Columns, the page's actions, and `matched` with no `total`.
  *
  * @param {Object} options
  * @param {string} options.query - The query the page holds
@@ -34,7 +34,7 @@ const perPageGroup = ({ size, setPrefs, t }) => ({
  * @param {Array} [options.clientGroups] - The client-side group specs of `useClientFilters`
  * @param {Object|null} [options.url] - The `useUrlNarrowing` result holding the client-side groups' values
  * @param {Function} options.onClearFilters - Empties every group, keeping the query
- * @param {{ key: string, labelKey: string, icon?: Function, onRun: Function }|null} options.action - The panel's action
+ * @param {Array<{ key: string, labelKey: string, icon?: Function, onRun?: Function, choices?: Array }>} [options.actions] - The panel's actions
  * @param {number|null} [options.matched] - The answer's `total`; the client-narrowed row count when absent
  * @param {Array} options.rows - The rows the list answered
  * @param {Array} options.columns - The table's columns
@@ -51,7 +51,7 @@ export const useListSearch = ({
   clientGroups,
   url = null,
   onClearFilters,
-  action,
+  actions = [],
   matched = null,
   rows,
   columns,
@@ -91,7 +91,7 @@ export const useListSearch = ({
       onClearFilters();
       filters.clear();
     },
-    action,
+    actions,
   });
 
   const setSort = (column, options) =>

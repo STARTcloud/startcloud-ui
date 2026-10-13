@@ -1,0 +1,21 @@
+{
+  "status": "warning",
+  "timestamp": "2026-10-12T09:00:00Z",
+  "services": { "database": "ok", "hypervisor": "warning", "tasks": "ok", "monitoring": "ok" },
+  "tools": [
+    { "name": "vagrant", "installed": true, "version": "2.4.3" },
+    { "name": "virtualbox", "installed": true, "version": "7.2.8" },
+    { "name": "git", "installed": true, "version": "2.47.1" },
+    { "name": "ansible", "installed": false },
+    { "name": "rsync", "installed": true, "version": "3.3.0" },
+    { "name": "scp", "installed": true },
+    { "name": "builtin_sync", "installed": true, "version": "embedded rsync client + sftp" }
+  ],
+  "notes": [
+    {
+      "code": "virtualbox_wsl",
+      "level": "warning",
+      "text": "WSL and VirtualBox share this host's virtualization; VirtualBox machines may be unstable while WSL runs."
+    }
+  ]
+}

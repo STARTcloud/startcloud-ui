@@ -161,9 +161,32 @@ const worst = services => {
   return words.some(word => word.startsWith('warning')) ? 'warning' : 'ok';
 };
 
+const AGENT_TOOLS = [
+  { name: 'vagrant', installed: true, version: '2.4.3' },
+  { name: 'virtualbox', installed: true, version: '7.2.8' },
+  { name: 'git', installed: true, version: '2.47.1' },
+  { name: 'ansible', installed: true, version: '2.18.1' },
+  { name: 'rsync', installed: true, version: '3.3.0' },
+  { name: 'scp', installed: true },
+  { name: 'builtin_sync', installed: true, version: 'embedded rsync client + sftp' },
+];
+const AGENT_NOTES = [
+  {
+    code: 'virtualbox_wsl',
+    level: 'warning',
+    text: "WSL and VirtualBox share this host's virtualization; VirtualBox machines may be unstable while WSL runs.",
+  },
+];
+
 const healthNow = () => {
   const services = { ...steady, ...phases[health.phase % phases.length] };
-  return { status: worst(services), timestamp: now(), services };
+  const noted = APIKEY_MODE && health.phase % phases.length === 1;
+  return {
+    status: worst(noted ? { ...services, hypervisor: 'warning' } : services),
+    timestamp: now(),
+    services: noted ? { ...services, hypervisor: 'warning' } : services,
+    ...(APIKEY_MODE ? { tools: AGENT_TOOLS, notes: noted ? AGENT_NOTES : [] } : {}),
+  };
 };
 
 const moveHealth = () => {

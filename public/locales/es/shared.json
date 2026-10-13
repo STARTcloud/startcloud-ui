@@ -1776,7 +1776,27 @@
       "pages": "Catálogo público",
       "store": "Almacén privado",
       "uds": "Base de datos UDS",
-      "events": "Flujo de eventos"
+      "events": "Flujo de eventos",
+      "stream": {
+        "connecting": "Conectando…",
+        "live": "En vivo",
+        "reconnecting": "Reconectando…",
+        "paused": "En pausa",
+        "stopped": "Desconectado"
+      },
+      "lastEvent": "último evento {{time}}",
+      "toolMissing": "no instalado",
+      "toolPresent": "presente",
+      "tools": {
+        "vagrant": "Vagrant",
+        "virtualbox": "VirtualBox",
+        "git": "Git",
+        "ansible": "Ansible",
+        "rsync": "rsync",
+        "scp": "scp",
+        "builtin_sync": "Sincronización integrada",
+        "utm": "UTM"
+      }
     },
     "pane": {
       "priorityAll": "Todas",
@@ -2033,21 +2053,14 @@
       "exportCsv": "Exportar CSV",
       "expandAll": "Expandir todo",
       "collapseAll": "Contraer todo",
-      "resetSort": "Quitar orden"
+      "resetSort": "Quitar orden",
+      "export": "Exportar"
     },
     "count": {
       "all_one": "{{count}} VM",
       "all_other": "{{count}} VMs",
       "filtered_one": "{{count}} / {{total}} VM",
-      "filtered_other": "{{count}} / {{total}} VMs",
-      "lastEvent": "último evento {{time}}"
-    },
-    "stream": {
-      "connecting": "Conectando…",
-      "live": "En vivo",
-      "reconnecting": "Reconectando…",
-      "paused": "En pausa",
-      "stopped": "Desconectado"
+      "filtered_other": "{{count}} / {{total}} VMs"
     },
     "table": {
       "hostname": "Hostname",

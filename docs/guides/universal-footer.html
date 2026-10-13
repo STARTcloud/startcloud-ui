@@ -904,6 +904,19 @@
         <strong>The heart as today.</strong> On the right, the per-service words on hover, its state
         on the events stream; the left slot the About link.
       </div>
+      <div class="callout">
+        <strong>What the heart's popover draws.</strong> The overall word first; on a host that
+        lists <code>events</code> the stream line, the connection's state with its dot and how long
+        ago the last named event arrived, read from the one event hub, so no page draws a live
+        indicator of its own; one row a service; then, under a rule, one row a tool the host answers
+        under <code>tools</code>, its name and its version, greyed while it is missing, the line
+        Super.Human.Installer's footer drew, Vagrant, VirtualBox, Git, ansible, rsync, scp, the
+        embedded transports and UTM on macOS; then one row a caution the host answers under
+        <code>notes</code>, <code>{ code, level, text }</code>, the triangle in the note's level,
+        the warning of WSL beside VirtualBox on a Windows host among them. The health answer's shape
+        is <code>{ status, timestamp, services, tools?, notes? }</code>; a host that answers no
+        tools and no notes draws the services alone.
+      </div>
     </div>
   </section>
 

@@ -1,0 +1,5 @@
+{
+  "status": "ok",
+  "timestamp": "2026-10-12T09:00:00Z",
+  "services": { "database": "ok", "uds": "ok", "events": "ok" }
+}

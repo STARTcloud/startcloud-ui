@@ -128,12 +128,14 @@ const RegistrationsPage = () => {
     clientGroups: CLIENT_GROUPS,
     url: { applied: state.applied, setFilter: state.setFilter, clearFilters: state.clear },
     onClearFilters: state.clear,
-    action: {
-      key: 'export',
-      labelKey: 'admin.activity.export',
-      icon: FaDownload,
-      onRun: state.doExport,
-    },
+    actions: [
+      {
+        key: 'export',
+        labelKey: 'admin.activity.export',
+        icon: FaDownload,
+        onRun: state.doExport,
+      },
+    ],
     matched: state.data?.total || 0,
     rows,
     columns,

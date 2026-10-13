@@ -6,6 +6,7 @@ import PageHeader from '../../../components/common/PageHeader';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useEventStream } from '../../../hooks/useEventStream';
+import { usePageName } from '../../../hooks/usePageName';
 import { log } from '../../../lib/logger';
 import { authMethod } from '../../../utils/capabilities';
 import { fetchPools, fetchVm } from '../api/fleet';
@@ -93,6 +94,7 @@ const VmBody = ({ instance, mode }) => {
   const { vm, pools, missing, ready, now } = useVm(instance);
   const grafana = useGrafana();
   const history = useVmHistory(instance);
+  usePageName(vm?.hostname || '', vm?.uds?.pool_name || '');
 
   useEffect(() => {
     document.title = vm?.hostname || instance;
@@ -157,9 +159,10 @@ VmBody.propTypes = {
  * One VM at `/vm/{instance_id}`: the hostname as the title with the
  * status, pool, cache and stale-image chips, then Overview, Metrics
  * (while Grafana is enabled), History and Stats, the VM kept live by the
- * stream and its history refetched when `vm-events` names it; a host that
- * needs a session shows the sign-in note until one exists and fetches
- * nothing before.
+ * stream and its history refetched when `vm-events` names it, the
+ * hostname and the pool named as the page's crumbs; a host that needs a
+ * session shows the sign-in note until one exists and fetches nothing
+ * before.
  */
 const VmPage = ({ instance, mode, user = null }) => {
   const { t } = useTranslation();

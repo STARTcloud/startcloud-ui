@@ -627,7 +627,32 @@ const hostTrail = (section, machinePage = '') => ({
     }),
 });
 
+const FLEET_ROOT = '/';
+
+const poolRoute = pool => `/?pool=${encodeURIComponent(pool)}`;
+
+const fleetCrumbs = ({ status, t, pool, name }) => {
+  if (!hasFeatureStrict(status, 'fleet')) {
+    return [];
+  }
+  const crumbs = [{ key: 'fleet', label: t('vdi.sidebar.fleet'), to: FLEET_ROOT }];
+  if (pool) {
+    crumbs.push({ key: 'pool', label: pool, to: poolRoute(pool) });
+  }
+  if (name) {
+    crumbs.push({ key: 'vm', label: name });
+  }
+  return crumbs;
+};
+
 const CRUMB_PARENTS = {
+  '/': {
+    crumbs: ({ status, pageName, t }) => fleetCrumbs({ status, t, pool: pageName, name: '' }),
+  },
+  '/vm/:instance': {
+    crumbs: ({ status, pageName, pageNoun, params, t }) =>
+      fleetCrumbs({ status, t, pool: pageNoun, name: pageName || params.instance }),
+  },
   '/org-console': {
     parent: '/user/organizations',
     name: ({ activeOrganization }) => activeOrganization?.name || '',

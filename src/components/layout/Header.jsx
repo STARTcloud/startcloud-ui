@@ -228,9 +228,7 @@ const Header = ({
         ) : null}
         {brand ? <Brand brand={brand} LinkComponent={LinkComponent} /> : null}
         <ul className="nav nav-pills me-auto align-items-center">
-          {signedIn ? (
-            <Crumbs crumbs={crumbs} LinkComponent={LinkComponent} leading={Boolean(brand)} />
-          ) : null}
+          <Crumbs crumbs={crumbs} LinkComponent={LinkComponent} leading={Boolean(brand)} />
         </ul>
 
         <Cluster

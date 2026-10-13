@@ -27,3 +27,12 @@ export const useEventStream = (name, handler) => {
  * @returns {string} The state
  */
 export const useEventStreamStatus = () => useSyncExternalStore(eventHub.onStatus, eventHub.status);
+
+/**
+ * The time the tab's event stream last delivered a named event, in epoch
+ * milliseconds, null while none has arrived.
+ *
+ * @returns {number|null} The time
+ */
+export const useEventStreamLastEvent = () =>
+  useSyncExternalStore(eventHub.onEvent, eventHub.lastEventAt);

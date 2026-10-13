@@ -4,19 +4,21 @@ import { openEventStream } from './sse';
  * The one event stream of a tab: pages and the chrome subscribe to named
  * events, the app connects the stream once the host advertises `events`
  * and a session exists, and the connection state is observable for a
- * live indicator. A handler is called with the event's data and a second
- * argument: the frame's id for a named event, `null` for `reset`, and for
- * `ready` whether the connection resumed from a last id, so a subscriber
- * reads its snapshot on a fresh connection and never on an in-ring
- * reconnect.
+ * live indicator, as is the time the last named event arrived. A handler
+ * is called with the event's data and a second argument: the frame's id
+ * for a named event, `null` for `reset`, and for `ready` whether the
+ * connection resumed from a last id, so a subscriber reads its snapshot
+ * on a fresh connection and never on an in-ring reconnect.
  *
- * @returns {{ subscribe: Function, connect: Function, disconnect: Function, status: Function, onStatus: Function }} The hub
+ * @returns {{ subscribe: Function, connect: Function, disconnect: Function, status: Function, onStatus: Function, lastEventAt: Function, onEvent: Function }} The hub
  */
 export const createEventHub = () => {
   const handlers = new Map();
   const statusListeners = new Set();
+  const eventListeners = new Set();
   let stop = null;
   let state = 'stopped';
+  let lastAt = null;
 
   const setState = next => {
     state = next;
@@ -24,6 +26,10 @@ export const createEventHub = () => {
   };
 
   const dispatch = (name, data, id) => {
+    if (name !== 'ready' && name !== 'reset') {
+      lastAt = Date.now();
+      eventListeners.forEach(listener => listener(lastAt));
+    }
     [...(handlers.get(name) || [])].forEach(handler => handler(data, id));
   };
 
@@ -64,5 +70,18 @@ export const createEventHub = () => {
     return () => statusListeners.delete(listener);
   };
 
-  return { subscribe, connect, disconnect, status: () => state, onStatus };
+  const onEvent = listener => {
+    eventListeners.add(listener);
+    return () => eventListeners.delete(listener);
+  };
+
+  return {
+    subscribe,
+    connect,
+    disconnect,
+    status: () => state,
+    onStatus,
+    lastEventAt: () => lastAt,
+    onEvent,
+  };
 };

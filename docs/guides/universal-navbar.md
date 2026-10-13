@@ -58,9 +58,8 @@ for row.
 ## Account cluster
 
 The right-hand end of the app's top bar (or its account control). Left of
-it is the app's: the brand alone while signed out, the brand and the
-route breadcrumb while signed in (see the
-[Universal Pages Contract](universal-pages/)). The cluster keeps one
+it is the app's: the brand and the route breadcrumb, signed in or not
+(see the [Universal Pages Contract](universal-pages/)). The cluster keeps one
 order in both states, left to right: search, Discover, the ticket icon,
 the mode control, the language control, then the account control, each
 present only by its own condition, so signed out it reads search,
@@ -87,16 +86,18 @@ Discover, mode, language, account.
 - No bell in the cluster. Notifications are a menu row.
 - Cluster icon buttons (mode, language) are borderless and transparent —
   no outline, no background until hover.
-- Nothing sits left of the cluster but the brand while signed out, and
-  nothing but the brand and the breadcrumb signed in: `links.docs`,
+- Nothing sits left of the cluster but the brand and the breadcrumb,
+  signed in or out: `links.docs`,
   `links.contact` and `links.api` are rows of the app-named menu section
   signed in and draw nowhere while signed out, the ticket icon being the
   one help a signed-out page carries and Discover its one destination,
   and About is a menu row alone, because a signed-out page is a sign-in
   page or a public listing and every link on it that is not the brand is
   help or the directory.
-- Left of the cluster, signed in, the app draws a breadcrumb after the
-  brand: plain text crumbs separated by a muted `›`, never buttons, pills
+- Left of the cluster the app draws a breadcrumb after the brand on
+  every route that yields one, signed in or out, because a crumb is the
+  route's own trail and hides nothing the URL does not already say:
+  plain text crumbs separated by a muted `›`, never buttons, pills
   or dropdowns. The crumbs come from the route alone —
   `› org › collection › item › version › provider`, each a plain link up
   the route — and are identical in BoxVault and the catalog; the brand is
@@ -187,9 +188,13 @@ identical in every app.
   in the group's color and inactive pills in the muted secondary tint. The
   label column sizes to the longest label on the page, and a group with no
   values on the page is not drawn. A foot row shows the active-filter count,
-  the page's action while it registered one (a small button carrying the
-  action's glyph and label), and a "Clear filters" link, which empties the
-  sets but keeps the query and the panel.
+  the page's actions while it registered any, each a small button carrying
+  the action's glyph and label, or a small menu of its `choices` for an
+  action that offers several, Export as JSON or CSV, and a "Clear filters"
+  link, which empties the sets but keeps the query and the panel. An
+  action over the narrowed list or the drawn rows, an export, expand all,
+  collapse all, reset sort, lives here and never in a toolbar of the
+  page's own, because every control of a search goes through the navbar.
 - **Registration**: a page publishes a binding — the query and its
   setter, the placeholder, the matched and total counts, the filter groups
   (key, label, entries with counts, the active set, the active class or a
@@ -219,7 +224,7 @@ identical in every app.
 - **One search per page**: a page never draws a search field or a filter
   row of its own beside the navbar's; the query, every filter and the
   Columns group live in the module and its panel, an action over the
-  narrowed list is the panel's registered action, and the page keeps only
+  narrowed list is one of the panel's registered actions, and the page keeps only
   what is not a narrowing, a bulk bar and the table, because every search
   goes through the navbar and a person looking for the box finds it in one
   place on every UI backend.

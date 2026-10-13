@@ -61,3 +61,22 @@ export const exportCsv = (rows, { t, now }) => {
   ]);
   return [header, ...lines].map(line => line.map(csvCell).join(',')).join('\n');
 };
+
+/**
+ * Hands the browser a file to save: the text under the type and the name
+ * given, through one object URL revoked once the click has gone out.
+ *
+ * @param {string} text - The file's content
+ * @param {string} type - Its media type
+ * @param {string} filename - The name the browser saves it under
+ */
+export const downloadText = (text, type, filename) => {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+};

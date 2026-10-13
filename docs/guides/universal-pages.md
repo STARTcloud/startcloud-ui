@@ -237,10 +237,13 @@ The route parser turns the current path into crumbs for the header:
   writing the crumb context the app mounts around the shell, a
   `CRUMB_PARENTS` entry naming a route pattern (`/admin/users/:id`) as
   readily as a path and its resolver receiving
-  `{ activeOrganization, pageName, params, t }` and reading `pageName`
+  `{ activeOrganization, pageName, pageNoun, status, params, t }` and reading `pageName`
   first, so the user record page reads Admin, Users, then the username,
   the translated `admin.users.placeholder` ("User") standing in while the
-  record has not answered; a route no row matches draws the route
+  record has not answered; an entry whose resolver answers the whole
+  trail wins over the row the route matches while it answers any crumb,
+  so the fleet's home reads Fleet, then the pool the route narrows to,
+  and never Fleet twice; a route no row matches draws the route
   parser's crumbs, never the tree's, a node's `matches(pathname)` opening
   the tree alone on a deep link; a reserved route no row matches draws
   the page's title as its one crumb, so the row is never empty.
@@ -1399,24 +1402,30 @@ verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
   `StatusCards` (ratio color, the no-session breakdown line, a click
   cycling the Status filter), one `PoolCards` card per pool (total, cache
   badges, agents-healthy line, publication, capacity, a click cycling the
-  Pool filter, the fold kept in prefs), the toolbar (JSON and CSV export
-  of the filtered sorted rows, expand all, collapse all, reset sort), the
+  Pool filter, the fold kept in prefs), the
   `FleetTable` over the columns hostname, pool, user, session, drives,
   icons, seen and cycle (every one sortable, the sort a stack of
   `{ column, direction }` advanced by Shift-click, rows linking to
   `/vm/{instance_id}`, row classes standby, no-session and decommissioned,
   an inline expand with Overview, Metrics while Grafana is enabled, History
-  and Stats) and the count line. Its navbar binding queries hostname,
+  and Stats) and the count line, the count alone, because the stream's
+  state and its last event are the footer heart's. Its navbar binding queries hostname,
   username, display name, first and last name, UNC paths, pool, IP, MAC,
   instance id and UDS username, with the groups Status (tristate), Pool
   (tristate), Session, Cache, Drives, Publication, then Columns, under
-  `table_prefs_vdi`; a tristate pill cycles neutral → include → exclude.
+  `table_prefs_vdi`, and the panel's actions over the narrowed rows,
+  Export with JSON and CSV as its choices, Expand all, Collapse all and
+  Reset sort while a sort was chosen, so the page draws no toolbar of its
+  own; a tristate pill cycles neutral → include → exclude. The crumbs
+  read Fleet, then the pool while the route carries `pool`.
   `VmPage` is `/vm/:instance`, by instance id and never by hostname:
   `PageHeader` with the hostname and the chips status, pool, cache and
   stale image, then the four sections `VmOverview`, `VmHistory` and
   `VmStats` (`useVmHistory` with the since select, refetched when
   `vm-events` names the VM) and `VmMetrics` (the Grafana panels while
-  `/api/config/grafana` answers `enabled`). Both set `document.title`;
+  `/api/config/grafana` answers `enabled`); its crumbs read Fleet, the
+  VM's pool linking to the fleet narrowed to it while the VM carries one,
+  then the hostname. Both set `document.title`;
   their keys are `vdi.*` in `shared.json` (`vdi.table.*`, `vdi.filter.*`,
   `vdi.status.*`, `vdi.session.*`, `vdi.cache.*`, `vdi.events.*`), and a
   UI backend without `fleet` answers `HomePage` at `/` (a `cookie` UI

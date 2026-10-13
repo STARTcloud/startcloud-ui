@@ -1,0 +1,12 @@
+{
+  "role": "vdi-health",
+  "version": "1.4.0",
+  "brand": { "name": "VDI Health Monitor", "logo_url": "/brand/startcloud/mark.svg" },
+  "auth": [],
+  "collections": [],
+  "config": ["app"],
+  "events": { "path": "/api/events", "topics": ["fleet", "health"] },
+  "features": ["health", "events", "fleet", "footer", "sidebar", "landing", "search", "rules"],
+  "links": { "docs": "", "contact": "" },
+  "ticket": null
+}

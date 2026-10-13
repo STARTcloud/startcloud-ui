@@ -28,6 +28,18 @@ Feature: footer pane
     Then the tasks pane lists 3 tasks
     And the tasks pane does not scroll sideways
 
+  Scenario: Footer heart: the popover draws the tools the agent answers with their versions, a missing one greyed, and the WSL beside VirtualBox caution with its triangle
+    Given the host answers the agent fixture
+    And the host answers the agent-health-tools fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/"
+    And I hover the footer heart
+    Then the heart's popover lists the tool "virtualbox" as "7.2.8"
+    And the heart's popover lists the tool "scp" as present
+    And the heart's popover lists the tool "ansible" as missing
+    And the heart's popover notes "virtualbox_wsl"
+    And the heart's popover draws no stream line
+
   Scenario: Consoles pane: the Consoles toggle opens on no console, and Open host shell of the host's Controls menu starts the session once, asks one unscoped ticket and draws the shell as the one tab
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"

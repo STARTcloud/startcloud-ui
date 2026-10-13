@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useContext, useEffect } from 'react';
-import { Spinner } from 'react-bootstrap';
+import { Dropdown, Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import {
   FaBan,
@@ -126,18 +126,70 @@ DateRangeGroup.propTypes = {
 
 const drawn = group => group.kind === 'date-range' || Object.keys(group.entries).length > 0;
 
-const PanelAction = ({ action, live }) => {
+const liveActionOf = (live, key) =>
+  (live().actions || []).find(action => action.key === key) || null;
+
+const ActionLabel = ({ action }) => {
   const { t } = useTranslation();
   const Icon = action.icon || null;
   return (
-    <button
-      type="button"
-      className="btn btn-outline-secondary btn-sm"
-      onClick={() => live().action.onRun()}
-    >
+    <>
       {Icon ? <Icon className="me-1" aria-hidden /> : null}
       {t(action.labelKey)}
-    </button>
+    </>
+  );
+};
+
+ActionLabel.propTypes = {
+  action: navbarSearchActionShape.isRequired,
+};
+
+/**
+ * One registered action at the panel's foot: a small button that runs
+ * the page's live `onRun`, or, for an action that carries `choices`, a
+ * small menu whose rows each run their own.
+ */
+const PanelAction = ({ action, live }) => {
+  const { t } = useTranslation();
+  if (!action.choices) {
+    return (
+      <button
+        type="button"
+        className="btn btn-outline-secondary btn-sm"
+        data-panel-action={action.key}
+        onClick={() => liveActionOf(live, action.key)?.onRun()}
+      >
+        <ActionLabel action={action} />
+      </button>
+    );
+  }
+  return (
+    <Dropdown>
+      <Dropdown.Toggle variant="outline-secondary" size="sm" data-panel-action={action.key}>
+        <ActionLabel action={action} />
+      </Dropdown.Toggle>
+      <Dropdown.Menu>
+        {action.choices.map(choice => {
+          const Icon = choice.icon || null;
+          return (
+            <Dropdown.Item
+              as="button"
+              type="button"
+              key={choice.key}
+              data-panel-choice={choice.key}
+              onClick={() =>
+                liveActionOf(live, action.key)
+                  ?.choices.find(entry => entry.key === choice.key)
+                  ?.onRun()
+              }
+            >
+              {Icon ? <Icon className="me-2" aria-hidden /> : null}
+              {t(choice.labelKey)}
+            </Dropdown.Item>
+          );
+        })}
+      </Dropdown.Menu>
+    </Dropdown>
   );
 };
 
@@ -162,7 +214,9 @@ const FilterGroups = ({ binding, search, live, onClear }) => {
       <div className="navbar-search-foot">
         <span>{t('search.activeFilters', { count: activeFilterCount(binding, search) })}</span>
         <span className="flex-grow-1" />
-        {binding.action ? <PanelAction action={binding.action} live={live} /> : null}
+        {(binding.actions || []).map(action => (
+          <PanelAction key={action.key} action={action} live={live} />
+        ))}
         <button type="button" className="btn btn-link btn-sm p-0" onClick={onClear}>
           {t('search.clearFilters')}
         </button>
@@ -809,7 +863,8 @@ AppSection.propTypes = {
  * feature token, the same gate as the box: the page's filter groups while
  * the gear is on and the box searches this app, a `toggle` or `select` group as one row of pills and a
  * `date-range` group as the shared `DateRange` with its presets, the
- * page's registered action at the foot beside Clear filters; while the
+ * page's registered actions at the foot beside Clear filters, each a
+ * button or, with `choices`, a menu of them; while the
  * gear is on, the route's scope chip as one row of one pill that drops it
  * and the run's count pills as one row, a pill per kind; and the
  * app-wide results of the one run for the text in the box, headed

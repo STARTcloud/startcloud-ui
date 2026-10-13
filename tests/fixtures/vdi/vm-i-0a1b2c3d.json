@@ -1,0 +1,37 @@
+{
+  "instance_id": "i-0a1b2c3d",
+  "hostname": "ACCT-VDI-01",
+  "status": "active",
+  "ip_address": "10.20.1.11",
+  "mac_address": "00:50:56:aa:bb:01",
+  "os_version": "Windows 11 Enterprise 23H2",
+  "uptime_seconds": 90000,
+  "last_boot_time": "2026-10-11T08:00:00Z",
+  "agent_version": "1.4.0",
+  "startup_agent_version": "1.4.0",
+  "last_checkin": "2026-10-12T08:59:30Z",
+  "last_user_checkin": "2026-10-12T08:59:30Z",
+  "last_startup_checkin": "2026-10-12T08:58:00Z",
+  "user": {
+    "username": "ACME\\jlee",
+    "display_name": "Jordan Lee",
+    "first_name": "Jordan",
+    "last_name": "Lee",
+    "session_state": "active"
+  },
+  "drives": [
+    { "letter": "H", "status": "healthy", "unc_path": "\\\\files\\home\\jlee" },
+    { "letter": "S", "status": "healthy", "unc_path": "\\\\files\\shared" }
+  ],
+  "desktop": { "status": "ok", "icon_count": 12, "user_desktop_path": "H:\\Desktop" },
+  "timings_ms": { "total_cycle": 420, "drive_check": 120, "icon_check": 40 },
+  "uds": {
+    "pool_name": "Accounting",
+    "cache_level": 0,
+    "uds_in_use": true,
+    "publication_id": 7,
+    "stale_image": false,
+    "uds_username": "jlee",
+    "client_ip": "192.168.5.20"
+  }
+}
