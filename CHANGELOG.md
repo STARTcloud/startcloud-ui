@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.59.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.58.0...v0.59.0) (2026-10-13)
+
+
+### Features
+
+* the catalog read as one folded document, the person's token on every read and no Authentication word on a catalog source, the Deploy seed always the public catalog URL; the Provisioning step and the machine's Provisioning page sharing one roles editor, every manifest role a switch on its default_enabled with the changed banner and Template defaults, cards dragged into run order and roles[] sent in that order with collection, tags, files and vars, one file picker a kind over the host's rows of the role's installer_dir with the downloadable ones named by their source, a missing pick's download glyph queuing POST artifacts/{id}/fetch and Create waiting on it through wait_for, the picks filling the manifest's answers and those fields never drawn, the Safe ID control with its cache, upload and agent-host doors, the attention triangle on a role that still needs an answer; the task dialog's progress bar and cancel in its header with the details one row; the hand-off confirmation naming the catalog; the deploy and navbar contracts, the asks to hyperweaver-agent and the Domino provisioner, the fixtures, the mocks, the scenarios, the unit tests and the English and Spanish keys following ([3ee5f34](https://github.com/STARTcloud/startcloud-ui/commit/3ee5f342849562a13cd611bae4d076c6cb299316))
+* the navbar filter panel's foot carrying every action of a page, each a button or a menu of choices, the fleet's Export as JSON or CSV, Expand all, Collapse all and Reset sort living there and its toolbar gone with the cards' filter press kept; the fleet's crumbs reading Fleet, the pool the route narrows to and the VM's hostname with the pool linking to the fleet narrowed to it, a whole trail an entry resolves winning over the row a route matches; the footer heart's popover drawing the stream's state and the time of its last event from the one event hub on every host that streams, the fleet's own live line gone, and the tools a host answers with their versions and the cautions it answers with their triangles, the mock agent answering both; the navbar, pages, footer and events contracts, the ask to hyperweaver-agent for the tools, the host and the VirtualBox-with-WSL caution on its health answer, the vdi and agent-health-tools fixtures, the fleet stream frames, the scenarios, the unit test and the English and Spanish keys following ([be09db4](https://github.com/STARTcloud/startcloud-ui/commit/be09db4490d2adddad4f33dc5f45b8669c27aa10))
+
+
+### Bug Fixes
+
+* the release PR and its merge commit no longer rerunning the full suite, lint, build, unit, features and CodeQL skipped on a release-please branch and on the release merge push, every feature push to main still tested whole ([add3b67](https://github.com/STARTcloud/startcloud-ui/commit/add3b672dcee77ce5b4ca51ec2262d3d8645978a))
+* the release PR and its merge commit no longer rerunning the full suite, lint, build, unit, features and CodeQL skipped on a release-please branch and on the release merge push, every feature push to main still tested whole; the Playwright browsers installed from the version package.json holds, never a pin of their own ([e3c6c4e](https://github.com/STARTcloud/startcloud-ui/commit/e3c6c4e23799c68ac4017eb45a373d15a087ae34))
+
 ## [0.58.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.57.0...v0.58.0) (2026-10-11)
 
 
