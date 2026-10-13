@@ -127,7 +127,7 @@ jobs:
 
       - name: Install Playwright browsers
         if: ${{ inputs.class == 'shared-ui' }}
-        run: npx --yes playwright@1.63.0 install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Boot the live instance
         if: ${{ inputs.boot != '' }}
