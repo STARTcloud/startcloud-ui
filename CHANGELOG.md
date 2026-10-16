@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.60.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.59.0...v0.60.0) (2026-10-16)
+
+
+### Features
+
+* the footer's Consoles pane re-attaching a live host shell or SSH session the person's own key started, created_by on every session the agents list and a session-ended event closing its tab whoever ended it, the shell running on across sockets on both agents; the Safe ID control reading and uploading the id_file kind under the safe_id role and the create carrying id_files, the build's waited_on downloads named in one notice; the footer heart's popover drawing the host's OS, architecture, cores and memory beside the tools and the cautions; the fleet's Swap column, status, sixth card, events, CSV column and Overview facts from the startup agent's pagefile report; Open host shell on a host node's right-click menu; the Playwright browsers installed from the version package.json holds; the release PR and its merge commit no longer rerunning the full suite, every feature push to main still tested whole; the mock agent listing its sessions and sending the sessions topic, the ID files location and the health host; the navbar, pages, events, deploy and footer contracts, the fixtures, the scenarios, the unit tests and the English and Spanish keys following ([54c658d](https://github.com/STARTcloud/startcloud-ui/commit/54c658d3c6ecbb1de815b3920b391ee274fe7f19))
+
+
+### Bug Fixes
+
+* linting items on swap space changes ([b57e477](https://github.com/STARTcloud/startcloud-ui/commit/b57e47794a50cca5818584c686808a535d693746))
+
 ## [0.59.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.58.0...v0.59.0) (2026-10-13)
 
 
