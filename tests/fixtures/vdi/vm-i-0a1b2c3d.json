@@ -25,6 +25,14 @@
   ],
   "desktop": { "status": "ok", "icon_count": 12, "user_desktop_path": "H:\\Desktop" },
   "timings_ms": { "total_cycle": 420, "drive_check": 120, "icon_check": 40 },
+  "swap": {
+    "current_usage_mb": 812,
+    "peak_usage_mb": 1536,
+    "allocated_base_size_mb": 4096,
+    "pages_input_per_sec": 12.3,
+    "usage_pct": 19.8,
+    "status": "ok"
+  },
   "uds": {
     "pool_name": "Accounting",
     "cache_level": 0,

@@ -2,6 +2,7 @@
   "status": "warning",
   "timestamp": "2026-10-12T09:00:00Z",
   "services": { "database": "ok", "hypervisor": "warning", "tasks": "ok", "monitoring": "ok" },
+  "host": { "os": "Windows 11 Pro 23H2", "arch": "amd64", "cpus": 16, "memory_bytes": 68719476736 },
   "tools": [
     { "name": "vagrant", "installed": true, "version": "2.4.3" },
     { "name": "virtualbox", "installed": true, "version": "7.2.8" },

@@ -48,11 +48,12 @@ const ratioOf = (value, denominator, inverted = false) => {
 };
 
 /**
- * The five status cards: Healthy over the checked-in VMs, CIFS broken and
- * Icons missing over the VMs with a session, Stale (the agent score) over
- * the checked-in VMs, and VDIs without a user session over every VM with
- * its cache-level breakdown; the number is colored by its ratio and a
- * click cycles the Status filter through include, exclude and off.
+ * The six status cards: Healthy over the checked-in VMs, CIFS broken,
+ * Icons missing and Swap pressure over the VMs with a session, Stale (the
+ * agent score) over the checked-in VMs, and VDIs without a user session
+ * over every VM with its cache-level breakdown; the number is colored by
+ * its ratio and a click cycles the Status filter through include, exclude
+ * and off.
  */
 const StatusCards = ({ vms, now, filterState, onCycle }) => {
   const { t } = useTranslation();
@@ -86,6 +87,13 @@ const StatusCards = ({ vms, now, filterState, onCycle }) => {
       description: t('vdi.cards.icons_missing.description'),
     },
     {
+      key: 'swap_pressure',
+      count: counts.swap_pressure,
+      denominator: sessionCount,
+      ratio: ratioOf(counts.swap_pressure, sessionCount, true),
+      description: t('vdi.cards.swap_pressure.description'),
+    },
+    {
       key: 'stale',
       count: scoreText(staleScore),
       denominator: total,
@@ -101,7 +109,7 @@ const StatusCards = ({ vms, now, filterState, onCycle }) => {
     },
   ];
   return (
-    <div className="row row-cols-1 row-cols-md-3 row-cols-xl-5 g-3 mb-3">
+    <div className="row row-cols-1 row-cols-md-3 row-cols-xl-6 g-3 mb-3">
       {cards.map(card => (
         <StatusCard
           key={card.key}

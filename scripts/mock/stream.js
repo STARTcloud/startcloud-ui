@@ -6,7 +6,7 @@ const RING_MAX_EVENTS = 500;
 const RING_MAX_AGE_MS = 5 * 60 * 1000;
 
 export const CORE_TOPICS = ['session', 'notifications', 'health', 'profile'];
-export const HOST_TOPICS = ['tasks', 'hosts', 'monitoring'];
+export const HOST_TOPICS = ['tasks', 'hosts', 'monitoring', 'sessions'];
 export const TOPICS = [...CORE_TOPICS, ...HOST_TOPICS];
 
 const ring = [];

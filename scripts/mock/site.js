@@ -34,7 +34,7 @@ import { onTaskEnd } from './tasks.js';
 
 const GIB = 1024 ** 3;
 const AGENT_AUTH = ['apikey', 'oidc'];
-const AGENT_TOPICS = ['health', 'tasks', 'hosts', 'admin', 'monitoring'];
+const AGENT_TOPICS = ['health', 'tasks', 'hosts', 'admin', 'monitoring', 'sessions'];
 const AGENT_REPO = 'https://github.com/Makr91/hyperweaver-agent';
 const AGENT_LINKS = { docs: '/docs', contact: '', api: '/api-docs' };
 const SHARED_FEATURES = [
@@ -170,6 +170,7 @@ const AGENT_TOOLS = [
   { name: 'scp', installed: true },
   { name: 'builtin_sync', installed: true, version: 'embedded rsync client + sftp' },
 ];
+const AGENT_HOST = { os: 'Windows 11 Pro 23H2', arch: 'amd64', cpus: 16, memory_bytes: 64 * GIB };
 const AGENT_NOTES = [
   {
     code: 'virtualbox_wsl',
@@ -185,7 +186,9 @@ const healthNow = () => {
     status: worst(noted ? { ...services, hypervisor: 'warning' } : services),
     timestamp: now(),
     services: noted ? { ...services, hypervisor: 'warning' } : services,
-    ...(APIKEY_MODE ? { tools: AGENT_TOOLS, notes: noted ? AGENT_NOTES : [] } : {}),
+    ...(APIKEY_MODE
+      ? { host: AGENT_HOST, tools: AGENT_TOOLS, notes: noted ? AGENT_NOTES : [] }
+      : {}),
   };
 };
 

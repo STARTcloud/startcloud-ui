@@ -503,7 +503,7 @@ Visibility 5, OS 6, Family 6, Vendor 7, Providers 7, Architectures 8,
 Platforms, Created and Updated 9; a downloads file's Language is the
 lowest of its table, folds first, and is not drawn at all while every
 file of the table says `any`; the fleet folds Cycle, Pool, User, Last
-seen, Session, Icons then Drives, the hostname last:
+seen, Session, Icons and Swap then Drives, the hostname last:
 
 | Column      | Boxes                                                                                       | ISOs                                                                                        | Provisioners                                             |
 | ----------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
@@ -1398,18 +1398,31 @@ verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
   `fleet` topic of the [Universal Events Contract](universal-events/)
   through `useFleet` (`fleet-snapshot`, `vm-updated`, `vm-removed`,
   `vm-events`, `pools-updated`, a five-second tick re-deriving relative
-  times and stale flags). `FleetPage` is the home route `/`: five
-  `StatusCards` (ratio color, the no-session breakdown line, a click
+  times and stale flags). `FleetPage` is the home route `/`: six
+  `StatusCards`, Healthy, CIFS broken, Icons missing, Swap pressure,
+  Stale and VDIs without a user session (ratio color, the no-session
+  breakdown line, a click
   cycling the Status filter), one `PoolCards` card per pool (total, cache
   badges, agents-healthy line, publication, capacity, a click cycling the
   Pool filter, the fold kept in prefs), the
   `FleetTable` over the columns hostname, pool, user, session, drives,
-  icons, seen and cycle (every one sortable, the sort a stack of
+  icons, swap, seen and cycle (every one sortable, the sort a stack of
   `{ column, direction }` advanced by Shift-click, rows linking to
   `/vm/{instance_id}`, row classes standby, no-session and decommissioned,
   an inline expand with Overview, Metrics while Grafana is enabled, History
   and Stats) and the count line, the count alone, because the stream's
-  state and its last event are the footer heart's. Its navbar binding queries hostname,
+  state and its last event are the footer heart's. Every vm row carries
+  `swap`, the startup agent's pagefile report, `{ current_usage_mb,
+  peak_usage_mb, allocated_base_size_mb, pages_input_per_sec, usage_pct,
+  status }`, `status` one of `ok`, `swap_pressure` and `n_a`, null or
+  empty on a row the startup agent has not reported; the Swap cell draws
+  `usage_pct` as a percent with the pages-in rate as its title, red on
+  `swap_pressure`, a dash on `n_a`, nothing on a standby or no-check-in
+  row; `vmStatus` reads `swap_pressure` after the icons and before
+  healthy; the `swap_pressure` and `swap_recovered` state events ride
+  `vm-events` with the five numbers and the thresholds in `details`; the
+  CSV carries `swap` after `icons`; and the VM's Overview draws the use,
+  the peak and the pages-in rate after the last boot. Its navbar binding queries hostname,
   username, display name, first and last name, UNC paths, pool, IP, MAC,
   instance id and UDS username, with the groups Status (tristate), Pool
   (tristate), Session, Cache, Drives, Publication, then Columns, under

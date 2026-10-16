@@ -144,6 +144,49 @@ NoteRows.propTypes = {
 
 const listOf = value => (Array.isArray(value) ? value : []);
 
+const GIB = 1024 ** 3;
+
+const HOST_FACTS = [
+  ['os', host => host.os],
+  ['arch', host => host.arch],
+  ['cpus', host => (host.cpus ? String(host.cpus) : '')],
+  [
+    'memory',
+    host => (host.memory_bytes ? `${(host.memory_bytes / GIB).toFixed(1)} GB` : ''),
+  ],
+];
+
+/**
+ * The host of the heart's popover, the facts the host answers under
+ * `host`, its OS, its architecture, its cores and its memory, each a
+ * row while the host answers it, the line SHI's footer drew.
+ */
+const HostRows = ({ host }) => {
+  const { t } = useTranslation();
+  const rows = host ? HOST_FACTS.map(([key, read]) => [key, read(host)]).filter(([, v]) => v) : [];
+  if (rows.length === 0) {
+    return null;
+  }
+  return (
+    <div className="mt-2 pt-2 border-top" data-list="health-host">
+      {rows.map(([key, value]) => (
+        <div key={key} className="mb-1" data-host-fact={key}>
+          {t(`footer.health.host.${key}`)}: {value}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+HostRows.propTypes = {
+  host: PropTypes.shape({
+    os: PropTypes.string,
+    arch: PropTypes.string,
+    cpus: PropTypes.number,
+    memory_bytes: PropTypes.number,
+  }),
+};
+
 const HealthIndicator = ({ fetchHealth, streamed }) => {
   const { t } = useTranslation();
   const [health, setHealth] = useState({ status: 'loading', services: {} });
@@ -202,6 +245,7 @@ const HealthIndicator = ({ fetchHealth, streamed }) => {
             : {status}
           </div>
         ))}
+        <HostRows host={health.host || null} />
         <ToolRows tools={listOf(health.tools)} />
         <NoteRows notes={listOf(health.notes)} />
       </Popover.Body>
@@ -429,8 +473,9 @@ PanedFooter.propTypes = {
  * read again when the person opens the heart; no timer runs. The
  * heart's popover draws the overall word, while `streamed` the stream's
  * state and the time of its last event, one row a service, then the
- * `tools` the host answers, one row a prerequisite with its version, and
- * the `notes` it answers, one row a caution with its triangle. While the
+ * `host` the host answers, its OS, architecture, cores and memory, the
+ * `tools` it answers, one row a prerequisite with its version, and the
+ * `notes` it answers, one row a caution with its triangle. While the
  * app hands a `pane`, the views hook a mounted feature exported, and the
  * hook answers at least one view, the center is the grip, the one drag
  * area of the row, the STARTcloud mark moves to the far left before the

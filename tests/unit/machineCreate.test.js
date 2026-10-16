@@ -787,7 +787,7 @@ describe('buildSpec', () => {
       org_uuid: 'org-1',
       vbox: { directives: {} },
     });
-    expect(spec).not.toHaveProperty('safe_id');
+    expect(spec).not.toHaveProperty('id_files');
     const plain = buildSpec(
       formOf({
         removeTransport: 'true',
@@ -800,19 +800,19 @@ describe('buildSpec', () => {
     expect(plain).not.toHaveProperty('wait_for');
   });
 
-  it('sends the safe id of the cache or an upload by its artifact, the path door by its path, nothing unpicked', () => {
+  it('sends the safe id of the cache or an upload as the one id_files row, the path door by its path, nothing unpicked', () => {
     expect(
       safeIdMembersOf({
         needsSafeId: true,
         safeId: { source: 'cache', artifact_id: 'art-0105', name: 'SAFE.ids', path: '' },
       })
-    ).toEqual({ safe_id: { artifact_id: 'art-0105', name: 'SAFE.ids' } });
+    ).toEqual({ id_files: [{ artifact_id: 'art-0105', name: 'SAFE.ids' }] });
     expect(
       safeIdMembersOf({
         needsSafeId: true,
         safeId: { source: 'upload', artifact_id: 'art-0200', name: 'mine.ids', path: '' },
       })
-    ).toEqual({ safe_id: { artifact_id: 'art-0200', name: 'mine.ids' } });
+    ).toEqual({ id_files: [{ artifact_id: 'art-0200', name: 'mine.ids' }] });
     expect(
       safeIdMembersOf({
         needsSafeId: true,

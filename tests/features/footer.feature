@@ -35,6 +35,8 @@ Feature: footer pane
     When I open "/"
     And I hover the footer heart
     Then the heart's popover lists the tool "virtualbox" as "7.2.8"
+    And the heart's popover names the host "cpus" as "16"
+    And the heart's popover names the host "memory" as "64.0 GB"
     And the heart's popover lists the tool "scp" as present
     And the heart's popover lists the tool "ansible" as missing
     And the heart's popover notes "virtualbox_wsl"
@@ -79,6 +81,29 @@ Feature: footer pane
     And the host was not sent POST to "/api/agents/1/term/start"
     And the host was sent GET to "/api/agents/1/ws-ticket"
     And the stored "console_tabs" holds 1 entries
+
+  Scenario: Consoles pane: a live session the person's own key started in another browser re-attaches in the footer with nothing stored, and another person's never does
+    Given the host answers the hosts fixture
+    And the host answers the hosts-consoles-owned fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/"
+    Then the host was sent GET to "/api/agents/1/term/sessions" 1 times
+    And the host was sent GET to "/api/agents/1/ssh/sessions" 1 times
+    And the footer holds the "consoles" toggle
+    And the footer pane draws the "host_shell" console of "Desk"
+    And the footer pane draws 0 tabs
+    And the host was not sent POST to "/api/agents/1/term/start"
+    And the stored "console_tabs" holds 1 entries
+
+  Scenario: Sidebar tree: a host node's right-click menu offers Open host shell on a host that lists host-terminal, starting the session once in the footer
+    Given the host answers the hosts fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1"
+    And I right-click the tree node "Desk"
+    Then the tree menu offers "host-shell"
+    When I press the tree menu's "host-shell" row
+    Then the host was sent POST to "/api/agents/1/term/start" 1 times
+    And the footer pane draws the "host_shell" console of "Desk"
 
   Scenario: Consoles pane: with two tabs the Commands bar draws, Accept broadcasts on a tab's menu marks it, the sent string lands in the history and the newline is a Terminal preference on by default
     Given the host answers the hosts fixture

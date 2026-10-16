@@ -9,7 +9,13 @@ import { CollapseButton } from '../../../components/common/GroupHeading';
 import SubTable from '../../../components/common/SubTable';
 import { sortShape } from '../../../utils/itemShape';
 import { useVmHistory } from '../hooks/useVmHistory';
-import { vmHasNoSession, vmIsDecommissioned, vmIsStandby, vmKey } from '../utils/vmStatus';
+import {
+  swapCellOf,
+  vmHasNoSession,
+  vmIsDecommissioned,
+  vmIsStandby,
+  vmKey,
+} from '../utils/vmStatus';
 
 import CacheBadge from './CacheBadge';
 import DriveBadges from './DriveBadges';
@@ -110,11 +116,35 @@ UserCell.propTypes = {
   vm: PropTypes.object.isRequired,
 };
 
+const SwapCell = ({ vm }) => {
+  const cell = swapCellOf(vm);
+  if (!cell.text) {
+    return null;
+  }
+  if (cell.text === '—') {
+    return <span className="text-body-tertiary">—</span>;
+  }
+  return (
+    <span
+      className={`badge ${cell.pressure ? 'text-bg-danger' : 'text-bg-secondary'}`}
+      title={cell.title}
+      data-swap={cell.pressure ? 'swap_pressure' : 'ok'}
+    >
+      {cell.text}
+    </span>
+  );
+};
+
+SwapCell.propTypes = {
+  vm: PropTypes.object.isRequired,
+};
+
 /**
  * The fleet table's columns, each sorting by what its cell shows: the
  * hostname, the pool name, the user's shown name, the session word, the
- * icon count, the last check-in instant, the cycle milliseconds and the
- * drive badges' text, a dash cell reading as empty.
+ * icon count, the pagefile's use as a percent, the last check-in instant,
+ * the cycle milliseconds and the drive badges' text, a dash cell reading
+ * as empty.
  */
 export const fleetColumns = [
   {
@@ -155,6 +185,14 @@ export const fleetColumns = [
     priority: 3,
     value: iconCount,
     render: vm => <IconsCell vm={vm} />,
+  },
+  {
+    key: 'swap',
+    kind: 'badge',
+    labelKey: 'vdi.table.swap',
+    priority: 3,
+    value: vm => vm.swap?.usage_pct ?? '',
+    render: vm => <SwapCell vm={vm} />,
   },
   {
     key: 'seen',
@@ -226,7 +264,7 @@ VmDetail.propTypes = {
 
 /**
  * The fleet table: one row per VM over the hostname, pool, user, session,
- * icons, last-seen and cycle columns and the drives badge list last, the
+ * icons, swap, last-seen and cycle columns and the drives badge list last, the
  * pages contract's one column order, every header sorting into
  * the stack, the hostname linking to the VM's page beside a fold that
  * opens the inline detail with its Overview, Metrics (while Grafana is

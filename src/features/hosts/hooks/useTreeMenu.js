@@ -10,6 +10,7 @@ import {
   FaRotate,
   FaSkull,
   FaStop,
+  FaTerminal,
   FaTrash,
 } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +35,7 @@ import { useActionRunner } from './useHostActions';
 import { useHostMachinesRefresh } from './useHostMachines';
 import { useHostStatsRefresh } from './useHostStats';
 import { useMachineDetailRefresh } from './useMachineDetail';
+import { useConsoleActions } from './useOpenConsole';
 import { useServers } from './useServers';
 
 const NONE = { action: '', id: '', name: '' };
@@ -196,6 +198,20 @@ const addHostRows = ({ role, navigate }) =>
       ]
     : [];
 
+const shellRows = ({ server, id, consoles }) =>
+  hostHasFeature(server, 'host-terminal')
+    ? [
+        divider('shell'),
+        {
+          key: 'host-shell',
+          labelKey: 'hosts.controls.openHostShell',
+          icon: FaTerminal,
+          tone: 'text-info',
+          onClick: () => consoles.open({ kind: 'host_shell', id, server, placed: 'footer' }),
+        },
+      ]
+    : [];
+
 const hostRows = ({ server, role, ask }) => {
   if (!canPowerOffHosts(role) || !hostHasFeature(server, 'host-power')) {
     return [];
@@ -236,7 +252,9 @@ const hostRows = ({ server, role, ask }) => {
  * list of `HOST_PAGES`, hyperweaver-ui's doors, each opening its page,
  * the one place the tree offers the pages since it lists none as rows,
  * New machine while `hostCreates` offers it, opening the create wizard
- * on the host's page, and Restart host and Power off host while the role and the
+ * on the host's page, Open host shell while the host lists
+ * `host-terminal`, the Controls menu's own row, opening the shell in the
+ * footer, and Restart host and Power off host while the role and the
  * host's `host-power` token allow them; on the Datacenter root Open and,
  * for a role that may manage settings, Add host, hyperweaver-ui's
  * affordance beside its root, opening the hosts page with the registry
@@ -261,6 +279,7 @@ export const useTreeMenu = user => {
   const refreshMachines = useHostMachinesRefresh();
   const refreshDetail = useMachineDetailRefresh();
   const { held } = useServers();
+  const consoles = useConsoleActions();
   const [target, setTarget] = useState(NONE);
   const role = user?.role;
 
@@ -324,6 +343,7 @@ export const useTreeMenu = user => {
           role,
           create: () => navigate(createRouteOf(id)),
         }),
+        ...shellRows({ server: node.server, id, consoles }),
         ...hostRows({
           server: node.server,
           role,
@@ -331,7 +351,7 @@ export const useTreeMenu = user => {
         }),
       ];
     },
-    [navigate, role, run, held]
+    [navigate, role, run, held, consoles]
   );
 
   const close = useCallback(() => setTarget(NONE), []);

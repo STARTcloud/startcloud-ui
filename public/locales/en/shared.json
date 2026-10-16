@@ -1796,6 +1796,12 @@
         "scp": "scp",
         "builtin_sync": "Built-in sync",
         "utm": "UTM"
+      },
+      "host": {
+        "os": "OS",
+        "arch": "Architecture",
+        "cpus": "Cores",
+        "memory": "Memory"
       }
     },
     "pane": {
@@ -2035,6 +2041,10 @@
         "label": "VDIs without a user session",
         "part": "{{n}} {{level}}",
         "empty": "No VMs without a user session"
+      },
+      "swap_pressure": {
+        "label": "Swap pressure",
+        "description": "The pagefile is under pressure on the VM"
       }
     },
     "pools": {
@@ -2070,7 +2080,8 @@
       "drives": "Drives",
       "icons": "Icons",
       "seen": "Last seen",
-      "cycle": "Cycle"
+      "cycle": "Cycle",
+      "swap": "Swap"
     },
     "filter": {
       "status": "Status",
@@ -2092,7 +2103,8 @@
       "poweredOff": "Powered off",
       "noCheckin": "No check-in",
       "recycled": "Recycled",
-      "removed": "Removed"
+      "removed": "Removed",
+      "swap_pressure": "Swap pressure"
     },
     "session": {
       "active": "Active",
@@ -2158,7 +2170,11 @@
       "clientHost": "Client host",
       "udsUser": "UDS user",
       "timings": "Timings",
-      "noTimings": "No timing data"
+      "noTimings": "No timing data",
+      "swapUsage": "Pagefile in use",
+      "swapUsageValue": "{{current}} / {{base}} MB ({{pct}}%)",
+      "swapPeak": "Pagefile peak",
+      "swapPagesIn": "Pages in per second"
     },
     "history": {
       "window": "History window",
@@ -2199,6 +2215,8 @@
       "drive_disappeared": "Drive gone",
       "icons_missing": "Icons missing",
       "icons_recovered": "Icons OK",
+      "swap_pressure": "Swap pressure",
+      "swap_recovered": "Swap recovered",
       "status_changed": "Status changed",
       "agent_first_seen": "First seen",
       "vm_decommissioned": "Decommissioned",
@@ -2219,6 +2237,7 @@
       "status": "Status",
       "drives": "Drives",
       "icons": "Icons",
+      "swap": "Swap %",
       "seen": "Last Seen",
       "ip": "IP",
       "agentVersion": "Agent Version",
@@ -11263,7 +11282,9 @@
       "createWaiting": "Create · waits on {{count}} downloads",
       "downloadQueued": "Download of {{filename}} queued; Create will wait on it",
       "downloadFailed": "A download failed: {{message}}",
-      "safeIdUploadFailed": "The safe ID upload failed: {{message}}"
+      "safeIdUploadFailed": "The safe ID upload failed: {{message}}",
+      "noIdFileLocation": "This host has no ID files location to upload into",
+      "waitedOn": "The build waits on {{count}} downloads and starts when the last one lands"
     },
     "hardwareSections": {
       "cpu": "CPU",

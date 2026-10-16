@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { ROLE_STATUS, featuresOf, machineOf, rowOf } from './fleet.js';
 import { AGENT_MODE, now, ok, problem, refusal } from './kit.js';
 import { openSocket } from './socket.js';
-import { openShell } from './terminal.js';
+import { announceSession, openShell } from './terminal.js';
 
 const VRDE_BASE = 3389;
 const WEB_BASE = 6080;
@@ -148,6 +148,18 @@ const zloginStop = ctx => {
   return ok({ success: true, message: 'Zlogin session stopped' });
 };
 
+const sshRow = session => ({
+  id: session.id,
+  machine_name: session.machine_name,
+  ssh_host: session.ssh_host,
+  ssh_port: 22,
+  ssh_username: SSH_USER,
+  status: session.status,
+  created_by: session.by,
+  created_at: session.created_at,
+  last_activity: session.last_activity,
+});
+
 const sshStart = ({ host, row, body, person }) => {
   const index = indexOf(host, row);
   const candidates = [addressOf(host, index), '127.0.0.1'];
@@ -156,19 +168,17 @@ const sshStart = ({ host, row, body, person }) => {
     return refusal(400, `ip_index out of range`, { ip_candidates: candidates });
   }
   const session = shellSession({ id: randomUUID(), machine: row.name, by: person.username });
+  session.ssh_host = candidates[ipIndex];
   storeOf(host).ssh.set(session.id, session);
+  announceSession('session-started', 'ssh', session);
   return ok({
-    id: session.id,
-    machine_name: row.name,
-    ssh_host: candidates[ipIndex],
-    ssh_port: 22,
-    ssh_username: SSH_USER,
+    ...sshRow(session),
     ip_candidates: candidates,
     ip_index: ipIndex,
-    status: session.status,
-    created_at: session.created_at,
   });
 };
+
+const sshSessions = ctx => ok([...storeOf(ctx.host).ssh.values()].map(sshRow));
 
 const sshStop = ctx => {
   const { ssh } = storeOf(ctx.host);
@@ -178,6 +188,7 @@ const sshStop = ctx => {
   }
   session.connection?.close();
   ssh.delete(session.id);
+  announceSession('session-ended', 'ssh', session);
   return ok({ success: true, message: 'SSH session stopped' });
 };
 
@@ -266,9 +277,11 @@ export const consoleSocketMachine = (host, params) => {
  * `GET zlogin/sessions`, `POST machines/{name}/zlogin/start`, answered
  * nested under `session`, and `DELETE zlogin/sessions/{id}/stop`. SSH
  * behind the `ssh` feature: `POST machines/{name}/ssh/start` answers the
- * session row with the guest's candidate addresses, an `ip_index` out
- * of range refused with them, and `DELETE ssh/sessions/{id}/stop` ends
- * it. RDP behind `rdp`: `GET machines/{name}/rdp` answers the console
+ * session row, `created_by` the calling person, with the guest's
+ * candidate addresses, an `ip_index` out of range refused with them,
+ * `GET ssh/sessions` lists the rows and `DELETE ssh/sessions/{id}/stop`
+ * ends it, each start and stop sent on the `sessions` topic. RDP behind
+ * `rdp`: `GET machines/{name}/rdp` answers the console
  * and guest targets of a running machine. The launchers behind
  * `host-launchers`: `open-rdp`, `open-directory`, `open-ftp` and
  * `GET machines/{name}/ftp`. The sockets: `zlogin/{id}` and `ssh/{id}`
@@ -302,6 +315,7 @@ export const mountConsoles = ({ agentRoute, socketRoute }) => {
   agentRoute('POST', 'machines/:name/zlogin/start', zlogin(found(running(zloginStart))));
   agentRoute('DELETE', 'zlogin/sessions/:session/stop', zlogin(zloginStop));
   agentRoute('POST', 'machines/:name/ssh/start', ssh(found(running(sshStart))));
+  agentRoute('GET', 'ssh/sessions', ssh(sshSessions));
   agentRoute('DELETE', 'ssh/sessions/:session/stop', ssh(sshStop));
   agentRoute('GET', 'machines/:name/rdp', rdp(running(rdpInfo)));
   agentRoute('POST', 'machines/:name/open-rdp', launcher(running(launched('RDP client'))));

@@ -24,6 +24,16 @@ Feature: vdi health
     When I press the filter panel's action "reset-sort"
     Then the filter panel offers no action "reset-sort"
 
+  Scenario: Fleet page: the Swap column reads the pagefile's use, red under pressure, the sixth card counts the VMs under pressure, and the VM's Overview draws the use, the peak and the pages-in rate
+    Given the host answers the vdi fixture
+    When I open "/"
+    Then the swap cell of "ACCT-VDI-01" reads "20%" as "ok"
+    And the swap cell of "ENG-VDI-01" reads "95%" as "swap_pressure"
+    And the fleet card "Swap pressure" reads "0/2"
+    When I open "/vm/i-0a1b2c3d"
+    Then I see "812 / 4096 MB (20%)"
+    And I see "1536 MB"
+
   Scenario: Fleet page: the cards keep their press on the filters while the toolbar is gone
     Given the host answers the vdi fixture
     When I open "/"

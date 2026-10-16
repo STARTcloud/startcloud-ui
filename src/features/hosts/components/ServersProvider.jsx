@@ -45,9 +45,10 @@ const answered = (epoch, patch) => current =>
  * inside it the providers of the stats,
  * machine rows, machine detail, host applications, readings, series,
  * snapshots, restores and zone terminals, and the keeper of the console
- * store beside the children.
+ * store beside the children, handed `person`, the name the agents write
+ * as `created_by` on the sessions the signed-in person starts.
  */
-const ServersProvider = ({ signedIn, organization, children }) => {
+const ServersProvider = ({ signedIn, organization, person = '', children }) => {
   const status = useStatus();
   const server = isServerRole(status);
   const [state, setState] = useState(() => emptyFor(signedIn, 0));
@@ -127,7 +128,7 @@ const ServersProvider = ({ signedIn, organization, children }) => {
                     <MachineSeriesProvider signedIn={signedIn}>
                       <MachineRestoreProvider signedIn={signedIn}>
                         <ZoneTerminalProvider signedIn={signedIn}>
-                          <ConsolesKeeper signedIn={signedIn} />
+                          <ConsolesKeeper signedIn={signedIn} person={person} />
                           {children}
                         </ZoneTerminalProvider>
                       </MachineRestoreProvider>
@@ -146,6 +147,7 @@ const ServersProvider = ({ signedIn, organization, children }) => {
 ServersProvider.propTypes = {
   signedIn: PropTypes.bool.isRequired,
   organization: PropTypes.string.isRequired,
+  person: PropTypes.string,
   children: PropTypes.node.isRequired,
 };
 

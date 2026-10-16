@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'crypto';
 import { featuresOf, runningOf } from './fleet.js';
 import { BLUE, GREEN, RESET, YELLOW, now, ok, refusal, secondsUp } from './kit.js';
 import { openSocket } from './socket.js';
+import { broadcast } from './stream.js';
 
 const TICKET_MS = 60 * 1000;
 const BUFFER_LINES = 1000;
@@ -133,23 +134,32 @@ const typed = (host, session, key) => {
 };
 
 const greet = (host, session) => {
-  const kept = host.kind === 'zoneweaver' && session.buffer;
-  if (kept) {
+  if (session.buffer) {
     const tail = session.buffer.split(EOL).slice(-REPLAY_LINES).join(EOL);
     session.connection.send(`${RECONNECTED}${tail}${LIVE}`);
     return;
   }
-  session.buffer = '';
   session.line = '';
   say(session, `Host terminal ready on ${host.facts.hostname}, a mock, try help${EOL}`);
 };
 
 /**
- * The `/term/{id}` socket, a line shell that reconnects as the agent of
- * the host's kind does: the zoneweaver kind keeps the shell of a session
- * and greets every new socket with the last 50 lines it wrote between
- * its two banners, the hyperweaver kind starts a new shell on every
- * socket and writes `Terminal session closed.` when the shell exits.
+ * The sessions event of one terminal session, `session-started` or
+ * `session-ended` on the `sessions` topic, `{ kind, id, machine_name }`.
+ *
+ * @param {string} event - The event name
+ * @param {string} kind - `host_shell` or `ssh`
+ * @param {Object} session - The session
+ * @returns {void}
+ */
+export const announceSession = (event, kind, session) =>
+  broadcast('sessions', event, { kind, id: session.id, machine_name: session.machine_name || '' });
+
+/**
+ * The `/term/{id}` socket, a line shell that reconnects as both agents
+ * do: the shell of a session runs on across sockets, every new socket
+ * greeted with the last 50 lines it wrote between its two banners, and
+ * `Terminal session closed.` written when the shell exits.
  *
  * @param {Object} options - `req`, `socket`, `host` and `session`
  * @returns {void}
@@ -175,13 +185,22 @@ export const openShell = ({ req, socket, host, session }) => {
   greet(host, session);
 };
 
+const termRow = session => ({
+  id: session.id,
+  status: session.status,
+  shell: session.shell,
+  created_by: session.by,
+  created_at: session.created_at,
+  last_activity: session.last_activity,
+});
+
 const startTerminal = ctx => {
   const { host, person } = ctx;
   const stamp = now();
   const session = {
     id: randomUUID(),
     by: person.username,
-    status: 'connecting',
+    status: 'active',
     shell: shellOf(host),
     created_at: stamp,
     last_activity: stamp,
@@ -190,14 +209,11 @@ const startTerminal = ctx => {
     connection: null,
   };
   host.terminals.set(session.id, session);
-  return ok({
-    id: session.id,
-    status: session.status,
-    shell: session.shell,
-    created_at: session.created_at,
-    last_activity: session.last_activity,
-  });
+  announceSession('session-started', 'host_shell', session);
+  return ok(termRow(session));
 };
+
+const termSessions = ctx => ok([...ctx.host.terminals.values()].map(termRow));
 
 const stopTerminal = ctx => {
   const session = ctx.host.terminals.get(ctx.params.session);
@@ -206,12 +222,15 @@ const stopTerminal = ctx => {
   }
   session.connection?.close();
   ctx.host.terminals.delete(session.id);
+  announceSession('session-ended', 'host_shell', session);
   return ok({ success: true, message: 'Terminal session stopped.' });
 };
 
 /**
- * The host terminal's routes: the ticket, the session's start and its
- * stop, answered as both agents answer them.
+ * The host terminal's routes: the ticket, the session's start, answered
+ * `active` at once with `created_by` the calling person, the list of the
+ * sessions the host holds and the stop, each start and stop sent on the
+ * `sessions` topic, as both agents answer them.
  *
  * @param {Function} agentRoute - The router's `agentRoute`
  * @returns {void}
@@ -219,5 +238,6 @@ const stopTerminal = ctx => {
 export const mountTerminal = agentRoute => {
   agentRoute('GET', 'ws-ticket', issueTicket);
   agentRoute('POST', 'term/start', startTerminal);
+  agentRoute('GET', 'term/sessions', termSessions);
   agentRoute('DELETE', 'term/sessions/:session/stop', stopTerminal);
 };

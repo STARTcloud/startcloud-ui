@@ -78,6 +78,18 @@ When('I press the status card {string}', async ({ page }, key) => {
     .click();
 });
 
+Then('the swap cell of {string} reads {string} as {string}', async ({ page }, host, text, state) => {
+  const cell = fleetOf(page).locator('tbody tr', { hasText: host }).locator('[data-swap]');
+  await expect(cell).toHaveText(text);
+  await expect(cell).toHaveAttribute('data-swap', state);
+});
+
+Then('the fleet card {string} reads {string}', async ({ page }, label, text) => {
+  await expect(
+    fleetOf(page).locator('.fleet-card', { hasText: label }).locator('.fleet-card-ratio')
+  ).toHaveText(text);
+});
+
 When('I press the pool card {string}', async ({ page }, name) => {
   await fleetOf(page).locator('.fleet-card', { hasText: name }).first().click();
 });
@@ -133,6 +145,10 @@ Then("the heart's popover lists the tool {string} as missing", async ({ page }, 
   await expect(popoverOf(page).locator(`[data-tool="${name}"]`)).toHaveClass(
     /text-body-secondary/u
   );
+});
+
+Then("the heart's popover names the host {string} as {string}", async ({ page }, fact, value) => {
+  await expect(popoverOf(page).locator(`[data-host-fact="${fact}"]`)).toContainText(value);
 });
 
 Then("the heart's popover notes {string}", async ({ page }, code) => {

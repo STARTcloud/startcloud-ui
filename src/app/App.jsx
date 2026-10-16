@@ -320,7 +320,11 @@ const App = ({ getSupportedLanguages }) => {
 
   return (
     <UnreadProvider notifications={user && loaded ? inbox : null}>
-      <ServersProvider signedIn={Boolean(user)} organization={orgFilter ? activeOrgUuid : ''}>
+      <ServersProvider
+        signedIn={Boolean(user)}
+        organization={orgFilter ? activeOrgUuid : ''}
+        person={String(user?.name || user?.username || '')}
+      >
         <SearchProvider collections={collections} sidebar={sidebar} kinds={kinds}>
           <CrumbProvider>
             {controlCommands}

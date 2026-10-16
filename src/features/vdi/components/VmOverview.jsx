@@ -95,6 +95,29 @@ AgentCheckin.propTypes = {
   language: PropTypes.string.isRequired,
 };
 
+const swapRows = (swap, t) => {
+  if (!swap || swap.usage_pct === undefined || swap.status === 'n_a') {
+    return [];
+  }
+  const pressure = swap.status === 'swap_pressure';
+  return [
+    {
+      key: 'swapUsage',
+      content: (
+        <span className={pressure ? 'text-danger' : ''}>
+          {t('vdi.overview.swapUsageValue', {
+            current: swap.current_usage_mb ?? '—',
+            base: swap.allocated_base_size_mb ?? '—',
+            pct: Math.round(swap.usage_pct),
+          })}
+        </span>
+      ),
+    },
+    { key: 'swapPeak', content: `${swap.peak_usage_mb ?? '—'} MB` },
+    { key: 'swapPagesIn', content: `${swap.pages_input_per_sec ?? '—'}` },
+  ];
+};
+
 const systemRows = ({ vm, now, t, language }) => {
   const stale = vmStaleInfo(vm, now);
   const rows = [
@@ -105,6 +128,7 @@ const systemRows = ({ vm, now, t, language }) => {
       key: 'lastBoot',
       content: vm.last_boot_time ? new Date(vm.last_boot_time).toLocaleString(language) : '—',
     },
+    ...swapRows(vm.swap, t),
     { key: 'ip', content: vm.ip_address || '—' },
     { key: 'mac', content: vm.mac_address || '—' },
     { key: 'userAgent', content: vm.agent_version ? `v${vm.agent_version}` : '—' },
@@ -199,7 +223,8 @@ const timingRows = (timings, t) => {
 
 /**
  * The Overview of one VM: the System facts (machine UUID, OS, uptime,
- * last boot, IP, MAC, the two agent versions, each agent's last check-in
+ * last boot, the pagefile's use, peak and pages-in rate while the startup
+ * agent reports them, IP, MAC, the two agent versions, each agent's last check-in
  * with its stale mark, the desktop path and the full name), the UDS Pool
  * facts when the VM has UDS data (pool, cache state, publication against
  * the pool's current revision, client IP and host, UDS user), and the

@@ -8,6 +8,7 @@ import { fetchMachineDefaults, fetchMachineOsTypes } from '../api/machineCreate'
 import { getKnownOrgs, managerOrgsOf } from '../api/orgAccessAPI';
 import {
   createMachine,
+  fetchArtifactStoragePaths,
   fetchArtifacts,
   fetchBridgedInterfaces,
   fetchIpSuggestions,
@@ -73,7 +74,7 @@ import {
 import { buildHardwarePayload, buildPortsPayload } from './HardwareEditor';
 import { dslConfiguration, pruneHidden, seedAnswers, validateAnswers } from './ProvisionerFieldDsl';
 import ResourceIssues from './ResourceIssues';
-import { SAFE_ID_KIND, emptySafeId } from './SafeIdControl';
+import { SAFE_ID_ROLE, emptySafeId, idFileLocationOf } from './SafeIdControl';
 import TaskDialog from './TaskDialog';
 
 const NO_ORGS = [];
@@ -889,10 +890,15 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   const uploadSafeId = async file => {
     setSafeIdUploading(true);
     try {
+      const location = idFileLocationOf((await fetchArtifactStoragePaths(status, id)).paths);
+      if (!location) {
+        throw new Error(t('machineEdit.machineCreateModal.noIdFileLocation'));
+      }
       const prepared = await prepareArtifactUpload(status, id, {
         filename: file.name,
         size: file.size,
-        kind: SAFE_ID_KIND,
+        storage_path_id: location.id,
+        role: SAFE_ID_ROLE,
       });
       const landed = await uploadArtifactFile(status, id, prepared.task_id, file);
       const row = landed?.artifact || {};
@@ -1147,6 +1153,9 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
         'info',
         t('machineEdit.machineCreateModal.templateDownloadQueued', { box: form.settings.box })
       );
+    }
+    if (made.waitedOn > 0) {
+      notify('info', t('machineEdit.machineCreateModal.waitedOn', { count: made.waitedOn }));
     }
     onClose();
   };

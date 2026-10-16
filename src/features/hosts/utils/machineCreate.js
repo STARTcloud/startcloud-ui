@@ -808,9 +808,9 @@ export const roleRowsOf = (rows, manifestRoles) =>
 
 /**
  * The safe id members of the create spec: `safe_id_path` for a file on
- * the agent host, `safe_id` with the artifact's id and name for a file of
- * the host's cache or one uploaded into it, nothing while the package
- * declares no id files or nothing is picked.
+ * the agent host, `id_files` with one row, the artifact's id and name,
+ * for a file of the host's cache or one uploaded into it, nothing while
+ * the package declares no id files or nothing is picked.
  *
  * @param {Object} form - The wizard's state
  * @returns {Object} The members
@@ -823,7 +823,7 @@ export const safeIdMembersOf = form => {
   if (source === 'path') {
     return trimmed(path) ? { safe_id_path: trimmed(path) } : {};
   }
-  return artifactId ? { safe_id: { artifact_id: artifactId, name: name || '' } } : {};
+  return artifactId ? { id_files: [{ artifact_id: artifactId, name: name || '' }] } : {};
 };
 
 /**
@@ -835,7 +835,7 @@ export const safeIdMembersOf = form => {
  * bhyve host, the `vbox` section of a VirtualBox host, `cloud_init`,
  * `tags`, `notes`, `networks`, `roles` in their drawn order through
  * `roleRowsOf`, `properties` with the hidden fields pruned, `sync_method`,
- * `remove_transport_on_completion` where chosen, `safe_id` or
+ * `remove_transport_on_completion` where chosen, `id_files` or
  * `safe_id_path` where the package declares id files through
  * `safeIdMembersOf`, `wait_for` with the task ids of the queued
  * downloads while any, `org_uuid` where chosen and `start_after_create`.
@@ -928,21 +928,24 @@ export const stepProblemOf = (stepId, form) => {
 /**
  * What a queued create answers, read for the notice and the task: the
  * machine's name, the task the dialog may open, whether a download
- * precedes the build, and, for a spec whose package rendered several
- * hosts, every machine's name in the order they are made.
+ * precedes the build, how many downloads the build waits on, `waited_on`,
+ * and, for a spec whose package rendered several hosts, every machine's
+ * name in the order they are made.
  *
  * @param {Object|null} answer - The agent's answer
  * @param {string} fallback - The name the form derived
- * @returns {{ machineName: string, taskId: string, requiresDownload: boolean, names: Array<string> }} The reading
+ * @returns {{ machineName: string, taskId: string, requiresDownload: boolean, waitedOn: number, names: Array<string> }} The reading
  */
 export const createdOf = (answer, fallback) => {
   const data = answer || {};
+  const waitedOn = Array.isArray(data.waited_on) ? data.waited_on.length : 0;
   if (data.multi_host && Array.isArray(data.machines)) {
     const names = data.machines.map(machine => machine.machine_name);
     return {
       machineName: names[0] || fallback,
       taskId: data.machines[0]?.parent_task_id || '',
       requiresDownload: false,
+      waitedOn,
       names,
     };
   }
@@ -950,6 +953,7 @@ export const createdOf = (answer, fallback) => {
     machineName: data.machine_name || fallback,
     taskId: data.parent_task_id || data.task_id || '',
     requiresDownload: Boolean(data.requires_download),
+    waitedOn,
     names: [],
   };
 };

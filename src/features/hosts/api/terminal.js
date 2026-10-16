@@ -33,8 +33,9 @@ export const stopTerminal = (status, id, sessionId) =>
 
 /**
  * Every host terminal session the agent holds, `GET term/sessions`,
- * each `{ id, status, shell, created_at, last_activity }`, some agents
- * nesting them under `sessions`.
+ * each `{ id, status, shell, created_by, created_at, last_activity }`,
+ * `created_by` the name of the key that started it, some agents nesting
+ * them under `sessions`.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
@@ -45,8 +46,8 @@ export const listTermSessions = (status, id) =>
 
 /**
  * Every SSH session the agent holds, `GET ssh/sessions`, each `{ id,
- * machine_name, status, ssh_host, ssh_port, ssh_username, created_at,
- * last_activity }`, some agents nesting them under `sessions`.
+ * machine_name, status, ssh_host, ssh_port, ssh_username, created_by,
+ * created_at, last_activity }`, some agents nesting them under `sessions`.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role

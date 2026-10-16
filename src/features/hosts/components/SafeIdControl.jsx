@@ -9,7 +9,9 @@ import { PathInput } from './PathPicker';
 
 export const SAFE_ID_SOURCES = ['cache', 'upload', 'path'];
 
-export const SAFE_ID_KIND = 'safe_id';
+export const ID_FILE_KIND = 'id_file';
+
+export const SAFE_ID_ROLE = 'safe_id';
 
 const DOORS = [
   ['cache', FaHardDrive, 'provisioning.safeId.doorCache'],
@@ -25,16 +27,32 @@ const DOORS = [
 export const emptySafeId = () => ({ source: 'cache', artifact_id: '', name: '', path: '' });
 
 /**
- * The safe ID rows of the host's artifacts, the rows of kind `safe_id`
- * that are on the host.
+ * The safe ID rows of the host's artifacts, the rows of kind `id_file`
+ * whose `role` is `safe_id` that are on the host.
  *
  * @param {Array<Object>|null} artifacts - The host's artifact rows
  * @returns {Array<Object>} The rows
  */
 export const safeIdRowsOf = artifacts =>
   (Array.isArray(artifacts) ? artifacts : []).filter(
-    row => row && row.file_type === SAFE_ID_KIND && row.file_exists !== false
+    row =>
+      row &&
+      row.file_type === ID_FILE_KIND &&
+      row.role === SAFE_ID_ROLE &&
+      row.file_exists !== false
   );
+
+/**
+ * The storage location an ID file upload lands in, the enabled location
+ * of type `id_file`, null while the host answers none.
+ *
+ * @param {Array<Object>|null} paths - The rows of `GET artifacts/storage/paths`
+ * @returns {Object|null} The location
+ */
+export const idFileLocationOf = paths =>
+  (Array.isArray(paths) ? paths : []).find(
+    row => row && row.type === ID_FILE_KIND && row.enabled !== false
+  ) || null;
 
 const SourceLine = ({ value, row }) => {
   const { t } = useTranslation();
@@ -67,11 +85,12 @@ SourceLine.propTypes = {
 
 /**
  * The Safe ID control of the Provisioning step, one control with three
- * doors: a pick among the safe ID rows of the host's cache, an upload
- * into that cache as kind `safe_id`, or a file on the agent host through
- * the path picker, and under it the one line naming where the file
- * comes from; `value` is `{ source, artifact_id, name, path }`, `onUpload`
- * takes the chosen file and answers the artifact row it landed as.
+ * doors: a pick among the safe ID rows of the host's cache, the `id_file`
+ * rows of role `safe_id`, an upload into the host's ID files location as
+ * that kind and role, or a file on the agent host through the path
+ * picker, and under it the one line naming where the file comes from;
+ * `value` is `{ source, artifact_id, name, path }`, `onUpload` takes the
+ * chosen file and answers the artifact row it landed as.
  */
 const SafeIdControl = ({ value, onChange, artifacts, host, onUpload, uploading, disabled }) => {
   const { t } = useTranslation();

@@ -19,6 +19,9 @@ import {
   isHeldKind,
   readStoredTabs,
   sessionLives,
+  sessionOwnedBy,
+  sessionToConsole,
+  storedTabFor,
   storedTabsOf,
   writeStoredTabs,
 } from '../utils/terminals';
@@ -54,18 +57,20 @@ const vncLives = async (status, id, name) => {
 /**
  * What keeps the console store true to the agents and the browser: on
  * sign-in, when the list of servers answers and again when the stream
- * opens fresh or answers `reset`, every placement `console_tabs` holds
- * is read back, the host shell, SSH and zlogin sessions listed from
- * each host they name, `GET term/sessions`, `GET ssh/sessions` and
- * `GET zlogin/sessions`, and the ones the agent still holds re-attached
- * where the person had them, a session the agent no longer holds
- * dropped from the map, a VNC or RDP display re-attached while the
- * machine runs; a `session-ended` event of the `sessions` topic closes
- * the matching tab with a notice; a sign-out drops every console, the
- * host shell and SSH sessions stopped, and empties the map. Nothing
- * reads on a clock.
+ * opens fresh or answers `reset`, the host shell, SSH and zlogin
+ * sessions are listed from every host that offers them, `GET
+ * term/sessions`, `GET ssh/sessions` and `GET zlogin/sessions`, and a
+ * live session is re-attached while the person placed it, `console_tabs`
+ * holding its placement, or while its `created_by` names the person,
+ * `person`, the footer then its place, so a shell started in another
+ * browser under the same key comes back and another person's never
+ * does; a placement whose session the agent no longer holds is dropped
+ * from the map, a VNC or RDP display re-attached while the machine runs;
+ * a `session-ended` event of the `sessions` topic closes the matching
+ * tab with a notice; a sign-out drops every console, the host shell and
+ * SSH sessions stopped, and empties the map. Nothing reads on a clock.
  */
-const ConsolesKeeper = ({ signedIn }) => {
+const ConsolesKeeper = ({ signedIn, person = '' }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
@@ -81,7 +86,7 @@ const ConsolesKeeper = ({ signedIn }) => {
   };
 
   const readListed = useCallback(
-    async (server, entry, wanted) => {
+    async (server, entry, wanted, map) => {
       const id = String(server.id);
       let sessions = [];
       try {
@@ -90,31 +95,35 @@ const ConsolesKeeper = ({ signedIn }) => {
         log.api.warn('Error listing sessions', { kind: entry.kind, error: error.message });
         return;
       }
+      wanted.forEach(([storageKey]) => {
+        const session = sessions.find(found => String(found.id) === storageKey);
+        if (!session || !sessionLives(session)) {
+          forget(storageKey);
+        }
+      });
+      const owned = sessions
+        .filter(session => sessionLives(session))
+        .map(session => sessionToConsole(entry.kind, id, session))
+        .filter(console => storedTabFor(map, console) || sessionOwnedBy(console.session, person));
       await Promise.all(
-        wanted.map(([storageKey, tab]) => {
-          const session = sessions.find(found => String(found.id) === storageKey);
-          const alive = session && sessionLives(session);
-          const key = consoleKeyOf({ kind: tab.kind, id, name: tab.name });
-          if (!alive) {
-            forget(storageKey);
+        owned.map(console => {
+          if (consolesHeld().some(found => found.key === console.key)) {
             return null;
           }
-          if (consolesHeld().some(found => found.key === key)) {
-            return null;
-          }
+          const tab = storedTabFor(map, console);
           return actions.adopt({
-            kind: tab.kind,
+            kind: console.kind,
             id,
-            name: tab.name,
+            name: console.name,
             server,
-            session,
-            placed: tab.placed,
-            accepts: tab.accepts,
+            session: console.session,
+            placed: tab?.placed || 'footer',
+            accepts: Boolean(tab?.accepts),
           });
         })
       );
     },
-    [status, actions]
+    [status, actions, person]
   );
 
   const readDisplay = useCallback(
@@ -145,25 +154,24 @@ const ConsolesKeeper = ({ signedIn }) => {
   const readOne = useCallback(
     async (server, map) => {
       const stored = storedTabsOf(map, String(server.id));
-      if (stored.length === 0) {
-        return;
-      }
       const lists = LISTS.map(entry => ({
         entry,
         wanted: stored.filter(([, tab]) => tab.kind === entry.kind),
-      })).filter(({ entry, wanted }) => wanted.length > 0 && offered(server, entry));
+      })).filter(
+        ({ entry, wanted }) => offered(server, entry) && (wanted.length > 0 || Boolean(person))
+      );
       const displays = stored.filter(([, tab]) => ['vnc', 'rdp'].includes(tab.kind));
       await Promise.all([
-        ...lists.map(({ entry, wanted }) => readListed(server, entry, wanted)),
+        ...lists.map(({ entry, wanted }) => readListed(server, entry, wanted, map)),
         ...displays.map(display => readDisplay(server, display)),
       ]);
     },
-    [readListed, readDisplay]
+    [readListed, readDisplay, person]
   );
 
   const readEvery = useCallback(() => {
     const map = readStoredTabs();
-    if (Object.keys(map).length === 0) {
+    if (Object.keys(map).length === 0 && !person) {
       return;
     }
     held.forEach(server => {
@@ -171,7 +179,7 @@ const ConsolesKeeper = ({ signedIn }) => {
         log.api.warn('Error re-attaching consoles', { error: error.message });
       });
     });
-  }, [held, readOne]);
+  }, [held, readOne, person]);
 
   const readRef = useRef(readEvery);
 
@@ -250,6 +258,7 @@ const ConsolesKeeper = ({ signedIn }) => {
 
 ConsolesKeeper.propTypes = {
   signedIn: PropTypes.bool.isRequired,
+  person: PropTypes.string,
 };
 
 export default ConsolesKeeper;

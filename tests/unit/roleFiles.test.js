@@ -110,7 +110,7 @@ const artifacts = [
     version: '1.1.6_R14',
     file_exists: true,
   },
-  { id: 'a6', filename: 'SAFE.ids', file_type: 'safe_id', file_exists: true },
+  { id: 'a6', filename: 'SAFE.ids', file_type: 'id_file', role: 'safe_id', file_exists: true },
 ];
 
 const missingPick = {

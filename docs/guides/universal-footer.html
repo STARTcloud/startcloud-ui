@@ -908,14 +908,18 @@
         <strong>What the heart's popover draws.</strong> The overall word first; on a host that
         lists <code>events</code> the stream line, the connection's state with its dot and how long
         ago the last named event arrived, read from the one event hub, so no page draws a live
-        indicator of its own; one row a service; then, under a rule, one row a tool the host answers
-        under <code>tools</code>, its name and its version, greyed while it is missing, the line
-        Super.Human.Installer's footer drew, Vagrant, VirtualBox, Git, ansible, rsync, scp, the
-        embedded transports and UTM on macOS; then one row a caution the host answers under
-        <code>notes</code>, <code>{ code, level, text }</code>, the triangle in the note's level,
-        the warning of WSL beside VirtualBox on a Windows host among them. The health answer's shape
-        is <code>{ status, timestamp, services, tools?, notes? }</code>; a host that answers no
-        tools and no notes draws the services alone.
+        indicator of its own; one row a service; then, under a rule, the host the host answers
+        under <code>host</code>, <code>{ os, arch, cpus, memory_bytes }</code>, one row a fact;
+        then one row a tool the host answers under <code>tools</code>, its name and its version,
+        greyed while it is missing, the line Super.Human.Installer's footer drew, Vagrant,
+        VirtualBox, Git, ansible, rsync, scp, the embedded transports and UTM on macOS; then one
+        row a caution the host answers under <code>notes</code>,
+        <code>{ code, level, text }</code>, the triangle in the note's level, the warning of WSL
+        beside VirtualBox on a Windows host, <code>virtualbox_wsl</code>, and the old rsync,
+        <code>rsync_old</code>, among them. The health answer's shape is
+        <code>{ status, timestamp, services, host?, tools?, notes? }</code>, the same report riding
+        the <code>health</code> event; a host that answers no host, no tools and no notes draws the
+        services alone.
       </div>
     </div>
   </section>

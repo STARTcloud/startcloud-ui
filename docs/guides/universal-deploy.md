@@ -455,7 +455,31 @@ Update to.
   from every source that can supply them; a file whose hash is unknown
   or differs from its expectation is marked with a warning and never
   refused, because a person who overrides a file is told what they gave
-  up and not stopped.
+  up and not stopped. The wire of the cache, as hyperweaver-agent
+  answers it: an artifact row's `version` is `{ "major", "minor",
+  "patch", "fix_pack", "ea_access_release", "full_version" }`; a
+  known-but-missing row, `file_exists: false`, carries `source`, one of
+  `boxvault`, `hcl` and `custom`, and `POST artifacts/{id}/fetch` with
+  no body queues its download, `202` `{ "task_id", "artifact_id",
+  "filename", "source", "status" }`, `409` while the file is already on
+  the host and `400` while the row names no source; a role's files are
+  the rows whose `role` is the manifest role's `installer_dir`,
+  `GET artifacts?type=installer&role=<installer_dir>`, and they mount at
+  `installers/<installer_dir>/archives/`; `POST machines` takes `roles[]`
+  in body order, each `{ name, enabled, collection, tags, files, vars }`,
+  and `wait_for: [ "<task id>", ... ]`, the downloads chained in that
+  order, the create's first task waiting on the last, a failed or
+  cancelled download cancelling the build with `Dependency failed`, the
+  answer carrying `waited_on`. ID files are one kind, `id_file`, the
+  row's `role` the id type, `safe_id`, `server_id` or `user_id`; an upload
+  goes through `POST artifacts/upload/prepare` with the `storage_path_id`
+  of an `id_file` location and `role` the type, the safe IDs listed by
+  `GET artifacts?type=id_file&role=safe_id`; the create carries
+  `id_files: [{ "artifact_id", "name" }]`, each landing at
+  `id-files/<folder of its type>/<name>`, a `safe_id` under the manifest's
+  `id_files.safe_id_dir`, `name` absent taking the `USER_SAFE_ID` answer
+  for a safe ID, else `safe.ids` unless `id_files.keep_original_name`;
+  `safe_id_path` stays the agent-host file door.
 
 **`machine`** lands on the host's page, which opens the create wizard over
 itself while the host offers a create, the query's members seeding the

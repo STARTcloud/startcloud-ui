@@ -29,13 +29,27 @@ export const isTerminalKind = kind => TERMINAL_KINDS.includes(kind);
 
 /**
  * Whether a console's terminal is held by the console store, the host
- * shell and SSH, whose socket is the session on an agent that closes the
- * shell with its socket.
+ * shell and SSH, whose xterm and socket outlive every surface that draws
+ * them, the shell behind the socket running on across sockets on both
+ * agents.
  *
  * @param {string} kind - The console's kind
  * @returns {boolean} True for a held kind
  */
 export const isHeldKind = kind => HELD_KINDS.includes(kind);
+
+/**
+ * Whether a listed session is the person's own, its `created_by` the
+ * name of the key or the account the person is signed in as; false for
+ * a session that names another or none, which is never re-attached
+ * unless the person placed it themselves.
+ *
+ * @param {Object} session - The session as the agent answers it
+ * @param {string} person - The signed-in person's name
+ * @returns {boolean} True while the session names the person
+ */
+export const sessionOwnedBy = (session, person) =>
+  Boolean(person) && String(session?.created_by || '') === person;
 
 /**
  * The key a console's placement is stored under in the browser: the

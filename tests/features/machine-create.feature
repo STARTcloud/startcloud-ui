@@ -783,8 +783,8 @@ Feature: machine create
     And the host was sent POST to "/api/agents/1/machines" carrying "5fd08b71e946f11308232170553aaca6f4c60c8bb8d91ef6fb89e3f171bad9a5" at "/properties/DOMINO_HASH"
     And the host was sent POST to "/api/agents/1/machines" carrying "14" at "/properties/DOMINO_INSTALLER_MAJOR_VERSION"
     And the host was sent POST to "/api/agents/1/machines" carrying "proxy.example.com" at "/properties/PROXY_SERVER"
-    And the host was sent POST to "/api/agents/1/machines" carrying "art-0105" at "/safe_id/artifact_id"
-    And the host was sent POST to "/api/agents/1/machines" carrying "SAFE.ids" at "/safe_id/name"
+    And the host was sent POST to "/api/agents/1/machines" carrying "art-0105" at "/id_files/0/artifact_id"
+    And the host was sent POST to "/api/agents/1/machines" carrying "SAFE.ids" at "/id_files/0/name"
     And the host was sent POST to "/api/agents/1/machines" carrying nothing at "/safe_id_path"
     And the host was sent POST to "/api/agents/1/machines" carrying nothing at "/wait_for"
     And the host was sent POST to "/api/agents/1/machines" 1 times
@@ -863,7 +863,7 @@ Feature: machine create
     And the host was sent POST to "/api/agents/1/machines" carrying "true" at "/properties/DOMINO_INSTALLER_FIXPACK_INSTALL"
     And the host was sent POST to "/api/agents/1/machines" carrying "14.0fp3" at "/roles/2/files/fixpack_version"
     And the host was sent POST to "/api/agents/1/machines" carrying "/local/ids/SAFE.ids" at "/safe_id_path"
-    And the host was sent POST to "/api/agents/1/machines" carrying nothing at "/safe_id"
+    And the host was sent POST to "/api/agents/1/machines" carrying nothing at "/id_files"
 
   Scenario: Controls menu: the tool rows by their tokens, Install OS draws on a VirtualBox host for a machine that is off and sends the ISO, the user and the password
     Given the host answers the hosts fixture

@@ -7,6 +7,7 @@ export const STATUS_KEYS = [
   'healthy',
   'cifs_broken',
   'icons_missing',
+  'swap_pressure',
   'stale',
   'no_user',
   'standby',
@@ -17,6 +18,7 @@ const STATUS_CLASSES = {
   healthy: 'text-bg-success',
   cifs_broken: 'text-bg-danger',
   icons_missing: 'text-bg-warning',
+  swap_pressure: 'text-bg-danger',
   stale: 'text-bg-warning',
   no_user: 'text-bg-secondary',
   standby: 'text-bg-secondary',
@@ -51,7 +53,7 @@ export const vmHasNoSession = vm => {
 
 /**
  * The health of one VM at `now`: decommissioned, standby, stale, then the
- * drives, then the icons, else healthy.
+ * drives, then the icons, then the pagefile's pressure, else healthy.
  * @param {Object} vm - The vm object the host answers
  * @param {number} now - The reference epoch in milliseconds
  * @returns {string} One of `STATUS_KEYS`
@@ -73,7 +75,32 @@ export const vmStatus = (vm, now) => {
   if (desktop !== undefined && desktop !== 'ok' && desktop !== 'n_a') {
     return 'icons_missing';
   }
+  if (vm.swap?.status === 'swap_pressure') {
+    return 'swap_pressure';
+  }
   return 'healthy';
+};
+
+/**
+ * What a VM's swap cell reads: the pagefile's use as a percent while the
+ * startup agent reported it, a dash while it reports none, `n_a`, and
+ * nothing for a standby or never-checked-in row or one with no report.
+ * @param {Object} vm - The vm object
+ * @returns {{ text: string, pressure: boolean, title: string }} The cell
+ */
+export const swapCellOf = vm => {
+  if (vmIsStandby(vm) || vmHasNoSession(vm) || !vm.swap || vm.swap.usage_pct === undefined) {
+    return { text: '', pressure: false, title: '' };
+  }
+  if (vm.swap.status === 'n_a') {
+    return { text: '—', pressure: false, title: '' };
+  }
+  const rate = vm.swap.pages_input_per_sec;
+  return {
+    text: `${Math.round(vm.swap.usage_pct)}%`,
+    pressure: vm.swap.status === 'swap_pressure',
+    title: rate === undefined || rate === null ? '' : `${rate} pages/s`,
+  };
 };
 
 export const statusBadgeClass = status => STATUS_CLASSES[status] || 'text-bg-secondary';

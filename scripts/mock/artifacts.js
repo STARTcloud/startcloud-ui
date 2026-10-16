@@ -5,8 +5,17 @@ import { queue, settles } from './tasks.js';
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
 const PAGE = 25;
-const EXTENSIONS = ['.iso', '.img', '.vmdk', '.vhd', '.vhdx', '.qcow2'];
+const EXTENSIONS = ['.iso', '.img', '.vmdk', '.vhd', '.vhdx', '.qcow2', '.ids', '.id'];
 const SEEDED_PATHS = [
+  {
+    name: 'ID Files',
+    path: '/var/lib/hyperweaver/artifacts/id-files',
+    type: 'id_file',
+    enabled: true,
+    used: '12K',
+    total: '1.8T',
+    percent: '0%',
+  },
   {
     name: 'ISO library',
     path: '/rpool/iso',

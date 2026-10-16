@@ -826,7 +826,10 @@ agent role):
   Configuration pages left out because a menu row is named by a key and
   a file is named by its own name, the tree's rule for a node's label,
   each opening its page, the one place
-  the tree offers them since it lists no page row, then Restart
+  the tree offers them since it lists no page row, New machine while
+  the host creates machines, Open host shell while the host lists
+  `host-terminal`, the Controls menu's own row opening the shell in the
+  footer, then Restart
   host and Power off host while the host lists `host-power`; on the
   Datacenter root Open and, for a role that may manage settings, Add
   host, opening the hosts page
@@ -1188,13 +1191,15 @@ server role, `/api/…` on an agent role).
   required spec option with no default and no value draws the warning
   triangle before its label. The Safe ID control draws where the
   manifest declares `id_files`, one control with three doors, the
-  host's cache, an upload into the cache as kind `safe_id`, and a file
-  on the agent host through the path picker, the source line under it
-  naming where the file comes from, sent as `safe_id` with the
-  artifact's id and name or as `safe_id_path`. Confirm names the
+  host's cache, the `id_file` rows of role `safe_id`, an upload into the
+  host's `id_file` location with that role through `artifacts/upload/prepare`,
+  and a file on the agent host through the path picker, the source line
+  under it naming where the file comes from, sent as `id_files`, one row
+  the artifact's id and name, or as `safe_id_path`. Confirm names the
   downloads the create waits on and the Create button says it waits on
   N downloads while any is queued, the body carrying `wait_for` with
-  their task ids, because a build should start the moment its last
+  their task ids and the answer's `waited_on` named in one notice,
+  because a build should start the moment its last
   file lands and never before. A host reads its registries and its catalogs as the
   person: the credential a server forwards for the signed-in person as
   `x-registry-token`, or on the agent's own UI, where the browser holds
@@ -2205,7 +2210,14 @@ hosts offer neither.
   for the host shell and bound to the machine otherwise, and the route
   that stops it; the host shell's and the SSH shell's xterm and socket
   are held by the console store and outlive every surface that draws
-  them, because on hyperweaver-agent the socket is the shell; the
+  them, and on both agents the shell behind the socket runs on across
+  sockets, a new socket replaying the last of its output and taking any
+  earlier socket's place, so a reload or a dropped connection re-attaches
+  to the shell a person left; every session the agents list carries
+  `created_by`, the key that started it, and the pane re-attaches a live
+  session the person placed, or one `created_by` names them, in the
+  footer, and never another person's; a `session-ended` event closes
+  the tab whoever ended the session; the
   zlogin tab draws the zone terminal provider's own terminal; a VNC tab
   draws the one display the machine shares with every viewer; an RDP
   tab draws the client's own bridge, one socket a viewer. The tab strip

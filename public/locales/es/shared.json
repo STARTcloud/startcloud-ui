@@ -1796,6 +1796,12 @@
         "scp": "scp",
         "builtin_sync": "Sincronización integrada",
         "utm": "UTM"
+      },
+      "host": {
+        "os": "SO",
+        "arch": "Arquitectura",
+        "cpus": "Núcleos",
+        "memory": "Memoria"
       }
     },
     "pane": {
@@ -2035,6 +2041,10 @@
         "label": "VDIs sin sesión de usuario",
         "part": "{{n}} {{level}}",
         "empty": "Ninguna VM sin sesión de usuario"
+      },
+      "swap_pressure": {
+        "label": "Presión de swap",
+        "description": "El archivo de paginación está bajo presión en la VM"
       }
     },
     "pools": {
@@ -2070,7 +2080,8 @@
       "drives": "Unidades",
       "icons": "Iconos",
       "seen": "Última vez",
-      "cycle": "Ciclo"
+      "cycle": "Ciclo",
+      "swap": "Swap"
     },
     "filter": {
       "status": "Estado",
@@ -2092,7 +2103,8 @@
       "poweredOff": "Apagada",
       "noCheckin": "Sin registro",
       "recycled": "Reciclada",
-      "removed": "Eliminada"
+      "removed": "Eliminada",
+      "swap_pressure": "Presión de swap"
     },
     "session": {
       "active": "Activa",
@@ -2158,7 +2170,11 @@
       "clientHost": "Host del cliente",
       "udsUser": "Usuario UDS",
       "timings": "Tiempos",
-      "noTimings": "Sin datos de tiempos"
+      "noTimings": "Sin datos de tiempos",
+      "swapUsage": "Archivo de paginación en uso",
+      "swapUsageValue": "{{current}} / {{base}} MB ({{pct}}%)",
+      "swapPeak": "Pico del archivo de paginación",
+      "swapPagesIn": "Páginas de entrada por segundo"
     },
     "history": {
       "window": "Ventana del historial",
@@ -2199,6 +2215,8 @@
       "drive_disappeared": "Unidad desaparecida",
       "icons_missing": "Faltan iconos",
       "icons_recovered": "Iconos OK",
+      "swap_pressure": "Presión de swap",
+      "swap_recovered": "Swap recuperado",
       "status_changed": "Cambio de estado",
       "agent_first_seen": "Vista por primera vez",
       "vm_decommissioned": "Retirada",
@@ -2219,6 +2237,7 @@
       "status": "Estado",
       "drives": "Unidades",
       "icons": "Iconos",
+      "swap": "Swap %",
       "seen": "Última vez",
       "ip": "IP",
       "agentVersion": "Versión del agente",
@@ -11263,7 +11282,9 @@
       "createWaiting": "Crear · espera {{count}} descargas",
       "downloadQueued": "Descarga de {{filename}} en cola; Crear esperará a que termine",
       "downloadFailed": "Una descarga falló: {{message}}",
-      "safeIdUploadFailed": "La subida de la ID segura falló: {{message}}"
+      "safeIdUploadFailed": "La subida de la ID segura falló: {{message}}",
+      "noIdFileLocation": "Este host no tiene una ubicación de id-files para subir a ella",
+      "waitedOn": "La creación espera {{count}} descargas y empieza cuando llegue la última"
     },
     "hardwareSections": {
       "cpu": "CPU",
