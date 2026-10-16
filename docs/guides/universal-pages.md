@@ -1413,8 +1413,8 @@ verifyToken, configs, update, uploadSsl }`: the setup token gate, one tab
   and Stats) and the count line, the count alone, because the stream's
   state and its last event are the footer heart's. Every vm row carries
   `swap`, the startup agent's pagefile report, `{ current_usage_mb,
-  peak_usage_mb, allocated_base_size_mb, pages_input_per_sec, usage_pct,
-  status }`, `status` one of `ok`, `swap_pressure` and `n_a`, null or
+peak_usage_mb, allocated_base_size_mb, pages_input_per_sec, usage_pct,
+status }`, `status` one of `ok`, `swap_pressure` and `n_a`, null or
   empty on a row the startup agent has not reported; the Swap cell draws
   `usage_pct` as a percent with the pages-in rate as its title, red on
   `swap_pressure`, a dash on `n_a`, nothing on a standby or no-check-in

@@ -323,7 +323,7 @@ const App = ({ getSupportedLanguages }) => {
       <ServersProvider
         signedIn={Boolean(user)}
         organization={orgFilter ? activeOrgUuid : ''}
-        person={String(user?.name || user?.username || '')}
+        person={String(user?.username || user?.name || '')}
       >
         <SearchProvider collections={collections} sidebar={sidebar} kinds={kinds}>
           <CrumbProvider>

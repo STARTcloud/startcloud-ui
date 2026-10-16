@@ -45,8 +45,9 @@ const answered = (epoch, patch) => current =>
  * inside it the providers of the stats,
  * machine rows, machine detail, host applications, readings, series,
  * snapshots, restores and zone terminals, and the keeper of the console
- * store beside the children, handed `person`, the name the agents write
- * as `created_by` on the sessions the signed-in person starts.
+ * store beside the children, handed `person`, the signed-in person's
+ * username, the name the agents write as `created_by` on the sessions
+ * their key starts, the key being named after its account.
  */
 const ServersProvider = ({ signedIn, organization, person = '', children }) => {
   const status = useStatus();

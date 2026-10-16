@@ -913,14 +913,18 @@ describe('stepProblemOf', () => {
 });
 
 describe('the answers', () => {
-  it('reads a queued create and a multi-host create', () => {
+  it('reads a queued create, the downloads it waited on, and a multi-host create', () => {
     expect(
-      createdOf({ parent_task_id: 'p1', machine_name: 'm1', requires_download: true }, 'fallback')
-    ).toEqual({ machineName: 'm1', taskId: 'p1', requiresDownload: true, names: [] });
+      createdOf(
+        { parent_task_id: 'p1', machine_name: 'm1', requires_download: true, waited_on: ['d1'] },
+        'fallback'
+      )
+    ).toEqual({ machineName: 'm1', taskId: 'p1', requiresDownload: true, waitedOn: 1, names: [] });
     expect(createdOf({ task_id: 't1' }, 'fallback')).toEqual({
       machineName: 'fallback',
       taskId: 't1',
       requiresDownload: false,
+      waitedOn: 0,
       names: [],
     });
     expect(
@@ -934,7 +938,13 @@ describe('the answers', () => {
         },
         'fallback'
       )
-    ).toEqual({ machineName: 'a', taskId: 'pa', requiresDownload: false, names: ['a', 'b'] });
+    ).toEqual({
+      machineName: 'a',
+      taskId: 'pa',
+      requiresDownload: false,
+      waitedOn: 0,
+      names: ['a', 'b'],
+    });
     expect(createdOf(null, 'f').machineName).toBe('f');
   });
 

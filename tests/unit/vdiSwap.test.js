@@ -27,7 +27,10 @@ describe('the swap pressure of a VM', () => {
     expect(vmStatus(vmOf({ usage_pct: 19.8, status: 'ok' }), NOW)).toBe('healthy');
     expect(
       vmStatus(
-        vmOf({ usage_pct: 95.2, status: 'swap_pressure' }, { drives: [{ letter: 'H', status: 'broken' }] }),
+        vmOf(
+          { usage_pct: 95.2, status: 'swap_pressure' },
+          { drives: [{ letter: 'H', status: 'broken' }] }
+        ),
         NOW
       )
     ).toBe('cifs_broken');

@@ -457,11 +457,11 @@ Update to.
   refused, because a person who overrides a file is told what they gave
   up and not stopped. The wire of the cache, as hyperweaver-agent
   answers it: an artifact row's `version` is `{ "major", "minor",
-  "patch", "fix_pack", "ea_access_release", "full_version" }`; a
+"patch", "fix_pack", "ea_access_release", "full_version" }`; a
   known-but-missing row, `file_exists: false`, carries `source`, one of
   `boxvault`, `hcl` and `custom`, and `POST artifacts/{id}/fetch` with
   no body queues its download, `202` `{ "task_id", "artifact_id",
-  "filename", "source", "status" }`, `409` while the file is already on
+"filename", "source", "status" }`, `409` while the file is already on
   the host and `400` while the row names no source; a role's files are
   the rows whose `role` is the manifest role's `installer_dir`,
   `GET artifacts?type=installer&role=<installer_dir>`, and they mount at

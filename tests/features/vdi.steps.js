@@ -78,11 +78,14 @@ When('I press the status card {string}', async ({ page }, key) => {
     .click();
 });
 
-Then('the swap cell of {string} reads {string} as {string}', async ({ page }, host, text, state) => {
-  const cell = fleetOf(page).locator('tbody tr', { hasText: host }).locator('[data-swap]');
-  await expect(cell).toHaveText(text);
-  await expect(cell).toHaveAttribute('data-swap', state);
-});
+Then(
+  'the swap cell of {string} reads {string} as {string}',
+  async ({ page }, host, text, state) => {
+    const cell = fleetOf(page).locator('tbody tr', { hasText: host }).locator('[data-swap]');
+    await expect(cell).toHaveText(text);
+    await expect(cell).toHaveAttribute('data-swap', state);
+  }
+);
 
 Then('the fleet card {string} reads {string}', async ({ page }, label, text) => {
   await expect(

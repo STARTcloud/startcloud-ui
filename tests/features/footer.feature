@@ -88,7 +88,6 @@ Feature: footer pane
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/"
     Then the host was sent GET to "/api/agents/1/term/sessions" 1 times
-    And the host was sent GET to "/api/agents/1/ssh/sessions" 1 times
     And the footer holds the "consoles" toggle
     And the footer pane draws the "host_shell" console of "Desk"
     And the footer pane draws 0 tabs

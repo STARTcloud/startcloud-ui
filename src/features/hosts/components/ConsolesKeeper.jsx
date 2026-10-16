@@ -61,8 +61,9 @@ const vncLives = async (status, id, name) => {
  * sessions are listed from every host that offers them, `GET
  * term/sessions`, `GET ssh/sessions` and `GET zlogin/sessions`, and a
  * live session is re-attached while the person placed it, `console_tabs`
- * holding its placement, or while its `created_by` names the person,
- * `person`, the footer then its place, so a shell started in another
+ * holding its placement, or, for a host shell or an SSH shell, while its
+ * `created_by` names the person, `person`, the footer then its place, so
+ * a shell started in another
  * browser under the same key comes back and another person's never
  * does; a placement whose session the agent no longer holds is dropped
  * from the map, a VNC or RDP display re-attached while the machine runs;
@@ -158,7 +159,9 @@ const ConsolesKeeper = ({ signedIn, person = '' }) => {
         entry,
         wanted: stored.filter(([, tab]) => tab.kind === entry.kind),
       })).filter(
-        ({ entry, wanted }) => offered(server, entry) && (wanted.length > 0 || Boolean(person))
+        ({ entry, wanted }) =>
+          offered(server, entry) &&
+          (wanted.length > 0 || (Boolean(person) && isHeldKind(entry.kind)))
       );
       const displays = stored.filter(([, tab]) => ['vnc', 'rdp'].includes(tab.kind));
       await Promise.all([

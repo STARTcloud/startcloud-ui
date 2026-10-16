@@ -150,10 +150,7 @@ const HOST_FACTS = [
   ['os', host => host.os],
   ['arch', host => host.arch],
   ['cpus', host => (host.cpus ? String(host.cpus) : '')],
-  [
-    'memory',
-    host => (host.memory_bytes ? `${(host.memory_bytes / GIB).toFixed(1)} GB` : ''),
-  ],
+  ['memory', host => (host.memory_bytes ? `${(host.memory_bytes / GIB).toFixed(1)} GB` : '')],
 ];
 
 /**
