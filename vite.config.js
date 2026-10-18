@@ -105,6 +105,19 @@ const callbackRedirect = () => ({
   },
 });
 
+const stampWorker = () => ({
+  name: 'stamp-worker',
+  apply: 'build',
+  closeBundle() {
+    fs.writeFileSync(
+      './dist/notification-sw.js',
+      fs
+        .readFileSync('./public/notification-sw.js', 'utf8')
+        .replace("'__APP_VERSION__'", JSON.stringify(pkg.version))
+    );
+  },
+});
+
 export default defineConfig(({ command }) => ({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
@@ -112,7 +125,7 @@ export default defineConfig(({ command }) => ({
     __SUPPORTED_LOCALES__: JSON.stringify(supportedLocales),
     __API_ORIGIN__: JSON.stringify(command === 'serve' ? apiTarget : ''),
   },
-  plugins: [react(), svgr(), callbackRedirect()],
+  plugins: [react(), svgr(), callbackRedirect(), stampWorker()],
   base: '/',
   publicDir: 'public',
   server: {

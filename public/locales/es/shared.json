@@ -12616,6 +12616,12 @@
       "authorityCertificate": "Certificado de la autoridad",
       "authorityKey": "Clave de la autoridad",
       "pastedRead": "Se leyó {{label}}."
+    },
+    "picker": {
+      "button": "Elegir de la bóveda",
+      "title": "Elegir de la bóveda",
+      "pick": "Usar",
+      "empty": "La bóveda no contiene nada con bytes para entregar."
     }
   }
 }

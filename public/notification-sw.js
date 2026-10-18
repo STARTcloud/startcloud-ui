@@ -1,12 +1,17 @@
 const PARAMS = new URL(self.location.href).searchParams;
 const APP_NAME = PARAMS.get('app') || 'Notification';
-const CACHE_NAME = `startcloud-ui-${PARAMS.get('v') || '0'}`;
+const VERSION = '__APP_VERSION__';
+const CACHE_NAME = `startcloud-ui-${VERSION}`;
+const SHELL = '/';
+const STATUS = '/api/status';
 const PRECACHE = [
+  SHELL,
   '/manifest.json',
   '/brand/startcloud/mark.svg',
   '/brand/startcloud/mark-192.png',
   '/brand/startcloud/mark-512.png',
 ];
+const KEPT = ['/assets/', '/locales/', '/brand/', '/themes/', '/fonts/', '/manifest.json'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -31,6 +36,44 @@ self.addEventListener('activate', event => {
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+});
+
+const kept = url =>
+  url.origin === self.location.origin && KEPT.some(prefix => url.pathname.startsWith(prefix));
+
+const store = (key, response) => {
+  if (response.ok) {
+    const copy = response.clone();
+    caches.open(CACHE_NAME).then(cache => cache.put(key, copy));
+  }
+  return response;
+};
+
+const cacheFirst = (request, key) =>
+  caches.match(key).then(hit => hit || fetch(request).then(response => store(key, response)));
+
+const serverFirst = (request, key) =>
+  fetch(request)
+    .then(response => store(key, response))
+    .catch(() => caches.match(key).then(hit => hit || Response.error()));
+
+self.addEventListener('fetch', event => {
+  const { request } = event;
+  if (request.method !== 'GET') {
+    return;
+  }
+  if (request.mode === 'navigate') {
+    event.respondWith(cacheFirst(request, SHELL));
+    return;
+  }
+  const url = new URL(request.url);
+  if (url.origin === self.location.origin && url.pathname === STATUS) {
+    event.respondWith(serverFirst(request, STATUS));
+    return;
+  }
+  if (kept(url)) {
+    event.respondWith(cacheFirst(request, url.pathname));
   }
 });
 

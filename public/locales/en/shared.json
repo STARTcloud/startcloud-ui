@@ -12616,6 +12616,12 @@
       "authorityCertificate": "Authority certificate",
       "authorityKey": "Authority key",
       "pastedRead": "{{label}} read."
+    },
+    "picker": {
+      "button": "Pick from vault",
+      "title": "Pick from the vault",
+      "pick": "Use",
+      "empty": "The vault holds nothing with bytes to hand over."
     }
   }
 }

@@ -5,15 +5,14 @@ import { register } from 'register-service-worker';
 import { useNotify } from '../contexts/NoticeContext';
 
 /**
- * The one service worker URL of the build, the app name and the UI
- * build's version in its query so the browser fetches and installs a new
- * worker each release while the file's bytes never change.
+ * The one service worker URL of the build, the app name in its query; the
+ * build stamps its version into the file, so each release is a new worker
+ * the browser installs on its next check.
  *
  * @param {string} app - The host's brand name
  * @returns {string} The worker URL push and the update share
  */
-export const serviceWorkerUrl = app =>
-  `/notification-sw.js?app=${encodeURIComponent(app)}&v=${__APP_VERSION__}`;
+export const serviceWorkerUrl = app => `/notification-sw.js?app=${encodeURIComponent(app)}`;
 
 /**
  * Registers the build's service worker at scope `/` in production and, when
