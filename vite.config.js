@@ -185,6 +185,9 @@ export default defineConfig(({ command }) => ({
           ) {
             return 'rdp';
           }
+          if (id.includes('vendor/cipher-wasm') || id.includes('@startcloud/cipher-wasm')) {
+            return 'certs';
+          }
           if (
             id.includes('node_modules/react-bootstrap') ||
             id.includes('node_modules/@restart') ||

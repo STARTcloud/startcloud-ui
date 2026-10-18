@@ -8,6 +8,14 @@ const VARIANTS = {
   restart: { keys: 'pages.confirm.restart', button: 'warning' },
 };
 
+/**
+ * The typed confirmation of a destructive step: the keyword the person
+ * types, Cancel and Confirm; `onConfirmed`, where given, is called once
+ * the dialog has left the page after a confirm, the place a caller moves
+ * focus to when the confirm removed the control that opened the dialog,
+ * and the dialog then neither holds focus while it leaves nor hands it
+ * back to that control.
+ */
 const ConfirmModal = ({
   show,
   handleClose,
@@ -17,12 +25,15 @@ const ConfirmModal = ({
   variant = 'delete',
   keyword: ownKeyword = '',
   confirmText = '',
+  onConfirmed = null,
 }) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
   const { keys, button } = VARIANTS[variant];
   const keyword = ownKeyword || t(`${keys}.keyword`);
+  const landing = confirmed && !show && Boolean(onConfirmed);
 
   const handleInputChange = event => {
     setInputValue(event.target.value);
@@ -30,6 +41,7 @@ const ConfirmModal = ({
   };
 
   const handleModalClose = () => {
+    setConfirmed(false);
     setInputValue('');
     setError('');
     handleClose();
@@ -37,6 +49,7 @@ const ConfirmModal = ({
 
   const handleConfirmClick = () => {
     if (inputValue.toLowerCase() === keyword) {
+      setConfirmed(true);
       handleConfirm();
       setInputValue('');
       setError('');
@@ -46,8 +59,22 @@ const ConfirmModal = ({
     }
   };
 
+  const handleExited = () => {
+    if (landing) {
+      onConfirmed();
+    }
+  };
+
   return (
-    <Modal show={show} onHide={handleModalClose} dialogClassName="list-modal" scrollable>
+    <Modal
+      show={show}
+      onHide={handleModalClose}
+      onExited={handleExited}
+      restoreFocus={!landing}
+      enforceFocus={!landing}
+      dialogClassName="list-modal"
+      scrollable
+    >
       <Modal.Header closeButton>
         <Modal.Title>{title || t(`${keys}.title`)}</Modal.Title>
       </Modal.Header>
@@ -86,6 +113,7 @@ ConfirmModal.propTypes = {
   variant: PropTypes.oneOf(Object.keys(VARIANTS)),
   keyword: PropTypes.string,
   confirmText: PropTypes.string,
+  onConfirmed: PropTypes.func,
 };
 
 export default ConfirmModal;

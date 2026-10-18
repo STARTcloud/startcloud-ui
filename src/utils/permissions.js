@@ -74,6 +74,28 @@ export const canManageBox = (user, organizationName, box) => {
 };
 
 /**
+ * Whether the user may change a record another person may have shared
+ * with an organization (its visibility, its status, its removal from the
+ * organization): the person who created it, or an org admin or owner,
+ * never a guest and never a global admin by role alone, the box rule
+ * with `created_by` standing where `user_id` stands.
+ *
+ * @param {object|null} user - The session's user
+ * @param {string} organizationName - The organization the record is shared with
+ * @param {object|null} record - The record, its `created_by` the creator's username
+ * @returns {boolean}
+ */
+export const canManageRecord = (user, organizationName, record) => {
+  if (!user || isGuest(accountMemberships(user), organizationName)) {
+    return false;
+  }
+  if (record && record.created_by && record.created_by === user.username) {
+    return true;
+  }
+  return isManager(accountMemberships(user), organizationName);
+};
+
+/**
  * Whether the viewer manages the rows a page lists: the page's
  * organization when it has one, any organization on the home listing;
  * the test the Visibility and Status columns make before they draw, so a

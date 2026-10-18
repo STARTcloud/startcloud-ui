@@ -58,6 +58,7 @@ export const UNIVERSAL_ROUTES = [
   'push',
   'search',
   'vm',
+  'certs',
   'hosts',
   'watches',
   'authenticator',

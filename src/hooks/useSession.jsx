@@ -186,7 +186,8 @@ export const useSession = ({
   useEffect(() => {
     const offEnded = events.on('sessionEnded', detail => {
       adopt(null);
-      setEnded({ returnTo: detail?.returnTo || '/' });
+      const path = detail?.returnTo || '/';
+      setEnded({ returnTo: returnTo.onAuthPage(path) ? '/' : path });
     });
     const offLogin = events.on('login', () =>
       provider.load({ navigate: navigateRef.current }).then(adopt)
@@ -204,7 +205,7 @@ export const useSession = ({
       offLogin();
       offLogout();
     };
-  }, [adopt, events, provider]);
+  }, [adopt, events, provider, returnTo]);
 
   useEffect(() => {
     if (!loaded || !session.user || !push || !push.isPushEnabled()) {

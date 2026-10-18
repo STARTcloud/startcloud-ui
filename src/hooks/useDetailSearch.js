@@ -27,6 +27,7 @@ import { useNavbarSearchBinding } from './useSearchBinding';
  * @param {Object|null} [options.url] - The `useUrlNarrowing` result holding the groups' values
  * @param {string[]|null} [options.views] - The views the page toggles between, the first the default
  * @param {Array} [options.defaultSort] - The sort stack drawn while nothing is saved
+ * @param {Array} [options.actions] - The panel's actions the page registers beside its groups
  * @returns {{ rows: Array, query: string, filtering: boolean, sort: Object, setSort: Function, hiddenColumns: Set, widths: Object, setColumnWidth: Function, view: string, setView: Function }} The narrowed, sorted rows and the search state
  */
 export const useDetailSearch = ({
@@ -41,6 +42,7 @@ export const useDetailSearch = ({
   url = null,
   views = null,
   defaultSort = [],
+  actions = [],
 }) => {
   const { t } = useTranslation();
   const arrivedQuery = useArrivalQuery();
@@ -76,6 +78,7 @@ export const useDetailSearch = ({
       }),
     ],
     onClearFilters: filters.clear,
+    actions,
   });
 
   const setSort = (column, options) =>

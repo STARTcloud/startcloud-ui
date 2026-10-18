@@ -12,6 +12,7 @@ const NO_PROVIDER = {
   epoch: 0,
   hosts: {},
   read: () => Promise.resolve(null),
+  ask: () => Promise.resolve(null),
   load: () => Promise.resolve(null),
   organization: '',
   turns: 0,
@@ -45,16 +46,16 @@ const narrowedBy =
  * @returns {{ stats: Object|null, loaded: boolean, failed: boolean, refresh: Function }} The stats
  */
 export const useHostStats = id => {
-  const { epoch, hosts, read, organization } = useContext(HostStatsContext) || NO_PROVIDER;
+  const { epoch, hosts, read, ask, organization } = useContext(HostStatsContext) || NO_PROVIDER;
   const { stats, loaded, failed, stale } = hosts[id] || EMPTY;
   const narrowed = Boolean(organization);
   const rows = useHeldMachines(id, narrowed);
 
   useEffect(() => {
     if (!loaded || stale) {
-      read(epoch, id);
+      ask(epoch, id);
     }
-  }, [loaded, stale, epoch, id, read]);
+  }, [loaded, stale, epoch, id, ask]);
 
   const { refresh: refreshRows } = rows;
 

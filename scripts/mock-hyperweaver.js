@@ -4,6 +4,7 @@ import path from 'path';
 
 import { mountAccount } from './mock/account.js';
 import { mountAgents, socketMachine, startFlapping } from './mock/agents.js';
+import { mountCerts } from './mock/certs.js';
 import { SETUP_TOKEN, mountConfig } from './mock/config.js';
 import { hostFor } from './mock/fleet.js';
 import { mountInbox } from './mock/inbox.js';
@@ -40,6 +41,7 @@ const CONTENT_TYPES = {
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
   '.webmanifest': 'application/manifest+json',
+  '.wasm': 'application/wasm',
 };
 const SIGN_IN_NAMES = 'user, admin, super, guest, or any other name';
 
@@ -49,6 +51,7 @@ mountSite(router);
 if (!APIKEY_MODE) {
   mountAccount(router);
   mountIntegrations(router);
+  mountCerts(router);
 }
 mountInbox(router);
 mountOrgs(router);

@@ -22,11 +22,13 @@ const HOVER_DWELL_MS = 400;
  * @param {boolean} props.uploading - Whether a file is going up
  * @param {number} props.progress - The percentage uploaded
  * @param {string} [props.accept] - The file input's accept list
+ * @param {boolean} [props.multiple] - Whether one pick or drop may carry several files, `onFile` called once per file
  * @param {string} props.dropText - The invitation drawn on the target
  * @param {string} props.uploadingText - The text drawn while uploading
  * @param {Function} props.onFile - Called with the picked or dropped file
  * @param {{ size: number }} [props.file] - The file the caller last picked
  * @param {string} [props.error] - The failure of the last send, translated
+ * @param {boolean} [props.defaultOpen] - Whether the target is open from the first draw, a tool page's way
  * @param {React.ReactNode} [props.children] - The caller's own fields
  * @param {React.ReactNode} [props.aside] - The caller's other way in, drawn beside the drop target
  * @returns {React.ReactNode} The zone
@@ -38,20 +40,29 @@ const UploadZone = ({
   uploadingText,
   onFile,
   accept = '',
+  multiple = false,
   file = null,
   error = '',
+  defaultOpen = false,
   children = null,
   aside = null,
 }) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [over, setOver] = useState(false);
   const dwell = useRef(null);
   const inputRef = useRef(null);
+  const targetRef = useRef(null);
   const bar = useRef(null);
   useCssVar(bar, '--progress-width', `${progress}%`);
 
   useEffect(() => () => clearTimeout(dwell.current), []);
+
+  useEffect(() => {
+    if (open && !defaultOpen) {
+      targetRef.current?.focus();
+    }
+  }, [open, defaultOpen]);
 
   const startDwell = () => {
     clearTimeout(dwell.current);
@@ -60,10 +71,9 @@ const UploadZone = ({
 
   const stopDwell = () => clearTimeout(dwell.current);
 
-  const pick = picked => {
-    if (picked) {
-      onFile(picked);
-    }
+  const pick = files => {
+    const picked = multiple ? [...files] : [files[0]];
+    picked.filter(Boolean).forEach(onFile);
   };
 
   if (!open) {
@@ -92,7 +102,7 @@ const UploadZone = ({
       onDrop={event => {
         event.preventDefault();
         setOver(false);
-        pick(event.dataTransfer.files[0]);
+        pick(event.dataTransfer.files);
       }}
     >
       <button
@@ -108,6 +118,7 @@ const UploadZone = ({
       {children}
       <div className="upload-zone-row">
         <button
+          ref={targetRef}
           type="button"
           className="upload-zone-target"
           onClick={() => inputRef.current?.click()}
@@ -128,9 +139,10 @@ const UploadZone = ({
         type="file"
         hidden
         accept={accept || undefined}
+        multiple={multiple}
         disabled={uploading}
         onChange={event => {
-          pick(event.target.files[0]);
+          pick(event.target.files);
           event.target.value = '';
         }}
       />
@@ -168,8 +180,10 @@ UploadZone.propTypes = {
   uploadingText: PropTypes.string.isRequired,
   onFile: PropTypes.func.isRequired,
   accept: PropTypes.string,
+  multiple: PropTypes.bool,
   file: PropTypes.shape({ size: PropTypes.number.isRequired }),
   error: PropTypes.string,
+  defaultOpen: PropTypes.bool,
   children: PropTypes.node,
   aside: PropTypes.node,
 };

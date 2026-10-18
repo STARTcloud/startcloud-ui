@@ -20,7 +20,8 @@ export const authorizationDetailShape = PropTypes.shape({
 /**
  * One scope row: the checkbox (a real input named `name` so a native form
  * carries it), the label and the description; a locked row is checked and
- * disabled with a hidden input so it still posts, and a read-only row draws
+ * disabled with a hidden input so it still posts, a disabled row is
+ * unchecked and disabled with no hidden input, and a read-only row draws
  * no control at all.
  */
 export const ScopeRow = ({
@@ -28,6 +29,7 @@ export const ScopeRow = ({
   checked,
   onToggle = null,
   locked = false,
+  disabled = false,
   readOnly = false,
   name = 'scope',
 }) => (
@@ -37,8 +39,8 @@ export const ScopeRow = ({
         type="checkbox"
         name={name}
         value={scope.id}
-        checked={checked}
-        disabled={locked}
+        checked={checked && !disabled}
+        disabled={locked || disabled}
         onChange={() => onToggle?.(scope.id)}
       />
     )}
@@ -55,6 +57,7 @@ ScopeRow.propTypes = {
   checked: PropTypes.bool.isRequired,
   onToggle: PropTypes.func,
   locked: PropTypes.bool,
+  disabled: PropTypes.bool,
   readOnly: PropTypes.bool,
   name: PropTypes.string,
 };
@@ -96,17 +99,20 @@ DetailRow.propTypes = {
 /**
  * The list of scope rows the consent and CIBA pages draw, and a later
  * connected-applications list draws read-only: `checked` holds the ids
- * on, `locked` the ids that cannot be turned off.
+ * on, `locked` the ids that cannot be turned off, `disabled` the ids that
+ * cannot be turned on; `id` names the list for a form summary's link.
  */
 const ScopeList = ({
   scopes,
   checked,
   onToggle = null,
   locked = [],
+  disabled = [],
   readOnly = false,
   name = 'scope',
+  id = undefined,
 }) => (
-  <div className="scope-list">
+  <div className="scope-list" id={id} tabIndex={id ? -1 : undefined}>
     {scopes.map(scope => (
       <ScopeRow
         key={scope.id}
@@ -114,6 +120,7 @@ const ScopeList = ({
         checked={checked.includes(scope.id)}
         onToggle={onToggle}
         locked={locked.includes(scope.id)}
+        disabled={disabled.includes(scope.id)}
         readOnly={readOnly}
         name={name}
       />
@@ -126,8 +133,10 @@ ScopeList.propTypes = {
   checked: PropTypes.arrayOf(PropTypes.string).isRequired,
   onToggle: PropTypes.func,
   locked: PropTypes.arrayOf(PropTypes.string),
+  disabled: PropTypes.arrayOf(PropTypes.string),
   readOnly: PropTypes.bool,
   name: PropTypes.string,
+  id: PropTypes.string,
 };
 
 export default ScopeList;

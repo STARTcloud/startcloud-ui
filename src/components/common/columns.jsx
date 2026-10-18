@@ -17,9 +17,23 @@ import { hasAny } from './SubTable';
 
 const NONE = 'N/A';
 
-const localeDate = value => (value ? new Date(value).toLocaleDateString() : '');
+/**
+ * A date value as the viewer's locale date, empty for none.
+ *
+ * @param {string|number|null|undefined} value - The instant
+ * @param {string} [language] - The locale, the browser's when absent
+ * @returns {string} The date text
+ */
+export const localeDate = (value, language = undefined) =>
+  value ? new Date(value).toLocaleDateString(language) : '';
 
-const timeOf = value => new Date(value || 0).getTime();
+/**
+ * The epoch milliseconds a date column sorts by, 0 for none.
+ *
+ * @param {string|number|null|undefined} value - The instant
+ * @returns {number} The epoch milliseconds
+ */
+export const timeOf = value => new Date(value || 0).getTime();
 
 /**
  * The `when` of the two access columns, Visibility and Status: drawn

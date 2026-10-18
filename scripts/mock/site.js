@@ -47,6 +47,8 @@ const SHARED_FEATURES = [
   'favorites',
   'notifications',
   'health',
+  'certs',
+  'certs-store',
 ];
 const SEARCH_FEATURES = ['search'];
 const RULES_FEATURES = ['rules'];

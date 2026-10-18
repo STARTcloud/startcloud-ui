@@ -144,7 +144,9 @@ const cachedOf = profile => {
  * except for a guest-only account, which the issuer refuses `403
  * guest_only`, so its choices stay the browser's. `signOut` and
  * `endSession` drop every storage key but the visitor's own, `mode`,
- * `theme`, `themes`, `motion` and `language`. `begin({ method, navigate })`
+ * `theme`, `themes`, `motion` and `language`, `endSession` only while a
+ * profile is cached and nothing while none is, so a visitor who never
+ * signed in is never told they were signed out. `begin({ method, navigate })`
  * with no method, `local` or `magic-link` moves in-router to `/login`,
  * while `oidc-<id>` stays a top-level navigation.
  *
@@ -190,6 +192,9 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
   const adoptResponse = () => undefined;
 
   const endSession = () => {
+    if (!current()) {
+      return;
+    }
     clear();
     dropStorage(storageKey);
     events.endSession();

@@ -5,6 +5,7 @@ import { createStore } from '../../../contexts/SearchContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useEventStream } from '../../../hooks/useEventStream';
 import { log } from '../../../lib/logger';
+import { authMethod } from '../../../utils/capabilities';
 import { fetchServers } from '../api/agents';
 import { ServersContext } from '../hooks/useServers';
 import { isServerRole, selfServer } from '../utils/hosts';
@@ -37,8 +38,10 @@ const answered = (epoch, patch) => current =>
 
 /**
  * The hosts feature's one context: the list of servers behind
- * `useServers`, read once on the server role and again on the stream's
- * fresh `ready`, `reset` and `servers-updated` and on `refresh`, the
+ * `useServers`, read once on the server role while a person is signed in
+ * or the host needs no sign-in, never for a signed-out visitor, and again
+ * on the stream's fresh `ready`, `reset` and `servers-updated` and on
+ * `refresh`, the
  * serving agent alone on an agent role, narrowed to the chosen
  * organization with every answered row kept as `held`; the store of the
  * feature's command list and whether the Controls menu is open; and
@@ -52,6 +55,7 @@ const answered = (epoch, patch) => current =>
 const ServersProvider = ({ signedIn, organization, person = '', children }) => {
   const status = useStatus();
   const server = isServerRole(status);
+  const open = signedIn || authMethod(status) === 'none';
   const [state, setState] = useState(() => emptyFor(signedIn, 0));
   const [commands] = useState(createStore);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,7 +67,7 @@ const ServersProvider = ({ signedIn, organization, person = '', children }) => {
 
   const read = useCallback(
     epoch => {
-      if (!server || flight.current === epoch) {
+      if (!server || !open || flight.current === epoch) {
         return;
       }
       flight.current = epoch;
@@ -79,7 +83,7 @@ const ServersProvider = ({ signedIn, organization, person = '', children }) => {
           }
         });
     },
-    [server]
+    [server, open]
   );
 
   useEventStream('ready', (data, resumed) => {

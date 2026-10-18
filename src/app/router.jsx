@@ -65,6 +65,19 @@ import {
   shortcuts as catalogShortcuts,
   sidebar as catalogSidebar,
 } from '../features/catalog';
+import {
+  ChainPage,
+  ComparePage,
+  ConvertPage,
+  DecodePage,
+  GeneratePage,
+  MatchPage,
+  RecordPage,
+  SharedPage,
+  SyncPage,
+  VaultPage,
+  sidebar as certsSidebar,
+} from '../features/certs';
 import { ErrorPage, hasServerFault } from '../features/errors';
 import {
   DashboardPage,
@@ -495,6 +508,16 @@ const PAGE_TITLES = {
   '/setup/server': 'auth.serverSetup.serverSetupTitle',
   '/setup/zone': 'auth.zoneRegister.registerBtn',
   '/vm/:instance': 'vdi.vm.title',
+  '/certs': 'certs.sidebar.vault',
+  '/certs/shared': 'certs.sidebar.shared',
+  '/certs/sync': 'certs.sidebar.sync',
+  '/certs/convert': 'certs.sidebar.convert',
+  '/certs/decode': 'certs.sidebar.decode',
+  '/certs/match': 'certs.sidebar.match',
+  '/certs/compare': 'certs.sidebar.compare',
+  '/certs/chain': 'certs.sidebar.chain',
+  '/certs/generate': 'certs.sidebar.generate',
+  '/certs/:id': 'certs.record.title',
   '/hosts/:id': 'hosts.host.title',
   '/hosts/:id/machines': 'hosts.machines.pageTitle',
   '/hosts/:id/machines/:name': 'hosts.machine.title',
@@ -653,6 +676,10 @@ const CRUMB_PARENTS = {
     crumbs: ({ status, pageName, pageNoun, params, t }) =>
       fleetCrumbs({ status, t, pool: pageNoun, name: pageName || params.instance }),
   },
+  '/certs/:id': {
+    parent: '/certs',
+    name: ({ pageName, t }) => pageName || t('certs.record.title'),
+  },
   '/org-console': {
     parent: '/user/organizations',
     name: ({ activeOrganization }) => activeOrganization?.name || '',
@@ -784,8 +811,8 @@ const foldGroups = groups => groups.reduce(foldInto, []).map(oneHeading);
 
 /**
  * Every mounted feature's sidebar groups in the order catalog, hosts,
- * profile, identity (on a `cookie` host), vdi and admin, folded by key;
- * empty while the host does not list `sidebar`.
+ * profile, identity (on a `cookie` host), vdi, certs and admin, folded
+ * by key; empty while the host does not list `sidebar`.
  *
  * @param {Object} options - The shell's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -805,6 +832,7 @@ export const sidebarEntries = ({ status, account, collections }) => {
     ...profileSidebar(status, account, issuerIntegrations, profileAccountFor({ status, account })),
     ...(cookie ? identitySidebar(status, account, admin) : []),
     ...vdiSidebar(status, account),
+    ...certsSidebar(status, account),
     ...adminSidebar(status, account, admin),
   ]);
 };
@@ -1104,6 +1132,15 @@ const VmRoute = ({ mode, user }) => {
 VmRoute.propTypes = {
   mode: PropTypes.string.isRequired,
   user: PropTypes.object,
+};
+
+const CertRecordRoute = ({ context }) => {
+  const { id } = useParams();
+  return <RecordPage id={id} context={context} />;
+};
+
+CertRecordRoute.propTypes = {
+  context: pageContextShape.isRequired,
 };
 
 const HostRoute = ({ context }) => {
@@ -1651,6 +1688,48 @@ const hostsRoutes = ({ hosts, signedOut, context, organizations }) => {
 };
 
 /**
+ * The certs feature's routes, each open while the host advertises
+ * `certs`, the Shared and Sync pages open while it advertises
+ * `certs-store` as well and drawing the sign-in placard while a needed
+ * session is not held.
+ *
+ * @param {Object} options - The router's side
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {boolean} options.signedOut - Whether the host needs a session and none is held
+ * @param {Object} options.context - The page context
+ * @returns {Array} The routes
+ */
+const certsRoutes = ({ status, signedOut, context }) => {
+  const certs = hasFeatureStrict(status, 'certs');
+  const store = hasFeatureStrict(status, 'certs-store');
+  const storePage = (path, element) =>
+    signedOut ? <SignInStub titleKey={titleOf(path)} signIn={context.signIn} /> : element;
+  const storeRow = (path, element) => ({
+    path,
+    open: certs && store,
+    element: storePage(path, element),
+    token: certs ? 'certs-store' : 'certs',
+  });
+  return gatedRoutes(
+    [
+      { path: '/certs', element: <VaultPage context={context} /> },
+      { path: '/certs/convert', element: <ConvertPage context={context} /> },
+      { path: '/certs/decode', element: <DecodePage context={context} /> },
+      { path: '/certs/match', element: <MatchPage context={context} /> },
+      { path: '/certs/compare', element: <ComparePage context={context} /> },
+      { path: '/certs/chain', element: <ChainPage context={context} /> },
+      { path: '/certs/generate', element: <GeneratePage context={context} /> },
+      { path: '/certs/:id', element: <CertRecordRoute context={context} /> },
+    ]
+      .map(({ path, element }) => ({ path, open: certs, element, token: 'certs' }))
+      .concat([
+        storeRow('/certs/shared', <SharedPage context={context} />),
+        storeRow('/certs/sync', <SyncPage context={context} />),
+      ])
+  );
+};
+
+/**
  * The setup page, the zone register and the server setup routes.
  *
  * @param {Object} options - The router's side
@@ -1858,6 +1937,7 @@ const AppRoutes = ({
         }
       />
       {hostsRoutes({ hosts, signedOut, context, organizations })}
+      {certsRoutes({ status, signedOut, context })}
       <Route path="/about" element={<AboutRoute oidc={oidc} clientId={account.clientId} />} />
       <Route
         path="/search"

@@ -85,8 +85,8 @@ the same pages.
 - **One visibility rule per app.** What a member sees is decided once:
   BoxVault by its read routes, discover and per-organization lists alike,
   which widen by the caller's token to the organizations the token's user
-  belongs to and show an unpublished item, of any kind, only to the user
-  who uploaded it, never to other members; the catalog by
+  belongs to and show an unpublished item, of any kind, to the person who
+  shared it or an owner or admin of its organization; the catalog by
   its worker, which folds the private provisioners of the person's
   organizations into the one catalog read while the request carries
   their token, each private entry carrying its organization. No page or
@@ -95,8 +95,8 @@ the same pages.
   four lines: public and published, anyone can access, period; published
   and private, anyone in the same organization can access; published,
   private and marked `guest_access`, the organization's guests can access
-  it too; unpublished, no one but the user who uploaded it can access,
-  not even people in their organization. A guest of an organization, the
+  it too; unpublished, the person who shared it or an owner or admin of
+  its organization can access it. A guest of an organization, the
   read-only fourth role of the
   [Universal Identity Contract](universal-identity/), sees the public
   items, the published private items its organization marked for guests

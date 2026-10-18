@@ -1,0 +1,283 @@
+import PropTypes from 'prop-types';
+import { useId, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FaStamp } from 'react-icons/fa6';
+
+import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import OptionList, { Option } from '../../../../components/common/OptionList';
+import SectionCard from '../../../../components/common/SectionCard';
+import { useNotify } from '../../../../contexts/NoticeContext';
+import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
+import { useEngine } from '../../hooks/useEngine';
+import { useVault } from '../../hooks/useVault';
+import { firstOf } from '../../utils/components';
+import { downloadText } from '../../utils/download';
+import { CERT_COMPONENT_KINDS, nameOf, relationships } from '../../utils/records';
+import { SIGN_LABELS, SIGN_SCHEMA } from '../../utils/schemas';
+import { SelectField, SwitchField } from '../fields';
+import InputZone from '../InputZone';
+
+import { issuedFileName, issuedRecord } from './CertificateTab';
+import IssueFields, { EMPTY_ISSUE, issueOf } from './IssueFields';
+import Outcome from './Outcome';
+
+const PEM = 'application/x-pem-file';
+
+const MODES = ['vault', 'paste'];
+
+const EMPTY_DRAFT = {
+  request_mode: '',
+  request_id: '',
+  request: null,
+  authority_mode: '',
+  authority_id: '',
+  authority_cert: null,
+  authority_key: null,
+  copy_extensions: true,
+  ...EMPTY_ISSUE,
+};
+
+const modeOf = (chosen, options) => chosen || (options.length > 0 ? 'vault' : 'paste');
+
+const withModes = (draft, requests, authorities) => ({
+  ...draft,
+  request_mode: modeOf(draft.request_mode, requests),
+  authority_mode: modeOf(draft.authority_mode, authorities),
+});
+
+const Picker = ({ prefix, options, draft, rules, onChange, pasteLabel, onDetected, children }) => {
+  const { t } = useTranslation();
+  const name = useId();
+  const mode = `${prefix}_mode`;
+  const id = `${prefix}_id`;
+  return (
+    <fieldset className="mb-3">
+      <legend className="form-label fs-6">{rules.labelFor(mode)}</legend>
+      <OptionList label={rules.labelFor(mode)}>
+        {MODES.map(entry => (
+          <Option
+            key={entry}
+            name={name}
+            value={entry}
+            checked={draft[mode] === entry}
+            disabled={entry === 'vault' && options.length === 0}
+            onChange={value => onChange(mode, value)}
+            label={t(`certs.generate.sourceMode.${entry}`)}
+          />
+        ))}
+      </OptionList>
+      <div className="mt-3">
+        {draft[mode] === 'vault' ? (
+          <SelectField
+            name={id}
+            options={options.map(option => ({ value: option.id, label: nameOf(option) }))}
+            blank={t('certs.generate.pickOne')}
+            draft={draft}
+            rules={rules}
+            onChange={onChange}
+          />
+        ) : (
+          <>
+            <p className="form-label">{pasteLabel}</p>
+            <InputZone idPrefix={`${prefix}-zone`} onDetected={onDetected} />
+            {children}
+          </>
+        )}
+      </div>
+    </fieldset>
+  );
+};
+
+Picker.propTypes = {
+  prefix: PropTypes.oneOf(['request', 'authority']).isRequired,
+  options: PropTypes.array.isRequired,
+  draft: PropTypes.object.isRequired,
+  rules: formRulesShape.isRequired,
+  onChange: PropTypes.func.isRequired,
+  pasteLabel: PropTypes.string.isRequired,
+  onDetected: PropTypes.func.isRequired,
+  children: PropTypes.node,
+};
+
+const PastedLine = ({ rules, names }) => {
+  const { t } = useTranslation();
+  return (
+    <ul className="small text-body-secondary mb-0">
+      {names.map(name => (
+        <li key={name} className={rules.errors[name] ? 'text-danger' : ''}>
+          {rules.errors[name] || t('certs.generate.pastedRead', { label: rules.labelFor(name) })}
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+PastedLine.propTypes = {
+  rules: formRulesShape.isRequired,
+  names: PropTypes.arrayOf(PropTypes.string).isRequired,
+};
+
+const requestInput = (draft, requests) => {
+  if (draft.request_mode === 'vault') {
+    const record = requests.find(entry => entry.id === draft.request_id) || null;
+    return record ? { der_b64: record.public_der_b64, record } : null;
+  }
+  return draft.request ? { der_b64: draft.request.der_b64, record: null } : null;
+};
+
+const authorityInput = (draft, authorities, records) => {
+  if (draft.authority_mode === 'vault') {
+    const record = authorities.find(entry => entry.id === draft.authority_id) || null;
+    const key = record ? relationships(record, records).key : null;
+    return record && key?.private_der_b64
+      ? { cert_der_b64: record.public_der_b64, key_der_b64: key.private_der_b64, record, key }
+      : null;
+  }
+  return draft.authority_cert && draft.authority_key
+    ? {
+        cert_der_b64: draft.authority_cert.der_b64,
+        key_der_b64: draft.authority_key.der_b64,
+        record: null,
+        key: null,
+      }
+    : null;
+};
+
+/**
+ * The Sign request tab of the Generate page: the request from the vault
+ * or pasted, the vault card picked by default while the vault holds a
+ * request and the paste card otherwise, read from the vault's records
+ * as they stand, the authority the same way, from the vault, one whose key the vault
+ * holds, or pasted as a certificate and its key, each drop adding what
+ * it carried so the two may come from two files, the validity, the
+ * Authority switch and Copy extensions, Sign issuing the certificate
+ * through the engine once the rules say what is held and what is
+ * missing, busy while it runs, then Save to vault keeping it linked to
+ * the issuer, the request and the request's key, and Download handing
+ * the browser the PEM.
+ */
+const SignTab = ({ fold }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const vault = useVault();
+  const engine = useEngine();
+  const requests = vault.records.filter(record => record.kind === 'request');
+  const authorities = vault.records.filter(
+    record =>
+      record.kind === 'authority' && relationships(record, vault.records).key?.private_der_b64
+  );
+  const [draft, setDraft] = useState(EMPTY_DRAFT);
+  const [made, setMade] = useState(null);
+  const [saved, setSaved] = useState(false);
+  const values = withModes(draft, requests, authorities);
+  const rules = useFormRules({
+    schema: SIGN_SCHEMA,
+    values,
+    labels: SIGN_LABELS,
+    idPrefix: 'certs-sign',
+  });
+  const set = (name, value) => setDraft(current => ({ ...current, [name]: value }));
+
+  const onRequest = detected =>
+    set('request', firstOf(detected, ['csr']) || (detected ? draft.request : null));
+
+  const onAuthority = detected => {
+    if (!detected) {
+      setDraft(current => ({ ...current, authority_cert: null, authority_key: null }));
+      return;
+    }
+    const cert = firstOf(detected, CERT_COMPONENT_KINDS);
+    const key = firstOf(detected, ['key']);
+    setDraft(current => ({
+      ...current,
+      authority_cert: cert || current.authority_cert,
+      authority_key: key || current.authority_key,
+    }));
+  };
+
+  const sign = event => {
+    event.preventDefault();
+    if (!rules.validateAll()) {
+      return;
+    }
+    const csr = requestInput(values, requests);
+    const ca = authorityInput(values, authorities, vault.records);
+    engine.run(held => {
+      const issued = held.sign_csr({
+        csr_der_b64: csr.der_b64,
+        ca_cert_der_b64: ca.cert_der_b64,
+        ca_key_der_b64: ca.key_der_b64,
+        ...issueOf(values),
+        copy_extensions: values.copy_extensions,
+      });
+      setMade({ ...issued, csr, ca });
+      setSaved(false);
+    });
+  };
+
+  const save = () =>
+    vault
+      .add(
+        issuedRecord(made, {
+          issuer_id: made.ca.record?.id || null,
+          request_id: made.csr.record?.id || null,
+          key_id: made.csr.record?.links?.key_id || null,
+        })
+      )
+      .then(() => {
+        setSaved(true);
+        notify('success', t('certs.notice.saved'));
+      });
+
+  return (
+    <SectionCard title={t('certs.generate.signTitle')} folded={fold.folded} onFold={fold.onFold}>
+      <form onSubmit={sign} noValidate>
+        <FormErrorSummary errors={rules.summary} />
+        <Picker
+          prefix="request"
+          options={requests}
+          draft={values}
+          rules={rules}
+          onChange={set}
+          pasteLabel={t('certs.generate.pasteRequest')}
+          onDetected={onRequest}
+        >
+          <PastedLine rules={rules} names={['request']} />
+        </Picker>
+        <Picker
+          prefix="authority"
+          options={authorities}
+          draft={values}
+          rules={rules}
+          onChange={set}
+          pasteLabel={t('certs.generate.pasteAuthority')}
+          onDetected={onAuthority}
+        >
+          <PastedLine rules={rules} names={['authority_cert', 'authority_key']} />
+        </Picker>
+        <IssueFields draft={values} rules={rules} onChange={set} />
+        <SwitchField name="copy_extensions" draft={values} rules={rules} onChange={set} />
+        <button type="submit" className="btn btn-primary" disabled={engine.busy}>
+          <FaStamp className="me-1" aria-hidden="true" />
+          {t('certs.generate.sign')}
+        </button>
+      </form>
+      {made ? (
+        <Outcome
+          title={t('certs.generate.certificateMade')}
+          facts={made.facts}
+          pem={made.pem}
+          saved={saved}
+          onSave={save}
+          onDownload={() => downloadText(made.pem, PEM, issuedFileName(made))}
+        />
+      ) : null}
+    </SectionCard>
+  );
+};
+
+SignTab.propTypes = {
+  fold: PropTypes.object.isRequired,
+};
+
+export default SignTab;

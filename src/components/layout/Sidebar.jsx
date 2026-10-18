@@ -241,6 +241,7 @@ const nodeShape = PropTypes.shape({
   revision: PropTypes.number,
   children: PropTypes.func,
   matches: PropTypes.func,
+  disabled: PropTypes.bool,
 });
 
 const nodeOpen = ({ node, tree, kids, current }) => {
@@ -331,6 +332,7 @@ const TreeNode = ({ node, inset, tree, current }) => {
         className={active ? 'sidebar-row active' : 'sidebar-row'}
         title={node.label}
         aria-expanded={branch ? open : undefined}
+        disabled={Boolean(node.disabled)}
         data-sidebar-row
         data-node={node.key}
         data-to={node.to}
@@ -523,7 +525,8 @@ const sizeShape = PropTypes.shape({
  * `revision`, the number a feature raises when the data behind the
  * children changed, moved since they were asked for, a node without `to` folding on click and never
  * navigating, its children loaded on mount because only they say
- * whether the current route lies under it, a status dot for `up` and `idle`, the right-click
+ * whether the current route lies under it, a `disabled` node drawn as a
+ * disabled row that neither folds nor navigates, a status dot for `up` and `idle`, the right-click
  * rows from `menu(node)` drawn by `ContextMenu`, the one presenter the
  * footer's pane shares, titled by the node's label, no menu opening for
  * a node without rows, the selection driven by the route, one row alone

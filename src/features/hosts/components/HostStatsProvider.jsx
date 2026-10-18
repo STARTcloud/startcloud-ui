@@ -39,7 +39,10 @@ const staled = current => ({
  * an action or a person's Refresh renews what the page, the Controls
  * menu and the tree draw; every answer raises the host's `revision` by
  * one, the word the tree hands the sidebar so its machines are asked for
- * again from the copy. Between reads the `hosts` topic's
+ * again from the copy. `load` answers a caller that is no component the
+ * copy held while it is fresh and the one request otherwise, and `ask` a
+ * caller that draws the same way, so a caller that mounts as an answer
+ * lands asks for nothing twice. Between reads the `hosts` topic's
  * `stats-updated` event is the copy: the stats it carries replace the
  * host's held ones, so a machine that started or stopped reaches every
  * caller by push. When the event stream opens fresh or answers
@@ -82,6 +85,7 @@ const HostStatsProvider = ({ signedIn, organization, children }) => {
       if (flying) {
         return flying;
       }
+      copies.current.delete(key);
       const flight = fetchStats(status, id)
         .then(stats => {
           copies.current.set(key, stats);
@@ -99,6 +103,14 @@ const HostStatsProvider = ({ signedIn, organization, children }) => {
       return flight;
     },
     [status]
+  );
+
+  const ask = useCallback(
+    (epoch, id) =>
+      copies.current?.has(keyOf(epoch, id))
+        ? Promise.resolve(copies.current.get(keyOf(epoch, id)))
+        : read(epoch, id),
+    [read]
   );
 
   const load = useCallback(
@@ -137,11 +149,12 @@ const HostStatsProvider = ({ signedIn, organization, children }) => {
       epoch: state.epoch,
       hosts: state.hosts,
       read,
+      ask,
       load,
       organization,
       turns: choice.turns,
     }),
-    [state, read, load, organization, choice.turns]
+    [state, read, ask, load, organization, choice.turns]
   );
 
   return <HostStatsContext.Provider value={value}>{children}</HostStatsContext.Provider>;

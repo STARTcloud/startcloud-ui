@@ -93,6 +93,9 @@ export const createBackendSession = ({ baseUrl, events, storageKey = 'user' }) =
   };
 
   const endSession = () => {
+    if (!current()) {
+      return;
+    }
     clear();
     events.endSession();
   };

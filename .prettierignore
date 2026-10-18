@@ -5,3 +5,4 @@ CHANGELOG.md
 playwright-report/
 test-results/
 coverage/
+vendor/cipher-wasm/

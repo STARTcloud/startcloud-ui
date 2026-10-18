@@ -13,6 +13,7 @@ import { useStatus } from '../contexts/StatusContext';
 import { UnreadProvider } from '../contexts/UnreadContext';
 import { hasAbout } from '../features/about';
 import { adminConfig } from '../features/admin';
+import { VaultProvider } from '../features/certs';
 import {
   RebuildItem,
   resetCatalogCache,
@@ -132,6 +133,18 @@ const notificationsFor = ({ status, cookie, claims, user, memberships, notificat
  */
 const menuFavoritesFor = current =>
   current.oidc || current.issuerUrl ? menuFavorites() : Promise.resolve([]);
+
+/**
+ * The organization the vault's rows are shared with: the active
+ * membership's route name, the primary membership's under All
+ * organizations, empty while the person holds none.
+ *
+ * @param {Array<Object>} memberships - The session's memberships
+ * @param {string} activeOrgUuid - The active organization's uuid, empty for all
+ * @returns {string} The organization's route name
+ */
+const vaultOrganizationOf = (memberships, activeOrgUuid) =>
+  routeNameOf(memberships, activeOrgUuid) || memberships.find(org => org.primary)?.name || '';
 
 const ownApiRows = status =>
   status.links?.api ? [{ key: 'api', labelKey: 'navbar.api', href: status.links.api }] : [];
@@ -325,45 +338,52 @@ const App = ({ getSupportedLanguages }) => {
         organization={orgFilter ? activeOrgUuid : ''}
         person={String(user?.username || user?.name || '')}
       >
-        <SearchProvider collections={collections} sidebar={sidebar} kinds={kinds}>
-          <CrumbProvider>
-            {controlCommands}
-            <AppShell
-              account={account}
-              avatarUrl={avatarUrl}
-              mode={mode}
-              resolvedMode={resolved}
-              toggleMode={toggleMode}
-              setMode={setMode}
-              onSignOut={handleSignOut}
-              getSupportedLanguages={getSupportedLanguages}
-              collections={collections}
-              organizations={organizations}
-              ticketUrl={ticket}
-              notifications={inbox}
-              push={pushAdapter}
-              sidebar={sidebar}
-              actionMenu={actionMenu}
-              footerPane={footerPane}
-              routeTitleKey={routeTitleKey}
-              routeCrumbParent={routeCrumbParent}
-              shortcuts={shortcuts}
-              {...flags}
-            >
-              <AppRoutes
+        <VaultProvider
+          signedIn={Boolean(user)}
+          user={user}
+          organization={vaultOrganizationOf(memberships, activeOrgUuid)}
+          organizations={memberships}
+        >
+          <SearchProvider collections={collections} sidebar={sidebar} kinds={kinds}>
+            <CrumbProvider>
+              {controlCommands}
+              <AppShell
                 account={account}
+                avatarUrl={avatarUrl}
+                mode={mode}
+                resolvedMode={resolved}
+                toggleMode={toggleMode}
+                setMode={setMode}
+                onSignOut={handleSignOut}
+                getSupportedLanguages={getSupportedLanguages}
                 collections={collections}
-                context={context}
-                mode={resolved}
-                setupComplete={Boolean(setupComplete)}
-                globalAdmin={globalAdmin}
-                afterSignIn={afterSignIn}
-                notifications={inbox}
+                organizations={organizations}
                 ticketUrl={ticket}
-              />
-            </AppShell>
-          </CrumbProvider>
-        </SearchProvider>
+                notifications={inbox}
+                push={pushAdapter}
+                sidebar={sidebar}
+                actionMenu={actionMenu}
+                footerPane={footerPane}
+                routeTitleKey={routeTitleKey}
+                routeCrumbParent={routeCrumbParent}
+                shortcuts={shortcuts}
+                {...flags}
+              >
+                <AppRoutes
+                  account={account}
+                  collections={collections}
+                  context={context}
+                  mode={resolved}
+                  setupComplete={Boolean(setupComplete)}
+                  globalAdmin={globalAdmin}
+                  afterSignIn={afterSignIn}
+                  notifications={inbox}
+                  ticketUrl={ticket}
+                />
+              </AppShell>
+            </CrumbProvider>
+          </SearchProvider>
+        </VaultProvider>
       </ServersProvider>
     </UnreadProvider>
   );
