@@ -1,0 +1,49 @@
+{
+  "id": "row-root",
+  "organization": "acme",
+  "kind": "authority",
+  "name": "Fixture Root CA",
+  "subject": "C=US, O=Fixture, CN=Fixture Root CA",
+  "not_after": "2036-10-14T11:32:30Z",
+  "published": false,
+  "is_public": true,
+  "guest_access": false,
+  "created_by": "system",
+  "updated_at": "2026-10-11T10:00:00.000Z",
+  "record": {
+    "id": "rec-root",
+    "kind": "authority",
+    "name": "Fixture Root CA",
+    "tags": [],
+    "notes": "",
+    "created_at": "2026-10-10T09:00:00.000Z",
+    "updated_at": "2026-10-11T10:00:00.000Z",
+    "facts": null,
+    "links": {
+      "key_id": null,
+      "issuer_id": null,
+      "request_id": null,
+      "chain_ids": []
+    },
+    "history": [
+      {
+        "version": 1,
+        "der_b64": "MIIFYzCCA0ugAwIBAgIUQPNET3NhkSo9gbe7NdrPKaQ2b4wwDQYJKoZIhvcNAQELBQAwOTELMAkGA1UEBhMCVVMxEDAOBgNVBAoMB0ZpeHR1cmUxGDAWBgNVBAMMD0ZpeHR1cmUgUm9vdCBDQTAeFw0yNjEwMTcxMTMyMzBaFw0zNjEwMTQxMTMyMzBaMDkxCzAJBgNVBAYTAlVTMRAwDgYDVQQKDAdGaXh0dXJlMRgwFgYDVQQDDA9GaXh0dXJlIFJvb3QgQ0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDFSjo1SzM4TNau23CO1Fc5v4jpy/RLCzPyqlfiSq/BwaqG1n+GE/0ADGPqSd6OSX6Y0D/cbYdVymWwZLyO5d6s2KcQK2rzlg29Q3RGj73nD8ozqUAq+MVZWv4Xb1uyWeUbac8gKcn4T2YaipFwjIVxKjrCG7T8Lfxg2FunKlXTzP5EEFTx/U5SIddL4cWcMV8l3ptKpNJbo6WpYwcTF33bWE7nJEM81b5A6Op0/U5LFttC6iMbBbdOjG1r9vsoxevjEcuZ/CQ6GPs755DlXSiLyIyCYiv4fLr1PXSLxemL8Dgva8xAmtlvZMvvBAoZazxRiIUmCcnlxY0fJA79TXnDI00w51VEZzSP0uHQsvfm4Hjg2QEz1BznCcjJ31QaRvxe0y/PyM8Jzqz52NOOAhMJK+Jf9e3Fw2gsZPGi8cpJ6eu9+byrq9QiJk8Fpi7iYmCHSp/IX7LeOvtUPSuLBC5oqoM3is/h9JRSvk043xAImr759bklpku96llqE2pwRGAvCboTS0TIBnfZUOFDvXVDUfybhvi0s2r+Kpu3/WHFVixG5LBAal3HjqhFdTaqx6KrGy33i628rh8/52INv36+DmyZ/FCI1DC0Zd26xPb5AwoA23JM4Xh7SMX6ewFsN893osLxPHHRCdtpqCb/7O1v8AhERPNKXHDV/gtGX9+uLwIDAQABo2MwYTAdBgNVHQ4EFgQUCeA8yG2Ttlk1jnFpJ+4VpvAdexkwHwYDVR0jBBgwFoAUCeA8yG2Ttlk1jnFpJ+4VpvAdexkwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYwDQYJKoZIhvcNAQELBQADggIBAMD0v/IWAKBJfVM1vCF/3l+CUYkYHa+U8WNYY69mTjChmS4hYgPebdzv2Brzghzrev2gJcksO64pPpw2Ossn1LCH76SVFA6i7O11gCxpMYgwSD9ky83te5Ngnzh1RCIqVvlFSOMAU7kj2hlL4HnJL+deA6i5r+YYke2Y4Jtuo/zmiupdKpsFomn2vfR3NXJxY3nCtXNg6n8DGbUrpQS5mRJuZJSbmUY61Bo98kMIB8UDxAyXIMy2vm83mHO3tAccrwdou75VRWCsKxOwDgdCtzgy55soEIXPwPwZ+MlpKCK60Nik3Ok0Guvhlz3b4vgo3IVInk+HKnGCWB8fMcvK23SLxrfuc3tnC18AEyVIT58vDaYyl2edaaltN/GxfTI5LLHuB4/jxM/mUBLa3mf+/wwgj03KjyBjartxpRHngW7KzvyF/hSzGarliS9kArRnK8hGf2Hvk+3O0i5IktKjJg4ptiejDL+eCn9BbWyn5x8iKDtKVHE+ZtS6/VREhM/4E3tjAtim3RS7VqLBPIHUktp5Hpd0iOpbXptWuLz2GcfAUWeKIbAX/rr9ajK2QnSa7zaWobnPy2750Z9v0s5+1ToY8U58ISFubL2AZJaNRfRM4ZRrUc2hgbhsd73BMWoDoFX97luVtE3xyevK40FBJ4XtsRmmdKXnFDI/AFe3BQuE",
+        "not_before": "2026-10-10T09:00:00.000Z",
+        "not_after": "2036-10-14T11:32:30Z",
+        "current": true
+      }
+    ],
+    "public_der_b64": "MIIFYzCCA0ugAwIBAgIUQPNET3NhkSo9gbe7NdrPKaQ2b4wwDQYJKoZIhvcNAQELBQAwOTELMAkGA1UEBhMCVVMxEDAOBgNVBAoMB0ZpeHR1cmUxGDAWBgNVBAMMD0ZpeHR1cmUgUm9vdCBDQTAeFw0yNjEwMTcxMTMyMzBaFw0zNjEwMTQxMTMyMzBaMDkxCzAJBgNVBAYTAlVTMRAwDgYDVQQKDAdGaXh0dXJlMRgwFgYDVQQDDA9GaXh0dXJlIFJvb3QgQ0EwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDFSjo1SzM4TNau23CO1Fc5v4jpy/RLCzPyqlfiSq/BwaqG1n+GE/0ADGPqSd6OSX6Y0D/cbYdVymWwZLyO5d6s2KcQK2rzlg29Q3RGj73nD8ozqUAq+MVZWv4Xb1uyWeUbac8gKcn4T2YaipFwjIVxKjrCG7T8Lfxg2FunKlXTzP5EEFTx/U5SIddL4cWcMV8l3ptKpNJbo6WpYwcTF33bWE7nJEM81b5A6Op0/U5LFttC6iMbBbdOjG1r9vsoxevjEcuZ/CQ6GPs755DlXSiLyIyCYiv4fLr1PXSLxemL8Dgva8xAmtlvZMvvBAoZazxRiIUmCcnlxY0fJA79TXnDI00w51VEZzSP0uHQsvfm4Hjg2QEz1BznCcjJ31QaRvxe0y/PyM8Jzqz52NOOAhMJK+Jf9e3Fw2gsZPGi8cpJ6eu9+byrq9QiJk8Fpi7iYmCHSp/IX7LeOvtUPSuLBC5oqoM3is/h9JRSvk043xAImr759bklpku96llqE2pwRGAvCboTS0TIBnfZUOFDvXVDUfybhvi0s2r+Kpu3/WHFVixG5LBAal3HjqhFdTaqx6KrGy33i628rh8/52INv36+DmyZ/FCI1DC0Zd26xPb5AwoA23JM4Xh7SMX6ewFsN893osLxPHHRCdtpqCb/7O1v8AhERPNKXHDV/gtGX9+uLwIDAQABo2MwYTAdBgNVHQ4EFgQUCeA8yG2Ttlk1jnFpJ+4VpvAdexkwHwYDVR0jBBgwFoAUCeA8yG2Ttlk1jnFpJ+4VpvAdexkwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYwDQYJKoZIhvcNAQELBQADggIBAMD0v/IWAKBJfVM1vCF/3l+CUYkYHa+U8WNYY69mTjChmS4hYgPebdzv2Brzghzrev2gJcksO64pPpw2Ossn1LCH76SVFA6i7O11gCxpMYgwSD9ky83te5Ngnzh1RCIqVvlFSOMAU7kj2hlL4HnJL+deA6i5r+YYke2Y4Jtuo/zmiupdKpsFomn2vfR3NXJxY3nCtXNg6n8DGbUrpQS5mRJuZJSbmUY61Bo98kMIB8UDxAyXIMy2vm83mHO3tAccrwdou75VRWCsKxOwDgdCtzgy55soEIXPwPwZ+MlpKCK60Nik3Ok0Guvhlz3b4vgo3IVInk+HKnGCWB8fMcvK23SLxrfuc3tnC18AEyVIT58vDaYyl2edaaltN/GxfTI5LLHuB4/jxM/mUBLa3mf+/wwgj03KjyBjartxpRHngW7KzvyF/hSzGarliS9kArRnK8hGf2Hvk+3O0i5IktKjJg4ptiejDL+eCn9BbWyn5x8iKDtKVHE+ZtS6/VREhM/4E3tjAtim3RS7VqLBPIHUktp5Hpd0iOpbXptWuLz2GcfAUWeKIbAX/rr9ajK2QnSa7zaWobnPy2750Z9v0s5+1ToY8U58ISFubL2AZJaNRfRM4ZRrUc2hgbhsd73BMWoDoFX97luVtE3xyevK40FBJ4XtsRmmdKXnFDI/AFe3BQuE",
+    "private_der_b64": null,
+    "template": null,
+    "origin": "shared",
+    "remote_id": "row-root",
+    "organization": "acme",
+    "created_by": "system",
+    "synced_at": null,
+    "published": false,
+    "is_public": true,
+    "guest_access": false
+  }
+}

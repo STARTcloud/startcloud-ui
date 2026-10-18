@@ -23,8 +23,12 @@ const encode = text => new TextEncoder().encode(text);
 
 /**
  * The one way a certs page takes material in: the shared upload zone,
- * open from the first draw, for dropped or picked files, each read on
- * its own, a textarea for pasted PEM, OpenSSH, PPK or JWK text read on
+ * open from the first draw, for dropped or picked files, the files of
+ * one drop read one after another in the order dropped, the first
+ * naming the page's downloads and the last named under the zone as the
+ * file Unlock reads again, a file the browser cannot open refused as a
+ * read the engine refuses is and the next file still read, a textarea for pasted
+ * PEM, OpenSSH, PPK or JWK text read on
  * Read, and a password drawn once the engine says the material is
  * locked, Unlock, or Enter in the password, reading it again with the
  * password; the detection, `{ format, encrypted, needs_password,
@@ -43,6 +47,7 @@ const InputZone = ({ onDetected, idPrefix = 'certs-input' }) => {
   const [busy, setBusy] = useState(false);
   const [reads, setReads] = useState(0);
   const readButton = useRef(null);
+  const queue = useRef(Promise.resolve());
   const rules = useFormRules({
     schema: INPUT_SCHEMA,
     values: draft,
@@ -58,11 +63,13 @@ const InputZone = ({ onDetected, idPrefix = 'certs-input' }) => {
 
   const set = (name, value) => setDraft(current => ({ ...current, [name]: value }));
 
-  const read = async (bytes, name, secret) => {
+  const read = async (load, name, secret) => {
     setBusy(true);
     setError('');
+    let bytes = null;
     try {
       const engine = await loadCerts();
+      bytes = await load();
       const detected = engine.detect(bytes, name, secret);
       setSource({ name, bytes });
       setLocked(Boolean(detected.needs_password));
@@ -80,13 +87,17 @@ const InputZone = ({ onDetected, idPrefix = 'certs-input' }) => {
 
   const readHeld = () =>
     draft.text.trim()
-      ? read(encode(draft.text), source.name || PASTED, draft.password)
-      : read(source.bytes, source.name, draft.password);
+      ? read(() => encode(draft.text), source.name || PASTED, draft.password)
+      : read(() => source.bytes, source.name, draft.password);
 
   const onFile = file => {
-    file.arrayBuffer().then(buffer => {
+    queue.current = queue.current.then(() => {
       set('text', '');
-      read(new Uint8Array(buffer), file.name, draft.password);
+      return read(
+        () => file.arrayBuffer().then(buffer => new Uint8Array(buffer)),
+        file.name,
+        draft.password
+      );
     });
   };
 

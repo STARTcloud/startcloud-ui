@@ -1,0 +1,275 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+import { createBdd } from 'playwright-bdd';
+
+import { expect, test } from './support/fixtures.js';
+
+const { Given, When, Then } = createBdd(test);
+
+const MATERIAL = JSON.parse(
+  fs.readFileSync(path.resolve('tests/fixtures/certs/material.json'), 'utf8')
+);
+
+const MIME = {
+  pem: 'application/x-pem-file',
+  key: 'application/x-pem-file',
+  pfx: 'application/x-pkcs12',
+  json: 'application/json',
+};
+
+const BINARY = ['pfx'];
+
+const WASM = /\.wasm(?:\?|$)/u;
+
+const VAULT_HEADING = '#certs-vault-heading';
+
+const downloads = new WeakMap();
+
+const engineAnswers = new WeakMap();
+
+const listOf = (map, page) => {
+  if (!map.has(page)) {
+    map.set(page, []);
+  }
+  return map.get(page);
+};
+
+const extensionOf = name => name.slice(name.lastIndexOf('.') + 1);
+
+const textOf = held => (typeof held === 'string' ? held : JSON.stringify(held));
+
+const fileOf = name => {
+  const extension = extensionOf(name);
+  const held = MATERIAL[name];
+  return {
+    name,
+    mimeType: MIME[extension],
+    buffer: BINARY.includes(extension)
+      ? Buffer.from(held, 'base64')
+      : Buffer.from(textOf(held), 'utf8'),
+  };
+};
+
+const certsPage = page => page.locator('[data-page^="certs-"]');
+
+const actionOf = (page, action) =>
+  certsPage(page).locator(`[data-action="${action}"]`).filter({ visible: true });
+
+const zoneOf = (page, panel) => page.locator(`[data-panel="${panel}"] input[type="file"]`);
+
+const vaultRows = page => page.locator('[data-page="certs-vault"] tbody tr');
+
+const vaultRow = (page, text) => vaultRows(page).filter({ hasText: text }).first();
+
+const issuedRow = (page, text, issuer) =>
+  vaultRows(page)
+    .filter({ hasText: text })
+    .filter({ has: page.locator('td.col-issuer', { hasText: issuer }) });
+
+const sharedTable = page => page.locator('[data-page="certs-shared"]');
+
+const sharedRows = page =>
+  sharedTable(page).locator('tbody tr:not(.table-group-row):not(.empty-row)');
+
+const sharedRow = (page, text) => sharedRows(page).filter({ hasText: text }).first();
+
+const openMenu = page => page.locator('.dropdown-menu.show');
+
+const menuToggle = (page, menu) =>
+  page.getByRole('button', { name: menu, exact: true }).and(page.locator('.dropdown-toggle'));
+
+const decodeOptions = page => page.locator('[id="certs-decode-component"] option');
+
+const relatedLinks = page => page.locator('[data-panel="record-related"] a');
+
+const recordChain = page => page.locator('[data-panel="record-chain"]');
+
+const kindNode = (page, kind) => page.locator(`.sidebar-tree [data-node="kind:${kind}"]`);
+
+const componentRows = page => certsPage(page).locator('.scope-list .scope-row');
+
+const componentRow = (page, text) => componentRows(page).filter({ hasText: text });
+
+const outcomeOf = page =>
+  certsPage(page).locator('[data-panel="outcome"]').filter({ visible: true });
+
+const differences = page => page.locator('[data-panel="differences"] li');
+
+const chainRows = page => page.locator('[data-page="certs-chain"] [data-list="chain"] li');
+
+const duplicateIds = () => {
+  const seen = new Set();
+  return [...document.querySelectorAll('[id]')]
+    .map(node => node.id)
+    .filter(id => id && (seen.has(id) || !seen.add(id)));
+};
+
+Given('the browser records its downloads', ({ page }) => {
+  page.on('download', download => listOf(downloads, page).push(download.suggestedFilename()));
+});
+
+Given("the browser records the engine's answers", ({ page }) => {
+  page.on('response', response => {
+    if (WASM.test(response.url())) {
+      listOf(engineAnswers, page).push(response.headers()['content-type'] || '');
+    }
+  });
+});
+
+When('I drop {string} into the input zone', async ({ page }, name) => {
+  await zoneOf(page, 'certs-input').setInputFiles(fileOf(name));
+});
+
+When('I drop {string} and {string} into the input zone', async ({ page }, first, second) => {
+  await zoneOf(page, 'certs-input').setInputFiles([fileOf(first), fileOf(second)]);
+});
+
+When('I drop {string} into the {string} zone', async ({ page }, name, panel) => {
+  await zoneOf(page, panel).setInputFiles(fileOf(name));
+});
+
+When('I drop {string} into the vault', async ({ page }, name) => {
+  await page.locator('[data-page="certs-vault"] input[type="file"]').setInputFiles(fileOf(name));
+});
+
+When('I paste the fixture {string} into the input zone', async ({ page }, name) => {
+  await page.locator('[data-panel="certs-input"] textarea').fill(textOf(MATERIAL[name]));
+});
+
+When("I press the certs page's {string} action", async ({ page }, action) => {
+  await actionOf(page, action).click();
+});
+
+When('I pick the generate tab {string}', async ({ page }, key) => {
+  await page.locator(`[data-page="certs-generate"] .nav-tabs [data-tab="${key}"]`).click();
+});
+
+When('I tick the vault row {string}', async ({ page }, name) => {
+  await page.getByRole('checkbox', { name, exact: true }).check();
+});
+
+When('I press {string} on the vault row {string}', async ({ page }, action, text) => {
+  await vaultRow(page, text).locator('.dropdown-toggle').click();
+  await openMenu(page).locator(`[data-action="${action}"]`).click();
+});
+
+When('I pull the shared row {string}', async ({ page }, text) => {
+  await sharedRow(page, text).locator('[data-action="pull"]').click();
+});
+
+When('I pick {string} in the {string} menu', async ({ page }, action, menu) => {
+  await menuToggle(page, menu).click();
+  await openMenu(page).locator(`[data-action="${action}"]`).click();
+});
+
+When('I follow the vault row {string} issued by {string}', async ({ page }, text, issuer) => {
+  await issuedRow(page, text, issuer).locator('td.col-name a').click();
+});
+
+Then('the {string} menu is drawn', async ({ page }, menu) => {
+  await expect(menuToggle(page, menu)).toBeVisible();
+});
+
+Then('the vault row {string} is issued by {string}', async ({ page }, text, issuer) => {
+  await expect(issuedRow(page, text, issuer)).toHaveCount(1);
+});
+
+Then("the record's related rows link {string}", async ({ page }, text) => {
+  await expect(relatedLinks(page).filter({ hasText: text })).toHaveCount(1);
+});
+
+Then("the record's chain names {string}", async ({ page }, text) => {
+  await expect(recordChain(page)).toContainText(text);
+});
+
+Then('the download is named {string}', async ({ page }, name) => {
+  await expect.poll(() => listOf(downloads, page).includes(name)).toBe(true);
+});
+
+Then('the engine was served as {string}', async ({ page }, type) => {
+  await expect.poll(() => listOf(engineAnswers, page).length).toBeGreaterThan(0);
+  expect(listOf(engineAnswers, page).every(answer => answer.startsWith(type))).toBe(true);
+});
+
+Then('the kind node {string} is held', async ({ page }, kind) => {
+  await expect(kindNode(page, kind)).toBeDisabled();
+});
+
+Then('the kind node {string} is offered', async ({ page }, kind) => {
+  await expect(kindNode(page, kind)).toBeEnabled();
+});
+
+Then('the vault heading holds the focus', async ({ page }) => {
+  await expect(page.locator(VAULT_HEADING)).toBeFocused();
+});
+
+Then('the vault row {string} holds the focus', async ({ page }, name) => {
+  await expect(vaultRow(page, name)).toBeFocused();
+});
+
+Then('the vault lists {int} rows', async ({ page }, count) => {
+  await expect(vaultRows(page)).toHaveCount(count);
+});
+
+Then('the shared table lists {int} rows', async ({ page }, count) => {
+  await expect(sharedRows(page)).toHaveCount(count);
+});
+
+Then('the shared table draws the {string} column', async ({ page }, column) => {
+  await expect(sharedTable(page).locator(`thead th.col-${column}`)).toHaveCount(1);
+});
+
+Then('the shared table draws no {string} column', async ({ page }, column) => {
+  await expect(sharedTable(page).locator('thead th.col-name')).toHaveCount(1);
+  await expect(sharedTable(page).locator(`thead th.col-${column}`)).toHaveCount(0);
+});
+
+Then('the shared row {string} offers {string}', async ({ page }, text, label) => {
+  await expect(sharedRow(page, text).locator('[data-action="pull"]')).toHaveText(label);
+});
+
+Then('the page carries no duplicate id', async ({ page }) => {
+  await expect(certsPage(page)).toBeVisible();
+  expect(await page.evaluate(duplicateIds)).toEqual([]);
+});
+
+Then('the decoded heading reads {string}', async ({ page }, text) => {
+  await expect(page.locator('[data-panel="decoded"] .section-heading')).toContainText(text);
+});
+
+Then('the decode select lists {int} components', async ({ page }, count) => {
+  await expect(decodeOptions(page)).toHaveCount(count);
+});
+
+Then('the decode select offers {string}', async ({ page }, text) => {
+  await expect(decodeOptions(page).filter({ hasText: text })).toHaveCount(1);
+});
+
+Then('the components list {int} rows', async ({ page }, count) => {
+  await expect(componentRows(page)).toHaveCount(count);
+});
+
+Then('the component {string} is ticked', async ({ page }, text) => {
+  await expect(componentRow(page, text).locator('input[type="checkbox"]')).toBeChecked();
+});
+
+Then("the certs page's {string} action is held", async ({ page }, action) => {
+  await expect(actionOf(page, action)).toBeDisabled();
+});
+
+Then('the outcome made reads {string}', async ({ page }, text) => {
+  await expect(outcomeOf(page)).toContainText(text);
+});
+
+Then('the differences list {string}', async ({ page }, field) => {
+  await expect(differences(page).filter({ hasText: field })).toHaveCount(1);
+});
+
+Then("the chain's first row names {string}", async ({ page }, text) => {
+  await expect(chainRows(page).first()).toContainText(text);
+});
+
+Then("the chain's first row is marked {string}", async ({ page }, badge) => {
+  await expect(chainRows(page).first().locator('.badge')).toHaveText(badge);
+});

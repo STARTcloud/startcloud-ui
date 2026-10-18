@@ -257,7 +257,7 @@ const SignTab = ({ fold }) => {
         </Picker>
         <IssueFields draft={values} rules={rules} onChange={set} />
         <SwitchField name="copy_extensions" draft={values} rules={rules} onChange={set} />
-        <button type="submit" className="btn btn-primary" disabled={engine.busy}>
+        <button type="submit" className="btn btn-primary" data-action="sign" disabled={engine.busy}>
           <FaStamp className="me-1" aria-hidden="true" />
           {t('certs.generate.sign')}
         </button>

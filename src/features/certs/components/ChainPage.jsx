@@ -30,6 +30,7 @@ const Loaded = ({ certs, onRemove }) => {
           <button
             type="button"
             className="btn btn-sm btn-outline-secondary"
+            data-action="remove"
             aria-label={t('certs.chain.remove')}
             title={t('certs.chain.remove')}
             onClick={() => onRemove(cert.id)}
@@ -118,6 +119,7 @@ const ChainPage = ({ context }) => {
       <button
         type="button"
         className="btn btn-sm btn-primary"
+        data-action="build-chain"
         disabled={engine.busy || certs.length === 0}
         onClick={build}
       >
@@ -127,6 +129,7 @@ const ChainPage = ({ context }) => {
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary"
+        data-action="download-fullchain"
         disabled={engine.busy || certs.length === 0}
         onClick={download}
       >
@@ -146,7 +149,9 @@ const ChainPage = ({ context }) => {
       {chain ? (
         <>
           <SectionHeading title={t('certs.chain.built')} />
-          <ChainView chain={chain} labels={certs.map(labelOf)} />
+          <div data-list="chain">
+            <ChainView chain={chain} labels={certs.map(labelOf)} />
+          </div>
         </>
       ) : null}
     </div>

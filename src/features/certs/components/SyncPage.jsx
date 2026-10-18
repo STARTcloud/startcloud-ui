@@ -86,7 +86,12 @@ const SyncForm = ({ held, records, brand, organization, onSave }) => {
           onToggle={() => setDraft(current => ({ ...current, [kind]: !current[kind] }))}
         />
       ))}
-      <button type="submit" className="btn btn-primary mt-2" disabled={!organization}>
+      <button
+        type="submit"
+        className="btn btn-primary mt-2"
+        data-action="save"
+        disabled={!organization}
+      >
         <FaRotate className="me-1" aria-hidden="true" />
         {t('certs.sync.save')}
       </button>

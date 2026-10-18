@@ -77,6 +77,7 @@ const TemplatePicker = ({ idPrefix, templates, onLoad, onSave, onDelete }) => {
                   <button
                     type="button"
                     className="btn btn-outline-danger"
+                    data-action="delete-template"
                     disabled={!held}
                     onClick={() => setDeleting(true)}
                   >
@@ -105,7 +106,12 @@ const TemplatePicker = ({ idPrefix, templates, onLoad, onSave, onDelete }) => {
                   onChange={event => setDraft({ name: event.target.value })}
                   onBlur={() => rules.onBlur('name')}
                 />
-                <button type="button" className="btn btn-outline-secondary" onClick={save}>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  data-action="save-template"
+                  onClick={save}
+                >
                   <FaFloppyDisk className="me-1" aria-hidden="true" />
                   {t('certs.generate.saveTemplate')}
                 </button>

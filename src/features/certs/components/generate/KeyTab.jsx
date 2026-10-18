@@ -92,7 +92,13 @@ const KeyTab = ({ fold }) => {
       <form onSubmit={event => event.preventDefault()} noValidate>
         <FormErrorSummary errors={rules.summary} />
         <KeyTypeSelect draft={draft} rules={rules} onChange={set} />
-        <button type="button" className="btn btn-primary" disabled={engine.busy} onClick={generate}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          data-action="generate-key"
+          disabled={engine.busy}
+          onClick={generate}
+        >
           <FaWandMagicSparkles className="me-1" aria-hidden="true" />
           {t('certs.generate.generateKey')}
         </button>

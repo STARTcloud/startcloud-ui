@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaDownload, FaRightLeft, FaVault } from 'react-icons/fa6';
 import { useSearchParams } from 'react-router-dom';
@@ -33,7 +33,7 @@ import InputZone from './InputZone';
 
 const FOLDS = ['input', 'components', 'output'];
 
-const EMPTY_DRAFT = { ...EMPTY_OUTPUT, picked: [] };
+const EMPTY_INPUT = { held: EMPTY_READ, picked: [] };
 
 const vaultComponents = (record, records) => {
   const related = relationships(record, records);
@@ -43,6 +43,25 @@ const vaultComponents = (record, records) => {
     source: nameOf(record),
     facts: component.kind === 'key' ? keyFacts : record.facts,
   }));
+};
+
+const inputOf = (record, records) => {
+  const components = vaultComponents(record, records);
+  return {
+    held: { components, name: nameOf(record), read: true },
+    picked: components.filter(pickable).map(idOf),
+  };
+};
+
+const afterRead = (answer, name) => input => {
+  if (!answer) {
+    return EMPTY_INPUT;
+  }
+  const held = withRead(input.held, answer, name);
+  const added = held.components
+    .filter(component => pickable(component) && !input.held.components.includes(component))
+    .map(idOf);
+  return { held, picked: [...new Set([...input.picked, ...added])] };
 };
 
 const scopesOf = (components, t, language) =>
@@ -92,7 +111,7 @@ const Downloads = ({ chosen, busy, onConvert, onSave }) => {
   const hasKey = chosen.some(component => component.kind === 'key');
   return (
     <div className="d-flex flex-wrap gap-2">
-      <button type="submit" className="btn btn-primary" disabled={busy}>
+      <button type="submit" className="btn btn-primary" data-action="convert" disabled={busy}>
         <FaRightLeft className="me-1" aria-hidden="true" />
         {t('certs.convert.convert')}
       </button>
@@ -101,6 +120,7 @@ const Downloads = ({ chosen, busy, onConvert, onSave }) => {
           <button
             type="button"
             className="btn btn-outline-secondary"
+            data-action="download-fullchain"
             disabled={busy}
             onClick={() => onConvert('fullchain')}
           >
@@ -110,6 +130,7 @@ const Downloads = ({ chosen, busy, onConvert, onSave }) => {
           <button
             type="button"
             className="btn btn-outline-secondary"
+            data-action="download-combined"
             disabled={busy}
             onClick={() => onConvert('combined')}
           >
@@ -118,7 +139,13 @@ const Downloads = ({ chosen, busy, onConvert, onSave }) => {
           </button>
         </>
       ) : null}
-      <button type="button" className="btn btn-outline-success" disabled={busy} onClick={onSave}>
+      <button
+        type="button"
+        className="btn btn-outline-success"
+        data-action="save-vault"
+        disabled={busy}
+        onClick={onSave}
+      >
         <FaVault className="me-1" aria-hidden="true" />
         {t('certs.convert.saveToVault')}
       </button>
@@ -141,42 +168,30 @@ const ConvertBody = ({ record, folds, onClear }) => {
   const notify = useNotify();
   const vault = useVault();
   const engine = useEngine();
-  const [own, setOwn] = useState(() =>
-    record
-      ? { components: vaultComponents(record, vault.records), name: nameOf(record), read: true }
-      : EMPTY_READ
-  );
-  const [draft, setDraft] = useState(() => ({
-    ...EMPTY_DRAFT,
-    picked: record ? vaultComponents(record, vault.records).filter(pickable).map(idOf) : [],
-  }));
+  const [input, setInput] = useState(() => (record ? inputOf(record, vault.records) : EMPTY_INPUT));
+  const [draft, setDraft] = useState(EMPTY_OUTPUT);
+  const { held, picked } = input;
+  const values = useMemo(() => ({ ...draft, picked }), [draft, picked]);
   const rules = useFormRules({
     schema: CONVERT_SCHEMA,
-    values: draft,
+    values,
     labels: CONVERT_LABELS,
     idPrefix: 'certs-convert',
   });
-  const chosen = chosenOf(own.components, draft.picked);
-  const stem = record ? stemOf(record) : fileStemOf(own.name);
+  const chosen = chosenOf(held.components, picked);
+  const stem = record ? stemOf(record) : fileStemOf(held.name);
 
   const detected = (answer, { name }) => {
+    setInput(afterRead(answer, name));
     if (!answer) {
-      setOwn(EMPTY_READ);
-      setDraft(EMPTY_DRAFT);
+      setDraft(EMPTY_OUTPUT);
       onClear();
-      return;
     }
-    const next = withRead(own, answer, name);
-    const added = next.components
-      .filter(component => pickable(component) && !own.components.includes(component))
-      .map(idOf);
-    setOwn(next);
-    setDraft(held => ({ ...held, picked: [...new Set([...held.picked, ...added])] }));
   };
 
   const convert = to =>
-    engine.run(held => {
-      const answer = held.convert({
+    engine.run(run => {
+      const answer = run.convert({
         components: carriedBy(chosen, to),
         to,
         password: draft.password,
@@ -194,10 +209,10 @@ const ConvertBody = ({ record, folds, onClear }) => {
   };
 
   const save = () =>
-    engine.run(async held => {
-      const picked = own.components.filter(component => draft.picked.includes(idOf(component)));
-      const fresh = picked.filter(component => !holdsDer(vault.records, component.der_b64));
-      const records = recordsOf(fresh, held, stem);
+    engine.run(async run => {
+      const kept = held.components.filter(component => picked.includes(idOf(component)));
+      const fresh = kept.filter(component => !holdsDer(vault.records, component.der_b64));
+      const records = recordsOf(fresh, run, stem);
       await Promise.all(records.map(entry => vault.add(entry)));
       notify(
         records.length > 0 ? 'success' : 'info',
@@ -219,11 +234,13 @@ const ConvertBody = ({ record, folds, onClear }) => {
       </SectionCard>
       <SectionCard title={t('certs.convert.components')} {...foldOf(folds, FOLDS[1])}>
         <Components
-          components={own.components}
-          picked={draft.picked}
+          components={held.components}
+          picked={picked}
           rules={rules}
-          read={own.read}
-          onToggle={id => setDraft(held => ({ ...held, picked: toggled(held.picked, id) }))}
+          read={held.read}
+          onToggle={id =>
+            setInput(current => ({ ...current, picked: toggled(current.picked, id) }))
+          }
         />
       </SectionCard>
       <SectionCard title={t('certs.convert.output')} {...foldOf(folds, FOLDS[2])}>
@@ -232,7 +249,7 @@ const ConvertBody = ({ record, folds, onClear }) => {
           kinds={[...new Set(chosen.map(component => component.kind))]}
           draft={draft}
           rules={rules}
-          onChange={patch => setDraft(held => ({ ...held, ...patch }))}
+          onChange={patch => setDraft(current => ({ ...current, ...patch }))}
         />
         <Downloads chosen={chosen} busy={engine.busy} onConvert={convert} onSave={save} />
       </SectionCard>

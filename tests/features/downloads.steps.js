@@ -8,6 +8,14 @@ When('I fill the control {string} with {string}', async ({ page }, id, value) =>
   await page.locator(`[id="${id}"]`).fill(value);
 });
 
+When('I check the control {string}', async ({ page }, id) => {
+  await page.locator(`[id="${id}"]`).check();
+});
+
+When('I choose {string} in the control {string}', async ({ page }, value, id) => {
+  await page.locator(`[id="${id}"]`).selectOption(value);
+});
+
 When('I press the {string} action', async ({ page }, action) => {
   await page.locator(`[data-action="${action}"]`).click();
 });

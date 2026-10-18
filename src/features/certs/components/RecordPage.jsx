@@ -100,7 +100,7 @@ const DetailsCard = ({ record, fold, onSave }) => {
         <TextField name="name" draft={draft} rules={rules} onChange={set} />
         <TextField name="tags" draft={draft} rules={rules} onChange={set} />
         <TextAreaField name="notes" draft={draft} rules={rules} onChange={set} />
-        <button type="submit" className="btn btn-primary">
+        <button type="submit" className="btn btn-primary" data-action="save">
           {t('certs.record.save')}
         </button>
       </form>
@@ -241,7 +241,12 @@ const KeySection = ({ record, keyRecord, actions }) => {
         actions={
           present ? (
             <>
-              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={view}>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                data-action="view-key"
+                onClick={view}
+              >
                 {pem ? (
                   <FaEyeSlash className="me-1" aria-hidden="true" />
                 ) : (
@@ -252,6 +257,7 @@ const KeySection = ({ record, keyRecord, actions }) => {
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary"
+                data-action="download-key"
                 onClick={() => actions.convertTo(held, { to: 'pkcs8' })}
               >
                 <FaDownload className="me-1" aria-hidden="true" />
@@ -305,7 +311,7 @@ const ExportCard = ({ record, keyRecord, issuers, fold, actions }) => {
           rules={rules}
           onChange={patch => setOutput(current => ({ ...current, ...patch }))}
         />
-        <button type="submit" className="btn btn-primary">
+        <button type="submit" className="btn btn-primary" data-action="convert-download">
           <FaRightLeft className="me-1" aria-hidden="true" />
           {t('certs.record.convertDownload')}
         </button>
@@ -381,6 +387,7 @@ const HeaderActions = ({ record, actions, manage, onDelete, onRemove, onAccess }
       <button
         type="button"
         className="btn btn-outline-secondary"
+        data-action="convert"
         onClick={() => actions.convert(record)}
       >
         <FaRightLeft className="me-1" aria-hidden="true" />
@@ -389,17 +396,23 @@ const HeaderActions = ({ record, actions, manage, onDelete, onRemove, onAccess }
       <button
         type="button"
         className="btn btn-outline-secondary"
+        data-action="download"
         onClick={() => actions.download(record)}
       >
         <FaDownload className="me-1" aria-hidden="true" />
         {t('certs.actions.download')}
       </button>
-      <button type="button" className="btn btn-danger" onClick={onDelete}>
+      <button type="button" className="btn btn-danger" data-action="delete" onClick={onDelete}>
         <FaTrash className="me-1" aria-hidden="true" />
         {t('certs.actions.delete')}
       </button>
       {manage ? (
-        <button type="button" className="btn btn-outline-danger" onClick={onRemove}>
+        <button
+          type="button"
+          className="btn btn-outline-danger"
+          data-action="remove-from"
+          onClick={onRemove}
+        >
           {t('certs.actions.removeFrom', { organization: record.organization })}
         </button>
       ) : null}

@@ -1,0 +1,41 @@
+{
+  "id": 2,
+  "uuid": "person-2",
+  "username": "admin",
+  "role": "admin",
+  "email": "admin@example.com",
+  "email_verified": true,
+  "name": "Dana Whitfield",
+  "given_name": "Dana",
+  "family_name": "Whitfield",
+  "has_local_auth": true,
+  "roles": ["ROLE_USER", "ROLE_ADMIN"],
+  "organizations": [
+    {
+      "uuid": "0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11",
+      "name": "acme",
+      "display_name": "Acme",
+      "roles": ["ADMIN"],
+      "primary": true,
+      "personal": false,
+      "logo_url": null,
+      "email_hash": null
+    },
+    {
+      "uuid": "5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622",
+      "name": "prominic",
+      "display_name": "Prominic",
+      "roles": ["MEMBER"],
+      "primary": false,
+      "personal": false,
+      "logo_url": null,
+      "email_hash": null
+    }
+  ],
+  "preferences": {
+    "language": "en",
+    "mode": "dark",
+    "theme": null,
+    "timezone": "America/Chicago"
+  }
+}

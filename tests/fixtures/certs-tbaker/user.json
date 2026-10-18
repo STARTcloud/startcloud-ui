@@ -1,0 +1,31 @@
+{
+  "id": 8,
+  "uuid": "person-8",
+  "username": "tbaker",
+  "role": "user",
+  "email": "tbaker@example.com",
+  "email_verified": true,
+  "name": "Tom Baker",
+  "given_name": "Tom",
+  "family_name": "Baker",
+  "has_local_auth": true,
+  "roles": ["ROLE_USER"],
+  "organizations": [
+    {
+      "uuid": "0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11",
+      "name": "acme",
+      "display_name": "Acme",
+      "roles": ["GUEST"],
+      "primary": true,
+      "personal": false,
+      "logo_url": null,
+      "email_hash": null
+    }
+  ],
+  "preferences": {
+    "language": "en",
+    "mode": "dark",
+    "theme": null,
+    "timezone": "America/Chicago"
+  }
+}

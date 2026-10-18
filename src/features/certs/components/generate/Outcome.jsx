@@ -18,13 +18,19 @@ const Outcome = ({ title, facts = null, pem, saved, onSave, onDownload }) => {
       <button
         type="button"
         className="btn btn-sm btn-outline-success"
+        data-action="save-vault"
         disabled={saved}
         onClick={onSave}
       >
         <FaVault className="me-1" aria-hidden="true" />
         {t('certs.convert.saveToVault')}
       </button>
-      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onDownload}>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        data-action="download"
+        onClick={onDownload}
+      >
         <FaDownload className="me-1" aria-hidden="true" />
         {t('certs.actions.download')}
       </button>

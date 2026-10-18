@@ -144,7 +144,12 @@ const RequestTab = ({ fold }) => {
         <FormErrorSummary errors={rules.summary} />
         <SubjectForm draft={draft} rules={rules} onChange={setDraft} />
         <KeySource draft={draft} rules={rules} onChange={set} keys={keys} />
-        <button type="submit" className="btn btn-primary" disabled={engine.busy}>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          data-action="make-request"
+          disabled={engine.busy}
+        >
           <FaFileSignature className="me-1" aria-hidden="true" />
           {t('certs.generate.makeRequest')}
         </button>

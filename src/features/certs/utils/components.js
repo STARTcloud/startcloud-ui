@@ -74,6 +74,17 @@ export const firstOf = (detected, kinds) =>
   (detected?.components || []).find(component => kinds.includes(component.kind)) || null;
 
 /**
+ * The newest component of one of the kinds among the ones held, the
+ * last read's standing in for an earlier one, null for none.
+ *
+ * @param {{ components: Array<Object> }|null} held - What a page holds
+ * @param {Array<string>} kinds - The component kinds wanted
+ * @returns {Object|null} The component
+ */
+export const lastOf = (held, kinds) =>
+  (held?.components || []).findLast(component => kinds.includes(component.kind)) || null;
+
+/**
  * The records of the engine's components: a certificate a record of the
  * `certificate` kind, a CA or an intermediate one of `authority`, a CSR
  * one of `request`, a key or a public key one of `key`, an SSH

@@ -28,6 +28,17 @@ const PICK_ID = 'certs-decode-component';
 
 const isCert = component => CERT_COMPONENT_KINDS.includes(component.kind);
 
+const EMPTY_INPUT = { held: EMPTY_READ, picked: '' };
+
+const afterRead = (answer, name) => input => {
+  if (!answer) {
+    return EMPTY_INPUT;
+  }
+  const held = withRead(input.held, answer, name);
+  const fresh = held.components.find(entry => !input.held.components.includes(entry));
+  return { held, picked: fresh ? idOf(fresh) : input.picked };
+};
+
 const Cautions = ({ facts, thresholdDays }) => {
   const { t } = useTranslation();
   const words = warningsOf(facts, nowOf(), thresholdDays);
@@ -94,6 +105,7 @@ const DecodedActions = ({ component, busy, onDownload, onSave, onCopy }) => {
           key={to}
           type="button"
           className="btn btn-sm btn-outline-secondary"
+          data-action={`download-${to}`}
           disabled={busy}
           onClick={() => onDownload(to)}
         >
@@ -102,7 +114,12 @@ const DecodedActions = ({ component, busy, onDownload, onSave, onCopy }) => {
         </button>
       ))}
       {component.facts ? (
-        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onCopy}>
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          data-action="copy-all"
+          onClick={onCopy}
+        >
           <FaCopy className="me-1" aria-hidden="true" />
           {t('certs.decode.copyAll')}
         </button>
@@ -111,6 +128,7 @@ const DecodedActions = ({ component, busy, onDownload, onSave, onCopy }) => {
         <button
           type="button"
           className="btn btn-sm btn-outline-success"
+          data-action="save-vault"
           disabled={busy}
           onClick={onSave}
         >
@@ -183,8 +201,8 @@ const DecodePage = ({ context }) => {
   const vault = useVault();
   const engine = useEngine();
   const folds = useFolds(`${context.prefsPrefix}_certs_decode`);
-  const [held, setHeld] = useState(EMPTY_READ);
-  const [picked, setPicked] = useState('');
+  const [input, setInput] = useState(EMPTY_INPUT);
+  const { held, picked } = input;
   const { components } = held;
   const component = components.find(entry => idOf(entry) === picked) || components.at(-1) || null;
 
@@ -192,17 +210,9 @@ const DecodePage = ({ context }) => {
     document.title = `${t('certs.sidebar.decode')} · ${context.appName}`;
   }, [context.appName, t]);
 
-  const detected = (answer, { name }) => {
-    if (!answer) {
-      setHeld(EMPTY_READ);
-      setPicked('');
-      return;
-    }
-    const next = withRead(held, answer, name);
-    const fresh = next.components.find(entry => !held.components.includes(entry));
-    setHeld(next);
-    setPicked(fresh ? idOf(fresh) : picked);
-  };
+  const detected = (answer, { name }) => setInput(afterRead(answer, name));
+
+  const pick = id => setInput(current => ({ ...current, picked: id }));
 
   const download = to =>
     engine.run(run => {
@@ -245,7 +255,7 @@ const DecodePage = ({ context }) => {
           <ComponentSelect
             components={components}
             picked={component ? idOf(component) : ''}
-            onPick={setPicked}
+            onPick={pick}
           />
           <Decoded
             component={component}

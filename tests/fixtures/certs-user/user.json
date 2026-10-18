@@ -1,0 +1,31 @@
+{
+  "id": 1,
+  "uuid": "person-1",
+  "username": "user",
+  "role": "user",
+  "email": "user@example.com",
+  "email_verified": true,
+  "name": "Sam Rivera",
+  "given_name": "Sam",
+  "family_name": "Rivera",
+  "has_local_auth": true,
+  "roles": ["ROLE_USER"],
+  "organizations": [
+    {
+      "uuid": "0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11",
+      "name": "acme",
+      "display_name": "Acme",
+      "roles": ["MEMBER"],
+      "primary": true,
+      "personal": false,
+      "logo_url": null,
+      "email_hash": null
+    }
+  ],
+  "preferences": {
+    "language": "en",
+    "mode": "dark",
+    "theme": null,
+    "timezone": "America/Chicago"
+  }
+}

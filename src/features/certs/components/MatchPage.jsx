@@ -8,8 +8,9 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import { useFolds } from '../../../hooks/useFolds';
 import { pageContextShape } from '../../../utils/itemShape';
 import { useEngine } from '../hooks/useEngine';
-import { firstOf } from '../utils/components';
+import { lastOf } from '../utils/components';
 import { foldOf } from '../utils/folds';
+import { EMPTY_READ, withRead } from '../utils/reads';
 import { CERT_COMPONENT_KINDS } from '../utils/records';
 
 import InputZone from './InputZone';
@@ -18,15 +19,15 @@ const SUBJECT_KINDS = [...CERT_COMPONENT_KINDS, 'csr'];
 
 const KEY_KINDS = ['key', 'public_key'];
 
-const NONE = { component: null, read: false };
-
 const describe = component =>
   `${component.facts?.algorithm || ''} ${component.facts?.curve || component.facts?.bits || ''}`.trim();
 
-const sideOf = (detected, kinds) => ({
-  component: firstOf(detected, kinds),
-  read: Boolean(detected),
-});
+const sideOf = (held, kinds) => ({ component: lastOf(held, kinds), read: held.read });
+
+const afterRead = (answer, name) => held => (answer ? withRead(held, answer, name) : EMPTY_READ);
+
+const verdictOf = (pair, subject, key) =>
+  pair && pair.subject === subject && pair.key === key ? pair.answer : null;
 
 const Verdict = ({ pair }) => {
   const { t } = useTranslation();
@@ -93,49 +94,52 @@ Side.propTypes = {
 
 /**
  * The Match page at `/certs/match`: two Input cards, one for a
- * certificate or a request and one for a key, a side that read
- * material of the other kind saying so in its heading, and once both
- * are read the verdict as the heading's state, whether the key is the
- * one the certificate or the request carries, over both public key
- * hashes and the algorithm.
+ * certificate or a request and one for a key, every read adding its
+ * components to the side's held ones as Convert does, the newest of the
+ * side's kind standing as its material, a side that read material of
+ * the other kind alone saying so in its heading, and once both are read
+ * the verdict as the heading's state, whether the key is the one the
+ * certificate or the request carries, over both public key hashes and
+ * the algorithm.
  */
 const MatchPage = ({ context }) => {
   const { t } = useTranslation();
-  const engine = useEngine();
+  const { run } = useEngine();
   const folds = useFolds(`${context.prefsPrefix}_certs_match`);
-  const [subject, setSubject] = useState(NONE);
-  const [key, setKey] = useState(NONE);
+  const [subjectHeld, setSubjectHeld] = useState(EMPTY_READ);
+  const [keyHeld, setKeyHeld] = useState(EMPTY_READ);
   const [pair, setPair] = useState(null);
+  const subject = sideOf(subjectHeld, SUBJECT_KINDS);
+  const key = sideOf(keyHeld, KEY_KINDS);
+  const { component: subjectComponent } = subject;
+  const { component: keyComponent } = key;
+  const verdict = verdictOf(pair, subjectComponent, keyComponent);
 
   useEffect(() => {
     document.title = `${t('certs.sidebar.match')} · ${context.appName}`;
   }, [context.appName, t]);
 
-  const compute = (nextSubject, nextKey) => {
-    if (!nextSubject || !nextKey) {
-      setPair(null);
-      return;
+  useEffect(() => {
+    let current = true;
+    if (subjectComponent && keyComponent) {
+      run(held => ({
+        subjectHash: held.public_key_hash(subjectComponent.der_b64, subjectComponent.kind),
+        keyHash: held.public_key_hash(keyComponent.der_b64, keyComponent.kind),
+        algorithm: `${describe(subjectComponent)} / ${describe(keyComponent)}`,
+      })).then(answer => {
+        if (current && answer) {
+          setPair({ subject: subjectComponent, key: keyComponent, answer });
+        }
+      });
     }
-    engine
-      .run(held => ({
-        subjectHash: held.public_key_hash(nextSubject.der_b64, nextSubject.kind),
-        keyHash: held.public_key_hash(nextKey.der_b64, nextKey.kind),
-        algorithm: `${describe(nextSubject)} / ${describe(nextKey)}`,
-      }))
-      .then(setPair);
-  };
+    return () => {
+      current = false;
+    };
+  }, [run, subjectComponent, keyComponent]);
 
-  const onSubject = detected => {
-    const next = sideOf(detected, SUBJECT_KINDS);
-    setSubject(next);
-    compute(next.component, key.component);
-  };
+  const onSubject = (answer, { name }) => setSubjectHeld(afterRead(answer, name));
 
-  const onKey = detected => {
-    const next = sideOf(detected, KEY_KINDS);
-    setKey(next);
-    compute(subject.component, next.component);
-  };
+  const onKey = (answer, { name }) => setKeyHeld(afterRead(answer, name));
 
   return (
     <div className="list row" data-page="certs-match">
@@ -157,7 +161,7 @@ const MatchPage = ({ context }) => {
           onDetected={onKey}
         />
       </div>
-      {pair ? <Verdict pair={pair} /> : null}
+      {verdict ? <Verdict pair={verdict} /> : null}
     </div>
   );
 };

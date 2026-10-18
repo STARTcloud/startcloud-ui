@@ -1,0 +1,31 @@
+{
+  "id": 9,
+  "uuid": "person-9",
+  "username": "asilva",
+  "role": "user",
+  "email": "asilva@example.com",
+  "email_verified": true,
+  "name": "Ana Silva",
+  "given_name": "Ana",
+  "family_name": "Silva",
+  "has_local_auth": true,
+  "roles": ["ROLE_USER"],
+  "organizations": [
+    {
+      "uuid": "5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622",
+      "name": "prominic",
+      "display_name": "Prominic",
+      "roles": ["OWNER"],
+      "primary": true,
+      "personal": false,
+      "logo_url": null,
+      "email_hash": null
+    }
+  ],
+  "preferences": {
+    "language": "en",
+    "mode": "dark",
+    "theme": null,
+    "timezone": "America/Chicago"
+  }
+}

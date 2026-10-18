@@ -147,7 +147,12 @@ const CertificateTab = ({ fold }) => {
         <SubjectForm draft={draft} rules={rules} onChange={setDraft} />
         <IssueFields draft={draft} rules={rules} onChange={set} />
         <KeySource draft={draft} rules={rules} onChange={set} keys={keys} />
-        <button type="submit" className="btn btn-primary" disabled={engine.busy}>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          data-action="self-sign"
+          disabled={engine.busy}
+        >
           <FaCertificate className="me-1" aria-hidden="true" />
           {t('certs.generate.selfSign')}
         </button>

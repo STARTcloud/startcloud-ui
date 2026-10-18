@@ -8,12 +8,18 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import { useFolds } from '../../../hooks/useFolds';
 import { pageContextShape } from '../../../utils/itemShape';
 import { useEngine } from '../hooks/useEngine';
-import { firstOf } from '../utils/components';
+import { lastOf } from '../utils/components';
 import { foldOf } from '../utils/folds';
+import { EMPTY_READ, withRead } from '../utils/reads';
 import { CERT_COMPONENT_KINDS } from '../utils/records';
 
 import CertFacts from './CertFacts';
 import InputZone from './InputZone';
+
+const afterRead = (answer, name) => held => (answer ? withRead(held, answer, name) : EMPTY_READ);
+
+const comparedOf = (held, left, right) =>
+  held && held.left === left && held.right === right ? held.answer : null;
 
 const Differences = ({ compared }) => {
   const { t } = useTranslation();
@@ -70,7 +76,9 @@ Side.propTypes = {
 
 /**
  * The Compare page at `/certs/compare`: two Input cards side by side,
- * each followed by its certificate's facts, and once both are read the
+ * every read adding its components to the side's held ones as Convert
+ * does, the newest certificate of a side standing as its material, each
+ * followed by that certificate's facts, and once both are read the
  * verdict as a heading's state, the same in every field or how many
  * differ, over the list of the fields that differ as the engine compared
  * them, subject, issuer, serial, validity, algorithm, bits, names and
@@ -78,35 +86,36 @@ Side.propTypes = {
  */
 const ComparePage = ({ context }) => {
   const { t } = useTranslation();
-  const engine = useEngine();
+  const { run } = useEngine();
   const folds = useFolds(`${context.prefsPrefix}_certs_compare`);
-  const [left, setLeft] = useState(null);
-  const [right, setRight] = useState(null);
-  const [compared, setCompared] = useState(null);
+  const [leftHeld, setLeftHeld] = useState(EMPTY_READ);
+  const [rightHeld, setRightHeld] = useState(EMPTY_READ);
+  const [held, setHeld] = useState(null);
+  const left = lastOf(leftHeld, CERT_COMPONENT_KINDS);
+  const right = lastOf(rightHeld, CERT_COMPONENT_KINDS);
+  const compared = comparedOf(held, left, right);
 
   useEffect(() => {
     document.title = `${t('certs.sidebar.compare')} · ${context.appName}`;
   }, [context.appName, t]);
 
-  const compute = (nextLeft, nextRight) => {
-    if (!nextLeft || !nextRight) {
-      setCompared(null);
-      return;
+  useEffect(() => {
+    let current = true;
+    if (left && right) {
+      run(engine => engine.compare(left.der_b64, right.der_b64)).then(answer => {
+        if (current && answer) {
+          setHeld({ left, right, answer });
+        }
+      });
     }
-    engine.run(held => held.compare(nextLeft.der_b64, nextRight.der_b64)).then(setCompared);
-  };
+    return () => {
+      current = false;
+    };
+  }, [run, left, right]);
 
-  const onLeft = detected => {
-    const next = firstOf(detected, CERT_COMPONENT_KINDS);
-    setLeft(next);
-    compute(next, right);
-  };
+  const onLeft = (answer, { name }) => setLeftHeld(afterRead(answer, name));
 
-  const onRight = detected => {
-    const next = firstOf(detected, CERT_COMPONENT_KINDS);
-    setRight(next);
-    compute(left, next);
-  };
+  const onRight = (answer, { name }) => setRightHeld(afterRead(answer, name));
 
   return (
     <div className="list row" data-page="certs-compare">

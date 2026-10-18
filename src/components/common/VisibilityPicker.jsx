@@ -192,6 +192,7 @@ const ScopedMenu = ({ face, title, className, disabled, count, lines, onPick }) 
             as="button"
             type="button"
             className="d-flex align-items-center"
+            data-action={line.key}
             disabled={line.disabled}
             title={line.title}
             onClick={() => onPick(line.key, line.opens && !alone[line.key])}

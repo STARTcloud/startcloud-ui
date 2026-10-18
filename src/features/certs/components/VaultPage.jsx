@@ -67,10 +67,20 @@ const VaultRowActions = ({ record, user, onConvert, onDownload, onDelete, onRemo
   const { t } = useTranslation();
   return (
     <RowMenu label={t('pages.table.actions')}>
-      <Dropdown.Item as="button" type="button" onClick={() => onConvert(record)}>
+      <Dropdown.Item
+        as="button"
+        type="button"
+        data-action="convert"
+        onClick={() => onConvert(record)}
+      >
         {t('certs.actions.convert')}
       </Dropdown.Item>
-      <Dropdown.Item as="button" type="button" onClick={() => onDownload(record)}>
+      <Dropdown.Item
+        as="button"
+        type="button"
+        data-action="download"
+        onClick={() => onDownload(record)}
+      >
         {t('certs.actions.download')}
       </Dropdown.Item>
       <Dropdown.Divider />
@@ -78,6 +88,7 @@ const VaultRowActions = ({ record, user, onConvert, onDownload, onDelete, onRemo
         as="button"
         type="button"
         className="text-danger"
+        data-action="delete"
         onClick={() => onDelete(record)}
       >
         {t('certs.actions.delete')}
@@ -87,6 +98,7 @@ const VaultRowActions = ({ record, user, onConvert, onDownload, onDelete, onRemo
           as="button"
           type="button"
           className="text-danger"
+          data-action="remove-from"
           onClick={() => onRemove(record)}
         >
           {t('certs.actions.removeFrom', { organization: record.organization })}
@@ -241,13 +253,19 @@ const PickedActions = ({ selection, managed, onAccess, onDelete, onExport }) => 
             key={action.key}
             type="button"
             className={`btn btn-sm ${action.variant}`}
+            data-action={action.key}
             onClick={onDelete}
           >
             {t(action.labelKey)}
           </button>
         );
       })}
-      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onExport}>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        data-action="export-bundle"
+        onClick={onExport}
+      >
         <FaDownload className="me-1" aria-hidden="true" />
         {t('certs.toolbar.exportBundle')}
       </button>
@@ -382,7 +400,7 @@ const VaultPage = ({ context }) => {
         onDelete={() => setDeleting(true)}
         onExport={() => vault.exportBundle(picked())}
       />
-      <Link to="/certs/generate" className="btn btn-sm btn-outline-primary">
+      <Link to="/certs/generate" className="btn btn-sm btn-outline-primary" data-action="generate">
         <FaWandMagicSparkles className="me-1" aria-hidden="true" />
         {t('certs.vault.generate')}
       </Link>

@@ -1,0 +1,49 @@
+{
+  "id": "row-leaf",
+  "organization": "acme",
+  "kind": "certificate",
+  "name": "www.fixture.test",
+  "subject": "C=US, O=Fixture, CN=www.fixture.test",
+  "not_after": "2027-10-17T11:32:30Z",
+  "published": true,
+  "is_public": true,
+  "guest_access": false,
+  "created_by": "system",
+  "updated_at": "2026-10-11T09:00:00.000Z",
+  "record": {
+    "id": "rec-leaf",
+    "kind": "certificate",
+    "name": "www.fixture.test",
+    "tags": [],
+    "notes": "",
+    "created_at": "2026-10-10T09:00:00.000Z",
+    "updated_at": "2026-10-11T09:00:00.000Z",
+    "facts": null,
+    "links": {
+      "key_id": null,
+      "issuer_id": null,
+      "request_id": null,
+      "chain_ids": []
+    },
+    "history": [
+      {
+        "version": 1,
+        "der_b64": "MIIC6jCCAdKgAwIBAgIUVVH9r+yrVHENvIeWukFR/BDnQG4wDQYJKoZIhvcNAQELBQAwQTELMAkGA1UEBhMCVVMxEDAOBgNVBAoMB0ZpeHR1cmUxIDAeBgNVBAMMF0ZpeHR1cmUgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNzExMzIzMFoXDTI3MTAxNzExMzIzMFowOjELMAkGA1UEBhMCVVMxEDAOBgNVBAoMB0ZpeHR1cmUxGTAXBgNVBAMMEHd3dy5maXh0dXJlLnRlc3QwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASlKd0iTtJa7TXu963hGOUEQOgTD0cD7RydVtHwitvCrJnCgW70KuTEgO32HMSXveE+UxkbQIB8e+/1iU/JGaQ5o4GrMIGoMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAvBgNVHREEKDAmghB3d3cuZml4dHVyZS50ZXN0ggxmaXh0dXJlLnRlc3SHBAoAAAEwHQYDVR0OBBYEFFm7zrMlBKoU65iG0DHxHTgzUdB+MB8GA1UdIwQYMBaAFFqrpusUZzZpdv5T9OhjHHen3/opMA0GCSqGSIb3DQEBCwUAA4IBAQB9I/zK3gpcUnJt+ICr3BMPBf9W4/usSrgqUCFu3qtnaCk9O5Pj+Wbccwr3y+fFvTmPx1kCfFxljG5SD1gcuUiY/YCbxlBtmIIY6JaZfOlmJP1JjaepwjIXfJ9T8/Q5KknODpg+sqbMzZ0lA2R4PkCVZTa4+Q7JfK8vZaE+2t3LDZwhY7pfZyrn6CRICHkfFS7qMZy+r60n9LlOs4w1zaEnJ4vXUBuqVPDoKkBHjDzxL440r0O6kQdpyynNifiIo8RnB8YnTIob8OSuTYva1UmZyqsTfYcMWN6MpHKxATkybzshRfpx/1GzDfZpNB3W2n6lRjKS4ZPmk/6tTfnCr0gs",
+        "not_before": "2026-10-10T09:00:00.000Z",
+        "not_after": "2027-10-17T11:32:30Z",
+        "current": true
+      }
+    ],
+    "public_der_b64": "MIIC6jCCAdKgAwIBAgIUVVH9r+yrVHENvIeWukFR/BDnQG4wDQYJKoZIhvcNAQELBQAwQTELMAkGA1UEBhMCVVMxEDAOBgNVBAoMB0ZpeHR1cmUxIDAeBgNVBAMMF0ZpeHR1cmUgSW50ZXJtZWRpYXRlIENBMB4XDTI2MTAxNzExMzIzMFoXDTI3MTAxNzExMzIzMFowOjELMAkGA1UEBhMCVVMxEDAOBgNVBAoMB0ZpeHR1cmUxGTAXBgNVBAMMEHd3dy5maXh0dXJlLnRlc3QwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASlKd0iTtJa7TXu963hGOUEQOgTD0cD7RydVtHwitvCrJnCgW70KuTEgO32HMSXveE+UxkbQIB8e+/1iU/JGaQ5o4GrMIGoMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAvBgNVHREEKDAmghB3d3cuZml4dHVyZS50ZXN0ggxmaXh0dXJlLnRlc3SHBAoAAAEwHQYDVR0OBBYEFFm7zrMlBKoU65iG0DHxHTgzUdB+MB8GA1UdIwQYMBaAFFqrpusUZzZpdv5T9OhjHHen3/opMA0GCSqGSIb3DQEBCwUAA4IBAQB9I/zK3gpcUnJt+ICr3BMPBf9W4/usSrgqUCFu3qtnaCk9O5Pj+Wbccwr3y+fFvTmPx1kCfFxljG5SD1gcuUiY/YCbxlBtmIIY6JaZfOlmJP1JjaepwjIXfJ9T8/Q5KknODpg+sqbMzZ0lA2R4PkCVZTa4+Q7JfK8vZaE+2t3LDZwhY7pfZyrn6CRICHkfFS7qMZy+r60n9LlOs4w1zaEnJ4vXUBuqVPDoKkBHjDzxL440r0O6kQdpyynNifiIo8RnB8YnTIob8OSuTYva1UmZyqsTfYcMWN6MpHKxATkybzshRfpx/1GzDfZpNB3W2n6lRjKS4ZPmk/6tTfnCr0gs",
+    "private_der_b64": null,
+    "template": null,
+    "origin": "shared",
+    "remote_id": "row-leaf",
+    "organization": "acme",
+    "created_by": "system",
+    "synced_at": null,
+    "published": true,
+    "is_public": true,
+    "guest_access": false
+  }
+}
