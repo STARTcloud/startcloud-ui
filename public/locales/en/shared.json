@@ -12571,7 +12571,8 @@
       "p384": "ECDSA P-384",
       "p521": "P-521",
       "secp256k1": "secp256k1",
-      "ed25519": "Ed25519"
+      "ed25519": "Ed25519",
+      "ed448": "Ed448"
     },
     "generate": {
       "about": "Make keys, CSRs and certificates in the browser and keep them in the vault.",
@@ -12582,6 +12583,7 @@
       "keyTitle": "Generate a key",
       "aboutKey": "A private key of the algorithm picked, nothing leaves the browser.",
       "algorithm": "Algorithm",
+      "signature": "Signature scheme",
       "generateKey": "Generate key",
       "keyMade": "Key",
       "requestTitle": "Make a CSR",
@@ -12624,6 +12626,10 @@
       "sourceMode": {
         "vault": "From the vault",
         "paste": "Paste"
+      },
+      "signatureScheme": {
+        "pkcs1": "PKCS#1 v1.5",
+        "pss": "RSASSA-PSS"
       },
       "pickOne": "Pick one",
       "copyExtensions": "Copy the request's extensions",

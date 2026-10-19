@@ -97,6 +97,7 @@ const RequestTab = ({ fold }) => {
       const key = resolveKey(held, draft, keys, draft.CN.trim());
       const csr = held.make_csr({
         key_der_b64: key.record.private_der_b64,
+        signature: draft.signature,
         subject: subjectOf(draft),
         sans: sansOf(draft.sans),
         ext_key_usage: draft.ext_key_usage,

@@ -12,12 +12,22 @@ const PRECACHE = [
   '/brand/startcloud/mark-512.png',
 ];
 const KEPT = ['/assets/', '/locales/', '/brand/', '/themes/', '/fonts/', '/manifest.json'];
+const LINKED = /(?:src|href)="(\/(?:assets|themes|brand|fonts)\/[^"]+)"/g;
+
+const linkedFiles = html => [...new Set([...html.matchAll(LINKED)].map(match => match[1]))];
+
+const precacheShell = cache =>
+  cache
+    .addAll(PRECACHE)
+    .then(() => cache.match(SHELL))
+    .then(shell => (shell ? shell.text() : ''))
+    .then(html => cache.addAll(linkedFiles(html)));
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then(cache => cache.addAll(PRECACHE))
+      .then(precacheShell)
       .then(() => self.skipWaiting())
   );
 });
@@ -51,7 +61,10 @@ const store = (key, response) => {
 };
 
 const cacheFirst = (request, key) =>
-  caches.match(key).then(hit => hit || fetch(request).then(response => store(key, response)));
+  caches
+    .match(key)
+    .then(hit => hit || fetch(request).then(response => store(key, response)))
+    .catch(() => Response.error());
 
 const fromCache = hit => {
   const headers = new Headers(hit.headers);

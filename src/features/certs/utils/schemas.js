@@ -11,7 +11,10 @@ const ALGORITHMS = [
   'p521',
   'secp256k1',
   'ed25519',
+  'ed448',
 ];
+
+const SIGNATURES = ['pkcs1', 'pss'];
 
 const SAN_KINDS = ['dns', 'ip', 'email', 'uri'];
 
@@ -52,16 +55,20 @@ const SUBJECT_LABELS = {
   ext_key_usage: 'certs.subject.eku',
 };
 
+const SIGNATURE_PROPERTY = { type: 'string', enum: SIGNATURES };
+
 const KEY_SOURCE_PROPERTIES = {
   mode: { type: 'string', enum: ['generate', 'vault'] },
   keyId: { ...NON_BLANK, dependsOn: 'mode', showWhen: ['vault'] },
   alg: { type: 'string', enum: ALGORITHMS },
+  signature: SIGNATURE_PROPERTY,
 };
 
 const KEY_SOURCE_LABELS = {
   mode: 'certs.generate.keySource',
   keyId: 'certs.generate.vaultKey',
   alg: 'certs.generate.algorithm',
+  signature: 'certs.generate.signature',
 };
 
 const ISSUE_PROPERTIES = {
@@ -98,7 +105,7 @@ export const KEY_LABELS = {
 /**
  * The page schema and label keys of the Request tab: the subject, the
  * names, the usages and the key source, the vault key required while the
- * source is the vault.
+ * source is the vault, the signature scheme one of the engine's two words.
  */
 export const REQUEST_SCHEMA = {
   required: ['CN', 'mode', 'keyId', 'alg'],
@@ -126,7 +133,8 @@ const pasted = mode => values => values[mode] === 'paste';
  * The page schema and label keys of the Sign request tab: the request
  * and the authority each from the vault, its pick required, or pasted,
  * the request's component, the authority's certificate and its key each
- * required while pasted, then the issue.
+ * required while pasted, the signature scheme the authority's key signs
+ * with, then the issue.
  */
 export const SIGN_SCHEMA = {
   required: ['request_mode', 'request_id', 'authority_mode', 'authority_id', 'days'],
@@ -142,6 +150,7 @@ export const SIGN_SCHEMA = {
     authority_key: {
       custom: (value, values) => required(value, values, pasted('authority_mode')),
     },
+    signature: SIGNATURE_PROPERTY,
     copy_extensions: { type: 'boolean' },
     ...ISSUE_PROPERTIES,
   },
@@ -155,6 +164,7 @@ export const SIGN_LABELS = {
   authority_id: 'certs.generate.authorityPick',
   authority_cert: 'certs.generate.authorityCertificate',
   authority_key: 'certs.generate.authorityKey',
+  signature: 'certs.generate.signature',
   copy_extensions: 'certs.generate.copyExtensions',
   ...ISSUE_LABELS,
 };
@@ -251,4 +261,4 @@ export const INPUT_SCHEMA = {
 
 export const INPUT_LABELS = { text: 'certs.input.pasteLabel', password: 'certs.input.password' };
 
-export { ALGORITHMS, EKUS, SAN_KINDS };
+export { ALGORITHMS, EKUS, SAN_KINDS, SIGNATURES };

@@ -12571,7 +12571,8 @@
       "p384": "ECDSA P-384",
       "p521": "P-521",
       "secp256k1": "secp256k1",
-      "ed25519": "Ed25519"
+      "ed25519": "Ed25519",
+      "ed448": "Ed448"
     },
     "generate": {
       "about": "Crea claves, CSR y certificados en el navegador y guárdalos en la bóveda.",
@@ -12582,6 +12583,7 @@
       "keyTitle": "Generar una clave",
       "aboutKey": "Una clave privada del algoritmo elegido; nada sale del navegador.",
       "algorithm": "Algoritmo",
+      "signature": "Esquema de firma",
       "generateKey": "Generar clave",
       "keyMade": "Clave",
       "requestTitle": "Crear un CSR",
@@ -12624,6 +12626,10 @@
       "sourceMode": {
         "vault": "Desde la bóveda",
         "paste": "Pegar"
+      },
+      "signatureScheme": {
+        "pkcs1": "PKCS#1 v1.5",
+        "pss": "RSASSA-PSS"
       },
       "pickOne": "Elige uno",
       "copyExtensions": "Copiar las extensiones de la solicitud",

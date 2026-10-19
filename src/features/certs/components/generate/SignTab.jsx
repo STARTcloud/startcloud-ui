@@ -18,6 +18,7 @@ import { CERT_COMPONENT_KINDS, algorithmOf, nameOf, relationships } from '../../
 import { SIGN_LABELS, SIGN_SCHEMA } from '../../utils/schemas';
 import { SelectField, SwitchField } from '../fields';
 import InputZone from '../InputZone';
+import SignatureSelect from '../SignatureSelect';
 
 import { issuedFileName, issuedRecord } from './CertificateTab';
 import IssueFields, { EMPTY_ISSUE, issueOf } from './IssueFields';
@@ -35,6 +36,7 @@ const EMPTY_DRAFT = {
   authority_id: '',
   authority_cert: null,
   authority_key: null,
+  signature: 'pkcs1',
   copy_extensions: true,
   ...EMPTY_ISSUE,
 };
@@ -190,6 +192,14 @@ const authorityInput = (draft, authorities, records) => {
     : null;
 };
 
+const authorityIsRsa = (draft, authorities, records) => {
+  const facts =
+    draft.authority_mode === 'vault'
+      ? authorityInput(draft, authorities, records)?.key?.facts
+      : draft.authority_key?.facts;
+  return facts?.algorithm === 'RSA';
+};
+
 /**
  * The Sign CSR tab of the Generate page: one line saying what it does,
  * the pending requests, the vault's requests no certificate of the vault
@@ -199,8 +209,9 @@ const authorityInput = (draft, authorities, records) => {
  * otherwise, read from the vault's records as they stand, the authority
  * the same way, from the vault, one whose key the vault holds, or pasted
  * as a certificate and its key, each drop adding what it carried so the
- * two may come from two files, the validity, the Authority switch and
- * Copy extensions, Sign issuing the certificate through the engine once
+ * two may come from two files, the signature scheme while that key is
+ * RSA, the validity, the Authority switch and Copy extensions, Sign
+ * issuing the certificate through the engine once
  * the rules say what is held and what is missing, its glyph a spinner
  * while it runs, then Save to vault keeping it linked to the issuer, the
  * request and the request's key, and Download handing the browser the
@@ -260,6 +271,7 @@ const SignTab = ({ fold }) => {
         csr_der_b64: csr.der_b64,
         ca_cert_der_b64: ca.cert_der_b64,
         ca_key_der_b64: ca.key_der_b64,
+        signature: values.signature,
         ...issueOf(values),
         copy_extensions: values.copy_extensions,
       });
@@ -310,6 +322,9 @@ const SignTab = ({ fold }) => {
         >
           <PastedLine rules={rules} names={['authority_cert', 'authority_key']} />
         </Picker>
+        {authorityIsRsa(values, authorities, vault.records) ? (
+          <SignatureSelect draft={values} rules={rules} onChange={set} />
+        ) : null}
         <IssueFields draft={values} rules={rules} onChange={set} />
         <SwitchField name="copy_extensions" draft={values} rules={rules} onChange={set} />
         <button type="submit" className="btn btn-primary" data-action="sign" disabled={engine.busy}>

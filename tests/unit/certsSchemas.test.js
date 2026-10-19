@@ -12,6 +12,7 @@ import {
   PREFERENCES_SCHEMA,
   REQUEST_SCHEMA,
   SAN_KINDS,
+  SIGNATURES,
   SIGN_SCHEMA,
   TEMPLATE_LABELS,
   templateSchemaOf,
@@ -20,10 +21,18 @@ import { validateObject } from '../../src/utils/validation.js';
 
 const pointersOf = (schema, values) => validateObject(schema, values).map(error => error.pointer);
 
-const SUBJECT = { CN: 'a', mode: 'generate', keyId: '', alg: 'p256', sans: [], ext_key_usage: [] };
+const SUBJECT = {
+  CN: 'a',
+  mode: 'generate',
+  keyId: '',
+  alg: 'p256',
+  signature: 'pkcs1',
+  sans: [],
+  ext_key_usage: [],
+};
 
 describe('the words the engine takes', () => {
-  it('lists the eight algorithms, the four name kinds and the four usages', () => {
+  it('lists the nine algorithms, the two signature schemes, the four name kinds and the four usages', () => {
     expect(ALGORITHMS).toEqual([
       'rsa2048',
       'rsa3072',
@@ -33,7 +42,9 @@ describe('the words the engine takes', () => {
       'p521',
       'secp256k1',
       'ed25519',
+      'ed448',
     ]);
+    expect(SIGNATURES).toEqual(['pkcs1', 'pss']);
     expect(SAN_KINDS).toEqual(['dns', 'ip', 'email', 'uri']);
     expect(EKUS).toEqual(['serverAuth', 'clientAuth', 'codeSigning', 'emailProtection']);
   });
@@ -49,6 +60,12 @@ describe('the generate schemas', () => {
     expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, CN: '' })).toEqual(['/CN']);
     expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, mode: 'vault' })).toEqual(['/keyId']);
     expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, mode: 'vault', keyId: 'k' })).toEqual([]);
+  });
+
+  it('refuses a signature scheme outside the two words', () => {
+    expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, signature: 'other' })).toEqual(['/signature']);
+    expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, signature: 'pss' })).toEqual([]);
+    expect(SIGN_SCHEMA.properties.signature.enum).toEqual(SIGNATURES);
   });
 
   it('refuses a name row without a value and an unknown usage', () => {

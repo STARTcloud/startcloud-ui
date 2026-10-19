@@ -2485,7 +2485,10 @@ Each test answers through an in-app notice card, "Test sent." or
   makes (the UI backend sends `Service-Worker-Allowed` and
   `Cache-Control: no-cache` on that one file), the push subscription and
   the update sharing that one registration; its `install` precaches the
-  page, the manifest and the marks and `skipWaiting`s, its `activate`
+  page, the manifest, the marks and every script, stylesheet, theme,
+  mark and font the page links, because the first load ran before the
+  worker held the page and nothing of it would be kept otherwise, and
+  `skipWaiting`s, its `activate`
   drops the previous version's cache and claims the clients, a
   notification click
   focuses an open tab of the app and moves it to the notice's `navigate`,

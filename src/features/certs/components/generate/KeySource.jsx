@@ -7,13 +7,29 @@ import { formRulesShape } from '../../../../hooks/useFormRules';
 import { nameOf, newRecord } from '../../utils/records';
 import { SelectField } from '../fields';
 import KeyTypeSelect from '../KeyTypeSelect';
+import SignatureSelect from '../SignatureSelect';
 
 const MODES = ['generate', 'vault'];
 
 /**
- * The key source members a form starts from: a fresh RSA 2048 key.
+ * The key source members a form starts from: a fresh RSA 2048 key
+ * signing with PKCS#1 v1.5.
  */
-export const EMPTY_KEY_SOURCE = { mode: 'generate', keyId: '', alg: 'rsa2048' };
+export const EMPTY_KEY_SOURCE = { mode: 'generate', keyId: '', alg: 'rsa2048', signature: 'pkcs1' };
+
+/**
+ * Whether the key a source resolves to is RSA, the one algorithm with a
+ * signature scheme to pick: the vault key's facts while one is picked,
+ * the algorithm word otherwise.
+ *
+ * @param {{ mode: string, keyId: string, alg: string }} source - The key source members
+ * @param {Array<Object>} keys - The vault's key records
+ * @returns {boolean} True for an RSA key
+ */
+export const sourceIsRsa = (source, keys) =>
+  source.mode === 'vault'
+    ? keys.find(key => key.id === source.keyId)?.facts?.algorithm === 'RSA'
+    : source.alg.startsWith('rsa');
 
 /**
  * The key a form signs with, resolved from its draft: the vault's key
@@ -48,7 +64,8 @@ export const resolveKey = (engine, source, keys, name) => {
  * rules: two option cards, a new key of the algorithm picked, generated
  * as the form runs and saved beside what it signed, or a key of the
  * vault picked from the keys held with their private half, required
- * while that card is on.
+ * while that card is on; the signature scheme under either while the
+ * key is RSA.
  */
 const KeySource = ({ draft, rules, onChange, keys }) => {
   const { t } = useTranslation();
@@ -83,6 +100,9 @@ const KeySource = ({ draft, rules, onChange, keys }) => {
             onChange={onChange}
           />
         )}
+        {sourceIsRsa(draft, held) ? (
+          <SignatureSelect draft={draft} rules={rules} onChange={onChange} />
+        ) : null}
       </div>
     </fieldset>
   );
