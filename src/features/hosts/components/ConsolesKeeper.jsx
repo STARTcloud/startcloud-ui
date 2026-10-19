@@ -16,6 +16,7 @@ import { hostHasConsole, hostHasFeature } from '../utils/capabilities';
 import { agentIdOf } from '../utils/hosts';
 import {
   consoleKeyOf,
+  holdsSession,
   isHeldKind,
   readStoredTabs,
   sessionLives,
@@ -62,8 +63,8 @@ const vncLives = async (status, id, name) => {
  * term/sessions`, `GET ssh/sessions` and `GET zlogin/sessions`, and a
  * live session is re-attached while the person placed it, `console_tabs`
  * holding its placement, or, for a host shell or an SSH shell, while its
- * `created_by` names the person, `person`, the footer then its place, so
- * a shell started in another
+ * `created_by` names the person, `person`, the footer then its place,
+ * every such session a tab of its own, so a shell started in another
  * browser under the same key comes back and another person's never
  * does; a placement whose session the agent no longer holds is dropped
  * from the map, a VNC or RDP display re-attached while the machine runs;
@@ -106,22 +107,24 @@ const ConsolesKeeper = ({ signedIn, person = '' }) => {
         .filter(session => sessionLives(session))
         .map(session => sessionToConsole(entry.kind, id, session))
         .filter(console => storedTabFor(map, console) || sessionOwnedBy(console.session, person));
-      await Promise.all(
-        owned.map(console => {
-          if (consolesHeld().some(found => found.key === console.key)) {
-            return null;
-          }
-          const tab = storedTabFor(map, console);
-          return actions.adopt({
-            kind: console.kind,
-            id,
-            name: console.name,
-            server,
-            session: console.session,
-            placed: tab?.placed || 'footer',
-            accepts: Boolean(tab?.accepts),
-          });
-        })
+      await owned.reduce(
+        (chain, console) =>
+          chain.then(() => {
+            if (holdsSession(consolesHeld(), console)) {
+              return null;
+            }
+            const tab = storedTabFor(map, console);
+            return actions.adopt({
+              kind: console.kind,
+              id,
+              name: console.name,
+              server,
+              session: console.session,
+              placed: tab?.placed || 'footer',
+              accepts: Boolean(tab?.accepts),
+            });
+          }),
+        Promise.resolve()
       );
     },
     [status, actions, person]

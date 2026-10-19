@@ -34,6 +34,29 @@ html {
   --bs-card-bg: var(--bs-secondary-bg);
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bs-border-color) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--bs-border-color);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bs-secondary-color);
+}
+
 .btn:focus-visible,
 .btn-check:focus-visible + .btn,
 .nav-link:focus-visible {
@@ -4405,12 +4428,21 @@ a.stat-card:focus-visible {
 .console-commands-field {
   flex: 1;
   min-width: 0;
+}
+
+.console-commands-field .form-control {
   font-family: var(--bs-font-monospace);
 }
 
 .console-commands-count {
   font-size: 12px;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.console-history-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .footer-consoles-bodies {

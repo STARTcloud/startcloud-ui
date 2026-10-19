@@ -1330,12 +1330,15 @@
       <div class="callout">
         <strong>A tab is a console.</strong> Each tab is one console, the host shell, an SSH shell,
         a zlogin terminal, a VNC display or an RDP display, named by its machine with its kind
-        beside it, the host for the host shell; switching shows another and the rest keep running;
-        the × closes the tab and stops its session. The host shell's and the SSH shell's terminal
-        and socket are held by the console store and follow the tab wherever it is drawn, because on
-        hyperweaver-agent the socket is the shell; the zlogin tab draws the zone terminal provider's
-        own terminal; a VNC tab draws the one display the machine shares with every viewer; an RDP
-        tab draws the client's own bridge, one socket a viewer.
+        beside it, the host for the host shell, a second shell of the same host or machine numbered;
+        a host shell or an SSH shell is one tab a session, every Open starting another, a VNC
+        display one tab a machine, a zlogin terminal one tab a zone and an RDP display one tab a
+        target; switching shows another and the rest keep running; the × closes the tab and stops
+        its session. The host shell's and the SSH shell's terminal and socket are held by the
+        console store and follow the tab wherever it is drawn, because on hyperweaver-agent the
+        socket is the shell; the zlogin tab draws the zone terminal provider's own terminal; a VNC
+        tab draws the one display the machine shares with every viewer; an RDP tab draws the
+        client's own bridge, one socket a viewer.
       </div>
       <div class="callout">
         <strong>Opened from the Controls menu.</strong> No button on the strip opens a console: the
@@ -1361,9 +1364,12 @@
         more tabs are open: one field typed once, Send writing it to every tab marked Accept
         broadcasts on its right-click menu, "just a dumb dump of the string into the shells", down a
         terminal's own WebSocket and as keystrokes into a VNC or an RDP display, Enter after it
-        while the Terminal preferences' broadcast newline is on, which it is by default; the history
-        of what was sent beside the field; the count of the tabs that accept over every tab. The
-        backend is unchanged.
+        while the Terminal preferences' broadcast newline is on, which it is by default, the Enter a
+        carriage return as a terminal sends it; Clear inside the field, Send a glyph; the history
+        button opening the history dialog, one row a string sent with its moment, the tabs that took
+        it, Use and Copy, Clear history under them, the rows kept in the browser under
+        <code>console_history</code>; the count of the tabs that accept over every tab as
+        <code>accepting/total</code>. The backend is unchanged.
       </div>
       <div class="callout">
         <strong>The drop-up and the pane's menu.</strong> Reconnect shell, Restart shell, Terminal
@@ -1622,8 +1628,8 @@
               >tasks</code
             >
             | <code>consoles</code>), <code>tasks_min_priority</code>, <code>tasks_columns</code>,
-            <code>terminal_prefs</code>, <code>console_tabs</code>, per origin beside
-            <code>sidebar_width</code> in the session contract's table
+            <code>terminal_prefs</code>, <code>console_tabs</code>, <code>console_history</code>,
+            per origin beside <code>sidebar_width</code> in the session contract's table
           </td>
         </tr>
         <tr>

@@ -59,10 +59,13 @@ Feature: footer pane
     And the footer pane draws 0 tabs
     And the footer pane draws no commands bar
     And the stored "console_tabs" holds 1 entries
+    When I click "Host actions"
+    And I press the Controls menu's "host-shell" row
+    Then the host was sent POST to "/api/agents/1/term/start" 2 times
     When I press the footer's "consoles" toggle
     And I press the footer drop-up's "restart" row
     Then the host was sent DELETE to "/api/agents/1/term/sessions/a1000000-0000-4000-8000-000000000001/stop" 1 times
-    And the host was sent POST to "/api/agents/1/term/start" 2 times
+    And the host was sent POST to "/api/agents/1/term/start" 3 times
     When I press the footer's "consoles" toggle
     And I press the footer drop-up's "close" row
     Then the footer pane draws no console
@@ -94,6 +97,20 @@ Feature: footer pane
     And the host was not sent POST to "/api/agents/1/term/start"
     And the stored "console_tabs" holds 1 entries
 
+  Scenario: Consoles pane: two live host shells of the person's own key re-attach as two tabs, the second numbered, with the Commands bar between them
+    Given the host answers the hosts fixture
+    And the host answers the hosts-consoles-two fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/"
+    Then the host was sent GET to "/api/agents/1/term/sessions" 1 times
+    And the footer pane draws the "host_shell" console of "Desk 2"
+    And the footer tab "Desk 2" is active
+    And the footer pane draws 2 tabs
+    And the footer pane draws the commands bar
+    And the commands bar says "0 of 2 tabs accept"
+    And the host was not sent POST to "/api/agents/1/term/start"
+    And the stored "console_tabs" holds 2 entries
+
   Scenario: Sidebar tree: a host node's right-click menu offers Open host shell on a host that lists host-terminal, starting the session once in the footer
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -122,7 +139,7 @@ Feature: footer pane
     And the footer pane draws 2 tabs
     And the footer tab "dev-1" is active
     And the footer pane draws the commands bar
-    And the commands bar says "0 of 2 tabs accept"
+    And the commands bar says "0/2"
     And the console panel says the "ssh" console is in the footer
     When I right-click the footer tab "dev-1"
     Then the footer tab menu offers "accept"
@@ -132,11 +149,14 @@ Feature: footer pane
     When I press the footer tab menu's "accept" row
     Then the footer tab "dev-1" accepts broadcasts
     And the footer tab "Desk" accepts no broadcasts
-    And the commands bar says "1 of 2 tabs accept"
+    And the commands bar says "1/2"
     When I send the command "uptime"
     And I open the commands history
-    Then the commands history lists "uptime"
+    Then the "console-history" dialog is open
+    And the commands history lists "uptime"
+    And the stored "console_history" holds 1 entries
     When I press "Escape"
+    Then no dialog is open
     And I press the footer's "consoles" toggle
     And I press the footer drop-up's "preferences" row
     Then the terminal preferences switch "broadcast-newline" is on

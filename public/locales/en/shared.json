@@ -1932,6 +1932,16 @@
       "clear": "Clear",
       "sentBefore": "Sent before",
       "nothingSent": "Nothing sent yet",
+      "historyWhen": "When",
+      "historyCommand": "Command",
+      "historySentTo": "Sent to",
+      "sentTo_one": "{{count}} tab",
+      "sentTo_other": "{{count}} tabs",
+      "use": "Use",
+      "copy": "Copy",
+      "copied": "Copied to the clipboard",
+      "copyFailed": "The clipboard refused the copy",
+      "clearHistory": "Clear history",
       "acceptCount_one": "{{count}} of {{total}} tabs accept",
       "acceptCount_other": "{{count}} of {{total}} tabs accept",
       "sessionEnded": "The session of {{target}} ended",
@@ -12301,7 +12311,7 @@
       "organization": "Organization"
     },
     "preferences": {
-      "title": "Preferences",
+      "title": "Certificates",
       "thresholdDays": "Expiring threshold (days)",
       "thresholdHint": "A certificate ending within this many days reads as expiring.",
       "save": "Save"

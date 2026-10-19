@@ -64,7 +64,7 @@ const SshConsoleDisplay = ({
   const isDirect = !isServerRole(status);
   const session = machineDetails.ssh_session;
   const sessionId = session?.id || '';
-  const consoleKey = consoleKeyOf({ kind: 'ssh', id, name });
+  const consoleKey = consoleKeyOf({ kind: 'ssh', id, name, session });
   const starters = {
     status,
     id,

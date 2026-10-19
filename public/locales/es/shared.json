@@ -1932,6 +1932,16 @@
       "clear": "Limpiar",
       "sentBefore": "Enviados antes",
       "nothingSent": "Nada enviado todavía",
+      "historyWhen": "Cuándo",
+      "historyCommand": "Comando",
+      "historySentTo": "Enviado a",
+      "sentTo_one": "{{count}} pestaña",
+      "sentTo_other": "{{count}} pestañas",
+      "use": "Usar",
+      "copy": "Copiar",
+      "copied": "Copiado al portapapeles",
+      "copyFailed": "El portapapeles rechazó la copia",
+      "clearHistory": "Borrar historial",
       "acceptCount_one": "{{count}} de {{total}} pestañas aceptan",
       "acceptCount_other": "{{count}} de {{total}} pestañas aceptan",
       "sessionEnded": "La sesión de {{target}} terminó",
@@ -12301,7 +12311,7 @@
       "organization": "Organización"
     },
     "preferences": {
-      "title": "Preferencias",
+      "title": "Certificados",
       "thresholdDays": "Umbral de expiración (días)",
       "thresholdHint": "Un certificado que vence dentro de este número de días se muestra como por expirar.",
       "save": "Guardar"

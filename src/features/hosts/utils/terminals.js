@@ -1,5 +1,9 @@
 const STORAGE_KEY = 'console_tabs';
 
+const HISTORY_KEY = 'console_history';
+
+const HISTORY_LIMIT = 200;
+
 export const CONSOLE_KINDS = ['host_shell', 'ssh', 'zlogin', 'vnc', 'rdp'];
 
 export const TERMINAL_KINDS = ['host_shell', 'ssh', 'zlogin'];
@@ -10,13 +14,36 @@ export const PLACES = ['footer', 'page'];
 
 /**
  * The key one console is held under: its kind, its host, its machine and
- * its RDP target, the last two empty where the kind has none.
+ * its RDP target, the last two empty where the kind has none, and for a
+ * held kind, the host shell and SSH, its session's id as well, so every
+ * session a person starts is a tab of its own while a display is one tab
+ * a machine or an RDP target.
  *
- * @param {{ kind: string, id: string, name?: string, target?: string }} entry - The console
+ * @param {{ kind: string, id: string, name?: string, target?: string, session?: Object|null }} entry - The console
  * @returns {string} The key
  */
-export const consoleKeyOf = ({ kind, id, name = '', target = '' }) =>
-  `${kind}|${id}|${name}|${target}`;
+export const consoleKeyOf = ({ kind, id, name = '', target = '', session = null }) =>
+  HELD_KINDS.includes(kind)
+    ? `${kind}|${id}|${name}|${target}|${session?.id || ''}`
+    : `${kind}|${id}|${name}|${target}`;
+
+/**
+ * Whether a list already holds a console of one listed session, the
+ * same kind and host and the same session id, whatever key the tab was
+ * given when it opened.
+ *
+ * @param {Array<Object>} consoles - The consoles
+ * @param {Object} entry - The console of `sessionToConsole`
+ * @returns {boolean} True while a console of that session is held
+ */
+export const holdsSession = (consoles, entry) =>
+  Boolean(entry.session?.id) &&
+  consoles.some(
+    held =>
+      held.kind === entry.kind &&
+      held.id === entry.id &&
+      String(held.session?.id || '') === String(entry.session.id)
+  );
 
 /**
  * Whether a console is a terminal, one whose broadcast is text written
@@ -155,25 +182,59 @@ export const nextActive = (before, after, active, left) => {
 export const receivers = consoles => footerConsoles(consoles).filter(entry => entry.accepts);
 
 /**
- * The text a broadcast sends: the string as typed, with a newline after
- * it while the Terminal preferences say so.
+ * The text a broadcast sends: the string as typed, with Enter after it
+ * while the Terminal preferences say so, the carriage return a terminal
+ * sends for the Enter key, which a Unix PTY turns into a newline and a
+ * Windows console takes as the line's end, where a bare newline is
+ * ignored.
  *
  * @param {string} text - The typed string
  * @param {boolean} newline - Whether Enter follows
  * @returns {string} The text sent
  */
-export const broadcastText = (text, newline) => (newline ? `${text}\n` : text);
+export const broadcastText = (text, newline) => (newline ? `${text}\r` : text);
 
 /**
- * The history after one broadcast: the string first, the same string
- * sent before dropped, twenty kept at most.
+ * The history after one broadcast: the entry first, the same string's
+ * earlier entry dropped, two hundred kept at most.
  *
- * @param {Array<string>} history - The strings sent before, newest first
- * @param {string} text - The string sent
- * @returns {Array<string>} The history
+ * @param {Array<Object>} history - The entries sent before, newest first
+ * @param {{ text: string, at: string, took: number, targets: Array<string> }} entry - The string sent, when, how many tabs took it and their labels
+ * @returns {Array<Object>} The history
  */
-export const withSent = (history, text) =>
-  [text, ...history.filter(entry => entry !== text)].slice(0, 20);
+export const withSent = (history, entry) =>
+  [entry, ...history.filter(held => held.text !== entry.text)].slice(0, HISTORY_LIMIT);
+
+/**
+ * The broadcast history the browser holds, `console_history`, newest
+ * first, each entry `{ text, at, took, targets }`; empty while nothing is
+ * stored or the stored value is no list.
+ *
+ * @returns {Array<Object>} The entries
+ */
+export const readStoredHistory = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    return Array.isArray(stored)
+      ? stored.filter(entry => entry && typeof entry.text === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Store the broadcast history, the key removed when it empties.
+ *
+ * @param {Array<Object>} history - The entries of `withSent`
+ */
+export const writeStoredHistory = history => {
+  if (history.length === 0) {
+    localStorage.removeItem(HISTORY_KEY);
+    return;
+  }
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+};
 
 /**
  * A console from one session the agent lists, `GET term/sessions`,
@@ -187,7 +248,7 @@ export const withSent = (history, text) =>
  */
 export const sessionToConsole = (kind, id, session) => {
   const name = kind === 'host_shell' ? '' : String(session.machine_name || '');
-  return { key: consoleKeyOf({ kind, id, name }), kind, id, name, target: '', session };
+  return { key: consoleKeyOf({ kind, id, name, session }), kind, id, name, target: '', session };
 };
 
 /**

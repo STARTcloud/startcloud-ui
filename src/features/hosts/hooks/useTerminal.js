@@ -5,12 +5,14 @@ import {
   footerConsoles,
   nextActive,
   pageConsolesOf,
+  readStoredHistory,
   readStoredTabs,
   receivers,
   withConsole,
   withSent,
   withStoredTab,
   withoutConsole,
+  writeStoredHistory,
   writeStoredTabs,
 } from '../utils/terminals';
 
@@ -19,7 +21,7 @@ const store = {
   active: '',
   states: {},
   turns: {},
-  history: [],
+  history: readStoredHistory(),
   opens: 0,
   opensIn: 'footer',
   prefsOpen: false,
@@ -239,17 +241,34 @@ export const registerSender = (key, sender) => {
 
 /**
  * Send one string to every footer console that accepts broadcasts, the
- * string recorded in the history, newest first.
+ * string recorded first in the history with the moment, how many tabs
+ * took it and their labels, the history written to `console_history`.
  *
  * @param {string} text - The text as the person typed it
- * @param {string} sent - The text sent, the newline added where the preferences say so
+ * @param {string} sent - The text sent, Enter added where the preferences say so
  * @returns {number} How many consoles took it
  */
 export const broadcast = (text, sent) => {
   const took = receivers(store.consoles).filter(entry => senders.get(entry.key)?.(sent) === true);
-  store.history = withSent(store.history, text);
+  store.history = withSent(store.history, {
+    text,
+    at: new Date().toISOString(),
+    took: took.length,
+    targets: took.map(entry => entry.label),
+  });
+  writeStoredHistory(store.history);
   announce();
   return took.length;
+};
+
+/**
+ * Forget every broadcast sent, the Clear history button of the history
+ * dialog, `console_history` removed with it.
+ */
+export const clearConsoleHistory = () => {
+  store.history = [];
+  writeStoredHistory(store.history);
+  announce();
 };
 
 /**
@@ -264,15 +283,14 @@ export const setOpensIn = placed => {
 };
 
 /**
- * Forget every console at once, a sign-out, the placements with them;
- * the caller closes what each held.
+ * Forget every console at once, a sign-out, the placements with them and
+ * the broadcast history kept; the caller closes what each held.
  */
 export const dropEveryConsole = () => {
   store.consoles = [];
   store.active = '';
   store.states = {};
   store.turns = {};
-  store.history = [];
   senders.clear();
   writeStoredTabs({});
   announce();
@@ -307,9 +325,10 @@ export const useConsoleStates = () => useSyncExternalStore(subscribe, readStates
 export const useConsoleTurns = () => useSyncExternalStore(subscribe, readTurns);
 
 /**
- * The strings broadcast before, newest first.
+ * The broadcasts sent before, newest first, each `{ text, at, took,
+ * targets }`.
  *
- * @returns {Array<string>} The history
+ * @returns {Array<Object>} The history
  */
 export const useConsoleHistory = () => useSyncExternalStore(subscribe, readHistory);
 

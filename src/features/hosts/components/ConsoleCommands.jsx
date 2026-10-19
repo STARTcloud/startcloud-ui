@@ -1,27 +1,28 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaClockRotateLeft, FaPaperPlane, FaXmark } from 'react-icons/fa6';
 
-import { broadcast, useConsoleHistory } from '../hooks/useTerminal';
+import { broadcast } from '../hooks/useTerminal';
 import { loadTerminalPrefs } from '../utils/terminalPrefs';
 import { broadcastText } from '../utils/terminals';
+
+import CommandsHistoryDialog from './CommandsHistoryDialog';
 
 /**
  * The Commands bar of the footer's Consoles pane, between the tab strip
  * and the terminals while two or more tabs are open: one field typed
- * once, Send writing it to every tab that accepts broadcasts as the keys
- * typed, Enter after it while the Terminal preferences say so, a
- * terminal taking it down its socket and a VNC or RDP tab as keystrokes;
- * beside the field the history of what was sent, newest first, a pick
- * filling the field again, Clear emptying it, and the count of the tabs
- * that accept over every tab. Enter in the field sends.
+ * once with Clear inside it, Send, a glyph, writing it to every tab that
+ * accepts broadcasts as the keys typed, Enter after it while the Terminal
+ * preferences say so, a terminal taking it down its socket and a VNC or
+ * RDP tab as keystrokes; the history button opening the history dialog,
+ * a pick there filling the field again; and the count of the tabs that
+ * accept over every tab as `accepting/total`. Enter in the field sends.
  */
 const ConsoleCommands = ({ accepting, total }) => {
   const { t } = useTranslation();
-  const history = useConsoleHistory();
   const [text, setText] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const send = () => {
     const typed = text;
@@ -42,73 +43,62 @@ const ConsoleCommands = ({ accepting, total }) => {
   return (
     <div className="console-commands" data-bar="console-commands">
       <span className="console-commands-label">{t('footer.console.commands')}</span>
-      <input
-        type="text"
-        className="form-control form-control-sm console-commands-field"
-        value={text}
-        placeholder={t('footer.console.commandPlaceholder')}
-        aria-label={t('footer.console.commands')}
-        data-field="command"
-        onChange={event => setText(event.target.value)}
-        onKeyDown={onKeyDown}
-      />
-      <Dropdown drop="up" align="end">
-        <Dropdown.Toggle
-          as="button"
+      <div className="input-group input-group-sm console-commands-field">
+        <input
+          type="text"
+          className="form-control"
+          value={text}
+          placeholder={t('footer.console.commandPlaceholder')}
+          aria-label={t('footer.console.commands')}
+          data-field="command"
+          onChange={event => setText(event.target.value)}
+          onKeyDown={onKeyDown}
+        />
+        <button
           type="button"
-          bsPrefix="btn"
-          className="btn btn-sm btn-outline-secondary btn-glyph"
-          title={t('footer.console.sentBefore')}
-          aria-label={t('footer.console.sentBefore')}
-          data-action="broadcast-history"
+          className="btn btn-outline-secondary btn-glyph"
+          disabled={!text}
+          title={t('footer.console.clear')}
+          aria-label={t('footer.console.clear')}
+          data-action="broadcast-clear"
+          onClick={() => setText('')}
         >
-          <FaClockRotateLeft />
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          {history.length === 0 ? (
-            <Dropdown.ItemText className="text-body-secondary small">
-              {t('footer.console.nothingSent')}
-            </Dropdown.ItemText>
-          ) : (
-            history.map(entry => (
-              <Dropdown.Item
-                as="button"
-                type="button"
-                key={entry}
-                className="font-monospace small"
-                data-sent={entry}
-                onClick={() => setText(entry)}
-              >
-                {entry}
-              </Dropdown.Item>
-            ))
-          )}
-        </Dropdown.Menu>
-      </Dropdown>
-      <button
-        type="button"
-        className="btn btn-sm btn-primary"
-        disabled={!text || accepting === 0}
-        data-action="broadcast-send"
-        onClick={send}
-      >
-        <FaPaperPlane className="me-1" aria-hidden="true" />
-        {t('footer.console.send')}
-      </button>
+          <FaXmark />
+        </button>
+      </div>
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary btn-glyph"
-        disabled={!text}
-        title={t('footer.console.clear')}
-        aria-label={t('footer.console.clear')}
-        data-action="broadcast-clear"
-        onClick={() => setText('')}
+        title={t('footer.console.sentBefore')}
+        aria-label={t('footer.console.sentBefore')}
+        data-action="broadcast-history"
+        onClick={() => setHistoryOpen(true)}
       >
-        <FaXmark />
+        <FaClockRotateLeft />
       </button>
-      <span className="console-commands-count text-body-secondary" data-note="accept-count">
-        {t('footer.console.acceptCount', { count: accepting, total })}
+      <button
+        type="button"
+        className="btn btn-sm btn-primary btn-glyph"
+        disabled={!text || accepting === 0}
+        title={t('footer.console.send')}
+        aria-label={t('footer.console.send')}
+        data-action="broadcast-send"
+        onClick={send}
+      >
+        <FaPaperPlane />
+      </button>
+      <span
+        className="console-commands-count text-body-secondary"
+        title={t('footer.console.acceptCount', { count: accepting, total })}
+        data-note="accept-count"
+      >
+        {accepting}/{total}
       </span>
+      <CommandsHistoryDialog
+        show={historyOpen}
+        onHide={() => setHistoryOpen(false)}
+        onPick={setText}
+      />
     </div>
   );
 };

@@ -2218,7 +2218,14 @@ hosts offer neither.
   footer: the host shell behind `host-terminal`, an SSH shell behind
   `ssh`, a zlogin terminal behind `zlogin`, a VNC display behind `vnc`
   and an RDP display behind `rdp`, every body mounted and the active
-  one drawn on top, so a tab switched away keeps running. A terminal
+  one drawn on top, so a tab switched away keeps running. A host shell
+  or an SSH shell is one tab a session, every Open starting a new
+  session beside the ones open, because the agent holds as many as a
+  person starts; a VNC display is one tab a machine, the display being
+  shared, a zlogin terminal one tab a zone, the agent holding one
+  console a zone, and an RDP display one tab a target, a second viewer
+  of the same target taking the first's place at the guest, an Open of
+  one already open bringing its tab to the front. A terminal
   tab is written against a terminal source, the route that starts the
   session, its WebSocket, its ticket from `GET /api/ws-ticket`, unbound
   for the host shell and bound to the machine otherwise, and the route
@@ -2236,7 +2243,8 @@ hosts offer neither.
   draws the one display the machine shares with every viewer; an RDP
   tab draws the client's own bridge, one socket a viewer. The tab strip
   draws while two or more tabs are open, the placeholder while none is;
-  a tab is named by its machine, the host for the host shell, with its
+  a tab is named by its machine, the host for the host shell, a second
+  shell of the same host or machine numbered, with its
   kind beside it, the active tab in the brand colour and a tab that
   accepts broadcasts under the brand bar along its top edge; its ×
   closes it and stops its session. No button on the strip opens a
@@ -2265,14 +2273,20 @@ hosts offer neither.
   the font family and the broadcast newline, kept in the browser and
   applied to every open terminal at once.
 - **Commands.** While two or more tabs are open the Commands bar draws
-  between the strip and the bodies: one field typed once, Send writing
-  it to every tab marked Accept broadcasts as the keys typed, down the
-  terminal's own socket and as keystrokes into a VNC or an RDP display,
-  Enter after it while the broadcast newline preference is on, the
-  preference on by default; the history of what was sent beside the
-  field, newest first, a pick filling the field again; Clear; and the
-  count of the tabs that accept over every tab. The backend is unchanged
-  by a broadcast.
+  between the strip and the bodies: one field typed once, Clear inside
+  it, Send, a glyph, writing it to every tab marked Accept broadcasts as
+  the keys typed, down the terminal's own socket and as keystrokes into
+  a VNC or an RDP display, Enter after it while the broadcast newline
+  preference is on, the preference on by default, Enter sent as the
+  carriage return a terminal sends for the key, because a Windows
+  console ignores a bare newline; the history button opening the
+  history dialog, one row a string sent, newest first, with the moment,
+  the string, how many tabs took it and their names, Use filling the
+  field again, Copy putting it on the clipboard and Clear history
+  forgetting every row, the rows the browser's own under
+  `console_history`, two hundred at most, kept across reloads and
+  sign-outs; and the count of the tabs that accept over every tab as
+  `accepting/total`. The backend is unchanged by a broadcast.
 - **Persistence.** The placement of every console, footer or page, is
   the browser's own under `console_tabs`, keyed by the session's id for
   a terminal and by the host and the machine for a display; on sign-in,
@@ -2280,7 +2294,7 @@ hosts offer neither.
   `reset`, the sessions of every host a placement names are listed,
   `GET /api/term/sessions`, `GET /api/ssh/sessions` and
   `GET /api/zlogin/sessions`, the ones the agent still holds re-attached
-  where the person had them and the rest dropped from the map, a
+  where the person had them, each its own tab, and the rest dropped from the map, a
   display re-attached while the machine runs; a `session-ended` event
   of the `sessions` topic closes the matching tab with a notice; a
   sign-out stops the host shell and SSH sessions and empties the map.
@@ -2307,7 +2321,7 @@ hosts offer neither.
   them on.
 - **Storage.** `footer_height`, `footer_open`, `footer_view`,
   `tasks_min_priority`, `tasks_columns`, `table_prefs_tasks`,
-  `terminal_prefs` and `console_tabs` per origin,
+  `terminal_prefs`, `console_tabs` and `console_history` per origin,
   in the session contract's storage table.
 
 Every health surface speaks one shape, `{ status, timestamp, services }`,

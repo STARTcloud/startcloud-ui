@@ -185,9 +185,10 @@ ConsoleBody.propTypes = {
  * in focus while that host lists `host-terminal`, the one button of the
  * pane that opens a console, because the pane is where a person looks
  * for one. A tab is named by its machine, the
- * host for the host shell, with its kind beside it, the active tab in
- * the brand colour and a tab that accepts broadcasts under the brand
- * bar; its × closes it and stops its session. A right-click on a tab
+ * host for the host shell, a second shell of the same host or machine
+ * numbered, with its kind beside it, the active tab in the brand colour
+ * and a tab that accepts broadcasts under the brand bar; its × closes it
+ * and stops its session. A right-click on a tab
  * opens its menu: Accept broadcasts, Send to the machine's or the zone's
  * page, Reconnect, Restart, Terminal preferences and Close. The terminal
  * preferences dialog draws here.

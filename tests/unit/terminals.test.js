@@ -4,10 +4,12 @@ import {
   broadcastText,
   consoleKeyOf,
   footerConsoles,
+  holdsSession,
   isHeldKind,
   isTerminalKind,
   nextActive,
   pageConsolesOf,
+  readStoredHistory,
   readStoredTabs,
   receivers,
   sessionLives,
@@ -19,6 +21,7 @@ import {
   withSent,
   withStoredTab,
   withoutConsole,
+  writeStoredHistory,
   writeStoredTabs,
 } from '../../src/features/hosts/utils/terminals.js';
 
@@ -33,10 +36,10 @@ beforeEach(() => {
   });
 });
 
-const shell = { key: 'host_shell|1||', kind: 'host_shell', id: '1', name: '', placed: 'footer' };
+const shell = { key: 'host_shell|1|||', kind: 'host_shell', id: '1', name: '', placed: 'footer' };
 
 const ssh = {
-  key: 'ssh|1|dev-1|',
+  key: 'ssh|1|dev-1||c1',
   kind: 'ssh',
   id: '1',
   name: 'dev-1',
@@ -48,11 +51,27 @@ const ssh = {
 const vnc = { key: 'vnc|1|dev-1|', kind: 'vnc', id: '1', name: 'dev-1', placed: 'page' };
 
 describe('consoleKeyOf and the kinds', () => {
-  it('keys a console by its kind, host, machine and target', () => {
-    expect(consoleKeyOf({ kind: 'host_shell', id: '1' })).toBe('host_shell|1||');
+  it('keys a display by its kind, host, machine and target, and a held shell by its session too', () => {
+    expect(consoleKeyOf({ kind: 'host_shell', id: '1' })).toBe('host_shell|1|||');
+    expect(consoleKeyOf({ kind: 'host_shell', id: '1', session: { id: 'a1' } })).toBe(
+      'host_shell|1|||a1'
+    );
+    expect(consoleKeyOf({ kind: 'ssh', id: '1', name: 'dev-1', session: { id: 'c2' } })).toBe(
+      'ssh|1|dev-1||c2'
+    );
     expect(consoleKeyOf({ kind: 'rdp', id: 'self', name: 'dev-1', target: 'guest' })).toBe(
       'rdp|self|dev-1|guest'
     );
+    expect(consoleKeyOf({ kind: 'vnc', id: '1', name: 'dev-1', session: { id: 'x' } })).toBe(
+      'vnc|1|dev-1|'
+    );
+  });
+
+  it('tells whether a listed session is already held, whatever the tab was keyed', () => {
+    expect(holdsSession([ssh], { kind: 'ssh', id: '1', session: { id: 'c1' } })).toBe(true);
+    expect(holdsSession([ssh], { kind: 'ssh', id: '1', session: { id: 'c2' } })).toBe(false);
+    expect(holdsSession([ssh], { kind: 'host_shell', id: '1', session: { id: 'c1' } })).toBe(false);
+    expect(holdsSession([shell], { kind: 'host_shell', id: '1', session: null })).toBe(false);
   });
 
   it('tells the terminal kinds and the held kinds apart', () => {
@@ -102,23 +121,36 @@ describe('nextActive', () => {
 });
 
 describe('broadcastText and withSent', () => {
-  it('adds the newline while the preference says so', () => {
-    expect(broadcastText('uptime', true)).toBe('uptime\n');
+  it('adds Enter as a carriage return while the preference says so', () => {
+    expect(broadcastText('uptime', true)).toBe('uptime\r');
     expect(broadcastText('uptime', false)).toBe('uptime');
   });
 
-  it('keeps the newest first, one copy of each and twenty at most', () => {
-    expect(withSent(['ls', 'uptime'], 'uptime')).toEqual(['uptime', 'ls']);
-    const many = [...Array(20).keys()].map(index => `cmd-${index}`);
-    expect(withSent(many, 'last')).toHaveLength(20);
-    expect(withSent(many, 'last')[0]).toBe('last');
+  it('keeps the newest first, one entry a string and two hundred at most', () => {
+    const sent = text => ({ text, at: '2026-10-18T12:00:00.000Z', took: 2, targets: ['Desk'] });
+    expect(withSent([sent('ls'), sent('uptime')], sent('uptime')).map(entry => entry.text)).toEqual(
+      ['uptime', 'ls']
+    );
+    const many = [...Array(200).keys()].map(index => sent(`cmd-${index}`));
+    expect(withSent(many, sent('last'))).toHaveLength(200);
+    expect(withSent(many, sent('last'))[0].text).toBe('last');
+  });
+
+  it('stores the history and reads it back, nothing for a value that is no list', () => {
+    const entry = { text: 'uptime', at: '2026-10-18T12:00:00.000Z', took: 1, targets: ['Desk'] };
+    writeStoredHistory([entry]);
+    expect(readStoredHistory()).toEqual([entry]);
+    storage.set('console_history', '{"a":1}');
+    expect(readStoredHistory()).toEqual([]);
+    writeStoredHistory([]);
+    expect(storage.has('console_history')).toBe(false);
   });
 });
 
 describe('sessionToConsole and sessionLives', () => {
   it('names the machine of a listed SSH session and none for the host shell', () => {
     expect(sessionToConsole('ssh', '1', { id: 'c1', machine_name: 'dev-1' })).toEqual({
-      key: 'ssh|1|dev-1|',
+      key: 'ssh|1|dev-1||c1',
       kind: 'ssh',
       id: '1',
       name: 'dev-1',

@@ -236,7 +236,7 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
       if (!session) {
         return;
       }
-      const key = consoleKeyOf({ kind, id, name, target: session.target || '' });
+      const key = consoleKeyOf({ kind, id, name, target: session.target || '', session });
       drawn.current.delete(key);
       setSessions(prev => ({ ...prev, ...CLEARED[kind] }));
       if (consolesHeld().some(entry => entry.key === key)) {

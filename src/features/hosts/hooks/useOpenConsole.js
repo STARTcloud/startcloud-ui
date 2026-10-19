@@ -49,13 +49,27 @@ const stopQuietly = (source, status, id, sessionId) =>
 
 const sourceOf = entry => (entry.kind === 'host_shell' ? HOST_SHELL : sshShell(entry.name));
 
+const othersOf = ({ kind, id, name, session }) =>
+  isHeldKind(kind)
+    ? consolesHeld().filter(
+        entry =>
+          entry.kind === kind &&
+          entry.id === id &&
+          entry.name === name &&
+          String(entry.session?.id || '') !== String(session?.id || '')
+      ).length
+    : 0;
+
 /**
  * The openers and the actions of the console store, the ones that reach
  * an agent or the zone terminal provider: `open` starts a console of one
  * kind and adds it, the host shell through `POST term/start`, SSH, VNC,
  * RDP and zlogin through the one start each console header calls, the
- * zlogin session through the provider; `adopt` adds a console over a
- * session the agent already holds or the page already draws; `close`
+ * zlogin session through the provider, a host shell or an SSH shell
+ * started afresh on every open, each session its own tab numbered after
+ * the first of its host or machine, a display or a zlogin terminal
+ * already open brought to the front instead; `adopt` adds a console over
+ * a session the agent already holds or the page already draws; `close`
  * drops one and stops what it started, the host shell's and SSH's
  * session through their stop route, the zlogin session through the
  * provider's cleanup, the VNC display and the RDP bridge left as they
@@ -99,14 +113,16 @@ export const useConsoleActions = () => {
 
   const adopt = useCallback(
     async ({ kind, id, name = '', target = '', server = null, session, placed, accepts }) => {
-      const key = consoleKeyOf({ kind, id, name, target });
+      const key = consoleKeyOf({ kind, id, name, target, session });
+      const base = name || (server ? hostLabel(server) : String(id));
+      const others = othersOf({ kind, id, name, session });
       const entry = {
         key,
         kind,
         id,
         name,
         target,
-        label: name || (server ? hostLabel(server) : String(id)),
+        label: others > 0 ? `${base} ${others + 1}` : base,
         noun: machineNoun(server ? [server] : []),
         session,
         placed,
@@ -164,15 +180,17 @@ export const useConsoleActions = () => {
 
   const open = useCallback(
     async ({ kind, id, name = '', target = '', server = null, placed = 'footer' }) => {
-      const key = consoleKeyOf({ kind, id, name, target });
-      const existing = consolesHeld().find(entry => entry.key === key);
-      if (existing) {
-        if (existing.placed === placed) {
-          activateConsole(key);
-        } else {
-          placeConsole(key, placed);
+      if (!isHeldKind(kind)) {
+        const key = consoleKeyOf({ kind, id, name, target });
+        const existing = consolesHeld().find(entry => entry.key === key);
+        if (existing) {
+          if (existing.placed === placed) {
+            activateConsole(key);
+          } else {
+            placeConsole(key, placed);
+          }
+          return existing;
         }
-        return existing;
       }
       let session = null;
       try {
