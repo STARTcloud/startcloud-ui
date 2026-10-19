@@ -4163,8 +4163,28 @@ a.stat-card:focus-visible {
   overflow: auto;
 }
 
+.task-modal .modal-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.task-modal .task-output-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.task-modal .task-output-card .card-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .task-output {
-  max-height: 300px;
+  flex: 1 1 auto;
+  min-height: 12rem;
   overflow: auto;
   padding: 8px;
   border-radius: var(--bs-border-radius-sm);

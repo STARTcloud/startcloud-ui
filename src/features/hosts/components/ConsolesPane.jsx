@@ -16,6 +16,7 @@ import {
 
 import TabStrip from '../../../components/common/TabStrip';
 import ContextMenu from '../../../components/layout/ContextMenu';
+import { useFocus } from '../hooks/useFocus';
 import { useConsoleActions } from '../hooks/useOpenConsole';
 import {
   activateConsole,
@@ -180,7 +181,10 @@ ConsoleBody.propTypes = {
  * display or an RDP display, every body mounted and the active one
  * drawn on top, so a tab switched away keeps running; the tab strip on
  * top while two or more are open, the Commands bar under it; the
- * placeholder while none is open. A tab is named by its machine, the
+ * placeholder while none is open, carrying Open host shell for the host
+ * in focus while that host lists `host-terminal`, the one button of the
+ * pane that opens a console, because the pane is where a person looks
+ * for one. A tab is named by its machine, the
  * host for the host shell, with its kind beside it, the active tab in
  * the brand colour and a tab that accepts broadcasts under the brand
  * bar; its × closes it and stops its session. A right-click on a tab
@@ -195,9 +199,11 @@ const ConsolesPane = ({ active, height }) => {
   const turns = useConsoleTurns();
   const prefsOpen = useTerminalPrefsOpen();
   const actions = useConsoleActions();
+  const focus = useFocus();
   const [menu, setMenu] = useState(null);
   const tabs = useMemo(() => footerConsoles(consoles), [consoles]);
   const accepting = receivers(consoles).length;
+  const shellOffered = focus.kind === 'host' && focus.features.includes('host-terminal');
 
   const strip = tabs.map(entry => ({
     key: entry.key,
@@ -307,6 +313,24 @@ const ConsolesPane = ({ active, height }) => {
             <div className="text-center">
               <div className="fw-medium">{t('footer.console.noneOpen')}</div>
               <div className="small opacity-75">{t('footer.console.openFromControls')}</div>
+              {shellOffered ? (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary mt-2"
+                  data-action="open-host-shell"
+                  onClick={() =>
+                    actions.open({
+                      kind: 'host_shell',
+                      id: focus.id,
+                      server: focus.server,
+                      placed: 'footer',
+                    })
+                  }
+                >
+                  <FaTerminal className="me-1" aria-hidden />
+                  {t('hosts.controls.openHostShell')}
+                </button>
+              ) : null}
             </div>
           </div>
         ) : null}

@@ -219,7 +219,7 @@ const ReadOnlyPreferences = ({ account, profile, folds, after = null }) => {
   return (
     <div className="tab-pane fade show active">
       <SectionCard
-        title={t('profile.preferences.title')}
+        title={t('profile.preferences.general')}
         className="mb-0"
         actions={<ManageLink account={account} />}
         folded={folds.folded('preferences')}
@@ -423,7 +423,7 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
   return (
     <div className="tab-pane fade show active">
       <SectionCard
-        title={t('profile.preferences.title')}
+        title={t('profile.preferences.general')}
         className="mb-0"
         folded={folds.folded('preferences')}
         onFold={() => folds.toggle('preferences')}
@@ -578,7 +578,9 @@ EditablePreferences.propTypes = {
 
 /**
  * The Preferences section of the identity contract at
- * `/user/profile/preferences`, one `SectionCard` titled Preferences whose
+ * `/user/profile/preferences`, one `SectionCard` titled General, the
+ * crumb and the row already saying Preferences and every card a feature
+ * adds under it named for that feature, whose
  * fold is kept under `table_prefs_profile_preferences`: language, mode
  * and motion on one row, each a select that writes through on change,
  * language and mode the same values the chrome's controls write through

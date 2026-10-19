@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { startTransition, useEffect, useMemo, useState } from 'react';
+import { Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -256,7 +257,7 @@ const App = ({ getSupportedLanguages }) => {
   const ticket = useTicketUrl({ status, user, claims, activeOrgCode: orgCode });
 
   useFavicon(brandMarkUrl(status.brand, theme, themes), brandLogoUrl(status.brand));
-  usePwa(status.brand.name);
+  usePwa({ app: status.brand.name, offline: Boolean(status.offline) });
   useAccountPreferences({
     user,
     setModePreference: setMode,
@@ -296,7 +297,12 @@ const App = ({ getSupportedLanguages }) => {
   const footerPane = footerPaneFor({ status, account: { user } });
 
   if (setupComplete === null) {
-    return <div>{t('loading')}</div>;
+    return (
+      <div className="d-flex align-items-center justify-content-center gap-2 vh-100" role="status">
+        <Spinner animation="border" size="sm" />
+        <span>{t('loading')}</span>
+      </div>
+    );
   }
 
   const globalAdmin = isGlobalAdmin(user);

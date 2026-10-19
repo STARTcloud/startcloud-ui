@@ -143,19 +143,21 @@ const ChainPage = ({ context }) => {
   return (
     <div className="list row" data-page="certs-chain">
       <p className="text-body-secondary">{t('certs.chain.about')}</p>
-      <SectionCard title={t('certs.chain.input')} {...foldOf(folds, 'input')}>
-        <InputZone onDetected={detected} />
-      </SectionCard>
-      <SectionHeading title={t('certs.chain.loaded')} count={certs.length} actions={actions} />
-      <Loaded certs={certs} onRemove={remove} />
-      {chain ? (
-        <>
-          <SectionHeading title={t('certs.chain.built')} />
-          <div data-list="chain">
-            <ChainView chain={chain} labels={certs.map(labelOf)} />
-          </div>
-        </>
-      ) : null}
+      <div>
+        <SectionCard title={t('certs.chain.input')} {...foldOf(folds, 'input')}>
+          <InputZone onDetected={detected} />
+        </SectionCard>
+        <SectionHeading title={t('certs.chain.loaded')} count={certs.length} actions={actions} />
+        <Loaded certs={certs} onRemove={remove} />
+        {chain ? (
+          <>
+            <SectionHeading title={t('certs.chain.built')} />
+            <div data-list="chain">
+              <ChainView chain={chain} labels={certs.map(labelOf)} />
+            </div>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 };

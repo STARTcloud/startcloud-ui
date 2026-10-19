@@ -6,7 +6,9 @@ import { log } from '../lib/logger';
 /**
  * The first-run gate of a host that advertises `setup`: asks the host
  * whether setup is complete and sends the visitor to `/setup` until it is;
- * a host without the feature is complete from the start.
+ * a host without the feature is complete from the start, and a host that
+ * does not answer counts as complete, because a host whose status the
+ * page already holds was set up and an offline boot must reach the app.
  *
  * @param {Object} options - The gate
  * @param {boolean} options.enabled - Whether the host advertises `setup`
@@ -35,6 +37,7 @@ export const useSetupGate = ({ enabled, checkStatus }) => {
       .catch(error => {
         if (mounted) {
           log.app.error('Error checking setup status', { error: error.message });
+          setSetupComplete(true);
         }
       });
     return () => {

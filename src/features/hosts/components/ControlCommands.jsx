@@ -1,13 +1,15 @@
 import PropTypes from 'prop-types';
 import { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaTerminal } from 'react-icons/fa6';
 import { matchPath, useLocation } from 'react-router-dom';
 
 import { NavbarSearchContext } from '../../../contexts/SearchContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useConsoleActions } from '../hooks/useOpenConsole';
 import { ServersContext, useControlCommandsPublish, useServers } from '../hooks/useServers';
 import { hostHasFeature } from '../utils/capabilities';
-import { machineNoun } from '../utils/hosts';
+import { SELF, isServerRole, machineNoun } from '../utils/hosts';
 import { canPowerOffHosts, canStartStopMachines } from '../utils/permissions';
 
 import { useBulkCommands } from './BulkRows';
@@ -94,13 +96,29 @@ RouteCommands.propTypes = {
 const HomeCommands = ({ user }) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const { servers } = useServers();
+  const { servers, held } = useServers();
+  const consoles = useConsoleActions();
   const offered = useMemo(
     () => servers.filter(server => hostHasFeature(server, 'machines')),
     [servers]
   );
+  const agent = isServerRole(status) ? null : held[0] || null;
+  const shell = hostHasFeature(agent, 'host-terminal')
+    ? [
+        {
+          key: 'host-shell',
+          group: 'console',
+          icon: FaTerminal,
+          tone: 'text-info',
+          labelKey: 'hosts.controls.openHostShell',
+          action: 'host-shell',
+          run: () =>
+            consoles.open({ kind: 'host_shell', id: SELF, server: agent, placed: 'footer' }),
+        },
+      ]
+    : [];
   const { commands, dialogs } = useBulkCommands({ status, servers: offered, scope: 'all', user });
-  const shown = offered.length > 0 ? commands : NO_COMMANDS;
+  const shown = [...shell, ...(offered.length > 0 ? commands : NO_COMMANDS)];
   useControlCommandsPublish({
     label: t('hosts.bulk.menu'),
     commands: shown,
@@ -127,7 +145,9 @@ const NoCommands = () => {
  * The hosts feature's command list wherever the feature is mounted: on a
  * machine's routes the machine's commands under the noun the host's
  * hypervisors fix, on a host's routes the host's commands, on the home
- * route the bulk commands over every host that lists `machines`, and
+ * route the bulk commands over every host that lists `machines` and, on
+ * an agent role, Open host shell first while the serving agent lists
+ * `host-terminal`, since its dashboard is that host's own page, and
  * elsewhere none; the host a route names is found among every row the
  * server answered. It draws the commands' dialogs and publishes the list
  * with the Controls menu's label to the hosts feature's context, where

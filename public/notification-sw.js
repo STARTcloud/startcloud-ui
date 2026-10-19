@@ -53,10 +53,16 @@ const store = (key, response) => {
 const cacheFirst = (request, key) =>
   caches.match(key).then(hit => hit || fetch(request).then(response => store(key, response)));
 
+const fromCache = hit => {
+  const headers = new Headers(hit.headers);
+  headers.set('X-Served-From', 'cache');
+  return new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers });
+};
+
 const serverFirst = (request, key) =>
   fetch(request)
     .then(response => store(key, response))
-    .catch(() => caches.match(key).then(hit => hit || Response.error()));
+    .catch(() => caches.match(key).then(hit => (hit ? fromCache(hit) : Response.error())));
 
 self.addEventListener('fetch', event => {
   const { request } = event;

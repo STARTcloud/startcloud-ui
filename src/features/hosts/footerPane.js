@@ -48,9 +48,29 @@ const TASKS_VIEW = {
 
 const listsToken = (focus, token) => focus.kind === 'host' && focus.features.includes(token);
 
-const consoleRows = (entry, actions) => {
+const shellRow = (focus, actions) =>
+  listsToken(focus, 'host-terminal')
+    ? [
+        {
+          key: 'host-shell',
+          labelKey: 'hosts.controls.openHostShell',
+          icon: FaTerminal,
+          tone: 'text-info',
+          onClick: () =>
+            actions.open({
+              kind: 'host_shell',
+              id: focus.id,
+              server: focus.server,
+              placed: 'footer',
+            }),
+        },
+      ]
+    : [];
+
+const consoleRows = (entry, actions, focus) => {
   if (!entry) {
     return [
+      ...shellRow(focus, actions),
       {
         key: 'preferences',
         labelKey: 'footer.terminal.title',
@@ -60,6 +80,7 @@ const consoleRows = (entry, actions) => {
     ];
   }
   return [
+    ...shellRow(focus, actions),
     ...(entry.kind === 'zlogin'
       ? []
       : [
@@ -119,11 +140,13 @@ const consoleRows = (entry, actions) => {
  * the row draws their toggles: the Consoles view while the focus is one
  * host that lists `host-terminal` or any console of `CONSOLE_DOORS`, and
  * while any console is placed in the footer whatever the route, its
- * rows acting on the active tab, Reconnect, a new socket to the same
- * session, Restart, a new session, Terminal preferences, then Send to
- * the machine's or the zone's page and Close, on the right-click menu
- * and on the toggle's drop-up alike, Terminal preferences alone while no
- * tab is open, and `opened` the count of the times a console asked the
+ * rows Open host shell first while the host in focus lists
+ * `host-terminal`, then the rows acting on the active tab, Reconnect, a
+ * new socket to the same session, Restart, a new session, Terminal
+ * preferences, then Send to the machine's or the zone's page and Close,
+ * on the right-click menu and on the toggle's drop-up alike, Open host
+ * shell and Terminal preferences alone while no tab is open, and
+ * `opened` the count of the times a console asked the
  * pane to show the view; and the tasks view while the focus lists
  * `tasks` or, with every host in focus, while any host does, its tools
  * Refresh, the priority filter and the Columns picker and its menu row
@@ -146,7 +169,7 @@ export const useFooterViews = () => {
   const tasks = focus.kind === 'all' ? focus.hosts.length > 0 : listsToken(focus, 'tasks');
   const active = consoleOf(consoles, activeKey);
   return useMemo(() => {
-    const rows = consoleRows(active, actions);
+    const rows = consoleRows(active, actions, focus);
     const consolesView = {
       key: 'consoles',
       labelKey: 'footer.pane.consoles',
@@ -157,7 +180,7 @@ export const useFooterViews = () => {
       opened,
     };
     return [...(offered ? [consolesView] : []), ...(tasks ? [TASKS_VIEW] : [])];
-  }, [offered, tasks, active, actions, opened]);
+  }, [offered, tasks, active, actions, opened, focus]);
 };
 
 /**

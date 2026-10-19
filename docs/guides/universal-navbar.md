@@ -734,7 +734,7 @@ answers 404.
 | `/hosts/{id}/machines/{name}` and its pages, `/hosts/{id}/machines/{name}/snapshots` and `/hosts/{id}/machines/{name}/provisioning`            | Machine controls, Zone controls while the host names `bhyve` alone | the machine rows below                                                                                                                                                                                                                                                                                                                                                                                 |
 | `/hosts/{id}`, `/hosts/{id}/machines`                                                                                                          | Host actions                                                       | View host details first, which opens the host's Overview; Restart host and Power off host for an admin while the host lists `host-power`, the restart offering the fast reboot and its boot environment while the host lists `host-fast-reboot`; the bulk rows over this host's machines while it lists `machines`; the toggle disabled while the host offers neither the power rows nor the bulk rows |
 | every other page of the host's column under `/hosts/{id}`, the Network, Storage, Devices, System, Updates, Provisioning, Files and Agent pages | Host actions                                                       | the rows of `/hosts/{id}`, the host's menu on every page of the host, because the route names the host and the column names the page                                                                                                                                                                                                                                                                   |
-| `/`                                                                                                                                            | Bulk actions                                                       | the bulk rows over the machines of every host that lists `machines`, under the heading Across all hosts; disabled while no host lists it                                                                                                                                                                                                                                                               |
+| `/`                                                                                                                                            | Bulk actions                                                       | the bulk rows over the machines of every host that lists `machines`, under the heading Across all hosts; on an agent role Open host shell first while the serving agent lists `host-terminal`, the dashboard being that host's own page; disabled while no row draws                                                                                                                                   |
 | every other route                                                                                                                              | Controls, disabled                                                 | none                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 The machine rows, in the order they draw, each a request at the path the
@@ -2206,7 +2206,10 @@ hosts offer neither.
   task, the transfer line and the guest's step among them, the columns
   folding under the row where the dialog is narrow and spreading as it
   widens, then its output in
-  terminal colors with Copy, its metadata a fold under the output,
+  terminal colors with Copy, the output taking every line of the
+  dialog's height the details, the metadata and the subtasks leave,
+  never under twelve lines, so in the zoomed dialog the folds sit at the
+  foot and the body scrolls only past that, its metadata a fold under the output,
   folded until opened, and its subtasks each opening its own dialog,
   over `GET /api/tasks/{id}`, `GET /api/tasks/{id}/output`, the
   `/tasks/{id}/stream` WebSocket and `DELETE /api/tasks/{id}`, because
@@ -2237,7 +2240,11 @@ hosts offer neither.
   kind beside it, the active tab in the brand colour and a tab that
   accepts broadcasts under the brand bar along its top edge; its ×
   closes it and stops its session. No button on the strip opens a
-  console: the host's Controls menu carries Open host shell, and the
+  console; the placeholder, while nothing is open, carries Open host
+  shell for the host in focus while that host lists `host-terminal`,
+  because the pane is where a person looks for a shell; the host's
+  Controls menu carries Open host shell, on an agent role on the
+  dashboard too, the dashboard being that host's own page, and the
   machine's Controls menu carries one row a console the host's row
   lists, each row the logout row's shape, its scope glyph a toggle
   between the footer, where the console persists from page to page, and
@@ -2283,10 +2290,12 @@ hosts offer neither.
 - **The pane's menu.** A right-click on the pane opens one menu at the
   pointer, titled by the view, its rows
   `[{ key, labelKey, icon?, tone?, onClick }]` as the sidebar tree's
-  are and drawn by the same presenter, `ContextMenu`: the active tab's
-  Reconnect shell, Restart shell, Terminal preferences, Send to the
-  machine's or the zone's page and Close on the consoles, Terminal
-  preferences alone while no tab is open, Refresh on the tasks; the
+  are and drawn by the same presenter, `ContextMenu`: on the consoles
+  Open host shell first while the host in focus lists `host-terminal`,
+  then the active tab's Reconnect shell, Restart shell, Terminal
+  preferences, Send to the machine's or the zone's page and Close, Open
+  host shell and Terminal preferences alone while no tab is open,
+  Refresh on the tasks; the
   same rows on the toggle's drop-up; Escape, a click away or a
   right-click elsewhere closes it.
 - **No timer.** The pane reads once on
@@ -2487,8 +2496,13 @@ Each test answers through an in-app notice card, "Test sent." or
   lacks it and keeping it then, so one loaded version stays whole and the
   app opens with no network; `GET /api/status` alone is asked of the
   server first and answered from its last copy only while the server does
-  not answer, so the boot reaches the app offline with the tokens it last
-  saw, and no other `/api` request is ever answered from a copy. A new
+  not answer, that copy marked `X-Served-From: cache`, so the boot reaches
+  the app offline with the tokens it last saw and the shell raises one
+  sticky warning banner, in the new-version banner's shape with its
+  dismiss, saying the host is offline and the page is the copy this
+  device holds; a host that does not answer its setup status counts as
+  set up, so the gate never holds an offline boot; and no other `/api`
+  request is ever answered from a copy. A new
   version is a new worker with an empty cache; its `activate` drops the
   old version's cache, and no file is ever renamed or hashed for any of
   this. When a new worker

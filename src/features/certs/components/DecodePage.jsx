@@ -249,29 +249,31 @@ const DecodePage = ({ context }) => {
   return (
     <div className="list row" data-page="certs-decode">
       <p className="text-body-secondary">{t('certs.decode.about')}</p>
-      <SectionCard title={t('certs.decode.input')} {...foldOf(folds, 'input')}>
-        <InputZone onDetected={detected} />
-      </SectionCard>
-      {component ? (
-        <>
-          <ComponentSelect
-            components={components}
-            picked={component ? idOf(component) : ''}
-            onPick={pick}
-          />
-          <Decoded
-            component={component}
-            thresholdDays={vault.preferences.threshold_days}
-            busy={engine.busy}
-            onDownload={download}
-            onSave={save}
-            onCopy={copy}
-          />
-        </>
-      ) : null}
-      {held.read && components.length === 0 ? (
-        <p className="text-body-secondary">{t('certs.decode.nothing')}</p>
-      ) : null}
+      <div>
+        <SectionCard title={t('certs.decode.input')} {...foldOf(folds, 'input')}>
+          <InputZone onDetected={detected} />
+        </SectionCard>
+        {component ? (
+          <>
+            <ComponentSelect
+              components={components}
+              picked={component ? idOf(component) : ''}
+              onPick={pick}
+            />
+            <Decoded
+              component={component}
+              thresholdDays={vault.preferences.threshold_days}
+              busy={engine.busy}
+              onDownload={download}
+              onSave={save}
+              onCopy={copy}
+            />
+          </>
+        ) : null}
+        {held.read && components.length === 0 ? (
+          <p className="text-body-secondary">{t('certs.decode.nothing')}</p>
+        ) : null}
+      </div>
     </div>
   );
 };

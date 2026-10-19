@@ -7,11 +7,9 @@ import { useCssVar } from '../../hooks/useCssVar';
 
 import UploadProgress from './UploadProgress';
 
-const HOVER_DWELL_MS = 400;
-
 /**
  * The one upload zone the estate's collections add a file through: a green
- * Add New that opens, on click or on a hover dwell, a full-width drop target
+ * Add New that opens, on click alone, a full-width drop target
  * under the heading row with the caller's own fields above it, the caller's
  * `aside` beside the target in one row that wraps under 900px, the shared
  * `UploadProgress` block while a file is going up and a close control. The
@@ -50,26 +48,16 @@ const UploadZone = ({
   const { t } = useTranslation();
   const [open, setOpen] = useState(defaultOpen);
   const [over, setOver] = useState(false);
-  const dwell = useRef(null);
   const inputRef = useRef(null);
   const targetRef = useRef(null);
   const bar = useRef(null);
   useCssVar(bar, '--progress-width', `${progress}%`);
-
-  useEffect(() => () => clearTimeout(dwell.current), []);
 
   useEffect(() => {
     if (open && !defaultOpen) {
       targetRef.current?.focus();
     }
   }, [open, defaultOpen]);
-
-  const startDwell = () => {
-    clearTimeout(dwell.current);
-    dwell.current = setTimeout(() => setOpen(true), HOVER_DWELL_MS);
-  };
-
-  const stopDwell = () => clearTimeout(dwell.current);
 
   const pick = files => {
     const picked = multiple ? [...files] : [files[0]];
@@ -82,8 +70,6 @@ const UploadZone = ({
         type="button"
         className="btn btn-sm btn-outline-success"
         onClick={() => setOpen(true)}
-        onMouseEnter={startDwell}
-        onMouseLeave={stopDwell}
       >
         {t('pages.addNew')}
       </button>

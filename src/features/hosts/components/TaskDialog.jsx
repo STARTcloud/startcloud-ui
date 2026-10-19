@@ -295,7 +295,7 @@ const OutputCard = ({ output, active }) => {
   }, [output]);
 
   return (
-    <div className="card mb-3">
+    <div className="card mb-3 task-output-card">
       <div className="card-body">
         <div className="d-flex align-items-center mb-2">
           <h6 className="fw-bold mb-0">{t('footer.task.output')}</h6>
@@ -445,7 +445,10 @@ const useTaskDetail = ({ status, id, task }) => {
  * a column a fact of the task, the transfer line and the guest's step
  * among them, the columns folding under the row where the dialog is
  * narrow and spreading as it widens;
- * its output in terminal colors with Copy; its metadata as a fold under
+ * its output in terminal colors with Copy, the output taking every line
+ * of the dialog's height the details, the metadata and the subtasks
+ * leave, never under twelve lines, so in the zoomed dialog the folds sit
+ * at the foot and the body scrolls only past that; its metadata as a fold under
  * the output, folded until opened; and its subtasks, each opening a
  * dialog of its own. The row, the output and the subtasks are read once
  * on open, then the output follows the `/tasks/{id}/stream` WebSocket,
@@ -491,7 +494,7 @@ const TaskDialog = ({ status, id, task, onHide }) => {
 
   return (
     <>
-      <Modal show onHide={onHide} dialogClassName="list-modal" scrollable>
+      <Modal show onHide={onHide} dialogClassName="list-modal task-modal" scrollable>
         <Modal.Header closeButton>
           <Modal.Title>
             {t('footer.task.taskTitle')}: {taskOperationLabel(row.operation, t)}

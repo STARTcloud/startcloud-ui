@@ -283,7 +283,8 @@
   },
   "pwa": {
     "newVersion": "A new version of {{app}} is available.",
-    "reload": "Reload"
+    "reload": "Reload",
+    "offline": "{{app}} is not answering. This is the copy saved on this device: nothing can be changed and what you see may be out of date."
   },
   "status": {
     "unreachable": "The server behind this page could not be reached. Check that it is running and retry.",
@@ -695,6 +696,7 @@
     },
     "preferences": {
       "title": "Preferences",
+      "general": "General",
       "language": "Language",
       "languageHint": "Saved as you change it, the same value the globe in the header writes.",
       "mode": {

@@ -283,7 +283,8 @@
   },
   "pwa": {
     "newVersion": "Hay una nueva versión de {{app}} disponible.",
-    "reload": "Recargar"
+    "reload": "Recargar",
+    "offline": "{{app}} no responde. Esta es la copia guardada en este dispositivo: no se puede cambiar nada y lo que ves puede estar desactualizado."
   },
   "status": {
     "unreachable": "No se pudo contactar con el servidor detrás de esta página. Comprueba que está en marcha y reintenta.",
@@ -695,6 +696,7 @@
     },
     "preferences": {
       "title": "Preferencias",
+      "general": "General",
       "language": "Idioma",
       "languageHint": "Se guarda al cambiarlo, el mismo valor que escribe el globo de la cabecera.",
       "mode": {

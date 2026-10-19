@@ -17,13 +17,28 @@ export const serviceWorkerUrl = app => `/notification-sw.js?app=${encodeURICompo
 /**
  * Registers the build's service worker at scope `/` in production and, when
  * a new worker is installed while one already controls the page, raises the
- * sticky "A new version is available" banner with a Reload action.
+ * sticky "A new version is available" banner with a Reload action; while
+ * the status the app booted with is the worker's saved copy, `offline`,
+ * raises the same shape of banner saying the host is offline and what is
+ * drawn is the copy this device holds, closed by its dismiss.
  *
- * @param {string} app - The host's brand name
+ * @param {Object} options - The host
+ * @param {string} options.app - The host's brand name
+ * @param {boolean} options.offline - Whether the status came from the worker's cache
  */
-export const usePwa = app => {
+export const usePwa = ({ app, offline }) => {
   const { t } = useTranslation();
   const notify = useNotify();
+
+  useEffect(() => {
+    if (offline) {
+      notify('warning', t('pwa.offline', { app }), {
+        tier: 'banner',
+        key: 'pwa-offline',
+        sticky: true,
+      });
+    }
+  }, [app, offline, notify, t]);
 
   useEffect(() => {
     if (!import.meta.env.PROD) {

@@ -12,11 +12,16 @@ const StatusContext = createContext(null);
  * `version` is the backend's own version, `brand`, `auth`, `idp`,
  * `analytics`, `collections`, `organization`, `sorts`, `groups`,
  * `config`, `events`, `features`, `links` and `ticket` carry the rest of
- * the status contract.
+ * the status contract; `offline` is true while the answer is the service
+ * worker's saved copy, the server not answering, read from the
+ * `X-Served-From` header the worker sets on that copy alone.
  *
  * @returns {Promise<Object>} The status payload
  */
-export const probeStatus = () => axios.get('/api/status').then(({ data }) => data);
+export const probeStatus = () =>
+  axios
+    .get('/api/status')
+    .then(({ data, headers }) => ({ ...data, offline: headers['x-served-from'] === 'cache' }));
 
 const DEFAULT_THEME = 'startcloud';
 
@@ -90,6 +95,7 @@ export const withThemeManifest = (status, manifest) => {
 export const statusShape = PropTypes.shape({
   role: PropTypes.string.isRequired,
   version: PropTypes.string.isRequired,
+  offline: PropTypes.bool,
   brand: PropTypes.shape({
     name: PropTypes.string.isRequired,
     logo_url: PropTypes.string.isRequired,
