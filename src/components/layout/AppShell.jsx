@@ -776,7 +776,11 @@ const AppShell = ({
       <div className="app-body d-flex flex-grow-1 min-height-0">
         <div ref={setColumn} className="app-column" />
         <div ref={scrollRef} className="container-fluid app-scroll py-3">
-          <ErrorBoundary showErrorDetails={import.meta.env.DEV} onError={reportRenderError}>
+          <ErrorBoundary
+            showErrorDetails={import.meta.env.DEV}
+            ticketUrl={ticketUrl}
+            onError={reportRenderError}
+          >
             <ColumnContext.Provider value={column}>{children}</ColumnContext.Provider>
           </ErrorBoundary>
         </div>

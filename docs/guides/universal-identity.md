@@ -2719,8 +2719,11 @@ nothing else, so a fresh install sends mail with no configuration and
   copies the trace for the ticket's description, since a trace in a URL
   would ride a query string to the ticket system. A render
   crash inside the chrome is not this page: it is the `ErrorBoundary`
-  fallback card of the navbar contract (refresh, home, the component
-  stack behind a fold in development), drawn in the one card style and
+  fallback card of the navbar contract (Refresh page, Go home, Report
+  this issue while signed in, the ticket URL with `type=Frontend` and
+  the error's first line as `context`, Copy error details, the path,
+  time, browser, screen, error, stack and component stack, and the
+  component stack behind a fold in development), drawn in the one card style and
   sentence case the ErrorPage uses so one failure family looks like one
   app, which ships the error and its component stack to
   `POST /api/client-errors`. That route admits anonymous reports,

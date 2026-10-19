@@ -6233,7 +6233,9 @@ java.lang.IllegalStateException: no registered client for id "conductor"
                   This page hit an error while drawing. Refresh the page or go home.
                 </p>
                 <div class="a-row" style="gap: 8px">
-                  <span class="btn primary">Refresh page</span><span class="btn">Go home</span>
+                  <span class="btn primary">Refresh page</span><span class="btn">Go home</span
+                  ><span class="btn">Report this issue</span
+                  ><span class="btn">Copy error details</span>
                 </div>
                 <details class="a-details" style="width: 100%">
                   <summary>Error details (development)</summary>
@@ -6312,7 +6314,8 @@ TypeError: Cannot read properties of undefined (reading 'items')
             <span class="c k">a render crash</span
             ><span class="c"
               >not this page: the chrome's <code>ErrorBoundary</code> fallback card in the same card
-              style and sentence case (refresh, home, the component stack behind a fold in
+              style and sentence case (Refresh page, Go home, Report this issue while signed in with
+              <code>type=Frontend</code>, Copy error details, the component stack behind a fold in
               development) ships the error and its component stack to
               <code>POST /api/client-errors</code>, anonymous under a per-address limit and an 8 KB
               cap</span

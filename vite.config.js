@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
@@ -105,15 +106,35 @@ const callbackRedirect = () => ({
   },
 });
 
+const DIST = './dist';
+
+const UNCACHED = [
+  `${DIST}/index.html`,
+  `${DIST}/notification-sw.js`,
+  `${DIST}/callback/index.html`,
+];
+
+const walk = dir =>
+  fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const path = `${dir}/${entry.name}`;
+    return entry.isDirectory() ? walk(path) : [path];
+  });
+
 const stampWorker = () => ({
   name: 'stamp-worker',
   apply: 'build',
   closeBundle() {
+    const files = walk(DIST).filter(file => !UNCACHED.includes(file));
+    const hash = createHash('sha256');
+    hash.update(fs.readFileSync(`${DIST}/index.html`));
+    files.forEach(file => hash.update(fs.readFileSync(file)));
     fs.writeFileSync(
-      './dist/notification-sw.js',
+      `${DIST}/notification-sw.js`,
       fs
         .readFileSync('./public/notification-sw.js', 'utf8')
         .replace("'__APP_VERSION__'", JSON.stringify(pkg.version))
+        .replace("'__APP_BUILD__'", JSON.stringify(hash.digest('hex').slice(0, 12)))
+        .replace("'__APP_FILES__'", JSON.stringify(files.map(file => file.slice(DIST.length))))
     );
   },
 });

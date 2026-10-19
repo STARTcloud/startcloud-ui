@@ -1,10 +1,10 @@
 import PropTypes from 'prop-types';
 import { startTransition, useEffect, useMemo, useState } from 'react';
-import { Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import BrandLogo from '../components/common/BrandLogo';
+import LoadingScreen from '../components/common/LoadingScreen';
 import AppShell from '../components/layout/AppShell';
 import { brandLogoUrl, brandMarkUrl } from '../config/brand';
 import { ACTIVE_ORG_KEY, PREFS_PREFIX } from '../config/constants';
@@ -297,12 +297,7 @@ const App = ({ getSupportedLanguages }) => {
   const footerPane = footerPaneFor({ status, account: { user } });
 
   if (setupComplete === null) {
-    return (
-      <div className="d-flex align-items-center justify-content-center gap-2 vh-100" role="status">
-        <Spinner animation="border" size="sm" />
-        <span>{t('loading')}</span>
-      </div>
-    );
+    return <LoadingScreen label={t('loading')} />;
   }
 
   const globalAdmin = isGlobalAdmin(user);

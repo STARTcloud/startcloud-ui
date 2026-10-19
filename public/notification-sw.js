@@ -1,33 +1,19 @@
 const PARAMS = new URL(self.location.href).searchParams;
 const APP_NAME = PARAMS.get('app') || 'Notification';
 const VERSION = '__APP_VERSION__';
-const CACHE_NAME = `startcloud-ui-${VERSION}`;
+const BUILD = '__APP_BUILD__';
+const FILES = '__APP_FILES__';
+const CACHE_NAME = `startcloud-ui-${VERSION}-${BUILD}`;
 const SHELL = '/';
 const STATUS = '/api/status';
-const PRECACHE = [
-  SHELL,
-  '/manifest.json',
-  '/brand/startcloud/mark.svg',
-  '/brand/startcloud/mark-192.png',
-  '/brand/startcloud/mark-512.png',
-];
+const PRECACHE = [SHELL, ...(Array.isArray(FILES) ? FILES : [])];
 const KEPT = ['/assets/', '/locales/', '/brand/', '/themes/', '/fonts/', '/manifest.json'];
-const LINKED = /(?:src|href)="(\/(?:assets|themes|brand|fonts)\/[^"]+)"/g;
-
-const linkedFiles = html => [...new Set([...html.matchAll(LINKED)].map(match => match[1]))];
-
-const precacheShell = cache =>
-  cache
-    .addAll(PRECACHE)
-    .then(() => cache.match(SHELL))
-    .then(shell => (shell ? shell.text() : ''))
-    .then(html => cache.addAll(linkedFiles(html)));
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then(precacheShell)
+      .then(cache => cache.addAll(PRECACHE))
       .then(() => self.skipWaiting())
   );
 });
@@ -63,7 +49,7 @@ const store = (key, response) => {
 const cacheFirst = (request, key) =>
   caches
     .match(key)
-    .then(hit => hit || fetch(request).then(response => store(key, response)))
+    .then(hit => hit || fetch(request))
     .catch(() => Response.error());
 
 const fromCache = hit => {

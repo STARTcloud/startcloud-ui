@@ -2494,23 +2494,24 @@ Each test answers through an in-app notice card, "Test sent." or
   `pushsubscriptionchange`. The hub never toasts a producer's events. The
   worker is the build's `/notification-sw.js` at the origin root,
   registered once by the shell with the app name in its query and the UI
-  build's version stamped into the file by the build, so each release is
+  build's version, a stamp of the build's files and the list of every
+  file of the build stamped into the file by the build, so each build is
   a new worker the browser installs on the check every registration
   makes (the UI backend sends `Service-Worker-Allowed` and
   `Cache-Control: no-cache` on that one file), the push subscription and
   the update sharing that one registration; its `install` precaches the
-  page, the manifest, the marks and every script, stylesheet, theme,
-  mark and font the page links, because the first load ran before the
-  worker held the page and nothing of it would be kept otherwise, and
+  page and every file of the build into a cache named for that build,
+  because a file fetched on demand would otherwise join the cache of
+  whatever build the worker held and two builds would mix, and
   `skipWaiting`s, its `activate`
-  drops the previous version's cache and claims the clients, a
+  drops every other build's cache and claims the clients, a
   notification click
   focuses an open tab of the app and moves it to the notice's `navigate`,
   opening a window only while no tab is open, and it answers a page and
   the build's own files, `/assets/`, `/locales/`, `/brand/`, `/themes/`,
-  `/fonts/` and the manifest, from the cache of the version it was
+  `/fonts/` and the manifest, from the cache of the build it was
   registered with, fetching a file from the server only while that cache
-  lacks it and keeping it then, so one loaded version stays whole and the
+  lacks it and never keeping it, so one loaded build stays whole and the
   app opens with no network; `GET /api/status` alone is asked of the
   server first and answered from its last copy only while the server does
   not answer, that copy marked `X-Served-From: cache`, so the boot reaches
@@ -2520,9 +2521,9 @@ Each test answers through an in-app notice card, "Test sent." or
   device holds; a host that does not answer its setup status counts as
   set up, so the gate never holds an offline boot; and no other `/api`
   request is ever answered from a copy. A new
-  version is a new worker with an empty cache; its `activate` drops the
-  old version's cache, and no file is ever renamed or hashed for any of
-  this. When a new worker
+  build is a new worker with a cache of its own; its `activate` drops the
+  other builds' caches, and no file is ever renamed or hashed for any of
+  this, the build's stamp living in the worker alone. When a new worker
   is installed while one already controls the page, the shell raises the
   sticky "A new version of {{app}} is available" banner with Reload.
 - A toast switch failure answers inline in the modal: unsupported browser,

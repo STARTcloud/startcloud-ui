@@ -1,10 +1,49 @@
 import PropTypes from 'prop-types';
-import { Component } from 'react';
+import { Component, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaArrowsRotate, FaHouse, FaTriangleExclamation } from 'react-icons/fa6';
 
-const Fallback = ({ error, errorInfo, showErrorDetails }) => {
+import { copyToClipboard } from '../../lib/clipboard';
+
+const CONTEXT_LENGTH = 200;
+
+const reportUrlOf = (ticketUrl, error) => {
+  if (!ticketUrl) {
+    return '';
+  }
+  try {
+    const url = new URL(ticketUrl);
+    url.searchParams.set('type', 'Frontend');
+    url.searchParams.set('context', String(error || '').slice(0, CONTEXT_LENGTH));
+    return url.href;
+  } catch {
+    return '';
+  }
+};
+
+const copyText = (error, errorInfo) =>
+  [
+    `path: ${window.location.pathname}`,
+    `time: ${new Date().toISOString()}`,
+    `browser: ${navigator.userAgent}`,
+    `screen: ${window.screen.width}x${window.screen.height}`,
+    String(error || ''),
+    error?.stack || '',
+    errorInfo?.componentStack || '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+const Fallback = ({ error, errorInfo, showErrorDetails, ticketUrl }) => {
   const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  const report = reportUrlOf(ticketUrl, error);
+
+  const copy = () =>
+    copyToClipboard(copyText(error, errorInfo))
+      .then(() => setCopied(true))
+      .catch(() => null);
+
   return (
     <div className="auth-page">
       <div className="auth-column error-card">
@@ -30,6 +69,27 @@ const Fallback = ({ error, errorInfo, showErrorDetails }) => {
             <FaHouse aria-hidden />
             {t('error.goHome')}
           </button>
+          {report ? (
+            <a
+              href={report}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="auth-btn auth-btn-secondary"
+              data-action="report-error"
+            >
+              {t('errors.report')}
+            </a>
+          ) : null}
+          <button
+            type="button"
+            className="auth-btn auth-btn-secondary"
+            data-action="copy-error"
+            onClick={copy}
+            onBlur={() => setCopied(false)}
+            aria-live="polite"
+          >
+            {copied ? t('errors.copied') : t('errors.copy')}
+          </button>
         </div>
         {showErrorDetails && error ? (
           <details className="auth-details w-100">
@@ -49,6 +109,7 @@ Fallback.propTypes = {
   error: PropTypes.object,
   errorInfo: PropTypes.object,
   showErrorDetails: PropTypes.bool.isRequired,
+  ticketUrl: PropTypes.string.isRequired,
 };
 
 class Boundary extends Component {
@@ -77,6 +138,7 @@ class Boundary extends Component {
         error={this.state.error}
         errorInfo={this.state.errorInfo}
         showErrorDetails={this.props.showErrorDetails}
+        ticketUrl={this.props.ticketUrl}
       />
     );
   }
@@ -85,17 +147,22 @@ class Boundary extends Component {
 Boundary.propTypes = {
   children: PropTypes.node.isRequired,
   showErrorDetails: PropTypes.bool.isRequired,
+  ticketUrl: PropTypes.string.isRequired,
   onError: PropTypes.func,
 };
 
 /**
  * Catches a render error anywhere under it and draws the shared fallback
- * card in the error page's card style, refresh and home, with the component
- * stack behind a details fold when `showErrorDetails` is on; `onError` lets
- * an app ship the error and its component stack its own way.
+ * card in the error page's card style: Refresh page, Go home, Report this
+ * issue while `ticketUrl` is given, the ticket URL with `type=Frontend`
+ * and the error's first line as `context`, and Copy error details, the
+ * path, the time, the browser, the screen, the error, its stack and the
+ * component stack to the clipboard; the component stack also behind a
+ * details fold when `showErrorDetails` is on. `onError` lets an app ship
+ * the error and its component stack its own way.
  */
-const ErrorBoundary = ({ children, showErrorDetails = false, onError = null }) => (
-  <Boundary showErrorDetails={showErrorDetails} onError={onError}>
+const ErrorBoundary = ({ children, showErrorDetails = false, ticketUrl = '', onError = null }) => (
+  <Boundary showErrorDetails={showErrorDetails} ticketUrl={ticketUrl} onError={onError}>
     {children}
   </Boundary>
 );
@@ -103,6 +170,7 @@ const ErrorBoundary = ({ children, showErrorDetails = false, onError = null }) =
 ErrorBoundary.propTypes = {
   children: PropTypes.node.isRequired,
   showErrorDetails: PropTypes.bool,
+  ticketUrl: PropTypes.string,
   onError: PropTypes.func,
 };
 

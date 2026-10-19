@@ -107,7 +107,7 @@ Feature: footer pane
     And the footer tab "Desk 2" is active
     And the footer pane draws 2 tabs
     And the footer pane draws the commands bar
-    And the commands bar says "0 of 2 tabs accept"
+    And the commands bar says "0/2"
     And the host was not sent POST to "/api/agents/1/term/start"
     And the stored "console_tabs" holds 2 entries
 
