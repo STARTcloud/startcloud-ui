@@ -15,7 +15,7 @@ const dialogOf = page => page.getByRole('dialog').last();
 
 const namedDialogOf = (page, name) => page.locator(`[data-dialog="${name}"]`);
 
-const locationOf = (page, id) => frameOf(page).locator(`[data-location="${id}"]`);
+const locationOf = (page, id) => page.locator(`[data-location="${id}"]`);
 
 const sourceOf = (page, name) => dialogOf(page).locator(`tr[id="source-${name}"]`);
 

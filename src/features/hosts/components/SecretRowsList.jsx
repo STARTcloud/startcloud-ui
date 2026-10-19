@@ -12,8 +12,8 @@ import { FilterPills, RowCards } from './PickDialogParts';
 const rowKey = row => String(row.id);
 
 /**
- * The Vault's table over a host store's secret rows, the one list the
- * host's Secrets page and the secret pick dialog draw: a search over the
+ * The Vault's table over a host store's secret rows, the list the
+ * secret pick dialog draws: a search over the
  * rows, the Kind and Profile pills, the table or cards toggle, the
  * store's secret columns and the caller's row actions; `openers` draw
  * before the toggle, `name` is the table's `data-table` and the cards'

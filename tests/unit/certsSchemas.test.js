@@ -207,7 +207,7 @@ describe('the secret schemas', () => {
 });
 
 describe('the secret profiles', () => {
-  it('ships the fourteen profiles, each with its kinds, label key, help keys, url, extras and glyph', () => {
+  it('ships the fifteen profiles, each with its kinds, label key, help keys, url, extras and glyph', () => {
     expect(PROFILES.map(profile => profile.id)).toEqual([
       'hcl_portal',
       'github',
@@ -221,9 +221,20 @@ describe('the secret profiles', () => {
       'docker_hub',
       'aws',
       'acme_dns',
+      'machine_login',
       'notes_id',
       'license',
     ]);
+    expect(profileOf('machine_login')).toMatchObject({
+      kinds: ['password', 'ssh_key'],
+      labelKey: 'certs.profile.machine_login.label',
+      help: {
+        password: 'certs.profile.machine_login.help.password',
+        private_key: 'certs.profile.machine_login.help.private_key',
+      },
+      icon: 'FaUserLock',
+    });
+    expect(profileOf('machine_login').extras.map(extra => extra.key)).toEqual(['username']);
     expect(profileOf('openai')).toMatchObject({
       kinds: ['api_key'],
       labelKey: 'certs.profile.openai.label',

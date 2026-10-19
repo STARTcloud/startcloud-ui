@@ -5,12 +5,19 @@ import { FaPlus } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { useStatus } from '../../../contexts/StatusContext';
-import { createAddress, deleteAddress, disableAddress, enableAddress } from '../api/networking';
+import {
+  createAddress,
+  deleteAddress,
+  disableAddress,
+  enableAddress,
+  updateAddress,
+} from '../api/networking';
 import { useHostReading } from '../hooks/useHostReadings';
 import { addressKey } from '../utils/networking';
 import {
   addressBody,
   addressDeleteParams,
+  addressEditBody,
   addressInterfacesOf,
   isGoAgent,
 } from '../utils/networkingManagement';
@@ -23,20 +30,27 @@ import NetworkingTable from './NetworkingTable';
 
 const NONE = { kind: '', row: null };
 
+const CLOSED = { open: false, row: null };
+
 /**
- * The one addresses table of the Addresses page, a folding glass section:
- * every address of the monitoring read and of the managed read once, the
- * Managed badge on a row the managed read answers, and, while the host
- * offers the managed read and the person controls hosts, Create in the
- * heading and Enable, Disable and Delete on each managed row. A create
- * sends `POST network/addresses` with `addressBody`; a delete, behind the
- * typed confirmation, sends `DELETE network/addresses/{addrobj}` with
- * `addressDeleteParams` over the managed rows; Enable and Disable send
- * their `PUT`, the Disable of a VirtualBox or UTM host behind a
- * confirmation of its own, hyperweaver-ui's, because that agent takes
- * the whole interface down. Every write goes through the page's one
- * `useNetworkingTools`, which raises the notice, follows the queued task
- * and reads the held addresses again.
+ * The one addresses table of the Addresses page, a folding glass section
+ * whose heading is the page's: the section's title, the count of the
+ * addresses the search left, and in its pane, while the host offers the
+ * managed read and the person controls hosts, Create, then the page's
+ * `actions`, Refresh; under it every address of the monitoring read and
+ * of the managed read once, the Managed badge on a row the managed read
+ * answers, and Enable, Disable, Edit and Delete on each managed row. A
+ * create sends `POST network/addresses` with `addressBody`; an edit, the
+ * same form opened on the row with its interface and address object held,
+ * sends `PUT network/addresses/{addrobj}` with `addressEditBody`; a
+ * delete, behind the typed confirmation, sends
+ * `DELETE network/addresses/{addrobj}` with `addressDeleteParams` over
+ * the managed rows; Enable and Disable send their `PUT`, the Disable of a
+ * VirtualBox or UTM host behind a confirmation of its own,
+ * hyperweaver-ui's, because that agent takes the whole interface down.
+ * Every write goes through the page's one `useNetworkingTools`, which
+ * raises the notice, follows the queued task and reads the held
+ * addresses again.
  */
 const IpAddressManagement = ({
   id,
@@ -50,12 +64,15 @@ const IpAddressManagement = ({
   filtering,
   fold,
   tools,
+  title,
+  count = null,
+  actions = null,
 }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const vnics = useHostReading(id, 'vnics');
   const interfaces = useHostReading(id, 'interfaces');
-  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState(CLOSED);
   const [confirm, setConfirm] = useState(NONE);
   const goAgent = isGoAgent(server);
   const writable = canControlHosts(role) && managedOffered;
@@ -65,16 +82,24 @@ const IpAddressManagement = ({
     [vnics.data, interfaces.data]
   );
 
-  const create = async form => {
+  const submit = async values => {
+    const editing = form.row;
     const { error } = await tools.send({
       id,
-      call: () => createAddress(status, id, addressBody(form)),
-      doneKey: 'hosts.networking.tools.addressCreated',
-      values: { name: form.addrobj },
-      failKey: 'host.ipAddressCreateModal.errors.createError',
+      call: () =>
+        editing
+          ? updateAddress(status, id, editing.addrobj, addressEditBody(values))
+          : createAddress(status, id, addressBody(values)),
+      doneKey: editing
+        ? 'hosts.networking.tools.addressUpdated'
+        : 'hosts.networking.tools.addressCreated',
+      values: { name: values.addrobj },
+      failKey: editing
+        ? 'host.ipAddressManagement.errors.updateError'
+        : 'host.ipAddressCreateModal.errors.createError',
     });
     if (!error) {
-      setCreating(false);
+      setForm(CLOSED);
     }
   };
 
@@ -116,17 +141,22 @@ const IpAddressManagement = ({
     return kind === 'delete' ? remove(row) : toggle(row, 'disable');
   };
 
-  const createButton = (
-    <button
-      type="button"
-      className="btn btn-sm btn-primary"
-      onClick={() => setCreating(true)}
-      disabled={tools.busy}
-      data-tool="create-address"
-    >
-      <FaPlus className="me-2" aria-hidden="true" />
-      {t('host.ipAddressManagement.createIpAddress')}
-    </button>
+  const pane = (
+    <>
+      {writable ? (
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          onClick={() => setForm({ open: true, row: null })}
+          disabled={tools.busy}
+          data-tool="create-address"
+        >
+          <FaPlus className="me-2" aria-hidden="true" />
+          {t('host.ipAddressManagement.createIpAddress')}
+        </button>
+      ) : null}
+      {actions}
+    </>
   );
 
   const deleteMessage = (
@@ -151,7 +181,8 @@ const IpAddressManagement = ({
     <>
       <NetworkingTable
         panel="networking-addresses"
-        title={t('host.ipAddressTable.title')}
+        title={title}
+        count={count}
         columns={ADDRESS_COLUMNS}
         table={table}
         rowKey={addressKey}
@@ -160,6 +191,7 @@ const IpAddressManagement = ({
           busy: tools.busy,
           onEnable: row => toggle(row, 'enable'),
           onDisable: disable,
+          onEdit: row => setForm({ open: true, row }),
           onDelete: row => setConfirm({ kind: 'delete', row }),
         }}
         ctx={ctx}
@@ -167,15 +199,16 @@ const IpAddressManagement = ({
         reading={reading}
         filtering={filtering}
         fold={fold}
-        actions={writable ? createButton : null}
+        actions={pane}
       />
-      {creating ? (
+      {form.open ? (
         <IpAddressCreateModal
           server={server}
           interfaces={options}
+          address={form.row}
           busy={tools.busy}
-          onClose={() => setCreating(false)}
-          onSubmit={create}
+          onClose={() => setForm(CLOSED)}
+          onSubmit={submit}
         />
       ) : null}
       <ConfirmModal
@@ -215,6 +248,9 @@ IpAddressManagement.propTypes = {
   filtering: PropTypes.bool.isRequired,
   fold: PropTypes.object.isRequired,
   tools: PropTypes.object.isRequired,
+  title: PropTypes.string.isRequired,
+  count: PropTypes.node,
+  actions: PropTypes.node,
 };
 
 export default IpAddressManagement;

@@ -12,12 +12,12 @@ import {
   FaHardDrive,
 } from 'react-icons/fa6';
 
-import RecordRows from '../../../../components/common/RecordRows';
-import { useStatus } from '../../../../contexts/StatusContext';
-import { formatFileSize } from '../../../../utils/formatFileSize';
-import { downloadArtifactFile } from '../../api/artifacts';
-import { saveBlob } from '../../hooks/useHostFiles';
-import { artifactTypeOf, artifactTypeTone } from '../../utils/artifacts';
+import RecordRows from '../../../components/common/RecordRows';
+import { useStatus } from '../../../contexts/StatusContext';
+import { formatFileSize } from '../../../utils/formatFileSize';
+import { downloadArtifactFile } from '../api/artifacts';
+import { saveBlob } from '../hooks/useHostFiles';
+import { artifactTypeOf, artifactTypeTone } from '../utils/artifacts';
 
 const VERIFICATION = {
   true: {

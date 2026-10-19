@@ -228,16 +228,17 @@ const DIALOGS = {
 };
 
 /**
- * The network spaces section of the networking page's management,
- * hyperweaver-ui's `NetworkSpacesPanel` over the one folding table, on
- * a host that lists `network-spaces`: the host-only interfaces with
- * their DHCP, the VirtualBox 7 host-only networks, the NAT networks with
- * their forwards and the read-only internal networks, each family drawn
- * as hyperweaver-ui's platform rule has it (`spaceFamiliesOf`), a Darwin
+ * The one spaces table of the Spaces page, a folding glass section whose
+ * heading is the page's: `title`, `count` after it, and in its pane
+ * Create, one button a family the host draws, for a role that controls
+ * hosts, then the page's `actions`, Refresh; on a host that lists
+ * `network-spaces`, the host-only interfaces with their DHCP, the
+ * VirtualBox 7 host-only networks, the NAT networks with their forwards
+ * and the read-only internal networks, each family drawn as
+ * hyperweaver-ui's platform rule has it (`spaceFamiliesOf`), a Darwin
  * host the networks alone and every other host the interfaces alone, and
- * hyperweaver-ui's note on the internal networks under the table. Create
- * in the heading, one button a family the host draws, and the row
- * actions, each for a role that controls hosts alone; every write goes
+ * hyperweaver-ui's note on the internal networks under the table. The
+ * row actions draw for a role that controls hosts alone; every write goes
  * through the page's one `useNetworkingTools`, the create and modify of
  * each family their `POST` and `PUT`, the delete behind the typed
  * confirmation its `DELETE`, Start and Stop the NAT network's service
@@ -254,6 +255,9 @@ const NetworkSpacesPanel = ({
   filtering,
   fold,
   tools,
+  title,
+  count = null,
+  actions = null,
 }) => {
   const { t } = useTranslation();
   const status = useStatus();
@@ -308,12 +312,34 @@ const NetworkSpacesPanel = ({
 
   const Dialog = dialog ? DIALOGS[dialog.kind] : null;
 
+  const pane = (
+    <>
+      {canEdit
+        ? creatable.map(kind => (
+            <button
+              key={kind}
+              type="button"
+              className="btn btn-sm btn-outline-primary"
+              onClick={() => setDialog({ kind, space: null })}
+              disabled={tools.busy}
+              data-tool={`create-${kind}`}
+            >
+              <FaPlus className="me-2" aria-hidden="true" />
+              {t(CREATE_KEYS[kind])}
+            </button>
+          ))
+        : null}
+      {actions}
+    </>
+  );
+
   return (
     <>
       <NetworkingTable
         panel="networking-spaces"
         section
-        title={t('host.networkSpaces.title')}
+        title={title}
+        count={count}
         columns={SPACE_COLUMNS}
         table={table}
         rowKey={row => `${row.type}|${row.name}`}
@@ -330,23 +356,7 @@ const NetworkSpacesPanel = ({
         reading={reading}
         filtering={filtering}
         fold={fold}
-        actions={
-          canEdit
-            ? creatable.map(kind => (
-                <button
-                  key={kind}
-                  type="button"
-                  className="btn btn-sm btn-outline-primary"
-                  onClick={() => setDialog({ kind, space: null })}
-                  disabled={tools.busy}
-                  data-tool={`create-${kind}`}
-                >
-                  <FaPlus className="me-2" aria-hidden="true" />
-                  {t(CREATE_KEYS[kind])}
-                </button>
-              ))
-            : null
-        }
+        actions={pane}
       />
       {intnets.length > 0 && !fold.folded ? (
         <p className="text-muted small" data-note="intnets">
@@ -385,6 +395,9 @@ NetworkSpacesPanel.propTypes = {
   filtering: PropTypes.bool.isRequired,
   fold: PropTypes.object.isRequired,
   tools: PropTypes.object.isRequired,
+  title: PropTypes.string.isRequired,
+  count: PropTypes.node,
+  actions: PropTypes.node,
 };
 
 export default NetworkSpacesPanel;

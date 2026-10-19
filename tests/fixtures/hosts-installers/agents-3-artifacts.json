@@ -12,6 +12,7 @@
       "checksum_verified": true,
       "file_exists": true,
       "role": null,
+      "registry": null,
       "version": null,
       "storage_location_id": "loc-iso",
       "storage_location": {
@@ -32,6 +33,7 @@
       "checksum_verified": null,
       "file_exists": true,
       "role": null,
+      "registry": null,
       "version": null,
       "storage_location_id": "loc-iso",
       "storage_location": {
@@ -53,6 +55,20 @@
       "expected_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "file_exists": true,
       "role": "domino_install",
+      "registry": {
+        "source_name": "boxvault",
+        "organization": "STARTcloud",
+        "download": "domino",
+        "release": "14.5",
+        "patch": "GA",
+        "key": "linux-x64",
+        "kind": "installer",
+        "platform": "linux",
+        "architecture": "x64",
+        "language": "en",
+        "variant": "",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
       "version": {
         "major": "14",
         "minor": "5",
@@ -80,6 +96,20 @@
       "checksum_verified": null,
       "file_exists": false,
       "role": "domino_fixpack",
+      "registry": {
+        "source_name": "boxvault",
+        "organization": "STARTcloud",
+        "download": "domino",
+        "release": "14.5",
+        "patch": "FP1",
+        "key": "linux-x64",
+        "kind": "fixpack",
+        "platform": "linux",
+        "architecture": "x64",
+        "language": "any",
+        "variant": "",
+        "sha256": "b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4"
+      },
       "version": {
         "major": "14",
         "minor": "5",

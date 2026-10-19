@@ -221,6 +221,31 @@ Feature: networking writes
     And the host was sent POST to "/api/agents/3/network/aggregates" carrying "policy" as "L4"
     And the page raised 2 success notices
 
+  Scenario: Addresses: Edit on a managed row opens the address form on the row with its interface and address object held and sends the change in place over PUT network/addresses/{addrobj}
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the host answers the hosts-networking-writes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/network/addresses"
+    Then the "addresses" section row "igb0/v4static" offers "edit"
+    And the "addresses" section row "127.0.0.1" offers no "edit"
+    And the section page draws one heading
+    When I press "edit" on the "addresses" section row "igb0/v4static"
+    Then the "address-edit" dialog is open
+    And the field "addrobj-input" reads "igb0/v4static"
+    And the field "address-input" reads "10.0.0.31"
+    And the field "netmask-select" reads "24"
+    And the field "interface-select" is disabled
+    When I type "10.0.0.32" into the field "address-input"
+    And I send the open dialog
+    Then the host was sent PUT to "/api/agents/3/network/addresses/igb0%2Fv4static" carrying "address" as "10.0.0.32/24"
+    And the host was sent PUT to "/api/agents/3/network/addresses/igb0%2Fv4static" carrying "interface" as "igb0"
+    And the host was sent PUT to "/api/agents/3/network/addresses/igb0%2Fv4static" carrying nothing at "/addrobj"
+    And the host was not sent POST to "/api/agents/3/network/addresses"
+    And the page raised 1 success notice
+    And no dialog is open
+
   Scenario: Addresses: an address is created over POST network/addresses with the address object named from the interface, enabled over its PUT and deleted behind the typed confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
@@ -299,6 +324,7 @@ Feature: networking writes
     When I open "/hosts/3/network/hostname"
     Then the networking field "new-hostname-input" reads "zone-1"
     And I see "zone-1"
+    And the section page draws one heading
     When I fill the networking field "new-hostname-input" with "zone-9"
     And I press the "hostname" section's "change-hostname" tool
     Then the host was sent PUT to "/api/agents/3/network/hostname" carrying "hostname" as "zone-9"
@@ -314,16 +340,18 @@ Feature: networking writes
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/dns"
     Then the networking field "dns-domain" reads ""
+    And the section page draws one heading
     When I fill the networking field "dns-domain" with "lan"
     And I press the "dns" section's "save-dns" tool
     Then the host was sent PUT to "/api/agents/3/system/dns" carrying "domain" as "lan"
     And the host was sent PUT to "/api/agents/3/system/dns" carrying "nameservers" as "10.0.0.1,1.1.1.1"
     And the page raised 1 success notice
-    When I switch the networking field "dns-raw-mode"
+    When I dismiss the success notice
+    And I switch the networking field "dns-raw-mode"
     And I fill the networking field "dns-raw" with "nameserver 9.9.9.9"
     And I press the "dns" section's "save-dns" tool
     Then the host was sent PUT to "/api/agents/3/system/dns" carrying "raw" as "nameserver 9.9.9.9"
-    And the page raised 2 success notices
+    And the page raised 1 success notice
 
   Scenario: Hosts file: the hosts file lists its entries as rows and is written over PUT system/hosts as the raw file behind the switch
     Given the host answers the hosts fixture
@@ -334,6 +362,7 @@ Feature: networking writes
     When I open "/hosts/3/network/hosts-file"
     Then the "hosts-file" section of the networking page lists 2 rows
     And I see "/etc/inet/hosts"
+    And the section page draws one heading
     When I press the "hosts-file" section's "add-entry" tool
     Then the "hosts-file" section of the networking page lists 3 rows
     When I press "remove-entry" on row 3 of the "hosts-file" section
@@ -341,11 +370,13 @@ Feature: networking writes
     When I press the "hosts-file" section's "save-hosts" tool
     Then the host was sent PUT to "/api/agents/3/system/hosts" carrying "127.0.0.1" at "/entries/0/ip"
     And the host was sent PUT to "/api/agents/3/system/hosts" carrying "zone-1" at "/entries/1/hostnames/0"
-    When I switch the networking field "hosts-raw-mode"
+    And the page raised 1 success notice
+    When I dismiss the success notice
+    And I switch the networking field "hosts-raw-mode"
     And I fill the networking field "hosts-raw" with "127.0.0.1 localhost"
     And I press the "hosts-file" section's "save-hosts" tool
     Then the host was sent PUT to "/api/agents/3/system/hosts" carrying "raw" as "127.0.0.1 localhost"
-    And the page raised 2 success notices
+    And the page raised 1 success notice
 
   Scenario: Spaces: the network spaces draw the families the platform carries, the NAT network is stopped, edited and the host-only interface deleted over their routes
     Given the host answers the hosts fixture
@@ -360,6 +391,7 @@ Feature: networking writes
     And the "spaces" section offers the "create-natnetwork" tool
     And the "spaces" section offers no "create-hostonlynet" tool
     And the "spaces" section row "intnet" offers no "delete"
+    And the section page draws one heading
     When I press "stop" on the "spaces" section row "NatNetwork"
     Then the host was sent POST to "/api/agents/1/network/spaces/natnetwork/NatNetwork/stop"
     When I press "edit" on the "spaces" section row "NatNetwork"

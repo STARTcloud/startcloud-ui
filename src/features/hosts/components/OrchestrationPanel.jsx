@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaCheck, FaGripVertical, FaListOl } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import {
@@ -26,6 +27,8 @@ import {
   strategyPatch,
   validPriority,
 } from '../utils/manage';
+
+import RefreshButton from './RefreshButton';
 
 const DEFAULT_STRATEGY = 'parallel_by_priority';
 
@@ -69,6 +72,26 @@ Plan.propTypes = {
   }).isRequired,
 };
 
+const StatusBadge = ({ state = null }) => {
+  const { t } = useTranslation();
+  if (!state) {
+    return <span className="small text-muted">{t('host.orchestrationPanel.unknown')}</span>;
+  }
+  const enabled = Boolean(state.orchestration_enabled);
+  return (
+    <span
+      className={`badge text-bg-${enabled ? 'success' : 'secondary'}`}
+      data-note="orchestration"
+    >
+      {t(enabled ? 'host.orchestrationPanel.enabled' : 'host.orchestrationPanel.disabled')}
+    </span>
+  );
+};
+
+StatusBadge.propTypes = {
+  state: PropTypes.object,
+};
+
 const Controls = ({
   state = null,
   strategy,
@@ -78,43 +101,28 @@ const Controls = ({
   onToggle,
   onPreview,
   onApply,
+  onRefresh,
 }) => {
   const { t } = useTranslation();
   const enabled = Boolean(state?.orchestration_enabled);
   return (
-    <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
-      <span>
-        {t('host.orchestrationPanel.status')}{' '}
-        {state ? (
-          <span
-            className={`badge text-bg-${enabled ? 'success' : 'secondary'}`}
-            data-note="orchestration"
-          >
-            {t(enabled ? 'host.orchestrationPanel.enabled' : 'host.orchestrationPanel.disabled')}
-          </span>
-        ) : (
-          <span className="text-muted">{t('host.orchestrationPanel.unknown')}</span>
-        )}
-      </span>
+    <>
       {state ? (
-        <span className="d-inline-flex align-items-center gap-1 small">
-          {t('host.orchestrationPanel.strategy')}
-          <select
-            id="orchestration-strategy"
-            className="form-select form-select-sm w-auto"
-            aria-label={t('host.orchestrationPanel.strategyAriaLabel')}
-            data-field="strategy"
-            value={strategy}
-            onChange={event => onStrategy(event.target.value)}
-            disabled={busy}
-          >
-            {STRATEGIES.map(entry => (
-              <option key={entry} value={entry}>
-                {entry}
-              </option>
-            ))}
-          </select>
-        </span>
+        <select
+          id="orchestration-strategy"
+          className="form-select form-select-sm w-auto"
+          aria-label={t('host.orchestrationPanel.strategyAriaLabel')}
+          data-field="strategy"
+          value={strategy}
+          onChange={event => onStrategy(event.target.value)}
+          disabled={busy}
+        >
+          {STRATEGIES.map(entry => (
+            <option key={entry} value={entry}>
+              {entry}
+            </option>
+          ))}
+        </select>
       ) : null}
       {state ? (
         <button
@@ -151,7 +159,8 @@ const Controls = ({
         <FaCheck className="me-1" aria-hidden="true" />
         {t('host.orchestrationPanel.apply')}
       </button>
-    </div>
+      <RefreshButton onRefresh={onRefresh} />
+    </>
   );
 };
 
@@ -164,6 +173,7 @@ Controls.propTypes = {
   onToggle: PropTypes.func.isRequired,
   onPreview: PropTypes.func.isRequired,
   onApply: PropTypes.func.isRequired,
+  onRefresh: PropTypes.func.isRequired,
 };
 
 const OrderHeader = () => {
@@ -241,12 +251,15 @@ OrderRow.propTypes = {
 
 /**
  * The orchestration of a host, the body of the host's Orchestration
- * page: the status of `GET machines/orchestration/status`, Enable behind
- * the typed confirmation and Disable, each written at once, and a draft
- * over the strategy and the boot order of `GET machines/priorities`, the
- * strategy select, the rows dragged into order and each row's typed
- * priority under one header row naming the machine and the boot
- * priority. Preview draws the dry run of
+ * page under its one heading: `title`, the status of
+ * `GET machines/orchestration/status` as the badge, and in the pane the
+ * strategy select, Enable behind the typed confirmation or Disable, each
+ * written at once, Preview, Apply and Refresh, which reads the status,
+ * the priorities and the page's `onRefresh` again; under it the boot
+ * order of `GET machines/priorities` straight on the page, the rows
+ * dragged into order and each row's typed priority under one header row
+ * naming the machine and the boot priority, the strategy and the order
+ * one draft. Preview draws the dry run of
  * `POST machines/orchestration/test` with the draft's strategy over the
  * priorities the agent holds; Apply, held while the draft equals what the
  * agent holds, writes the draft in one go, the strategy as one merge
@@ -256,7 +269,7 @@ OrderRow.propTypes = {
  * changed; a typed priority outside one to a hundred is refused with its
  * notice and nothing sent. Nothing polls.
  */
-const OrchestrationPanel = ({ id }) => {
+const OrchestrationPanel = ({ id, title, onRefresh }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
@@ -357,53 +370,60 @@ const OrchestrationPanel = ({ id }) => {
     over: name => setOrder(current => movedOrder(current, dragName, name)),
   };
 
+  const refresh = () => {
+    orchestration.refresh();
+    priorities.refresh();
+    onRefresh();
+  };
+
+  const pane = (
+    <Controls
+      state={state}
+      strategy={drawn}
+      busy={busy}
+      dirty={dirty}
+      onStrategy={setStrategy}
+      onToggle={() => (enabled ? toggle() : setConfirming(true))}
+      onPreview={preview}
+      onApply={apply}
+      onRefresh={refresh}
+    />
+  );
+
   return (
     <div data-panel="orchestration-body">
+      <SectionHeading title={title} badge={<StatusBadge state={state} />} actions={pane} />
       {orchestration.failed ? (
         <div className="alert alert-warning" role="alert" data-note="status-unavailable">
           {t('host.orchestrationPanel.statusUnavailable', { message: orchestration.message })}
         </div>
       ) : null}
-      <Controls
-        state={state}
-        strategy={drawn}
-        busy={busy}
-        dirty={dirty}
-        onStrategy={setStrategy}
-        onToggle={() => (enabled ? toggle() : setConfirming(true))}
-        onPreview={preview}
-        onApply={apply}
-      />
       {plan ? <Plan plan={plan} /> : null}
       {held && order.length > 0 ? (
-        <div className="card mb-3" data-panel="boot-order">
-          <div className="card-body">
-            <h6 className="fw-bold mb-2">{t('host.orchestrationPanel.bootOrderTitle')}</h6>
-            <div className="d-flex flex-column gap-1">
-              <OrderHeader />
-              <div className="d-flex flex-column gap-1" role="list">
-                {order.map((name, index) => (
-                  <OrderRow
-                    key={name}
-                    name={name}
-                    index={index}
-                    row={rowOf(held, name)}
-                    dragged={dragName === name}
-                    moved={moved}
-                    edit={edits[name]}
-                    busy={busy}
-                    drag={drag}
-                    onEdit={(machine, value) =>
-                      setEdits(current => ({ ...current, [machine]: value }))
-                    }
-                  />
-                ))}
-              </div>
+        <div className="mb-3" data-panel="boot-order">
+          <h6 className="fw-bold mb-2">{t('host.orchestrationPanel.bootOrderTitle')}</h6>
+          <div className="d-flex flex-column gap-1">
+            <OrderHeader />
+            <div className="d-flex flex-column gap-1" role="list">
+              {order.map((name, index) => (
+                <OrderRow
+                  key={name}
+                  name={name}
+                  index={index}
+                  row={rowOf(held, name)}
+                  dragged={dragName === name}
+                  moved={moved}
+                  edit={edits[name]}
+                  busy={busy}
+                  drag={drag}
+                  onEdit={(machine, value) =>
+                    setEdits(current => ({ ...current, [machine]: value }))
+                  }
+                />
+              ))}
             </div>
-            <p className="form-text text-muted mb-0">
-              {t('host.orchestrationPanel.bootOrderHelp')}
-            </p>
           </div>
+          <p className="form-text text-muted mb-0">{t('host.orchestrationPanel.bootOrderHelp')}</p>
         </div>
       ) : null}
       <p className="form-text text-muted">{t('host.orchestrationPanel.priorityFootnote')}</p>
@@ -423,6 +443,8 @@ const OrchestrationPanel = ({ id }) => {
 
 OrchestrationPanel.propTypes = {
   id: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  onRefresh: PropTypes.func.isRequired,
 };
 
 export default OrchestrationPanel;

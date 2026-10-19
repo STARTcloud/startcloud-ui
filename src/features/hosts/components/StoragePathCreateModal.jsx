@@ -2,15 +2,12 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useStatus } from '../../../../contexts/StatusContext';
-import {
-  ARTIFACT_TYPES,
-  STORAGE_PATH_FORM,
-  storagePathBody,
-  storagePathProblem,
-} from '../../utils/artifacts';
-import { PathInput } from '../PathPicker';
-import ToolFormDialog from '../ToolFormDialog';
+import { useStatus } from '../../../contexts/StatusContext';
+import { STORAGE_PATH_FORM, storagePathBody, storagePathProblem } from '../utils/artifacts';
+import { ARTIFACT_TYPES } from '../utils/manageCatalog';
+
+import { PathInput } from './PathPicker';
+import ToolFormDialog from './ToolFormDialog';
 
 const TYPE_KEYS = {
   iso: 'artifacts.storagePathCreateModal.isoFiles',
@@ -21,10 +18,10 @@ const TYPE_KEYS = {
 };
 
 /**
- * The one dialog that makes a storage location, hyperweaver-ui's: the
- * name, the absolute path with Browse picking the storage root, the type
- * among the five kinds, the enabled switch and the notes on what the
- * agent does with it; Create sends `POST artifacts/storage/paths` once.
+ * The one dialog that makes a storage location: the name, the absolute
+ * path with Browse picking the storage root, the type among the five
+ * kinds, the enabled switch and the notes on what the agent does with
+ * it; Create sends `POST artifacts/storage/paths` once.
  */
 const StoragePathCreateModal = ({ id, server, busy, onClose, onSubmit }) => {
   const { t } = useTranslation();

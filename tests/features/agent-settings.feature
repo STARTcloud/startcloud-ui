@@ -183,6 +183,25 @@ Feature: agent-settings
     And the release "v1.4.0-beta.1" shows the checksum "3f0c9a1b7e4d2c8f5a6b1d0e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a"
     And I see "37.3 MB"
 
+  Scenario: Agent pages: the Secrets page draws one heading row with Add, Copy from Vault, Reload and the view toggle in its pane in that order, no search box of its own, the navbar search narrowing its rows
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the host answers the hosts-search fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/secrets"
+    Then the section page "secrets" draws
+    And the section page draws one heading
+    And the heading pane of the section page reads "secret-add,secret-copy-from-vault,secrets-reload,view-toggle"
+    And the section page draws no search box
+    And the agent page offers no "refresh"
+    And the "secrets" table of the section page lists 2 rows
+    When I press "/"
+    And I type "deploy" in the navbar search box
+    Then the "secrets" table of the section page lists 1 rows
+    And the navbar search count reads "1 / 2"
+    And the heading of the networking page counts 1
+
   Scenario: Agent pages: the Secrets page reads the host store's rows as it opens and lists them with their kind, Add saves one row as one POST carrying the kind, the name and the secret and reads again, Remove sends one DELETE behind the typed confirmation, and Reload reads again
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
@@ -190,6 +209,7 @@ Feature: agent-settings
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/agent/secrets"
     Then the section page "secrets" draws
+    And the section page draws one heading
     And the agent page draws the "secrets" panel
     And the host was sent GET to "/api/agents/1/certs" 1 times
     And the host was not sent GET to "/api/agents/1/api-keys"

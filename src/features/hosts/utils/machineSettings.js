@@ -67,10 +67,22 @@ const credentialKey = () => {
   return `credential-${credentialKeySeq}`;
 };
 
+const USES_BY_KIND = { password: 'ssh', ssh_key: 'ssh', key_pair: 'vagrant' };
+
+/**
+ * The username a store row signs in as, its record's `username` or
+ * `user` extra, empty while it carries none.
+ *
+ * @param {Object|null} row - The store row
+ * @returns {string} The username
+ */
+export const credentialUsernameOf = row =>
+  String(row?.username || row?.record?.extra?.username || row?.record?.extra?.user || '');
+
 /**
  * The credential rows of the Settings form from the detail's
- * `credentials`, each `{ key, id, use, default, kind, name }`, `key`
- * the form's own identity.
+ * `credentials`, each `{ key, id, use, default, kind, name, username }`,
+ * `key` the form's own identity.
  *
  * @param {Array<Object>|null} credentials - The detail's `credentials`
  * @returns {Array<Object>} The rows
@@ -85,24 +97,31 @@ export const seedCredentialRows = credentials =>
       default: row.default === true,
       kind: row.kind || '',
       name: row.name || '',
+      username: credentialUsernameOf(row),
     }));
 
 /**
- * A fresh credential row of one use, nothing picked, the default of its
- * use while no other row of the use is.
+ * A credential row of one store row picked: the row's id, kind, name and
+ * username, the use its kind suggests, `ssh` for a password or an SSH
+ * key and `vagrant` for a key pair, and the default of that use while no
+ * other row of the use is.
  *
  * @param {Array<Object>} rows - The form's credential rows
- * @param {string} [use] - The use
+ * @param {Object} secret - The store row picked
  * @returns {Object} The row
  */
-export const newCredentialRow = (rows, use = 'ssh') => ({
-  key: credentialKey(),
-  id: '',
-  use,
-  default: !rows.some(row => row.use === use && row.default),
-  kind: '',
-  name: '',
-});
+export const credentialRowOf = (rows, secret) => {
+  const use = USES_BY_KIND[secret.kind] || 'ssh';
+  return {
+    key: credentialKey(),
+    id: String(secret.id),
+    use,
+    default: !rows.some(row => row.use === use && row.default),
+    kind: secret.kind || '',
+    name: secret.name || '',
+    username: credentialUsernameOf(secret),
+  };
+};
 
 /**
  * The credential rows with one row patched, a row made the default of

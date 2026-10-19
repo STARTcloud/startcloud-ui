@@ -11,11 +11,12 @@ import {
   buildZoneChanges,
   changedNicEntries,
   cpuChangesOf,
+  credentialRowOf,
+  credentialUsernameOf,
   credentialsWire,
   editableFields,
   immediateOnlyChanges,
   messageBase,
-  newCredentialRow,
   patchedCredentialRows,
   pendingCount,
   seedCredentialRows,
@@ -52,8 +53,22 @@ const knobCurrent = {
 
 const credentials = [
   { id: 'sec-deploy', use: 'ssh', default: true, kind: 'ssh_key', name: 'deploy' },
-  { id: 'sec-domino', use: 'rdp', default: false, kind: 'password', name: 'domino-admin' },
+  {
+    id: 'sec-domino',
+    use: 'rdp',
+    default: false,
+    kind: 'password',
+    name: 'domino-admin',
+    username: 'Administrator',
+  },
 ];
+
+const picked = {
+  id: 'sec-aws',
+  kind: 'key_pair',
+  name: 'aws',
+  record: { extra: { user: 'ec2-user' } },
+};
 
 describe('asFormString', () => {
   it('answers a list joined, an object by its enabled and nothing as the empty string', () => {
@@ -99,6 +114,7 @@ describe('buildSeed', () => {
       { id: 'sec-domino', use: 'rdp', default: false },
     ]);
     expect(seed.credentials[0].name).toBe('deploy');
+    expect(seed.credentials[1].username).toBe('Administrator');
     expect(buildSeed({}, {}).guestAgent).toBeNull();
     expect(buildSeed({}, {}).credentials).toEqual([]);
   });
@@ -115,27 +131,47 @@ describe('the credential rows', () => {
     expect(new Set(rows.map(row => row.key)).size).toBe(3);
   });
 
-  it('adds a row that is the default of its use only while no row of the use is', () => {
+  it('reads the username a store row signs in as from its extra', () => {
+    expect(credentialUsernameOf(picked)).toBe('ec2-user');
+    expect(credentialUsernameOf({ record: { extra: { username: 'root' } } })).toBe('root');
+    expect(credentialUsernameOf({ username: 'mark' })).toBe('mark');
+    expect(credentialUsernameOf({})).toBe('');
+  });
+
+  it('adds a picked store row under the use its kind suggests, the default of that use only while no row of the use is', () => {
     const rows = seedCredentialRows(credentials);
-    expect(newCredentialRow(rows).default).toBe(false);
-    expect(newCredentialRow(rows, 'console').default).toBe(true);
-    expect(newCredentialRow(rows, 'console').id).toBe('');
+    const pair = credentialRowOf(rows, picked);
+    expect([pair.id, pair.kind, pair.name, pair.username, pair.use, pair.default]).toEqual([
+      'sec-aws',
+      'key_pair',
+      'aws',
+      'ec2-user',
+      'vagrant',
+      true,
+    ]);
+    const password = credentialRowOf(rows, { id: 'sec-root', kind: 'password', name: 'root' });
+    expect([password.use, password.default]).toEqual(['ssh', false]);
+    expect(credentialRowOf([], { id: 'sec-root', kind: 'ssh_key', name: 'root' }).default).toBe(
+      true
+    );
   });
 
   it('keeps one default a use, a row made the default taking it from the others', () => {
-    const rows = [...seedCredentialRows(credentials), newCredentialRow([], 'ssh')];
+    const seeded = seedCredentialRows(credentials);
+    const rows = [...seeded, credentialRowOf(seeded, { id: 'sec-root', kind: 'password' })];
     const [, rdp, fresh] = rows;
-    const next = patchedCredentialRows(rows, fresh.key, { id: 'sec-domino', default: true });
+    const next = patchedCredentialRows(rows, fresh.key, { default: true });
     expect(next.map(row => row.default)).toEqual([false, false, true]);
     const moved = patchedCredentialRows(next, rdp.key, { use: 'ssh', default: true });
     expect(moved.map(row => row.default)).toEqual([false, true, false]);
   });
 
-  it('sends the picked rows alone as id, use and default', () => {
-    const rows = [...seedCredentialRows(credentials), newCredentialRow([], 'vagrant')];
-    expect(credentialsWire(rows)).toEqual([
+  it('sends the rows as id, use and default', () => {
+    const rows = seedCredentialRows(credentials);
+    expect(credentialsWire([...rows, credentialRowOf(rows, picked)])).toEqual([
       { id: 'sec-deploy', use: 'ssh', default: true },
       { id: 'sec-domino', use: 'rdp', default: false },
+      { id: 'sec-aws', use: 'vagrant', default: true },
     ]);
   });
 });
@@ -190,9 +226,15 @@ describe('buildScalarChanges', () => {
     expect(
       buildScalarChanges({
         ...base,
-        credentials: [...seed.credentials, newCredentialRow(seed.credentials)],
+        credentials: [...seed.credentials, credentialRowOf(seed.credentials, picked)],
       })
-    ).toEqual({});
+    ).toEqual({
+      credentials: [
+        { id: 'sec-deploy', use: 'ssh', default: true },
+        { id: 'sec-domino', use: 'rdp', default: false },
+        { id: 'sec-aws', use: 'vagrant', default: true },
+      ],
+    });
     expect(
       buildScalarChanges({
         ...base,

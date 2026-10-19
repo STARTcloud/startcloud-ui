@@ -92,6 +92,15 @@ const extensionOf = filename => filename.slice(filename.lastIndexOf('.')).toLowe
 
 const locationOf = row => ({ id: row.id, name: row.name, path: row.path, type: row.type });
 
+const CACHE_MEMBERS = {
+  registry: null,
+  role: null,
+  version: null,
+  file_exists: true,
+  source: null,
+  expected_sha256: null,
+};
+
 const seededPaths = host =>
   SEEDED_PATHS.map((seed, index) => ({
     id: pathId(host, index + 1),
@@ -109,6 +118,7 @@ const seededPaths = host =>
 
 const seededArtifacts = (host, paths) =>
   SEEDED_ARTIFACTS.map((seed, index) => ({
+    ...CACHE_MEMBERS,
     id: artifactId(host, index + 1),
     filename: seed.filename,
     path: `${paths[seed.location].path}/${seed.filename}`,
@@ -322,6 +332,7 @@ const added = (
   const index = store.next;
   store.next += 1;
   const row = {
+    ...CACHE_MEMBERS,
     id: artifactId(host, index),
     filename,
     path: `${location.path}/${filename}`,
@@ -510,7 +521,9 @@ const downloadedFile = ({ row }) => ({
  * The ISO and artifact storage of a host behind `artifacts`, every
  * route hyperweaver-ui's artifact management calls as hyperweaver-agent
  * answers it: the storage locations at `artifacts/storage/paths`, read,
- * made, changed and removed; the artifacts at `artifacts` with the
+ * made, changed and removed; the artifacts at `artifacts`, every row the
+ * one cache row shape with `registry`, `role`, `version`, `file_exists`,
+ * `source` and `expected_sha256`, with the
  * type, the location, the search, the sort and the page, the ISO images
  * alone at `artifacts/iso`, one artifact's
  * detail, its bytes at `download`, the batch delete at

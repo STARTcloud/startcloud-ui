@@ -337,6 +337,7 @@ Feature: host-manage
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/orchestration"
     Then the section page notes "orchestration"
+    And the section page draws one heading
     And the section page draws the "boot-order" panel
     And the boot order draws its header row
     And the section page's "orchestration-apply" action is held

@@ -125,7 +125,10 @@ const effectiveSort = (prefs, collection, status) =>
     : hostSort(status, collection.key, 'items') || collection.defaultSort || [];
 
 const effectiveGroup = (prefs, collection, status) =>
-  prefs.group[collection.key] ?? hostGroup(status, collection.key, 'items');
+  prefs.group[collection.key] ??
+  hostGroup(status, collection.key, 'items') ??
+  collection.defaultGroup ??
+  null;
 
 const groupLabel = (collection, labelKey, prefixed, t) =>
   prefixed ? `${t(collection.labelKey)} · ${t(labelKey)}` : t(labelKey);

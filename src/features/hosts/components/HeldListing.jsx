@@ -173,11 +173,15 @@ export const useSourcesPanel = ({ seedUrl, seedOf, dropHandoff }) => {
 };
 
 /**
- * The listing of a host's Provisioners or Templates page: the one
- * `Listing` over `collections` with the heading of the title, the count
- * of the entries shown, Add, the page's `pane` and the view toggle,
- * keyed by the host's Refresh presses, `children` drawn over it; while
- * `loaded` is false the heading with the pane alone and the children.
+ * The listing of a host's Provisioners, Templates or Installer files
+ * page: the one `Listing` over `collections` with the heading of the
+ * title, the count of the entries shown, the picked-state group of the
+ * collection's bulk actions as the `bulk` pane while it has any, Add
+ * while `add`, the page's `pane` and the view toggle, grouped by
+ * organization while `grouped`, keyed by the host's Refresh presses and
+ * by `nonce`, so a page's write reads the rows again, `children` drawn
+ * over it; while `loaded` is false the heading with the pane alone and
+ * the children.
  */
 export const HeldListing = ({
   table,
@@ -186,13 +190,21 @@ export const HeldListing = ({
   pane,
   collections,
   context,
+  add = true,
+  grouped = true,
+  nonce = 0,
   children = null,
 }) => {
   const presses = useContext(ManageRefreshContext);
-  const heading = ({ count, toggle, filters, setFilter }) => {
+  const heading = ({ count, toggle, filters, setFilter, bulk }) => {
     const actions = (
       <>
-        <AddButton filters={filters} setFilter={setFilter} />
+        {bulk ? (
+          <span className="d-inline-flex align-items-center gap-2" data-pane="bulk">
+            {bulk}
+          </span>
+        ) : null}
+        {add ? <AddButton filters={filters} setFilter={setFilter} /> : null}
         {pane}
         {toggle}
       </>
@@ -203,11 +215,11 @@ export const HeldListing = ({
     <div data-table={table}>
       {loaded ? (
         <Listing
-          key={presses}
+          key={`${presses}:${nonce}`}
           collections={collections}
           org=""
           member={false}
-          grouped
+          grouped={grouped}
           context={context}
           heading={heading}
         >
@@ -230,5 +242,8 @@ HeldListing.propTypes = {
   pane: PropTypes.node.isRequired,
   collections: PropTypes.array.isRequired,
   context: pageContextShape.isRequired,
+  add: PropTypes.bool,
+  grouped: PropTypes.bool,
+  nonce: PropTypes.number,
   children: PropTypes.node,
 };

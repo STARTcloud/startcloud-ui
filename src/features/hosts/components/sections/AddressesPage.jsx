@@ -9,6 +9,7 @@ import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useHostSeriesRefresh } from '../../hooks/useHostSeries';
 import { useNetworkingTools } from '../../hooks/useNetworkingTools';
+import { sectionTitle } from '../../pages';
 import {
   ADDRESS_FILTERS,
   addressRows,
@@ -37,15 +38,15 @@ const readingOf = reads => {
 };
 
 /**
- * The IP addresses page of a host: the heading counting the addresses
- * and Refresh in its pane, and under it the one addresses table, a
- * folding glass section over the rows of the monitoring read,
- * `ip-addresses`, and of the managed read, `network-addresses`, each
- * address once, narrowed by the page's search, the management of the
- * managed rows on it and every write through the one
- * `useNetworkingTools` and the task dialog it opens drawn once; the
- * fold kept under `table_prefs_addresses`. Refresh reads every held
- * answer of the host and every drawn series again.
+ * The IP addresses page of a host: one heading, the table's own, the
+ * section's title counting the addresses with Create and Refresh in its
+ * pane, and under it the one addresses table, a folding glass section
+ * over the rows of the monitoring read, `ip-addresses`, and of the
+ * managed read, `network-addresses`, each address once, narrowed by the
+ * page's search, the management of the managed rows on it and every
+ * write through the one `useNetworkingTools` and the task dialog it
+ * opens drawn once; the fold kept under `table_prefs_addresses`. Refresh
+ * reads every held answer of the host and every drawn series again.
  */
 const AddressesPage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
@@ -90,12 +91,7 @@ const AddressesPage = ({ id, server, context, section, onRefresh }) => {
   };
 
   return (
-    <SectionPane
-      section={section}
-      server={server}
-      count={reading.loaded ? rows.length : null}
-      actions={<RefreshButton onRefresh={refresh} />}
-    >
+    <SectionPane section={section} server={server} headed={!reading.offered}>
       {reading.offered ? (
         <IpAddressManagement
           id={id}
@@ -113,6 +109,9 @@ const AddressesPage = ({ id, server, context, section, onRefresh }) => {
             title: t(folded ? 'host.ipAddressTable.expand' : 'host.ipAddressTable.collapse'),
           }}
           tools={tools}
+          title={sectionTitle(section, server, '', t)}
+          count={reading.loaded ? search.tables.addresses.rows.length : null}
+          actions={<RefreshButton onRefresh={refresh} />}
         />
       ) : null}
       {tools.task ? (

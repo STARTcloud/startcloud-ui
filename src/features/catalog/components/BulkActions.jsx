@@ -150,6 +150,7 @@ const BulkActions = ({ collection, level, groups, onClear, onDone }) => {
             key={action.key}
             type="button"
             className={`btn btn-sm ${action.variant}`}
+            data-action={`bulk-${action.key}`}
             disabled={busy}
             onClick={() => pick(action)}
           >

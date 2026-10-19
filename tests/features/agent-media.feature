@@ -31,6 +31,14 @@ Feature: agent-media
     And the "isos" table of the section page lists 2 rows
     And the section page draws no "media-disks" panel
 
+  Scenario: Agent media: a disk image's long path draws cut in its middle with the whole path as its tooltip
+    Given the host answers the agent-overview fixture
+    And the host answers the agent-media fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/storage/media"
+    Then the "disks" table of the section page lists 3 rows
+    And the "media-disks" panel of the section page draws "/var/lib/hyperweaver/machines/build-win11/build-win11.vdi" cut in its middle
+
   Scenario: Agent media: a host whose row lists no media draws the not-available stub on the Media route and is asked for nothing
     Given the host answers the agent-overview fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"

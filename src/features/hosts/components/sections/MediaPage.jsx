@@ -6,6 +6,7 @@ import { hasAny } from '../../../../components/common/SubTable';
 import TabStrip from '../../../../components/common/TabStrip';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { pageContextShape } from '../../../../utils/itemShape';
+import { middleEllipsis } from '../../../../utils/text';
 import { fetchIsoArtifacts, fetchMedia } from '../../api/artifacts';
 import { useManageRead } from '../../hooks/useHostManage';
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
@@ -24,8 +25,9 @@ const sourceOf = (row, ctx) =>
   SOURCE_KEYS[row.source_stamp] ? ctx.t(SOURCE_KEYS[row.source_stamp]) : '';
 
 /**
- * The columns of the disk images table: the path, the format, the size,
- * the source the agent stamped and the machines holding the image.
+ * The columns of the disk images table: the path, cut in its middle with
+ * the whole path as its tooltip, the format, the size, the source the
+ * agent stamped and the machines holding the image.
  */
 export const DISK_COLUMNS = [
   {
@@ -33,7 +35,11 @@ export const DISK_COLUMNS = [
     kind: 'name',
     labelKey: 'hosts.media.path',
     value: row => row.path || '',
-    render: row => <code className="small">{row.path}</code>,
+    render: row => (
+      <code className="small" title={row.path}>
+        {middleEllipsis(row.path)}
+      </code>
+    ),
   },
   {
     key: 'format',

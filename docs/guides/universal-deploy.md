@@ -451,7 +451,10 @@ Update to.
   kind's location under the role with the checksum, the page follows the
   task and the file lands as a cache entry every later build resolves,
   because the host does every fetch itself and the browser never mints a
-  download link and never carries bytes. The shipped registry's known
+  download link and never carries bytes. The host's cache page draws
+  the same file rows the downloads collection draws on BoxVault, each
+  carrying its registry address while the host resolved it. The shipped
+  registry's known
   files the cache lacks draw as missing with their sha256 and are offered
   from every source that can supply them; a file whose hash is unknown
   or differs from its expectation is marked with a warning and never

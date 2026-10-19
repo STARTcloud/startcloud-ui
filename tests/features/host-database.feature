@@ -10,6 +10,7 @@ Feature: host-database
     And the host column draws the "database" row to "/hosts/1/agent/database"
     And the "databases" table of the section page lists 1 rows
     And the database page draws its totals
+    And the section page draws one heading
     And the host was sent GET to "/api/agents/1/database/stats" 1 times
 
   Scenario: Database: Vacuum, Analyze and Cleanup each one request and one notice, the vacuum naming the space reclaimed, the statistics read again
@@ -26,11 +27,15 @@ Feature: host-database
     And the page raised 1 success notice
     And the page raised 1 info notice
     And the host was sent GET to "/api/agents/3/database/stats" 2 times
-    When I press the section page's "database-analyze" action
+    When I dismiss the success notice
+    And I dismiss the info notice
+    And I press the section page's "database-analyze" action
     Then the host was sent POST to "/api/agents/3/database/analyze" 1 times
-    When I press the section page's "database-cleanup" action
+    And the page raised 1 success notice
+    When I dismiss the success notice
+    And I press the section page's "database-cleanup" action
     Then the host was sent POST to "/api/agents/3/database/cleanup" 1 times
-    And the page raised 3 success notices
+    And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/database/stats" 4 times
 
   Scenario: Database: a row's Explore opens its tables under the table read once, Browse opens the row browser paged by fifty with the order the agent validates

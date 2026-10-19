@@ -3,6 +3,10 @@ export default {
   'GET /api/agents/3/machines': { status: 200, file: 'agents-3-machines.json' },
   'GET /api/agents/3/network/addresses': { status: 200, file: 'agents-3-network-addresses.json' },
   'POST /api/agents/3/network/addresses': { status: 202, file: 'queued-address-create.json' },
+  'PUT /api/agents/3/network/addresses/igb0%2Fv4static': {
+    status: 202,
+    file: 'queued-address-create.json',
+  },
   'DELETE /api/agents/3/network/addresses/vnic1%2Fv4static': {
     status: 202,
     file: 'queued-address-delete.json',

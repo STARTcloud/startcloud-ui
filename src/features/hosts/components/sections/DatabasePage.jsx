@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useManageSectionsData } from '../../hooks/useManageSectionsData';
+import { sectionTitle } from '../../pages';
 import { matchesDatabase } from '../../utils/database';
 import { DATABASE_COLUMNS } from '../DatabasePanel';
 import DatabaseSection from '../DatabaseSection';
@@ -11,9 +12,10 @@ import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
 
 /**
- * The Database page of a host: the heading counting the databases the
- * search leaves, Refresh in its pane, and `DatabaseSection` under it,
- * the statistics read once for this page.
+ * The Database page of a host: `DatabaseSection` drawing the one heading,
+ * the section's title with the totals of the statistics, Vacuum, Analyze,
+ * Cleanup and Refresh in its pane, and the one table under it, the
+ * statistics read once for this page.
  */
 const DatabasePage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
@@ -38,18 +40,15 @@ const DatabasePage = ({ id, server, context, section, onRefresh }) => {
   });
 
   return (
-    <SectionPane
-      section={section}
-      server={server}
-      count={search.tables.databases.rows.length}
-      actions={<RefreshButton onRefresh={onRefresh} />}
-    >
+    <SectionPane section={section} server={server} headed={false}>
       <DatabaseSection
         id={id}
         ctx={ctx}
         table={search.tables.databases}
         reading={sections.reads.databases}
         filtering={search.filtering}
+        title={sectionTitle(section, server, '', t)}
+        actions={<RefreshButton onRefresh={onRefresh} />}
       />
     </SectionPane>
   );

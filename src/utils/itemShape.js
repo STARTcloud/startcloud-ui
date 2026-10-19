@@ -277,6 +277,8 @@ export const collectionShape = PropTypes.shape({
   }),
   matches: PropTypes.func,
   canManage: PropTypes.func,
+  manages: PropTypes.func,
+  defaultGroup: PropTypes.string,
   groupsOf: PropTypes.func,
   rowPick: PropTypes.func,
   slots: PropTypes.object.isRequired,

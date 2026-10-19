@@ -8,6 +8,7 @@ import { pageContextShape } from '../../../../utils/itemShape';
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useNetworkingTools } from '../../hooks/useNetworkingTools';
+import { sectionTitle } from '../../pages';
 import { SPACE_FILTERS, matchesSpace, spaceFamiliesOf } from '../../utils/networkingManagement';
 import NetworkSpacesPanel, { SPACE_COLUMNS } from '../NetworkSpaces/NetworkSpacesPanel';
 import RefreshButton from '../RefreshButton';
@@ -19,11 +20,12 @@ const NAME_SORT = [{ column: 'name', direction: 'asc' }];
 const NO_ROWS = [];
 
 /**
- * The Spaces page of a host, behind `network-spaces`: the heading
- * counting the spaces, Refresh in its pane, and `NetworkSpacesPanel`
- * under it over the families the host's platform draws, narrowed by the
- * page's search, every write through `useNetworkingTools` and its task
- * dialog drawn once; the fold kept under `table_prefs_spaces`.
+ * The Spaces page of a host, behind `network-spaces`: one heading, the
+ * spaces table's own, the section's title counting the spaces the
+ * page's search left with the create buttons and Refresh in its pane,
+ * and under it `NetworkSpacesPanel` over the families the host's platform
+ * draws, every write through `useNetworkingTools` and its task dialog
+ * drawn once; the fold kept under `table_prefs_spaces`.
  */
 const SpacesPage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
@@ -66,12 +68,7 @@ const SpacesPage = ({ id, server, context, section, onRefresh }) => {
   };
 
   return (
-    <SectionPane
-      section={section}
-      server={server}
-      count={spaces.loaded ? rows.length : null}
-      actions={<RefreshButton onRefresh={refresh} />}
-    >
+    <SectionPane section={section} server={server} headed={false}>
       <NetworkSpacesPanel
         id={id}
         server={server}
@@ -87,6 +84,9 @@ const SpacesPage = ({ id, server, context, section, onRefresh }) => {
           title: '',
         }}
         tools={tools}
+        title={sectionTitle(section, server, '', t)}
+        count={spaces.loaded ? search.tables.spaces.rows.length : null}
+        actions={<RefreshButton onRefresh={refresh} />}
       />
       {tools.task ? (
         <TaskDialog status={status} id={id} task={tools.task.row} onHide={tools.closeTask} />

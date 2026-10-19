@@ -58,18 +58,17 @@ export const readSecretRowsOf = (status, id, config) =>
  * `reset`, on the page's Refresh and after every write; `add(record)`
  * sends `POST certs` with the record's wire row under no organization,
  * `save(row, record)` sends `PUT certs/{id}`, `remove(row)` sends
- * `DELETE certs/{id}`, and `share(record)` sends a record of the
- * browser's vault as `POST certs` with its own store's members cleared,
- * so a pulled copy reaches the host under no organization; each one
- * request and one notice, the
- * rows read again on success, answering the row the store answered or
- * null.
+ * `DELETE certs/{id}`, and `copy(record)` sends a copy of a record of
+ * the browser's vault as `POST certs` with its own store's members
+ * cleared, so the copy reaches the host under no organization; each one
+ * request and one notice, the rows read again on success, answering the
+ * row the store answered or null.
  *
  * @param {Object} options - The host and the narrowing
  * @param {string} options.id - The registry id, or `self` on an agent role
  * @param {string} [options.kind] - The field's kind, empty for every secret kind
  * @param {string} [options.profile] - The profile wanted, empty for every row
- * @returns {{ rows: Array<Object>, reading: Object, busy: boolean, add: Function, save: Function, remove: Function, share: Function, task: Object|null, closeTask: Function }} The store
+ * @returns {{ rows: Array<Object>, reading: Object, busy: boolean, add: Function, save: Function, remove: Function, copy: Function, task: Object|null, closeTask: Function }} The store
  */
 export const useHostSecrets = ({ id, kind = '', profile = '' }) => {
   const status = useStatus();
@@ -123,7 +122,7 @@ export const useHostSecrets = ({ id, kind = '', profile = '' }) => {
     [written, status, id]
   );
 
-  const share = useCallback(record => add({ ...record, ...DETACHED }), [add]);
+  const copy = useCallback(record => add({ ...record, ...DETACHED }), [add]);
 
   return {
     rows: secretRowsOf(reading.data, kind, profile),
@@ -132,7 +131,7 @@ export const useHostSecrets = ({ id, kind = '', profile = '' }) => {
     add,
     save,
     remove,
-    share,
+    copy,
     task,
     closeTask,
   };

@@ -10,6 +10,8 @@ import {
   VNIC_FILTERS,
   addressBody,
   addressDeleteParams,
+  addressEditBody,
+  addressFormOf,
   addressInterfacesOf,
   addressObjectOf,
   addressProblem,
@@ -250,6 +252,69 @@ describe('the addresses', () => {
       temporary: false,
       down: false,
     });
+  });
+
+  it('seeds the edit form from a managed row, the prefix from prefix_length or the CIDR', () => {
+    expect(
+      addressFormOf({
+        interface: 'igb0',
+        type: 'Static',
+        addrobj: 'igb0/v4static',
+        ip_address: '10.0.0.31',
+        prefix_length: 24,
+        state: 'down',
+        primary: true,
+      })
+    ).toEqual({
+      interface: 'igb0',
+      type: 'static',
+      addrobj: 'igb0/v4static',
+      address: '10.0.0.31',
+      netmask: '24',
+      primary: true,
+      wait: '30',
+      temporary: false,
+      down: true,
+    });
+    const fromCidr = addressFormOf({
+      interface: 'vnic1',
+      addrobj: 'vnic1/v4',
+      addr: '10.1.0.5/16',
+    });
+    expect([fromCidr.type, fromCidr.address, fromCidr.netmask, fromCidr.down]).toEqual([
+      'static',
+      '10.1.0.5',
+      '16',
+      false,
+    ]);
+    expect(addressFormOf({ addr: '10.1.0.5' }).netmask).toBe('24');
+  });
+
+  it('builds the edit body as the create body less the address object', () => {
+    expect(
+      addressEditBody({
+        interface: 'igb0',
+        type: 'static',
+        addrobj: 'igb0/v4static',
+        address: '10.0.0.32',
+        netmask: '24',
+        primary: false,
+        wait: '30',
+        temporary: false,
+        down: false,
+      })
+    ).toEqual({
+      interface: 'igb0',
+      type: 'static',
+      primary: false,
+      wait: 30,
+      temporary: false,
+      down: false,
+      address: '10.0.0.32/24',
+    });
+    expect(
+      addressEditBody({ interface: 'igb0', type: 'dhcp', addrobj: 'igb0/v4dhcp', wait: '30' })
+    ).not.toHaveProperty('addrobj');
   });
 
   it('sends the bare address on a delete of one of several under one object on the Go agent alone', () => {

@@ -5,7 +5,6 @@ import {
   CATALOG_SOURCES,
   FILE_SOURCES,
   TEMPLATE_SOURCES,
-  artifactFiltersOf,
   artifactStatusOf,
   buildSteps,
   buildVariables,
@@ -21,7 +20,6 @@ import {
   installedKeysOf,
   knownHashOf,
   locationNeedsRole,
-  matchesArtifact,
   matchesPackage,
   matchesProvisioner,
   matchesRecipe,
@@ -60,7 +58,6 @@ import {
   sourceRemovePatch,
   sourceTogglePatch,
   sourcesPatch,
-  tableStateOf,
   targetProblem,
   templateKey,
   templateLabel,
@@ -77,21 +74,12 @@ const LOCATIONS = [
   { id: 'old', name: 'Old', type: 'iso', enabled: false },
 ];
 
-describe('the sizes and the table state', () => {
-  it('formats a size as hyperweaver-ui did and names the table state', () => {
+describe('the sizes', () => {
+  it('formats a size as hyperweaver-ui did', () => {
     expect(formatSize(0)).toBe('-');
     expect(formatSize(512)).toBe('512 B');
     expect(formatSize(1536)).toBe('1.5 KB');
     expect(formatSize(3 * 1024 ** 3)).toBe('3.0 GB');
-    expect(tableStateOf({ loaded: false, failed: false, filtering: false, rows: 0 })).toBe(
-      'loading'
-    );
-    expect(tableStateOf({ loaded: true, failed: true, filtering: false, rows: 0 })).toBe('failed');
-    expect(tableStateOf({ loaded: true, failed: false, filtering: false, rows: 2 })).toBe('rows');
-    expect(tableStateOf({ loaded: true, failed: false, filtering: true, rows: 0 })).toBe(
-      'filtered'
-    );
-    expect(tableStateOf({ loaded: true, failed: false, filtering: false, rows: 0 })).toBe('empty');
   });
 });
 
@@ -120,7 +108,7 @@ describe('the installer files', () => {
     expect(artifactStatusOf({ checksum: 'abc' }).key).toBe('hashed');
   });
 
-  it('offers the other locations of the same type, reads the roles and the query', () => {
+  it('offers the other locations of the same type and reads the roles', () => {
     expect(
       transferOptionsOf(LOCATIONS, { file_type: 'iso', storage_location_id: 'iso' }).map(l => l.id)
     ).toEqual(['old']);
@@ -133,11 +121,6 @@ describe('the installer files', () => {
       'a',
       'b',
     ]);
-    expect(artifactFiltersOf({ type: 'iso', storage_path_id: '', limit: 200 })).toEqual({
-      limit: 200,
-      offset: 0,
-      type: 'iso',
-    });
   });
 
   it('builds the upload, register, download and HCL bodies hyperweaver-ui sent', () => {
@@ -185,40 +168,6 @@ describe('the installer files', () => {
       'host.installerFilesModals.hclFieldsRequired'
     );
     expect(hclProblem({ keyName: 'k', filename: 'f', role: 'r' })).toBe('');
-  });
-
-  it('matches an artifact by its name, type, role, version and location', () => {
-    const row = {
-      filename: 'Domino.tar',
-      file_type: 'installer',
-      role: 'domino_install',
-      version: '14.5',
-      storage_location: { name: 'HCL' },
-    };
-    expect(matchesArtifact(row, 'domino')).toBe(true);
-    expect(matchesArtifact(row, 'hcl')).toBe(true);
-    expect(matchesArtifact(row, 'iso')).toBe(false);
-    expect(matchesArtifact(row, '14.5')).toBe(true);
-  });
-
-  it('matches an artifact by the full_version of the version object the agent answers', () => {
-    const row = {
-      filename: 'Domino.tar',
-      file_type: 'installer',
-      role: 'domino_install',
-      version: {
-        major: '14',
-        minor: '5',
-        patch: '0',
-        fix_pack: 'FP1',
-        ea_access_release: '',
-        full_version: '14.5.0FP1',
-      },
-      storage_location: { name: 'HCL' },
-    };
-    expect(matchesArtifact(row, 'fp1')).toBe(true);
-    expect(matchesArtifact(row, '14.5.0')).toBe(true);
-    expect(matchesArtifact(row, 'object')).toBe(false);
   });
 
   it('seeds a source dialog from a missing row by the sha256 it is known by', () => {

@@ -30,15 +30,6 @@ const withProfileExtras = (rows, profile) => {
   return [...rows, ...added];
 };
 
-/**
- * The form draft a secret record opens on: the record's members, or the
- * kind and the profile given with the profile's url and extras seeded.
- *
- * @param {Object|null} record - The record edited, null for a new one
- * @param {string} kind - The kind a new record opens on
- * @param {string} profileId - The profile a new record opens on
- * @returns {Object} The draft
- */
 const membersOf = (record, kind, profile) => {
   const members = Object.fromEntries(
     (SECRET_MEMBERS[kind] || []).map(member => [member, String(record?.secret?.[member] ?? '')])
@@ -52,9 +43,20 @@ const membersOf = (record, kind, profile) => {
 const customOf = (record, kind, profile) =>
   kind === 'custom' ? customTextOf(record?.secret || CUSTOM_SEEDS[profile?.id]) : '';
 
+/**
+ * The form draft a secret record opens on: the record's members, or the
+ * kind and the profile given with the profile's url and extras seeded, a
+ * profile that does not take the kind dropped.
+ *
+ * @param {Object|null} record - The record edited, null for a new one
+ * @param {string} kind - The kind a new record opens on, empty for none picked
+ * @param {string} profileId - The profile a new record opens on
+ * @returns {Object} The draft
+ */
 export const secretDraftOf = (record, kind, profileId) => {
-  const own = record?.kind || kind || SECRET_KINDS[0];
-  const profile = profileOf(record?.profile || profileId);
+  const own = record?.kind || kind || '';
+  const named = profileOf(record?.profile || profileId);
+  const profile = named && (!own || named.kinds.includes(own)) ? named : null;
   return {
     name: record?.name || '',
     kind: own,
@@ -249,16 +251,17 @@ ExtraRows.propTypes = {
 /**
  * The one form of a secret record, the dialog the Vault and a host's
  * Secrets page add and edit a secret through: the kind select over the
- * eight secret kinds, held while the caller fixes it, the profile select
- * narrowed to that kind, a pick seeding the url and drawing the
- * profile's extras, the kind's members with the first required, a
- * password, key or private half behind the reveal input, a key or a
- * file's bytes as a textarea and the bytes read from a picked file, a
- * `custom` row's map as JSON text, the notes, and the extra rows of
- * named values with Add and Remove; Save hands `onSave` the record once
- * the rules pass. While the draft differs from the one it opened on, a
- * backdrop click, Escape, the close button and Cancel ask the discard
- * prompt. `data-dialog` is `secret-record`.
+ * secret kinds the caller admits, opening unpicked and asking for one
+ * while the caller fixes none, held while it does, the service preset
+ * select drawn only for a kind that has presets and narrowed to it, a
+ * pick seeding the url and drawing the preset's extras, the kind's
+ * members with the first required, a password, key or private half
+ * behind the reveal input, a key or a file's bytes as a textarea and the
+ * bytes read from a picked file, a `custom` row's map as JSON text, the
+ * notes, and the extra rows of named values with Add and Remove; Save
+ * hands `onSave` the record once the rules pass. While the draft differs
+ * from the one it opened on, a backdrop click, Escape, the close button
+ * and Cancel ask the discard prompt. `data-dialog` is `secret-record`.
  */
 const SecretRecordModal = ({
   record = null,
@@ -278,11 +281,12 @@ const SecretRecordModal = ({
   const rules = useFormRules({ schema, values: draft, labels: SECRET_LABELS, idPrefix });
   const profile = profileOf(draft.profile);
   const members = SECRET_MEMBERS[draft.kind] || [];
+  const profiles = profilesOf(draft.kind);
 
   const set = (name, value) => {
     if (name === 'kind') {
       setDraft(current => ({
-        ...secretDraftOf(null, value, ''),
+        ...secretDraftOf(null, value, profileId),
         name: current.name,
         notes: current.notes,
         extra: current.extra,
@@ -328,22 +332,22 @@ const SecretRecordModal = ({
             <SelectField
               name="kind"
               options={kinds.map(entry => ({ value: entry, label: t(`certs.kind.${entry}`) }))}
+              blank={record || kind ? '' : t('certs.secret.pickKind')}
               draft={draft}
               rules={rules}
               onChange={set}
               disabled={Boolean(record) || Boolean(kind)}
             />
-            <SelectField
-              name="profile"
-              options={profilesOf(draft.kind).map(entry => ({
-                value: entry.id,
-                label: t(entry.labelKey),
-              }))}
-              blank={t('certs.profile.generic.label')}
-              draft={draft}
-              rules={rules}
-              onChange={set}
-            />
+            {profiles.length > 0 ? (
+              <SelectField
+                name="profile"
+                options={profiles.map(entry => ({ value: entry.id, label: t(entry.labelKey) }))}
+                blank={t('certs.profile.generic.label')}
+                draft={draft}
+                rules={rules}
+                onChange={set}
+              />
+            ) : null}
             <TextField name="name" draft={draft} rules={rules} onChange={set} />
             {members.map(member => (
               <MemberField

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaBroom, FaMagnifyingGlassChart, FaTrashArrowUp } from 'react-icons/fa6';
 
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { runDatabaseMaintenance } from '../api/database';
@@ -25,14 +26,16 @@ const ACTIONS = {
 };
 
 /**
- * The agent's databases, the body of the Database page: Vacuum, Analyze
- * and Cleanup, each one request and one notice, the vacuum's naming the
- * space reclaimed; the totals of the statistics; the one table over the
- * databases the page's search leaves, a row's Explore opening its tables
- * in the detail row under that row, with Browse into the row browser;
- * the statistics read again on a success.
+ * The agent's databases, the body of the Database page under its one
+ * heading: `title`, the totals of the statistics as the count once they
+ * are read, and in the pane Vacuum, Analyze and Cleanup, each one request
+ * and one notice, the vacuum's naming the space reclaimed, then
+ * `actions`; under it the one table over the databases the page's search
+ * leaves, a row's Explore opening its tables in the detail row under that
+ * row, with Browse into the row browser; the statistics read again on a
+ * success.
  */
-const DatabaseSection = ({ id, ctx, table, reading, filtering }) => {
+const DatabaseSection = ({ id, ctx, table, reading, filtering, title, actions = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
@@ -62,48 +65,54 @@ const DatabaseSection = ({ id, ctx, table, reading, filtering }) => {
     }
   };
 
+  const totals = stats ? (
+    <span data-note="database-totals">
+      {typeof stats.total_size === 'number' ? (
+        <span className="me-3">
+          {t('host.databasePanel.totalSize')}{' '}
+          <strong>{formatDatabaseBytes(stats.total_size)}</strong>
+        </span>
+      ) : null}
+      {typeof stats.total_tables === 'number' ? (
+        <span className="me-3">
+          {t('host.databasePanel.tables')} <strong>{stats.total_tables}</strong>
+        </span>
+      ) : null}
+      {typeof stats.total_rows === 'number' ? (
+        <span>
+          {t('host.databasePanel.rows')}{' '}
+          <strong>{stats.total_rows.toLocaleString(ctx.language)}</strong>
+        </span>
+      ) : null}
+    </span>
+  ) : null;
+
+  const pane = (
+    <>
+      {MAINTENANCE_ACTIONS.map(action => {
+        const { Icon, tone } = ACTIONS[action];
+        return (
+          <button
+            key={action}
+            type="button"
+            className={`btn btn-sm btn-outline-${tone}`}
+            data-action={`database-${action}`}
+            title={t(`host.databasePanel.${action}Title`)}
+            onClick={() => maintain(action)}
+            disabled={busy || !reading.loaded}
+          >
+            <Icon className="me-1" aria-hidden="true" />
+            {t(`host.databasePanel.${action}`)}
+          </button>
+        );
+      })}
+      {actions}
+    </>
+  );
+
   return (
     <div data-panel="database">
-      <div className="d-flex flex-wrap gap-2 mb-3">
-        {MAINTENANCE_ACTIONS.map(action => {
-          const { Icon, tone } = ACTIONS[action];
-          return (
-            <button
-              key={action}
-              type="button"
-              className={`btn btn-sm btn-outline-${tone}`}
-              data-action={`database-${action}`}
-              title={t(`host.databasePanel.${action}Title`)}
-              onClick={() => maintain(action)}
-              disabled={busy || !reading.loaded}
-            >
-              <Icon className="me-1" aria-hidden="true" />
-              {t(`host.databasePanel.${action}`)}
-            </button>
-          );
-        })}
-      </div>
-      {stats ? (
-        <p className="form-text text-muted mt-0" data-note="database-totals">
-          {typeof stats.total_size === 'number' ? (
-            <span className="me-3">
-              {t('host.databasePanel.totalSize')}{' '}
-              <strong>{formatDatabaseBytes(stats.total_size)}</strong>
-            </span>
-          ) : null}
-          {typeof stats.total_tables === 'number' ? (
-            <span className="me-3">
-              {t('host.databasePanel.tables')} <strong>{stats.total_tables}</strong>
-            </span>
-          ) : null}
-          {typeof stats.total_rows === 'number' ? (
-            <span>
-              {t('host.databasePanel.rows')}{' '}
-              <strong>{stats.total_rows.toLocaleString(ctx.language)}</strong>
-            </span>
-          ) : null}
-        </p>
-      ) : null}
+      <SectionHeading title={title} count={totals} actions={pane} />
       <ManageTable
         name="databases"
         columns={DATABASE_COLUMNS}
@@ -150,6 +159,8 @@ DatabaseSection.propTypes = {
     refresh: PropTypes.func.isRequired,
   }).isRequired,
   filtering: PropTypes.bool.isRequired,
+  title: PropTypes.string.isRequired,
+  actions: PropTypes.node,
 };
 
 export default DatabaseSection;

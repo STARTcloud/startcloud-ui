@@ -1,7 +1,15 @@
 import { catalogItemsFrom } from '../../collections/provisioners';
-import { fetchCatalog, fetchCatalogHealth, fetchRemoteTemplates } from '../api/provisioning';
+import {
+  deleteArtifacts,
+  fetchArtifacts,
+  fetchCatalog,
+  fetchCatalogHealth,
+  fetchRemoteTemplates,
+} from '../api/provisioning';
 
 import { remoteBoxItemsOf, sourceKeyOf } from './boxCatalog';
+import { artifactIdsOf, hostFilesOf } from './hostFiles';
+import { ARTIFACT_PAGE_SIZE } from './manageCatalog';
 
 const defaultFirst = sources =>
   sources
@@ -113,6 +121,53 @@ export const remoteBoxesAdapter = ({ status, id, sources }) => {
   return {
     listAll,
     listOrg: listAll,
+  };
+};
+
+const artifactPages = (status, id, offset = 0) =>
+  fetchArtifacts(status, id, { limit: ARTIFACT_PAGE_SIZE, offset }).then(answer => {
+    const page = Array.isArray(answer?.artifacts) ? answer.artifacts : [];
+    return Boolean(answer?.pagination?.has_more) && page.length > 0
+      ? artifactPages(status, id, offset + page.length).then(rest => [...page, ...rest])
+      : page;
+  });
+
+/**
+ * The adapter the host's Installer files page lists through, every
+ * artifact row of the host's cache as a file item, `GET artifacts` read
+ * page by page until the agent answers no more, the rows held for the
+ * writes; `bulk('items', 'delete', names, scope, { delete_files })`
+ * sends `DELETE artifacts/files` with the ids of the named rows and
+ * answers the bulk result shape. No watches and no item pages.
+ *
+ * @param {Object} options - The host
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @returns {Object} The adapter
+ */
+export const hostFilesAdapter = ({ status, id }) => {
+  let held = [];
+  const listAll = () =>
+    artifactPages(status, id).then(rows => {
+      held = hostFilesOf(rows);
+      return held;
+    });
+  const bulk = (...args) => {
+    const [, action, names, , extra = {}] = args;
+    const ids = artifactIdsOf(held, names);
+    if (action !== 'delete' || ids.length === 0) {
+      return Promise.resolve({ processed: 0, skipped: names.length, errors: [] });
+    }
+    return deleteArtifacts(status, id, {
+      artifact_ids: ids,
+      delete_files: Boolean(extra.delete_files),
+    }).then(() => ({ processed: ids.length, skipped: 0, errors: [] }));
+  };
+  return {
+    listAll,
+    listOrg: listAll,
+    bulk,
+    rows: () => held,
   };
 };
 

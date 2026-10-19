@@ -12,9 +12,12 @@ import {
   FaXmark,
 } from 'react-icons/fa6';
 
-import { formatFileSize } from '../../../../utils/formatFileSize';
-import { transferStatusKey, transferTone } from '../../utils/artifacts';
-import { formatPercent, formatTaskDate } from '../../utils/tasks';
+import SubTable from '../../../components/common/SubTable';
+import { useTablePrefs } from '../../../hooks/useTablePrefs';
+import { formatFileSize } from '../../../utils/formatFileSize';
+import { sortItems } from '../../../utils/sort';
+import { transferStatusKey, transferTone } from '../utils/artifacts';
+import { formatPercent, formatTaskDate } from '../utils/tasks';
 
 const MIB = 1024 * 1024;
 
@@ -59,16 +62,15 @@ const sizeText = (row, t) => {
 };
 
 /**
- * The columns of the transfers in flight, hyperweaver-ui's download
- * rows: the file with its status glyph and the URL of a download, the
- * status, the bytes so far and the speed, the storage location and when
- * it started.
+ * The columns of the transfers in flight: the file with its status
+ * glyph and the URL of a download, the status, the bytes so far and the
+ * speed, the storage location and when it started.
  */
 export const TRANSFER_COLUMNS = [
   {
     key: 'filename',
     kind: 'name',
-    labelKey: 'artifacts.artifactTable.filenameHeader',
+    labelKey: 'pages.table.name',
     value: (row, ctx) => row.filename || ctx.t('artifacts.artifactDownloadRow.downloadingLabel'),
     render: (row, ctx) => {
       const Kind = row.isUpload ? FaUpload : FaDownload;
@@ -105,7 +107,7 @@ export const TRANSFER_COLUMNS = [
   {
     key: 'size',
     kind: 'text',
-    labelKey: 'artifacts.artifactTable.sizeHeader',
+    labelKey: 'pages.table.fileSize',
     value: row => Number(row.progress_info?.downloaded_mb) || 0,
     render: (row, ctx) => (
       <span>
@@ -121,7 +123,7 @@ export const TRANSFER_COLUMNS = [
   {
     key: 'location',
     kind: 'text',
-    labelKey: 'artifacts.artifactTable.storageLocationHeader',
+    labelKey: 'host.installerFiles.colLocation',
     priority: 5,
     value: row => row.storage_location?.name || '',
     render: row =>
@@ -135,16 +137,16 @@ export const TRANSFER_COLUMNS = [
   {
     key: 'started',
     kind: 'date',
-    labelKey: 'artifacts.artifactTable.addedHeader',
+    labelKey: 'pages.table.created',
     value: row => new Date(row.created_at).getTime(),
     render: row => formatTaskDate(row.created_at),
   },
 ];
 
 /**
- * The actions of one transfer's row, hyperweaver-ui's: the failure
- * mark carrying the error while it failed, and Cancel while it is
- * queued or running, which drops it from the list.
+ * The actions of one transfer's row: the failure mark carrying the error
+ * while it failed, and Cancel while it is queued or running, which drops
+ * it from the list.
  */
 export const TransferRowActions = ({ row, onCancel }) => {
   const { t } = useTranslation();
@@ -182,3 +184,48 @@ TransferRowActions.propTypes = {
   }).isRequired,
   onCancel: PropTypes.func.isRequired,
 };
+
+const transferKey = row => row.taskId;
+
+/**
+ * The transfers in flight over the one table, drawn above the files
+ * while any is followed, its sort and widths kept under the page's
+ * prefix; nothing while none is.
+ */
+const ArtifactTransfers = ({ transfers, ctx, prefsPrefix, onCancel }) => {
+  const { t } = useTranslation();
+  const prefs = useTablePrefs(`${prefsPrefix}_artifact-transfers`, TRANSFER_COLUMNS);
+  if (transfers.length === 0) {
+    return null;
+  }
+  return (
+    <div className="mb-3" data-table="artifact-transfers" data-count={transfers.length}>
+      <p className="small text-muted mb-2">
+        {t('artifacts.artifactManagement.downloadsInProgress', { count: transfers.length })}
+      </p>
+      <SubTable
+        columns={TRANSFER_COLUMNS}
+        rows={sortItems(transfers, prefs.sort, TRANSFER_COLUMNS, ctx)}
+        rowKey={transferKey}
+        RowActions={TransferRowActions}
+        actionsProps={{ onCancel }}
+        sort={prefs.sort}
+        onSort={prefs.setSort}
+        hiddenColumns={prefs.hiddenColumns}
+        widths={prefs.widths}
+        onResize={prefs.setColumnWidth}
+        ctx={ctx}
+        emptyText=""
+      />
+    </div>
+  );
+};
+
+ArtifactTransfers.propTypes = {
+  transfers: PropTypes.array.isRequired,
+  ctx: PropTypes.object.isRequired,
+  prefsPrefix: PropTypes.string.isRequired,
+  onCancel: PropTypes.func.isRequired,
+};
+
+export default ArtifactTransfers;

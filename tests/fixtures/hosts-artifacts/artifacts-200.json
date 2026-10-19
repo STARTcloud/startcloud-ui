@@ -21,6 +21,10 @@
         "type": "iso"
       },
       "source_url": "https://mirror.example.com/debian-13.0.0-amd64-netinst.iso",
+      "registry": null,
+      "role": null,
+      "version": null,
+      "file_exists": true,
       "discovered_at": "2026-09-20T00:00:00.000Z",
       "updated_at": "2026-09-27T06:00:00.000Z"
     },
@@ -44,6 +48,10 @@
         "type": "iso"
       },
       "source_url": null,
+      "registry": null,
+      "role": null,
+      "version": null,
+      "file_exists": true,
       "discovered_at": "2026-09-21T00:00:00.000Z",
       "updated_at": "2026-09-27T06:00:00.000Z"
     },
@@ -67,6 +75,10 @@
         "type": "iso"
       },
       "source_url": null,
+      "registry": null,
+      "role": null,
+      "version": null,
+      "file_exists": true,
       "discovered_at": "2026-09-22T00:00:00.000Z",
       "updated_at": "2026-09-27T06:00:00.000Z"
     }

@@ -4,36 +4,36 @@ import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaDownload } from 'react-icons/fa6';
 
+import { drawnColumns } from '../../../components/common/SubTable';
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useClientFilters } from '../../../hooks/useClientFilters';
+import { formatFileSize } from '../../../utils/formatFileSize';
 import { fetchArtifactStoragePaths } from '../api/provisioning';
 import { fetchTemplateSources } from '../api/templates';
 import { useManageRead, useManageSend, useTaskFollow } from '../hooks/useHostManage';
 import { hostHasFeature } from '../utils/capabilities';
-import {
-  FILE_SOURCES,
-  kindLocationOf,
-  matchesArtifact,
-  roleOptionsOf,
-} from '../utils/manageCatalog';
+import { hostFilesOf, matchesHostFile } from '../utils/hostFiles';
+import { FILE_SOURCES, kindLocationOf, roleOptionsOf } from '../utils/manageCatalog';
 import { artifactRowsOf } from '../utils/roleFiles';
 
-import { ARTIFACT_COLUMNS, ARTIFACT_FILTERS } from './ArtifactColumns';
+import { HOST_FILE_COLUMNS, HOST_FILE_FILTERS } from './HostFileColumns';
 import {
   DownloadModal,
   HclDownloadModal,
+  OPENERS,
   RegisterModal,
   RegistryDownloadModal,
   UploadModal,
 } from './InstallerFilesModals';
-import { OPENERS } from './InstallerFilesSection';
 import { DialogTable } from './ManageTable';
 import { FilterPills, RowCards } from './PickDialogParts';
 import TaskDialog from './TaskDialog';
 
 const NO_ROWS = [];
 
-const rowKey = row => String(row.id);
+const PICK_FILTERS = HOST_FILE_FILTERS.map(spec => ({ labelFor: value => value, ...spec }));
+
+const rowKey = row => row.id;
 
 const listOf = (reading, member) =>
   Array.isArray(reading.data?.[member]) ? reading.data[member] : NO_ROWS;
@@ -42,7 +42,7 @@ const PickRowActions = ({ row, busy, onPick, onFetch }) => {
   const { t } = useTranslation();
   return (
     <span className="d-inline-flex align-items-center gap-1" data-artifact={row.id}>
-      {row.file_exists === false && onFetch ? (
+      {!row.fileExists && onFetch ? (
         <button
           type="button"
           className="btn btn-sm btn-outline-secondary"
@@ -50,7 +50,7 @@ const PickRowActions = ({ row, busy, onPick, onFetch }) => {
           title={t('provisioning.provisioningRolesTab.fetchTitle')}
           aria-label={t('provisioning.provisioningRolesTab.fetchTitle')}
           disabled={busy}
-          onClick={() => onFetch(row)}
+          onClick={() => onFetch(row.artifact)}
         >
           <FaDownload aria-hidden="true" />
         </button>
@@ -60,7 +60,7 @@ const PickRowActions = ({ row, busy, onPick, onFetch }) => {
         className="btn btn-sm btn-primary"
         data-action="file-pick-row"
         disabled={busy}
-        onClick={() => onPick(row)}
+        onClick={() => onPick(row.artifact)}
       >
         {t('provisioning.provisioningRolesTab.pickRow')}
       </button>
@@ -70,8 +70,9 @@ const PickRowActions = ({ row, busy, onPick, onFetch }) => {
 
 PickRowActions.propTypes = {
   row: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    file_exists: PropTypes.bool,
+    id: PropTypes.string.isRequired,
+    fileExists: PropTypes.bool.isRequired,
+    artifact: PropTypes.object.isRequired,
   }).isRequired,
   busy: PropTypes.bool.isRequired,
   onPick: PropTypes.func.isRequired,
@@ -114,16 +115,16 @@ SourceDialog.propTypes = {
 
 /**
  * The dialog that picks one artifact of one kind and one role, the
- * Installer files listing over the host's artifact rows whose `file_type`
- * is the kind and whose `role` is the given one, the rows on the host
- * first: the page's columns and filter groups, a search over the rows,
- * the table or cards view, and the page's openers, Upload, Register
- * path, From BoxVault, Download URL and HCL portal, through the page's
- * own dialogs seeded with the kind, the role and the kind's storage
- * location, each landing a row the host's artifacts are read again for
- * through `onReload`; a row's Pick hands the row to `onPick`, and on a
- * missing row the download glyph hands it to `onFetch`. `host` is
- * `{ status, hostId, server }`.
+ * host's artifact rows whose `file_type` is the kind and whose `role` is
+ * the given one drawn as the Installer files page draws them, one file
+ * row each with the rows on the host first: the page's columns and
+ * filter groups, a search over the rows, the table or cards view, and
+ * the page's openers, Upload, Register path, From BoxVault, Download URL
+ * and HCL portal, through the page's own dialogs seeded with the kind,
+ * the role and the kind's storage location, each landing a row the
+ * host's artifacts are read again for through `onReload`; a row's Pick
+ * hands the artifact row to `onPick`, and on a missing row the download
+ * glyph hands it to `onFetch`. `host` is `{ status, hostId, server }`.
  */
 const ArtifactPickModal = ({
   kind,
@@ -158,11 +159,12 @@ const ArtifactPickModal = ({
   }, [locations, onReload]);
   const follow = useTaskFollow({ id, onEnd: reread });
   const sender = { send, follow, busy };
-  const rows = artifactRowsOf(artifacts, kind, role);
+  const rows = hostFilesOf(artifactRowsOf(artifacts, kind, role));
   const needle = query.trim().toLowerCase();
-  const searched = needle ? rows.filter(row => matchesArtifact(row, needle)) : rows;
-  const filters = useClientFilters({ specs: ARTIFACT_FILTERS, rows: searched });
-  const ctx = { t, language: i18n.language };
+  const searched = needle ? rows.filter(row => matchesHostFile(row, needle)) : rows;
+  const filters = useClientFilters({ specs: PICK_FILTERS, rows: searched });
+  const ctx = { t, language: i18n.language, groupedBy: '', formatFileSize };
+  const columns = drawnColumns(HOST_FILE_COLUMNS, filters.rows, ctx);
   const offered = registries ? FILE_SOURCES : FILE_SOURCES.filter(entry => entry !== 'registry');
   const locationRows = listOf(locations, 'paths');
   const seed = {
@@ -220,7 +222,7 @@ const ArtifactPickModal = ({
                 <RowCards
                   name="artifact-cards"
                   rows={filters.rows}
-                  columns={ARTIFACT_COLUMNS}
+                  columns={columns}
                   rowKey={rowKey}
                   ctx={ctx}
                   RowActions={PickRowActions}
@@ -230,7 +232,7 @@ const ArtifactPickModal = ({
               ) : (
                 <DialogTable
                   name="artifact-pick"
-                  columns={ARTIFACT_COLUMNS}
+                  columns={HOST_FILE_COLUMNS}
                   rows={filters.rows}
                   rowKey={rowKey}
                   RowActions={PickRowActions}

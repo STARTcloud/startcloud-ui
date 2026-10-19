@@ -4,13 +4,38 @@ import { useTranslation } from 'react-i18next';
 import { FaPenToSquare, FaRotate, FaTrash } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import SectionHeading from '../../../components/common/SectionHeading';
+import ViewToggle from '../../../components/common/ViewToggle';
 import { useStatus } from '../../../contexts/StatusContext';
-import { SecretRecordModal, recordOf } from '../../certs';
+import { pageContextShape } from '../../../utils/itemShape';
+import {
+  SECRET_STORE_COLUMNS,
+  SECRET_STORE_FILTERS,
+  SecretRecordModal,
+  matchesStoreRow,
+  nowOf,
+  recordOf,
+} from '../../certs';
+import { tableOf, useHostManageSearch } from '../hooks/useHostManageSearch';
 import { useHostSecrets } from '../hooks/useHostSecrets';
+import { sectionTitle } from '../pages';
 
+import ManageTable from './ManageTable';
+import { RowCards } from './PickDialogParts';
 import SecretOpeners from './SecretOpeners';
-import SecretRowsList from './SecretRowsList';
 import TaskDialog from './TaskDialog';
+
+const rowKey = row => String(row.id);
+
+const emptyKeyOf = (reading, filtering) => {
+  if (!reading.loaded) {
+    return 'pages.loading';
+  }
+  if (reading.failed) {
+    return 'hosts.overview.readError';
+  }
+  return filtering ? 'pages.noMatches' : 'agentSettings.agentSecretsTab.noRows';
+};
 
 const SecretRowActions = ({ row, busy, onEdit, onRemove }) => {
   const { t } = useTranslation();
@@ -51,59 +76,107 @@ SecretRowActions.propTypes = {
 
 /**
  * The Secrets page's body of a host, behind the host's `certs-store` token:
- * the secret rows of the host's own store, `GET certs`, over the Vault's
- * table and cards with the Kind and Profile pills and a search, Add
- * opening the secret record form and writing `POST certs`, Share from
- * Vault writing a record of the browser's vault the same way, Reload,
- * and on each row Edit, the form over the row's record writing
- * `PUT certs/{id}`, and Remove behind the typed confirmation writing
- * `DELETE certs/{id}`; every write one request and one notice, the rows
- * read again after it. The rows read once as the page draws, again when
- * the stream opens fresh or answers `reset`, on the page's Refresh and
- * on Reload.
+ * one heading row, the section's title counting the rows the navbar search
+ * leaves, with Add, Copy from Vault, Reload and the table or cards toggle in
+ * its pane, over the secret rows of the host's own store, `GET certs`, in the
+ * Vault's columns, the navbar search carrying the query, the Kind and Profile
+ * groups and the Columns group. Add opens the secret record form and writes
+ * `POST certs`, Copy from Vault writes a record of the browser's vault the
+ * same way, Reload is `onRefresh`, and on each row Edit, the form over the
+ * row's record writing `PUT certs/{id}`, and Remove behind the typed
+ * confirmation writing `DELETE certs/{id}`; every write one request and one
+ * notice, the rows read again after it. The rows read once as the page
+ * draws, again when the stream opens fresh or answers `reset`, and on Reload.
  */
-const AgentSecretsTab = ({ id, prefsKey }) => {
-  const { t } = useTranslation();
+const AgentSecretsTab = ({ id, server, context, section, onRefresh }) => {
+  const { t, i18n } = useTranslation();
   const status = useStatus();
   const store = useHostSecrets({ id });
   const [editing, setEditing] = useState(null);
   const [removing, setRemoving] = useState(null);
-  const openers = (
+  const [view, setView] = useState('table');
+  const ctx = { ...context, t, language: i18n.language, now: nowOf(), thresholdDays: 0 };
+  const search = useHostManageSearch({
+    section,
+    tables: {
+      secrets: tableOf({
+        key: 'secrets',
+        labelKey: 'hosts.nav.secrets',
+        rows: store.rows,
+        columns: SECRET_STORE_COLUMNS,
+        matches: matchesStoreRow,
+        filterGroups: SECRET_STORE_FILTERS,
+        sort: 'name',
+        offered: true,
+      }),
+    },
+    ctx,
+    prefsPrefix: context.prefsPrefix,
+    placeholderKey: 'certs.search.sharedPlaceholder',
+  });
+  const table = search.tables.secrets;
+  const actionsProps = { busy: store.busy, onEdit: setEditing, onRemove: setRemoving };
+  const actions = (
     <>
       <SecretOpeners
         busy={store.busy}
-        prefsKey={`${prefsKey}_vault`}
+        prefsKey={`${context.prefsPrefix}_agent_secrets_vault`}
         onAdd={store.add}
-        onShare={store.share}
+        onCopy={store.copy}
       />
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary"
         data-action="secrets-reload"
-        onClick={store.reading.refresh}
+        onClick={onRefresh}
         disabled={store.busy}
       >
         <FaRotate className="me-1" aria-hidden="true" />
         {t('agentSettings.agentSecretsTab.reloadButton')}
       </button>
+      <ViewToggle view={view} onChange={setView} />
     </>
   );
 
   return (
     <div data-panel="secrets">
+      <SectionHeading
+        title={sectionTitle(section, server, '', t)}
+        count={store.reading.loaded ? table.rows.length : null}
+        actions={actions}
+      />
       {store.reading.failed ? (
         <div className="alert alert-danger py-2" role="alert" data-note="secrets-failed">
           {t('agentSettings.agentSecretsTab.failedLoadSecrets', { message: store.reading.message })}
         </div>
       ) : null}
-      <SecretRowsList
-        name="secrets"
-        rows={store.rows}
-        loaded={store.reading.loaded}
-        RowActions={SecretRowActions}
-        actionsProps={{ busy: store.busy, onEdit: setEditing, onRemove: setRemoving }}
-        openers={openers}
-      />
+      <div data-view={view}>
+        {view === 'cards' ? (
+          <RowCards
+            name="secrets-cards"
+            rows={table.rows}
+            columns={SECRET_STORE_COLUMNS}
+            rowKey={rowKey}
+            ctx={ctx}
+            RowActions={SecretRowActions}
+            actionsProps={actionsProps}
+            emptyText={t(emptyKeyOf(store.reading, search.filtering))}
+          />
+        ) : (
+          <ManageTable
+            name="secrets"
+            columns={SECRET_STORE_COLUMNS}
+            table={table}
+            rowKey={rowKey}
+            RowActions={SecretRowActions}
+            actionsProps={actionsProps}
+            ctx={ctx}
+            emptyKey="agentSettings.agentSecretsTab.noRows"
+            reading={store.reading}
+            filtering={search.filtering}
+          />
+        )}
+      </div>
       {editing ? (
         <SecretRecordModal
           record={recordOf(editing)}
@@ -135,7 +208,10 @@ const AgentSecretsTab = ({ id, prefsKey }) => {
 
 AgentSecretsTab.propTypes = {
   id: PropTypes.string.isRequired,
-  prefsKey: PropTypes.string.isRequired,
+  server: PropTypes.object.isRequired,
+  context: pageContextShape.isRequired,
+  section: PropTypes.string.isRequired,
+  onRefresh: PropTypes.func.isRequired,
 };
 
 export default AgentSecretsTab;

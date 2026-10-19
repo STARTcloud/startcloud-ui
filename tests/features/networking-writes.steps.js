@@ -71,6 +71,14 @@ When("I press the topology's {string} tool", async ({ page }, tool) => {
   await topologyOf(page).locator(`[data-tool="${tool}"]`).first().click();
 });
 
+Then('the section page draws one heading', async ({ page }) => {
+  await expect(frameOf(page).locator('.section-heading')).toHaveCount(1);
+});
+
+Then('the field {string} is disabled', async ({ page }, id) => {
+  await expect(dialogOf(page).locator(`[id="${id}"]`)).toBeDisabled();
+});
+
 Then('the networking page draws the {string} section', async ({ page }, name) => {
   await expect(sectionOf(page, name)).toBeVisible();
 });

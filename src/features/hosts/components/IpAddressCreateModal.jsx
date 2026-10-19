@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import {
   ADDRESS_FORM,
+  addressFormOf,
   addressObjectOf,
   addressProblem,
   addressTypesOf,
@@ -24,9 +25,9 @@ const NETMASKS = [
   ['30', '255.255.255.252'],
 ];
 
-const withField = (form, field, value) => {
+const withField = (form, field, value, editing) => {
   const next = { ...form, [field]: value };
-  if (field === 'interface' || field === 'type' || field === 'address') {
+  if (!editing && (field === 'interface' || field === 'type' || field === 'address')) {
     return { ...next, addrobj: addressObjectOf(next) };
   }
   return next;
@@ -113,22 +114,29 @@ Flag.propTypes = {
 };
 
 /**
- * The create dialog of an IP address, hyperweaver-ui's: the interface
- * among the host's VNICs and physical interfaces, the address object
- * named from the interface, the version and the type until a person
- * types one, the type, static everywhere, DHCP and addrconf as the host
- * offers them (`addressTypesOf`), the address and its netmask for a
- * static one, the wait, and the primary, temporary and down flags. The
- * form's problem draws over the fields and holds the send; the body is
- * `addressBody`.
+ * The form dialog of an IP address, hyperweaver-ui's, the create and the
+ * edit in one: the interface among the host's VNICs and physical
+ * interfaces, the address object named from the interface, the version
+ * and the type until a person types one, the type, static everywhere,
+ * DHCP and addrconf as the host offers them (`addressTypesOf`), the
+ * address and its netmask for a static one, the wait, and the primary,
+ * temporary and down flags; an edit opens on the managed row `address`
+ * through `addressFormOf` with the interface and the address object
+ * held, because the route names them. The form's problem draws over the
+ * fields and holds the send; the body is `addressBody`, the edit's
+ * `addressEditBody`. `data-dialog` is `address-create` or `address-edit`.
  */
-const IpAddressCreateModal = ({ server, interfaces, busy, onClose, onSubmit }) => {
+const IpAddressCreateModal = ({ server, interfaces, address = null, busy, onClose, onSubmit }) => {
   const { t } = useTranslation();
-  const [form, setForm] = useState(ADDRESS_FORM);
+  const [form, setForm] = useState(() => (address ? addressFormOf(address) : ADDRESS_FORM));
   const [tried, setTried] = useState(false);
   const types = addressTypesOf(server);
   const problem = addressProblem(form);
-  const change = (field, value) => setForm(current => withField(current, field, value));
+  const editing = Boolean(address);
+  const change = (field, value) => setForm(current => withField(current, field, value, editing));
+  const options = interfaces.some(row => row.name === form.interface)
+    ? interfaces
+    : [...(form.interface ? [{ name: form.interface, type: 'Interface' }] : []), ...interfaces];
 
   const submit = () => {
     setTried(true);
@@ -139,9 +147,11 @@ const IpAddressCreateModal = ({ server, interfaces, busy, onClose, onSubmit }) =
 
   return (
     <ToolFormDialog
-      dialog="address-create"
-      title={t('host.ipAddressCreateModal.title')}
-      submitKey="host.ipAddressCreateModal.submit"
+      dialog={editing ? 'address-edit' : 'address-create'}
+      title={t(editing ? 'host.ipAddressCreateModal.editTitle' : 'host.ipAddressCreateModal.title')}
+      submitKey={
+        editing ? 'host.ipAddressCreateModal.editSubmit' : 'host.ipAddressCreateModal.submit'
+      }
       problemKey={tried ? problem : ''}
       busy={busy}
       onClose={onClose}
@@ -156,11 +166,11 @@ const IpAddressCreateModal = ({ server, interfaces, busy, onClose, onSubmit }) =
           className="form-select"
           value={form.interface}
           onChange={event => change('interface', event.target.value)}
-          disabled={busy}
+          disabled={busy || editing}
           required
         >
           <option value="">{t('host.ipAddressCreateModal.selectInterface')}</option>
-          {interfaces.map(row => (
+          {options.map(row => (
             <option key={row.name} value={row.name}>
               {row.name} ({row.type}
               {row.over ? t('host.ipAddressCreateModal.over', { over: row.over }) : ''})
@@ -180,7 +190,7 @@ const IpAddressCreateModal = ({ server, interfaces, busy, onClose, onSubmit }) =
           placeholder="e.g., vnic0/v4static"
           value={form.addrobj}
           onChange={event => change('addrobj', event.target.value)}
-          disabled={busy}
+          disabled={busy || editing}
           required
         />
         <p className="form-text text-muted">{t('host.ipAddressCreateModal.addrobjHelp')}</p>
@@ -259,6 +269,7 @@ IpAddressCreateModal.propTypes = {
       over: PropTypes.string,
     })
   ).isRequired,
+  address: PropTypes.object,
   busy: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,

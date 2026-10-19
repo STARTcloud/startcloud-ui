@@ -103,11 +103,14 @@ Feature: host recipes and provisioning network
     Then the section page "provisioning-network" draws
     And the host row "provisioning-network" is the active one
     And the section page notes "network-not-ready"
+    And the section page draws one heading
     And the "network-components" table of the section page lists 3 rows
     And the "network-config" table of the section page lists 4 rows
     When I press the section page's "network-setup" action
     Then the host was sent POST to "/api/agents/3/provisioning/network/setup"
-    When I press the section page's "network-teardown" action
+    And the page raised 1 success notice
+    When I dismiss the success notice
+    And I press the section page's "network-teardown" action
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/3/provisioning/network/teardown"
 

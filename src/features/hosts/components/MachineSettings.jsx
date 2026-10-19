@@ -37,7 +37,7 @@ import MachineOrgAccess from './MachineOrgAccess';
 import MachineSettingsStatus from './MachineSettingsStatus';
 import NetworkAdaptersEditor from './NetworkAdaptersEditor';
 import ResourceControlsEditor from './ResourceControlsEditor';
-import SecretPickModal, { SecretPickRow } from './SecretPickModal';
+import SecretPickModal from './SecretPickModal';
 import StorageDevicesEditor from './StorageDevicesEditor';
 import TaskDialog from './TaskDialog';
 import UsbPanel from './UsbPanel';
@@ -180,7 +180,15 @@ CpuTopologySection.propTypes = {
   disabled: PropTypes.bool,
 };
 
-const CredentialRow = ({ row, disabled, onPatch, onPick, onRemove }) => {
+const CREDENTIAL_PROFILE = 'machine_login';
+
+/**
+ * One credential of the machine, a row of the host's store: its name,
+ * its kind as a badge, the username it signs in as while the row
+ * carries one, the Use select over plain words, the Default switch of
+ * that use and Remove.
+ */
+const CredentialRow = ({ row, disabled, onPatch, onRemove }) => {
   const { t } = useTranslation();
   const useId = `machine-cred-use-${row.key}`;
   const defaultId = `machine-cred-default-${row.key}`;
@@ -191,8 +199,21 @@ const CredentialRow = ({ row, disabled, onPatch, onPick, onRemove }) => {
       data-credential={row.id}
       data-credential-use={row.use}
     >
+      <div className="col-12 col-md-5 d-flex align-items-center gap-2 flex-wrap">
+        <span className="d-inline-flex align-items-center gap-2" data-credential-pick={row.key}>
+          <code className="small">{row.name || row.id}</code>
+        </span>
+        <span className="badge text-bg-secondary" data-credential-kind={row.kind}>
+          {t(`certs.kind.${row.kind}`)}
+        </span>
+        {row.username ? (
+          <span className="small text-muted" data-credential-username={row.username}>
+            {t('machineEdit.machineSettings.credentialUsername', { username: row.username })}
+          </span>
+        ) : null}
+      </div>
       <div className="col-12 col-md-3">
-        <label className="form-label small mb-1" htmlFor={useId}>
+        <label className="visually-hidden" htmlFor={useId}>
           {t('machineEdit.machineSettings.credentialUse')}
         </label>
         <select
@@ -208,21 +229,6 @@ const CredentialRow = ({ row, disabled, onPatch, onPick, onRemove }) => {
             </option>
           ))}
         </select>
-      </div>
-      <div className="col-12 col-md-5 d-flex align-items-center gap-2">
-        <SecretPickRow
-          label={t('machineEdit.machineSettings.credentialSecret')}
-          picked={row.id ? { id: row.id, name: row.name } : null}
-          disabled={disabled}
-          onOpen={onPick}
-          onClear={() => onPatch({ id: '', kind: '', name: '' })}
-          attributes={{ 'data-credential-pick': row.key }}
-        />
-        {row.kind ? (
-          <code className="small" data-credential-kind={row.kind}>
-            {row.kind}
-          </code>
-        ) : null}
       </div>
       <div className="col-6 col-md-2">
         <div className="form-check form-switch mb-0">
@@ -266,16 +272,22 @@ CredentialRow.propTypes = {
     default: PropTypes.bool.isRequired,
     kind: PropTypes.string,
     name: PropTypes.string,
+    username: PropTypes.string,
   }).isRequired,
   disabled: PropTypes.bool,
   onPatch: PropTypes.func.isRequired,
-  onPick: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
 };
 
+/**
+ * The Credentials tab: the machine's credentials as rows of the host's
+ * store, Add credential opening the secret pick dialog over the store's
+ * password, SSH key and key pair rows with the machine login preset, a
+ * pick landing one row with the use its kind suggests.
+ */
 const CredentialsTab = ({ page }) => {
   const { t } = useTranslation();
-  const [picking, setPicking] = useState('');
+  const [picking, setPicking] = useState(false);
   const { form, tools, formDisabled } = page;
   return (
     <div data-tab-body="credentials">
@@ -289,7 +301,6 @@ const CredentialsTab = ({ page }) => {
             row={row}
             disabled={formDisabled}
             onPatch={patch => tools.patchCredential(row.key, patch)}
-            onPick={() => setPicking(row.key)}
             onRemove={() => tools.removeCredential(row.key)}
           />
         ))}
@@ -304,7 +315,7 @@ const CredentialsTab = ({ page }) => {
         className="btn btn-sm btn-outline-secondary"
         data-action="credential-add"
         disabled={formDisabled}
-        onClick={tools.addCredential}
+        onClick={() => setPicking(true)}
       >
         <FaPlus className="me-1" aria-hidden="true" />
         {t('machineEdit.machineSettings.addCredential')}
@@ -312,18 +323,15 @@ const CredentialsTab = ({ page }) => {
       {picking ? (
         <SecretPickModal
           kind="credential"
+          profile={CREDENTIAL_PROFILE}
           host={page.host}
           title={t('machineEdit.machineSettings.pickCredentialTitle')}
           disabled={formDisabled}
           onPick={secret => {
-            tools.patchCredential(picking, {
-              id: String(secret.id),
-              kind: secret.kind || '',
-              name: secret.name || '',
-            });
-            setPicking('');
+            tools.addCredential(secret);
+            setPicking(false);
           }}
-          onClose={() => setPicking('')}
+          onClose={() => setPicking(false)}
         />
       ) : null}
     </div>
@@ -672,11 +680,12 @@ const useSettingsFeeds = ({ status, hostId, server }) => {
 /**
  * The Settings page of one machine, hyperweaver-ui's Settings tab: the
  * tabs over every editor, each seeded from `knob_current` over the
- * configuration, the Credentials tab a list of the machine's credentials
- * from `credentials`, each row its use, the host store's password, SSH
- * key or key pair row picked through the secret pick dialog, its
- * Default switch, one default a use, and Remove, with Add credential,
- * sent whole as `credentials` while the list changed, and Apply sending the changed members alone as one
+ * configuration, the Credentials tab the machine's credentials from
+ * `credentials`, each a row of the host's store with its name, kind and
+ * username, its use, its Default switch, one default a use, and Remove,
+ * Add credential picking a password, SSH key or key pair row through the
+ * secret pick dialog, sent whole as `credentials` while the list
+ * changed, and Apply sending the changed members alone as one
  * `PUT machines/{name}`, the modify wire of both agents, through
  * `useSettingsApply`. The form seeds itself again from the detail the
  * held copies answer after a write, and Reset seeds it again by hand.

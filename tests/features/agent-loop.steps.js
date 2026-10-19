@@ -29,7 +29,22 @@ Given("the page's navigations are watched", async ({ page }) => {
 });
 
 When("I press the account menu's admin board", async ({ page }) => {
-  await page.locator('.user-menu .dropdown-menu.show a[href="/admin"]').click();
+  const menu = page.locator('.user-menu .dropdown-menu.show');
+  await expect
+    .poll(
+      async () => {
+        if ((await menu.count()) === 0) {
+          await page.locator('.user-menu > .nav-link').click();
+        }
+        return menu
+          .locator('a[href="/admin"]')
+          .click({ timeout: 2000 })
+          .then(() => true)
+          .catch(() => false);
+      },
+      { timeout: 20000 }
+    )
+    .toBe(true);
 });
 
 Then('the pathname is {string}', async ({ page }, pathname) => {

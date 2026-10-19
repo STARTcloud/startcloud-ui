@@ -23,7 +23,6 @@ const PackagesPage = ({ id, server, context, section, onRefresh }) => {
     params: catalog.params,
     setParam: catalog.setParam,
     resetParams: catalog.resetParams,
-    locations: catalog.rows.locations,
     t,
   });
   const ctx = { ...context, t, language: i18n.language, id, server };

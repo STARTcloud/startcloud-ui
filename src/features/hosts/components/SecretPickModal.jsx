@@ -104,7 +104,7 @@ SecretPickRow.propTypes = {
  * authority rows and a `key` field the key and SSH certificate rows,
  * read as the dialog opens, with the search, the pills and the cards
  * toggle, Add on a secret kind opening the secret record form seeded
- * with the kind and `profile` and writing `POST certs`, Share from Vault
+ * with the kind and `profile` and writing `POST certs`, Copy from Vault
  * writing a browser record of the admitted kinds the same way, each
  * landing a row the store is read again for, and Pick on a row handing
  * it to `onPick`. `host` is `{ status, hostId }`; `data-dialog` is
@@ -131,7 +131,7 @@ const SecretPickModal = ({
       busy={busy}
       prefsKey="table_prefs_secret_pick_vault"
       onAdd={store.add}
-      onShare={store.share}
+      onCopy={store.copy}
     />
   );
   return (

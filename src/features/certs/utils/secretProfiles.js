@@ -117,6 +117,13 @@ export const PROFILES = [
     icon: 'FaGlobe',
   }),
   profile({
+    id: 'machine_login',
+    kinds: ['password', 'ssh_key'],
+    help: ['password', 'private_key'],
+    extras: [extraOf('machine_login', 'username')],
+    icon: 'FaUserLock',
+  }),
+  profile({
     id: 'notes_id',
     kinds: ['file'],
     help: ['bytes', 'password'],

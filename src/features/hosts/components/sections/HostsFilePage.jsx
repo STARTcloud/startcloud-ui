@@ -6,6 +6,7 @@ import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useNetworkingTools } from '../../hooks/useNetworkingTools';
+import { sectionTitle } from '../../pages';
 import HostsFileEditor from '../HostsFileEditor';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
@@ -18,12 +19,13 @@ const foldOf = (folds, key) => ({
 });
 
 /**
- * The Hosts file page of a host: the heading with Refresh in its pane,
- * and under it the hosts file as a folding section drawn while the
- * host's own row offers its read, every write through the one
- * `useNetworkingTools` and the task dialog it opens drawn once; the read
- * the copy the hosts feature's context holds and the fold kept under the
- * page's `table_prefs_hosts-file`.
+ * The Hosts file page of a host: one heading, the hosts file section's
+ * own, the section's title with the file's path after it and the raw
+ * switch, Save and Refresh in its pane, and under it the entries straight
+ * on the page's ground, drawn while the host's own row offers its read,
+ * every write through the one `useNetworkingTools` and the task dialog it
+ * opens drawn once; the read the copy the hosts feature's context holds
+ * and the fold kept under the page's `table_prefs_hosts-file`.
  */
 const HostsFilePage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
@@ -41,12 +43,7 @@ const HostsFilePage = ({ id, server, context, section, onRefresh }) => {
   };
 
   return (
-    <SectionPane
-      section={section}
-      server={server}
-      count={null}
-      actions={<RefreshButton onRefresh={refresh} />}
-    >
+    <SectionPane section={section} server={server} headed={!hosts.offered}>
       {hosts.offered ? (
         <HostsFileEditor
           id={id}
@@ -55,6 +52,8 @@ const HostsFilePage = ({ id, server, context, section, onRefresh }) => {
           ctx={ctx}
           fold={foldOf(folds, 'manage-hosts')}
           tools={tools}
+          title={sectionTitle(section, server, '', t)}
+          actions={<RefreshButton onRefresh={refresh} />}
         />
       ) : null}
       {tools.task ? (

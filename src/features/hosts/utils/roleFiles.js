@@ -112,51 +112,61 @@ const numberFieldsOf = config =>
     (config?.fields || []).filter(field => field?.type === 'number').map(field => field.name)
   );
 
+const defaultTextOf = field => (field?.default === undefined ? '' : String(field.default));
+
 /**
  * The file the manifest's configuration names as a role's default of one
  * kind: `filename`, the default of the field the role's
- * `files.<kind>.answers.name` names, and `major`, the default of the field
- * its `major` answer names, each empty while the configuration carries
- * no such default.
+ * `files.<kind>.answers.name` names, and `version`, the defaults of the
+ * fields its `major`, `minor` and `patch` answers name joined by dots, or
+ * the default of the field its `version` answer names, each empty while
+ * the configuration carries no such default.
  *
  * @param {Object|null} manifestRole - The manifest's role
  * @param {string} kind - `installer`, `fixpack` or `hotfix`
  * @param {{ fields: Array<Object> }|null} config - The version's configuration
- * @returns {{ filename: string, major: string }} The wanted file
+ * @returns {{ filename: string, version: string }} The wanted file
  */
 export const wantedFileOf = (manifestRole, kind, config) => {
   const answers = manifestRole?.files?.[kind]?.answers;
-  const nameField = fieldOf(config, isObject(answers) ? answers.name : '');
-  const majorField = fieldOf(config, isObject(answers) ? answers.major : '');
+  const named = member => (isObject(answers) ? answers[member] : '');
+  const parts = ['major', 'minor', 'patch']
+    .map(member => defaultTextOf(fieldOf(config, named(member))))
+    .filter(Boolean);
   return {
-    filename: nameField?.default === undefined ? '' : String(nameField.default),
-    major: majorField?.default === undefined ? '' : String(majorField.default),
+    filename: defaultTextOf(fieldOf(config, named('name'))),
+    version: parts.length > 0 ? parts.join('.') : defaultTextOf(fieldOf(config, named('version'))),
   };
 };
 
+const NO_WANT = { filename: '', version: '' };
+
+const exactVersionOf = row => {
+  const version = artifactVersionOf(row);
+  return [version.major, version.minor, version.patch].filter(Boolean).join('.');
+};
+
 /**
- * The file an installer picker opens on, among the rows on the host: the
- * row whose file name is the manifest's default, else a row whose major
- * version is the default major's, else the first; the first known row
- * while none is on the host; none for a fixpack or a hotfix.
+ * The file an installer picker opens on: among every row the host knows,
+ * the ones on the host first, the row whose file name is the manifest's
+ * default, else the row whose major, minor and patch equal the default
+ * version exactly, else none; none for a fixpack or a hotfix.
  *
  * @param {Array<Object>} rows - The rows of `roleArtifactsOf`
  * @param {string} kind - `installer`, `fixpack` or `hotfix`
- * @param {{ filename: string, major: string }} [wanted] - The wanted file of `wantedFileOf`
+ * @param {{ filename: string, version: string }} [wanted] - The wanted file of `wantedFileOf`
  * @returns {Object|null} The row
  */
-export const defaultPickOf = (rows, kind, wanted = { filename: '', major: '' }) => {
+export const defaultPickOf = (rows, kind, wanted = NO_WANT) => {
   if (kind !== 'installer') {
     return null;
   }
-  const present = rows.filter(artifactPresent);
-  return (
-    (wanted.filename && present.find(row => row.filename === wanted.filename)) ||
-    (wanted.major && present.find(row => artifactVersionOf(row).major === wanted.major)) ||
-    present[0] ||
-    rows[0] ||
-    null
-  );
+  const ordered = [...rows.filter(artifactPresent), ...rows.filter(row => !artifactPresent(row))];
+  const named = wanted.filename ? ordered.find(row => row.filename === wanted.filename) : null;
+  const versioned = wanted.version
+    ? ordered.find(row => exactVersionOf(row) === wanted.version)
+    : null;
+  return named || versioned || null;
 };
 
 /**

@@ -72,15 +72,16 @@ describe('formTools', () => {
     expect(held.form.zoneNicEdits).toEqual({ vnic0: { vlan_id: '5', props: { mtu: '9000' } } });
   });
 
-  it('adds, patches and removes a credential row, one default a use', () => {
+  it('adds a picked store row, patches and removes a credential row, one default a use', () => {
     const { held, tools } = stateOf();
-    tools.addCredential();
-    tools.addCredential();
+    tools.addCredential({ id: 'sec-root', kind: 'password', name: 'root' });
+    tools.addCredential({ id: 'sec-deploy', kind: 'ssh_key', name: 'deploy' });
     const [first, second] = held.form.credentials;
-    expect([first.default, second.default]).toEqual([true, false]);
-    tools.patchCredential(second.key, { id: 'sec-deploy', name: 'deploy', default: true });
+    expect([first.id, first.use, first.default]).toEqual(['sec-root', 'ssh', true]);
+    expect([second.id, second.use, second.default]).toEqual(['sec-deploy', 'ssh', false]);
+    tools.patchCredential(second.key, { default: true });
     expect(held.form.credentials.map(row => [row.id, row.default])).toEqual([
-      ['', false],
+      ['sec-root', false],
       ['sec-deploy', true],
     ]);
     tools.removeCredential(first.key);

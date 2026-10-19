@@ -153,25 +153,37 @@ describe('the rows of a role', () => {
     expect(artifactRowsOf(artifacts, 'installer', '')).toEqual([]);
   });
 
-  it('opens an installer on the first row on the host, a fixpack on none', () => {
+  it('opens an installer on nothing while the manifest names no default, a fixpack on none', () => {
     const rows = roleArtifactsOf(artifacts, domino, 'installer');
-    expect(defaultPickOf(rows, 'installer').id).toBe('a1');
-    expect(defaultPickOf([artifacts[0]], 'installer').id).toBe('a2');
+    expect(defaultPickOf(rows, 'installer')).toBeNull();
     expect(defaultPickOf(rows, 'fixpack')).toBeNull();
     expect(defaultPickOf([], 'installer')).toBeNull();
   });
 
-  it('reads the default file name and major the configuration names for a kind', () => {
+  it('reads the default file name and the exact version the configuration names for a kind', () => {
     expect(wantedFileOf(domino, 'installer', config)).toEqual({
       filename: 'Domino_14.5_Linux_English.tar',
-      major: '14',
+      version: '14',
     });
-    expect(wantedFileOf(domino, 'fixpack', config)).toEqual({ filename: '', major: '' });
-    expect(wantedFileOf(domino, 'installer', null)).toEqual({ filename: '', major: '' });
-    expect(wantedFileOf({ name: 'x' }, 'installer', config)).toEqual({ filename: '', major: '' });
+    expect(wantedFileOf(domino, 'fixpack', config)).toEqual({ filename: '', version: '' });
+    expect(wantedFileOf(domino, 'installer', null)).toEqual({ filename: '', version: '' });
+    expect(wantedFileOf({ name: 'x' }, 'installer', config)).toEqual({
+      filename: '',
+      version: '',
+    });
+    const exact = {
+      fields: [
+        { name: 'DOMINO_INSTALLER_MAJOR_VERSION', type: 'number', default: 14 },
+        { name: 'DOMINO_INSTALLER_MINOR_VERSION', type: 'number', default: 5 },
+        { name: 'DOMINO_INSTALLER_PATCH_VERSION', type: 'number', default: 1 },
+        { name: 'DOMINO_REST_API_INSTALLER_VERSION', type: 'text', default: '1.1.6' },
+      ],
+    };
+    expect(wantedFileOf(domino, 'installer', exact).version).toBe('14.5.1');
+    expect(wantedFileOf(restApi, 'installer', exact).version).toBe('1.1.6');
   });
 
-  it('prefers the present row the default names, then a present row of the default major, then the first present row', () => {
+  it('picks the row the default names, present or missing, else the row of the exact default version, never a stray row', () => {
     const present = { ...artifacts[0], id: 'a2p', file_exists: true };
     const older = {
       id: 'a0',
@@ -181,13 +193,19 @@ describe('the rows of a role', () => {
       version: '12.0.2',
       file_exists: true,
     };
-    const named = { filename: 'Domino_14.5_Linux_English.tar', major: '14' };
+    const named = { filename: 'Domino_14.5_Linux_English.tar', version: '14.5.0' };
     expect(defaultPickOf([older, artifacts[1], present], 'installer', named).id).toBe('a2p');
-    expect(defaultPickOf([older, artifacts[1], artifacts[0]], 'installer', named).id).toBe('a1');
+    expect(defaultPickOf([older, artifacts[1], artifacts[0]], 'installer', named).id).toBe('a2');
     expect(
-      defaultPickOf([older, artifacts[1]], 'installer', { filename: 'none.tar', major: '15' }).id
-    ).toBe('a0');
-    expect(defaultPickOf([artifacts[0]], 'installer', named).id).toBe('a2');
+      defaultPickOf([older, artifacts[1]], 'installer', { filename: 'none.tar', version: '14.0.0' })
+        .id
+    ).toBe('a1');
+    expect(
+      defaultPickOf([older, artifacts[1]], 'installer', { filename: 'none.tar', version: '14' })
+    ).toBeNull();
+    expect(
+      defaultPickOf([older, artifacts[1]], 'installer', { filename: 'none.tar', version: '15.0.0' })
+    ).toBeNull();
   });
 
   it('reads the source word of a missing row and nothing else', () => {
@@ -310,7 +328,7 @@ describe('what a pick writes', () => {
     ]);
   });
 
-  it('seeds each file-taking role with its default installer and the answers, keeping a pick already made', () => {
+  it('seeds no pick while the manifest names no default, keeping a pick already made', () => {
     const seeded = seedRolePicks(
       [
         { name: 'domino_install', enabled: true, files: {}, vars: {} },
@@ -320,23 +338,13 @@ describe('what a pick writes', () => {
       [domino, restApi, { name: 'networking' }],
       artifacts
     );
-    expect(seeded.roles[0].files).toEqual({
-      installer: 'Domino_14.0_Linux_English.tar',
-      installer_hash: 'abc',
-      installer_version: '14.0.0',
-    });
+    expect(seeded.roles[0].files).toEqual({});
     expect(seeded.roles[1].files).toEqual({ installer: 'kept.tar.gz' });
     expect(seeded.roles[2].files).toEqual({});
-    expect(seeded.answers).toEqual({
-      DOMINO_INSTALLER: 'Domino_14.0_Linux_English.tar',
-      DOMINO_HASH: 'abc',
-      DOMINO_INSTALLER_MAJOR_VERSION: '14',
-      DOMINO_INSTALLER_MINOR_VERSION: '0',
-      DOMINO_INSTALLER_PATCH_VERSION: '0',
-    });
+    expect(seeded.answers).toEqual({});
   });
 
-  it('seeds the installer the configuration names while it is on the host and types its answers by the configuration', () => {
+  it('seeds the installer the configuration names, on the host or known and missing, and types its answers by the configuration', () => {
     const rows = [{ name: 'domino_install', enabled: true, files: {}, vars: {} }];
     const present = { ...artifacts[0], id: 'a2p', file_exists: true };
     const seeded = seedRolePicks(rows, [domino], [...artifacts, present], config);
@@ -348,9 +356,16 @@ describe('what a pick writes', () => {
       DOMINO_INSTALLER_MINOR_VERSION: 5,
       DOMINO_INSTALLER_PATCH_VERSION: 0,
     });
-    const major = seedRolePicks(rows, [domino], artifacts, config);
-    expect(major.roles[0].files.installer).toBe('Domino_14.0_Linux_English.tar');
-    expect(major.answers.DOMINO_INSTALLER_MAJOR_VERSION).toBe(14);
+    const missing = seedRolePicks(rows, [domino], artifacts, config);
+    expect(missing.roles[0].files.installer).toBe('Domino_14.5_Linux_English.tar');
+    expect(missing.roles[0].files.installer_hash).toBe(SHA);
+    const none = seedRolePicks(
+      rows,
+      [domino],
+      artifacts.filter(row => row.id !== 'a2'),
+      config
+    );
+    expect(none.roles[0].files).toEqual({});
   });
 });
 

@@ -54,6 +54,24 @@ Then('the secret row {string} is of kind {string}', async ({ page }, name, kind)
   ).toHaveAttribute('data-secret-kind', kind);
 });
 
+Then('the heading pane of the section page reads {string}', async ({ page }, names) => {
+  const pane = frameOf(page).locator('.section-heading > .ms-auto').first();
+  await expect(pane).toBeVisible();
+  const drawn = await pane
+    .locator(':scope > *')
+    .evaluateAll(nodes =>
+      nodes.map(node =>
+        node.getAttribute('role') === 'group' ? 'view-toggle' : node.getAttribute('data-action')
+      )
+    );
+  expect(drawn.join(',')).toBe(names);
+});
+
+Then('the section page draws no search box', async ({ page }) => {
+  await expect(frameOf(page).locator('.section-heading').first()).toBeVisible();
+  await expect(frameOf(page).locator('input[type="search"]')).toHaveCount(0);
+});
+
 Then('the agent page draws the {string} panel', async ({ page }, name) => {
   await expect(frameOf(page).locator(`[data-panel="${name}"]`)).toBeVisible();
 });

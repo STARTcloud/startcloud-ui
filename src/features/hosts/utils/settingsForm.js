@@ -9,7 +9,7 @@ import {
   buildUtmSection,
   buildZoneChanges,
   cpuChangesOf,
-  newCredentialRow,
+  credentialRowOf,
   patchedCredentialRows,
   seededUtmArgs,
 } from './machineSettings';
@@ -114,7 +114,8 @@ export const isMarkedAttachment = (form, entry) =>
  * update so a writer never closes over a stale form: `update` of one key
  * by value or by function, `set` and `toggleIn` curried by key, the
  * attachment mark, a hardware section's value, the credential rows'
- * add, patch and remove, and a zone NIC's edit and net property.
+ * add of one store row picked, patch and remove, and a zone NIC's edit
+ * and net property.
  *
  * @param {Function} setForm - The state setter
  * @returns {Object} The writers
@@ -150,7 +151,8 @@ export const formTools = setForm => {
         ...hardware,
         [sectionId]: { ...(hardware[sectionId] || {}), [key]: value },
       })),
-    addCredential: () => update('credentials', rows => [...rows, newCredentialRow(rows)]),
+    addCredential: secret =>
+      update('credentials', rows => [...rows, credentialRowOf(rows, secret)]),
     patchCredential: (key, patch) =>
       update('credentials', rows => patchedCredentialRows(rows, key, patch)),
     removeCredential: key => update('credentials', rows => rows.filter(row => row.key !== key)),

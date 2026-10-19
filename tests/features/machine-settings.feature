@@ -53,7 +53,7 @@ Feature: machine settings
     And the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
     And the host was sent GET to "/api/agents/1/machines" 2 times
 
-  Scenario: Machine page: the Credentials tab lists the machine's credentials, Add credential picks a password, SSH key or key pair row of the host's store and Apply sends credentials whole at once, one default a use
+  Scenario: Machine page: the Credentials tab lists the machine's credentials as store rows, Add credential opens the secret pick dialog over the password, SSH key and key pair rows of the host's store with the machine login preset, a pick lands one row with its kind and the use its kind suggests, and Apply sends credentials whole at once, one default a use
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-tools fixture
@@ -64,14 +64,17 @@ Feature: machine settings
     Then the credentials tab lists 1 credentials
     And the credential "sec-deploy" names "deploy"
     And the credential "sec-deploy" is the default
+    And the credential "sec-deploy" is of kind "ssh_key"
     When I press the settings page's "credential-add" action
-    Then the credentials tab lists 2 credentials
-    When I press the "secret-pick" action of the last credential
     Then the "secret-pick" dialog is open
+    And the open dialog is for the kind "credential" with the preset "machine_login"
     And the host was sent GET to "/api/agents/1/certs" 3 times
     When I press "secret-pick-row" on the row "domino-admin" of the dialog table "secret-pick"
     Then no dialog is open
+    And the credentials tab lists 2 credentials
     And the credential "sec-domino" names "domino-admin"
+    And the credential "sec-domino" is of kind "password"
+    And the credential "sec-domino" is for the use "ssh"
     When I flip the default of the credential "sec-domino"
     Then the credential "sec-domino" is the default
     When I press the settings page's "apply-settings" action

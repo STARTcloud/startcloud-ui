@@ -37,10 +37,6 @@ When('I press {string} on the zone disk {string}', async ({ page }, action, name
   await zoneDiskOf(page, name).locator(`[data-action="${action}"]`).click();
 });
 
-When('I press the {string} action of the last credential', async ({ page }, action) => {
-  await credentialRowsOf(page).last().locator(`[data-action="${action}"]`).click();
-});
-
 When('I flip the default of the credential {string}', async ({ page }, id) => {
   await credentialOf(page, id).locator('[data-action="credential-default"]').click();
 });
@@ -57,6 +53,23 @@ Then('the credential {string} names {string}', async ({ page }, id, name) => {
 Then('the credential {string} is the default', async ({ page }, id) => {
   await expect(credentialOf(page, id).locator('[data-action="credential-default"]')).toBeChecked();
 });
+
+Then('the credential {string} is of kind {string}', async ({ page }, id, kind) => {
+  await expect(credentialOf(page, id).locator(`[data-credential-kind="${kind}"]`)).toBeVisible();
+});
+
+Then('the credential {string} is for the use {string}', async ({ page }, id, use) => {
+  await expect(credentialOf(page, id)).toHaveAttribute('data-credential-use', use);
+});
+
+Then(
+  'the open dialog is for the kind {string} with the preset {string}',
+  async ({ page }, kind, profile) => {
+    const dialog = dialogOf(page).locator('[data-dialog="secret-pick"]');
+    await expect(dialog).toHaveAttribute('data-kind', kind);
+    await expect(dialog).toHaveAttribute('data-profile', profile);
+  }
+);
 
 When('I press the preset {string}', async ({ page }, preset) => {
   await dialogOf(page).locator(`[data-preset="${preset}"]`).click();

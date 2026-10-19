@@ -3,23 +3,14 @@ import { useCallback, useState } from 'react';
 import { useStatus } from '../../../contexts/StatusContext';
 import { selectGroup, switchGroup } from '../../../hooks/useClientFilters';
 import { fetchPackages, searchPackages } from '../api/packages';
-import {
-  fetchArtifactStoragePaths,
-  fetchArtifacts,
-  fetchProvisioners,
-  fetchRecipes,
-  fetchTemplates,
-} from '../api/provisioning';
+import { fetchProvisioners, fetchRecipes, fetchTemplates } from '../api/provisioning';
 import { fetchTemplateSources } from '../api/templates';
 import { hostHasFeature, hostHasHypervisor } from '../utils/capabilities';
 import {
-  ARTIFACT_PAGE_SIZE,
-  ARTIFACT_TYPES,
   BRANDS,
   OS_FAMILIES,
   PACKAGE_PARAMS,
   RECIPE_PARAMS,
-  artifactFiltersOf,
   recipesOf,
   searchRowsOf,
 } from '../utils/manageCatalog';
@@ -33,7 +24,6 @@ const NO_ROWS = [];
  */
 export const CATALOG_PARAMS = {
   packages: PACKAGE_PARAMS,
-  installers: { type: '', storage_path_id: '', limit: ARTIFACT_PAGE_SIZE },
   recipes: RECIPE_PARAMS,
 };
 
@@ -45,18 +35,17 @@ const rowsOf = reading => (Array.isArray(reading.data) ? reading.data : NO_ROWS)
 const withClear = (group, onClear) => ({ ...group, onClear });
 
 /**
- * The request filters of the packages, installer files and recipes tables
- * as panel groups, each clearing its table's filters.
+ * The request filters of the packages and recipes tables as panel
+ * groups, each clearing its table's filters.
  *
  * @param {Object} options - The filters and the vocabularies
  * @param {Object} options.params - The filters of `useManageCatalogData`
  * @param {Function} options.setParam - Its writer
  * @param {Function} options.resetParams - Its reset of one table
- * @param {Array<Object>} options.locations - The storage locations
  * @param {Function} options.t - The translator
  * @returns {Object} The groups by table key
  */
-export const catalogParamGroups = ({ params, setParam, resetParams, locations, t }) => ({
+export const catalogParamGroups = ({ params, setParam, resetParams, t }) => ({
   packages: [
     withClear(
       switchGroup({
@@ -67,30 +56,6 @@ export const catalogParamGroups = ({ params, setParam, resetParams, locations, t
         onChange: on => setParam('packages', 'showAll', on),
       }),
       () => resetParams('packages')
-    ),
-  ],
-  installers: [
-    withClear(
-      selectGroup({
-        key: 'type',
-        label: t('host.installerFiles.filterByType'),
-        values: ARTIFACT_TYPES,
-        value: params.installers.type,
-        onChange: value => setParam('installers', 'type', value),
-      }),
-      () => resetParams('installers')
-    ),
-    withClear(
-      selectGroup({
-        key: 'location',
-        label: t('host.installerFiles.filterByLocation'),
-        values: locations.map(location => String(location.id)),
-        value: params.installers.storage_path_id,
-        onChange: value => setParam('installers', 'storage_path_id', value),
-        labelFor: value =>
-          locations.find(location => String(location.id) === String(value))?.name || value,
-      }),
-      () => resetParams('installers')
     ),
   ],
   recipes: [
@@ -125,7 +90,6 @@ export const catalogParamGroups = ({ params, setParam, resetParams, locations, t
  */
 export const catalogGates = server => ({
   packages: hostHasFeature(server, 'packages'),
-  installers: hostHasFeature(server, 'artifacts') && hostHasFeature(server, 'provisioner-registry'),
   recipes: hostHasFeature(server, 'provisioning') && hostHasHypervisor(server, 'bhyve'),
   templates: hostHasFeature(server, 'templates'),
   provisioners: hostHasFeature(server, 'provisioner-registry'),
@@ -169,17 +133,6 @@ export const useManageCatalogData = ({ id, server, only = null }) => {
       ),
       gates.packages
     ),
-    locations: useManageRead(
-      useCallback(() => fetchArtifactStoragePaths(status, id), [status, id]),
-      gates.installers
-    ),
-    installers: useManageRead(
-      useCallback(
-        () => fetchArtifacts(status, id, artifactFiltersOf(params.installers)),
-        [status, id, params.installers]
-      ),
-      gates.installers
-    ),
     recipes: useManageRead(
       useCallback(
         () =>
@@ -207,8 +160,6 @@ export const useManageCatalogData = ({ id, server, only = null }) => {
 
   const rows = {
     packages: rowsOf(reads.packages),
-    locations: listOf(reads.locations, 'paths'),
-    installers: listOf(reads.installers, 'artifacts'),
     recipes: rowsOf(reads.recipes),
     templates: listOf(reads.templates, 'templates'),
     sources: rowsOf(reads.sources),

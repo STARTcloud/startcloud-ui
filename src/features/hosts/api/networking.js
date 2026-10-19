@@ -19,6 +19,19 @@ export const createAddress = (status, id, body) =>
   client.post(agentPath(status, id, 'network/addresses'), body);
 
 /**
+ * Change an IP address in place, `PUT network/addresses/{addrobj}` with
+ * the body of `addressEditBody`, a queued task.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} addrobj - The address object
+ * @param {Object} body - The body of `addressEditBody`
+ * @returns {Promise<Object>} The agent's answer
+ */
+export const updateAddress = (status, id, addrobj, body) =>
+  client.put(named(status, id, 'addresses', addrobj), body);
+
+/**
  * Delete an IP address, `DELETE network/addresses/{addrobj}` with the
  * query of `addressDeleteParams`.
  *

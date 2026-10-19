@@ -199,7 +199,7 @@
             "help": "Filename of the Domino server installer tar placed in installers/domino/archives",
             "type": "text",
             "group": "installers",
-            "default": "Domino_14.5.1_Linux_English.tar"
+            "default": "Domino_14.0_Linux_English.tar"
           },
           {
             "name": "DOMINO_HASH",
@@ -220,14 +220,14 @@
             "label": "Domino Minor Version",
             "type": "number",
             "group": "installers",
-            "default": 5
+            "default": 0
           },
           {
             "name": "DOMINO_INSTALLER_PATCH_VERSION",
             "label": "Domino Patch Version",
             "type": "number",
             "group": "installers",
-            "default": 1
+            "default": 0
           },
           {
             "name": "DOMINO_INSTALLER_FIXPACK_INSTALL",

@@ -5,6 +5,7 @@ import { FaPlay, FaSliders, FaTrash } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useStatus } from '../../../contexts/StatusContext';
 import {
   fetchProvisioningNetworkStatus,
@@ -16,6 +17,7 @@ import { isServerRole } from '../utils/hosts';
 import { HEALTH_TONES, componentDetail, componentHealth } from '../utils/manageCatalog';
 
 import { DialogTable } from './ManageTable';
+import RefreshButton from './RefreshButton';
 import TaskDialog from './TaskDialog';
 
 const COMPONENT_COLUMNS = [
@@ -72,20 +74,22 @@ const entriesOf = value =>
 const MACHINES_CONFIG = '/admin/config/machines';
 
 /**
- * The provisioning network of a host, hyperweaver-ui's panel as the
- * body of the Manage page's Provisioning network section: the status
- * of `GET provisioning/network/status`, the ready badge, the disabled
- * message while the agent says it is off, the components over the one
- * table each tinted by its health and the configuration over another;
- * Edit settings, hyperweaver-ui's door to the agent's settings, opens
- * the config engine's page of the agent's `machines` file, where
+ * The provisioning network of a host, the body of the Provisioning
+ * network page under its one heading: `title`, the ready badge of
+ * `GET provisioning/network/status`, and in the pane Edit settings, Set
+ * up, Tear down and Refresh, which reads the status and the page's
+ * `onRefresh` again; under it straight on the page the disabled message
+ * while the agent says it is off, the components over the one table each
+ * tinted by its health and the configuration over another. Edit settings
+ * opens the config engine's page of the agent's `machines` file, where
  * `provisioning.network` lives, on an agent role alone, since the server
- * role has no config engine over a proxied agent yet; Set up sends `POST provisioning/network/setup` and Tear down, behind
- * the typed confirmation, `DELETE provisioning/network/teardown`, each a
- * queued task followed on `task-updated` and the status read again at
- * its end. Nothing polls.
+ * role has no config engine over a proxied agent; Set up sends
+ * `POST provisioning/network/setup` and Tear down, behind the typed
+ * confirmation, `DELETE provisioning/network/teardown`, each a queued
+ * task followed on `task-updated` and the status read again at its end.
+ * Nothing polls.
  */
-const ProvisioningNetworkPanel = ({ id, ctx }) => {
+const ProvisioningNetworkPanel = ({ id, ctx, title, onRefresh }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const navigate = useNavigate();
@@ -114,115 +118,119 @@ const ProvisioningNetworkPanel = ({ id, ctx }) => {
     }
   };
 
+  const refresh = () => {
+    network.refresh();
+    onRefresh();
+  };
+
+  const badge = enabled ? (
+    <span
+      className={`badge text-bg-${state.ready ? 'success' : 'warning'}`}
+      data-note={state.ready ? 'network-ready' : 'network-not-ready'}
+    >
+      {t(
+        state.ready
+          ? 'host.provisioningNetworkPanel.ready'
+          : 'host.provisioningNetworkPanel.notReady'
+      )}
+    </span>
+  ) : null;
+
+  const pane = (
+    <>
+      {isServerRole(status) ? null : (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          data-action="network-settings"
+          title={t('host.provisioningNetworkPanel.editSettingsTitle')}
+          onClick={() => navigate(MACHINES_CONFIG)}
+        >
+          <FaSliders className="me-1" aria-hidden="true" />
+          {t('host.provisioningNetworkPanel.editSettings')}
+        </button>
+      )}
+      {enabled ? (
+        <>
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            data-action="network-setup"
+            onClick={() =>
+              act({
+                call: () => setupProvisioningNetwork(status, id),
+                labelKey: 'host.provisioningNetworkPanel.setupLabel',
+              })
+            }
+            disabled={busy}
+          >
+            <FaPlay className="me-1" aria-hidden="true" />
+            {t('host.provisioningNetworkPanel.setUp')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger"
+            data-action="network-teardown"
+            onClick={() => setConfirming(true)}
+            disabled={busy}
+          >
+            <FaTrash className="me-1" aria-hidden="true" />
+            {t('host.provisioningNetworkPanel.tearDown')}
+          </button>
+        </>
+      ) : null}
+      <RefreshButton onRefresh={refresh} />
+    </>
+  );
+
   return (
-    <div className="card" data-panel="provisioning-network-body">
-      <div className="card-body">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-          <h6 className="fw-bold mb-0">
-            {t('host.provisioningNetworkPanel.title')}
-            {enabled ? (
-              <span
-                className={`badge ms-2 text-bg-${state.ready ? 'success' : 'warning'}`}
-                data-note={state.ready ? 'network-ready' : 'network-not-ready'}
-              >
-                {t(
-                  state.ready
-                    ? 'host.provisioningNetworkPanel.ready'
-                    : 'host.provisioningNetworkPanel.notReady'
-                )}
-              </span>
-            ) : null}
-          </h6>
-          <div className="d-flex gap-2">
-            {isServerRole(status) ? null : (
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-secondary"
-                data-action="network-settings"
-                title={t('host.provisioningNetworkPanel.editSettingsTitle')}
-                onClick={() => navigate(MACHINES_CONFIG)}
-              >
-                <FaSliders className="me-1" aria-hidden="true" />
-                {t('host.provisioningNetworkPanel.editSettings')}
-              </button>
-            )}
-            {enabled ? (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  data-action="network-setup"
-                  onClick={() =>
-                    act({
-                      call: () => setupProvisioningNetwork(status, id),
-                      labelKey: 'host.provisioningNetworkPanel.setupLabel',
-                    })
-                  }
-                  disabled={busy}
-                >
-                  <FaPlay className="me-1" aria-hidden="true" />
-                  {t('host.provisioningNetworkPanel.setUp')}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-danger"
-                  data-action="network-teardown"
-                  onClick={() => setConfirming(true)}
-                  disabled={busy}
-                >
-                  <FaTrash className="me-1" aria-hidden="true" />
-                  {t('host.provisioningNetworkPanel.tearDown')}
-                </button>
-              </>
-            ) : null}
-          </div>
+    <div data-panel="provisioning-network-body">
+      <SectionHeading title={title} badge={badge} actions={pane} />
+      {network.failed ? (
+        <div className="alert alert-danger py-2" role="alert" data-note="network-failed">
+          {t('host.provisioningNetworkPanel.loadFailed', { message: network.message })}
         </div>
-        {network.failed ? (
-          <div className="alert alert-danger py-2" role="alert" data-note="network-failed">
-            {t('host.provisioningNetworkPanel.loadFailed', { message: network.message })}
-          </div>
-        ) : null}
-        {network.loaded ? null : (
-          <p className="text-muted mb-0">{t('host.provisioningNetworkPanel.loading')}</p>
-        )}
-        {state && state.enabled === false ? (
-          <div className="alert alert-info mb-0" role="note" data-note="network-disabled">
-            {state.message || t('host.provisioningNetworkPanel.disabledMessage')}
-          </div>
-        ) : null}
-        {enabled ? (
-          <>
-            <p className="form-text text-muted mt-0">
-              {t('host.provisioningNetworkPanel.changeAddressingBefore')}{' '}
-              <code>provisioning.network</code>{' '}
-              {t('host.provisioningNetworkPanel.changeAddressingAfter')}
-            </p>
-            {components.length > 0 ? (
-              <div className="mb-3">
-                <h6 className="fw-bold">{t('host.provisioningNetworkPanel.components')}</h6>
-                <DialogTable
-                  name="network-components"
-                  columns={COMPONENT_COLUMNS}
-                  rows={components}
-                  rowKey={row => row.name}
-                  ctx={ctx}
-                  emptyText={t('host.provisioningNetworkPanel.missing')}
-                />
-              </div>
-            ) : null}
-            {config.length > 0 ? (
+      ) : null}
+      {network.loaded ? null : (
+        <p className="text-muted mb-0">{t('host.provisioningNetworkPanel.loading')}</p>
+      )}
+      {state && state.enabled === false ? (
+        <div className="alert alert-info mb-0" role="note" data-note="network-disabled">
+          {state.message || t('host.provisioningNetworkPanel.disabledMessage')}
+        </div>
+      ) : null}
+      {enabled ? (
+        <>
+          <p className="form-text text-muted mt-0">
+            {t('host.provisioningNetworkPanel.changeAddressingBefore')}{' '}
+            <code>provisioning.network</code>{' '}
+            {t('host.provisioningNetworkPanel.changeAddressingAfter')}
+          </p>
+          {components.length > 0 ? (
+            <div className="mb-3">
+              <h6 className="fw-bold">{t('host.provisioningNetworkPanel.components')}</h6>
               <DialogTable
-                name="network-config"
-                columns={CONFIG_COLUMNS}
-                rows={config}
-                rowKey={row => row.key}
+                name="network-components"
+                columns={COMPONENT_COLUMNS}
+                rows={components}
+                rowKey={row => row.name}
                 ctx={ctx}
                 emptyText={t('host.provisioningNetworkPanel.missing')}
               />
-            ) : null}
-          </>
-        ) : null}
-      </div>
+            </div>
+          ) : null}
+          {config.length > 0 ? (
+            <DialogTable
+              name="network-config"
+              columns={CONFIG_COLUMNS}
+              rows={config}
+              rowKey={row => row.key}
+              ctx={ctx}
+              emptyText={t('host.provisioningNetworkPanel.missing')}
+            />
+          ) : null}
+        </>
+      ) : null}
       <ConfirmModal
         show={confirming}
         handleClose={() => setConfirming(false)}
@@ -248,6 +256,8 @@ ProvisioningNetworkPanel.propTypes = {
   ctx: PropTypes.shape({
     server: PropTypes.shape({ hostname: PropTypes.string }).isRequired,
   }).isRequired,
+  title: PropTypes.string.isRequired,
+  onRefresh: PropTypes.func.isRequired,
 };
 
 export default ProvisioningNetworkPanel;

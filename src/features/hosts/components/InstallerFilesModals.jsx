@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaDownload } from 'react-icons/fa6';
+import { FaBoxOpen, FaCloudArrowDown, FaDownload, FaFileImport, FaUpload } from 'react-icons/fa6';
 
 import SubTable from '../../../components/common/SubTable';
 import UploadProgress from '../../../components/common/UploadProgress';
@@ -17,6 +17,7 @@ import {
   uploadArtifactFile,
 } from '../api/provisioning';
 import { useManageRead } from '../hooks/useHostManage';
+import { extractFilenameFromUrl } from '../utils/artifacts';
 import { pickDefaultSource, sourceKeyOf, sourceLabelOf } from '../utils/boxCatalog';
 import {
   FILE_SOURCES,
@@ -41,6 +42,19 @@ import {
 import { PathInput } from './PathPicker';
 import SecretPickModal, { SecretPickRow } from './SecretPickModal';
 import ToolFormDialog from './ToolFormDialog';
+
+/**
+ * The openers of the installer files, each its kind, glyph, label key
+ * and tone: Upload, Register path, From BoxVault, Download URL and HCL
+ * portal.
+ */
+export const OPENERS = [
+  ['upload', FaUpload, 'host.installerFiles.upload', 'primary'],
+  ['register', FaFileImport, 'host.installerFiles.registerPath', 'primary'],
+  ['registry', FaBoxOpen, 'host.installerFiles.fromBoxVault', 'info'],
+  ['download', FaCloudArrowDown, 'host.installerFiles.downloadUrl', 'info'],
+  ['hcl', FaCloudArrowDown, 'host.installerFiles.hclPortal', 'info'],
+];
 
 const HCL_PROFILE = 'hcl_portal';
 
@@ -291,9 +305,10 @@ LocationRoleFields.propTypes = {
  * The upload dialog, hyperweaver-ui's two steps: the location and the
  * role, the file, the expected checksum and the overwrite switch;
  * `POST artifacts/upload/prepare` answers the task the bytes go up
- * under, the bar drawn as they do, the task followed to its end. A
- * `seed`, a missing row's, fills the location, the role and the checksum
- * and draws the other sources over the fields.
+ * under, the bar drawn as they do, the task followed to its end and
+ * `onDone(answer, { filename, isUpload })` called with the agent's
+ * answer. A `seed`, a missing row's, fills the location, the role and
+ * the checksum and draws the other sources over the fields.
  */
 export const UploadModal = ({
   id,
@@ -343,7 +358,7 @@ export const UploadModal = ({
     setProgress(null);
     if (!error) {
       sender.follow(answer);
-      onDone();
+      onDone(answer, { filename: answer?.filename || file.name, isUpload: true });
     }
   };
 
@@ -527,10 +542,12 @@ RegisterModal.propTypes = {
  * URL, the file name, the expected checksum, the overwrite switch and
  * the mirror credentials, a `basic_auth` row of the host's store picked
  * through the secret pick dialog, its name sent as `resource_name`;
- * `POST artifacts/download`,
- * a queued task followed to its end. A `seed`, a missing row's, fills
- * the location, the role, the file name and the checksum and draws the
- * other sources over the fields.
+ * the file name follows the name the URL ends with until a name is
+ * typed; `POST artifacts/download`, a queued task followed to its end
+ * and `onDone(answer, { filename, url })` called with the agent's
+ * answer. A `seed`, a missing row's, fills the location, the role, the
+ * file name and the checksum and draws the other sources over the
+ * fields.
  */
 export const DownloadModal = ({
   id,
@@ -555,8 +572,17 @@ export const DownloadModal = ({
     overwrite: false,
     resourceName: '',
   });
+  const [named, setNamed] = useState(Boolean(seed?.filename));
   const [problem, setProblem] = useState('');
   const patch = changes => setForm(current => ({ ...current, ...changes }));
+
+  const typeUrl = url =>
+    patch(named ? { url } : { url, filename: extractFilenameFromUrl(url.trim()) });
+
+  const typeFilename = filename => {
+    setNamed(filename !== '');
+    patch({ filename });
+  };
 
   const submit = async () => {
     const why = targetProblem(locations, form.locationId, form.role);
@@ -565,14 +591,15 @@ export const DownloadModal = ({
     if (missing) {
       return;
     }
+    const body = downloadBody(form);
     const { answer, error } = await sender.send({
-      call: () => downloadArtifact(status, id, downloadBody(form)),
+      call: () => downloadArtifact(status, id, body),
       doneKey: 'host.installerFilesModals.downloadQueuedDefault',
       failKey: 'hosts.manage.installers.downloadFailed',
     });
     if (!error) {
       sender.follow(answer);
-      onDone();
+      onDone(answer, { filename: answer?.filename || body.filename || '', url: body.url });
     }
   };
 
@@ -613,7 +640,7 @@ export const DownloadModal = ({
           type="text"
           placeholder="https://…"
           value={form.url}
-          onChange={event => patch({ url: event.target.value })}
+          onChange={event => typeUrl(event.target.value)}
           disabled={sender.busy}
         />
       </div>
@@ -621,7 +648,7 @@ export const DownloadModal = ({
         id="artifact-download-filename"
         labelKey="host.installerFilesModals.filenameBlankFromUrl"
         value={form.filename}
-        onChange={filename => patch({ filename })}
+        onChange={typeFilename}
         disabled={sender.busy}
       />
       <NameField

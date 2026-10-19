@@ -153,6 +153,16 @@ Then('the boot order draws its header row', async ({ page }) => {
   await expect(order.locator('[data-row="boot-order-header"] span')).toHaveCount(2);
 });
 
+Then(
+  'the {string} panel of the section page draws {string} cut in its middle',
+  async ({ page }, name, text) => {
+    const cell = frameOf(page).locator(`[data-panel="${name}"] tbody [title="${text}"]`);
+    await expect(cell).toHaveCount(1);
+    await expect(cell).toContainText('…');
+    await expect(cell).not.toHaveText(text);
+  }
+);
+
 Then('the section page notes {string}', async ({ page }, note) => {
   await expect(frameOf(page).locator(`[data-note="${note}"]`).first()).toBeVisible();
 });

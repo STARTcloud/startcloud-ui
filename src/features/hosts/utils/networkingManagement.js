@@ -235,6 +235,44 @@ export const addressBody = form => ({
 });
 
 /**
+ * The body of `PUT network/addresses/{addrobj}`, the create body less the
+ * address object the route names.
+ *
+ * @param {Object} form - The form, the shape of `ADDRESS_FORM`
+ * @returns {Object} The body
+ */
+export const addressEditBody = form =>
+  Object.fromEntries(Object.entries(addressBody(form)).filter(([key]) => key !== 'addrobj'));
+
+const prefixOfRow = row => {
+  if (row?.prefix_length !== undefined && row?.prefix_length !== null) {
+    return String(row.prefix_length);
+  }
+  const [, prefix = ''] = String(row?.addr || '').split('/');
+  return prefix || ADDRESS_FORM.netmask;
+};
+
+/**
+ * The address form seeded from a managed address row, the form an edit
+ * opens on: its interface, type and address object, its address and
+ * prefix, and the flags the row carries, the rest the create defaults.
+ *
+ * @param {Object} row - The managed address row
+ * @returns {Object} The form, the shape of `ADDRESS_FORM`
+ */
+export const addressFormOf = row => ({
+  ...ADDRESS_FORM,
+  interface: String(row?.interface || ''),
+  type: String(row?.type || ADDRESS_FORM.type).toLowerCase(),
+  addrobj: String(row?.addrobj || ''),
+  address: String(row?.ip_address || String(row?.addr || '').split('/')[0] || ''),
+  netmask: prefixOfRow(row),
+  primary: Boolean(row?.primary),
+  temporary: Boolean(row?.temporary),
+  down: lower(row?.state) === 'down',
+});
+
+/**
  * The bare address of an address row, `ip_address` or the part of `addr`
  * before the slash.
  *

@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  FaArrowUpRightFromSquare,
   FaCompactDisc,
   FaFolder,
   FaHardDrive,
@@ -13,10 +12,11 @@ import {
   FaTrash,
 } from 'react-icons/fa6';
 
-import { useCssVar } from '../../../../hooks/useCssVar';
-import { formatFileSize } from '../../../../utils/formatFileSize';
-import { ARTIFACT_TYPES, getDiskUsageColor, parseUsagePercentage } from '../../utils/artifacts';
-import { formatTaskDate } from '../../utils/tasks';
+import { useCssVar } from '../../../hooks/useCssVar';
+import { formatFileSize } from '../../../utils/formatFileSize';
+import { getDiskUsageColor, parseUsagePercentage } from '../utils/artifacts';
+import { ARTIFACT_TYPES } from '../utils/manageCatalog';
+import { formatTaskDate } from '../utils/tasks';
 
 const TYPE_GLYPHS = { iso: FaCompactDisc, image: FaHardDrive };
 
@@ -43,33 +43,6 @@ const TypeGlyph = ({ type }) => {
 
 TypeGlyph.propTypes = {
   type: PropTypes.string,
-};
-
-const NameCell = ({ row, ctx }) => (
-  <span className="d-inline-flex align-items-center">
-    <TypeGlyph type={row.type} />
-    <button
-      type="button"
-      className="btn btn-link p-0 fw-bold"
-      data-action="open-artifacts"
-      title={ctx.t('artifacts.storagePathTable.viewArtifactsTooltip', {
-        name: row.name,
-        count: row.file_count || 0,
-      })}
-      onClick={() => ctx.onStoragePath(row)}
-    >
-      {row.name}
-      <FaArrowUpRightFromSquare className="ms-1 small" aria-hidden="true" />
-    </button>
-  </span>
-);
-
-NameCell.propTypes = {
-  row: PropTypes.object.isRequired,
-  ctx: PropTypes.shape({
-    t: PropTypes.func.isRequired,
-    onStoragePath: PropTypes.func.isRequired,
-  }).isRequired,
 };
 
 const UsageBar = ({ usage }) => {
@@ -101,10 +74,10 @@ UsageBar.propTypes = {
 };
 
 /**
- * The columns of the storage locations table, hyperweaver-ui's: the
- * name, a button opening the location's artifacts, the path, the type among the five kinds,
- * whether it is enabled, its file count, its size, its last scan and
- * its disk usage as a bar.
+ * The columns of the storage locations table: the name with its type's
+ * glyph, the path, the type among the five kinds, whether it is
+ * enabled, its file count, its size, its last scan and its disk usage
+ * as a bar.
  */
 export const STORAGE_PATH_COLUMNS = [
   {
@@ -112,7 +85,12 @@ export const STORAGE_PATH_COLUMNS = [
     kind: 'name',
     labelKey: 'artifacts.storagePathTable.nameHeader',
     value: row => row.name || '',
-    render: (row, ctx) => <NameCell row={row} ctx={ctx} />,
+    render: row => (
+      <span className="d-inline-flex align-items-center">
+        <TypeGlyph type={row.type} />
+        <span className="fw-bold">{row.name}</span>
+      </span>
+    ),
   },
   {
     key: 'path',
@@ -200,10 +178,9 @@ export const STORAGE_PATH_FILTERS = [
 ];
 
 /**
- * The actions of one storage location's row, hyperweaver-ui's: Scan of
- * that location, Enable or Disable by its state, Edit and Delete, the
- * last two never of a built-in location; every button held while a
- * request is in flight.
+ * The actions of one storage location's row: Scan of that location,
+ * Enable or Disable by its state, Edit and Delete, the last two never of
+ * a built-in location; every button held while a request is in flight.
  */
 export const StoragePathRowActions = ({ row, busy, onAction }) => {
   const { t } = useTranslation();

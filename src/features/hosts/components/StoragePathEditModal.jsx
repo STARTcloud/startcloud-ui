@@ -2,9 +2,10 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { formatFileSize } from '../../../../utils/formatFileSize';
-import { storagePathEditBody, storagePathEditProblem } from '../../utils/artifacts';
-import ToolFormDialog from '../ToolFormDialog';
+import { formatFileSize } from '../../../utils/formatFileSize';
+import { storagePathEditBody, storagePathEditProblem } from '../utils/artifacts';
+
+import ToolFormDialog from './ToolFormDialog';
 
 const TYPE_KEYS = {
   iso: 'artifacts.storagePathEditModal.isoFiles',
@@ -30,11 +31,10 @@ Stat.propTypes = {
 };
 
 /**
- * The dialog that edits a storage location, hyperweaver-ui's: the name,
- * the path and the type read-only, the enabled switch with its
- * sentence, the location's statistics, and the warning of disabling
- * one that holds files; Save sends `PUT artifacts/storage/paths/{id}`
- * once.
+ * The dialog that edits a storage location: the name, the path and the
+ * type read-only, the enabled switch with its sentence, the location's
+ * statistics, and the warning of disabling one that holds files; Save
+ * sends `PUT artifacts/storage/paths/{id}` once.
  */
 const StoragePathEditModal = ({ storagePath, busy, onClose, onSubmit }) => {
   const { t } = useTranslation();

@@ -118,18 +118,20 @@ const draftOf = data => ({
 });
 
 /**
- * The hosts file section of the networking page's management,
- * hyperweaver-ui's `HostsFileEditor` as a folding section: the file's
- * entries as rows of the one `SubTable`, for a role that controls hosts
- * each an address and its hostnames typed in place with a remove, and
- * Add entry under them, or the raw file behind the switch, the raw
- * winning on the wire, and Save, which sends `PUT system/hosts` with
- * `hostsBody` through the page's one `useNetworkingTools`, the notice
- * carrying the backup the agent wrote, and the held answer is read
+ * The hosts file section of the Hosts file page, a folding glass section
+ * whose heading is the page's: `title`, the file's path as code after it,
+ * and in its pane, for a role that controls hosts, the raw switch and
+ * Save, then the page's `actions`, Refresh; under it, straight on the
+ * page's ground, the file's entries as rows of the one `SubTable`, for a
+ * role that controls hosts each an address and its hostnames typed in
+ * place with a remove, and Add entry under them, or the raw file behind
+ * the switch, the raw winning on the wire, Save sending `PUT system/hosts`
+ * with `hostsBody` through the page's one `useNetworkingTools`, the
+ * notice carrying the backup the agent wrote, and the held answer read
  * again; every other role reads the entries as plain rows. The rows
  * follow the held answer until a person types, and again after a save.
  */
-const HostsFileEditor = ({ id, role, reading, ctx, fold, tools }) => {
+const HostsFileEditor = ({ id, role, reading, ctx, fold, tools, title, actions = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [draft, setDraft] = useState(null);
@@ -171,9 +173,7 @@ const HostsFileEditor = ({ id, role, reading, ctx, fold, tools }) => {
     numberOf: key => form.rows.findIndex(row => row.key === key) + 1,
   };
 
-  const heading = t('host.hostsFileEditor.hostsFile');
-
-  const actions = (
+  const writes = (
     <>
       <div className="form-check form-switch mb-0">
         <input
@@ -202,6 +202,13 @@ const HostsFileEditor = ({ id, role, reading, ctx, fold, tools }) => {
     </>
   );
 
+  const pane = (
+    <>
+      {writable ? writes : null}
+      {actions}
+    </>
+  );
+
   return (
     <div
       data-section="networking-hosts-file"
@@ -210,86 +217,84 @@ const HostsFileEditor = ({ id, role, reading, ctx, fold, tools }) => {
       className="mb-3"
     >
       <SectionHeading
-        title={heading}
+        title={title}
         count={path ? <code>{path}</code> : null}
         folded={fold.folded}
         onFold={fold.onFold}
         foldTitle={fold.title}
-        actions={writable ? actions : null}
+        actions={pane}
       />
       {fold.folded ? null : (
-        <div className="card">
-          <div className="card-body">
-            {reading.failed ? (
-              <div className="alert alert-danger" role="alert">
-                {t('hosts.overview.readError')}
-              </div>
-            ) : null}
-            {writable ? null : (
+        <div>
+          {reading.failed ? (
+            <div className="alert alert-danger" role="alert">
+              {t('hosts.overview.readError')}
+            </div>
+          ) : null}
+          {writable ? null : (
+            <SubTable
+              columns={READ_COLUMNS}
+              rows={form.rows}
+              rowKey={row => row.key}
+              sort={NO_SORT}
+              onSort={() => {}}
+              hiddenColumns={NO_HIDDEN}
+              ctx={ctx}
+              emptyText={t('hosts.networking.hostsFile.empty')}
+            />
+          )}
+          {writable ? (
+            <p className="form-text text-muted mt-0">
+              {t('host.hostsFileEditor.backupNote')}
+              {form.rawMode
+                ? t('host.hostsFileEditor.rawModeNote')
+                : t('host.hostsFileEditor.tableModeNote')}
+            </p>
+          ) : null}
+          {writable && form.rawMode ? (
+            <textarea
+              id="hosts-raw"
+              className="form-control font-monospace"
+              rows={12}
+              value={form.raw}
+              onChange={event => change('raw', event.target.value)}
+              disabled={tools.busy}
+              aria-label={t('host.hostsFileEditor.rawAriaLabel')}
+            />
+          ) : null}
+          {writable && !form.rawMode ? (
+            <>
               <SubTable
-                columns={READ_COLUMNS}
+                columns={ENTRY_COLUMNS}
                 rows={form.rows}
                 rowKey={row => row.key}
+                RowActions={EntryActions}
+                actionsProps={{
+                  busy: tools.busy,
+                  onRemove: key =>
+                    change(
+                      'rows',
+                      form.rows.filter(row => row.key !== key)
+                    ),
+                }}
                 sort={NO_SORT}
                 onSort={() => {}}
                 hiddenColumns={NO_HIDDEN}
-                ctx={ctx}
+                ctx={tableCtx}
                 emptyText={t('hosts.networking.hostsFile.empty')}
               />
-            )}
-            {writable ? (
-              <p className="form-text text-muted mt-0">
-                {t('host.hostsFileEditor.backupNote')}
-                {form.rawMode
-                  ? t('host.hostsFileEditor.rawModeNote')
-                  : t('host.hostsFileEditor.tableModeNote')}
-              </p>
-            ) : null}
-            {writable && form.rawMode ? (
-              <textarea
-                id="hosts-raw"
-                className="form-control font-monospace"
-                rows={12}
-                value={form.raw}
-                onChange={event => change('raw', event.target.value)}
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary mt-2"
+                onClick={addRow}
                 disabled={tools.busy}
-                aria-label={t('host.hostsFileEditor.rawAriaLabel')}
-              />
-            ) : null}
-            {writable && !form.rawMode ? (
-              <>
-                <SubTable
-                  columns={ENTRY_COLUMNS}
-                  rows={form.rows}
-                  rowKey={row => row.key}
-                  RowActions={EntryActions}
-                  actionsProps={{
-                    busy: tools.busy,
-                    onRemove: key =>
-                      change(
-                        'rows',
-                        form.rows.filter(row => row.key !== key)
-                      ),
-                  }}
-                  sort={NO_SORT}
-                  onSort={() => {}}
-                  hiddenColumns={NO_HIDDEN}
-                  ctx={tableCtx}
-                  emptyText={t('hosts.networking.hostsFile.empty')}
-                />
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-primary mt-2"
-                  onClick={addRow}
-                  disabled={tools.busy}
-                  data-tool="add-entry"
-                >
-                  <FaPlus className="me-2" aria-hidden="true" />
-                  {t('host.hostsFileEditor.addEntry')}
-                </button>
-              </>
-            ) : null}
-          </div>
+                data-tool="add-entry"
+              >
+                <FaPlus className="me-2" aria-hidden="true" />
+                {t('host.hostsFileEditor.addEntry')}
+              </button>
+            </>
+          ) : null}
         </div>
       )}
     </div>
@@ -303,6 +308,8 @@ HostsFileEditor.propTypes = {
   ctx: PropTypes.object.isRequired,
   fold: PropTypes.object.isRequired,
   tools: PropTypes.object.isRequired,
+  title: PropTypes.string.isRequired,
+  actions: PropTypes.node,
 };
 
 export default HostsFileEditor;

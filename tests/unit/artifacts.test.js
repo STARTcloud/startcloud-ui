@@ -1,92 +1,40 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  ARTIFACT_TYPES,
-  DOWNLOAD_FORM,
-  ROLE_KEYED_TYPES,
   STORAGE_PATH_FORM,
-  UPLOAD_FORM,
-  artifactQuery,
   artifactTypeOf,
-  checksumStateOf,
-  defaultPathOf,
-  destinationsOf,
-  downloadBody,
-  downloadProblem,
-  extensionOf,
+  artifactTypeTone,
   extractFilenameFromUrl,
   getDiskUsageColor,
-  isDownloadUrl,
-  isStoragePathSuitable,
-  matchesArtifact,
-  matchesStoragePath,
   parseUsagePercentage,
-  roleFreePaths,
   storagePathBody,
   storagePathEditBody,
   storagePathEditProblem,
   storagePathProblem,
-  storagePathsWithCounts,
   transferOf,
   transferStatusKey,
   transferTone,
   transferWithTask,
-  uploadPrepareBody,
-  uploadProblem,
 } from '../../src/features/hosts/utils/artifacts.js';
 
-const paths = [
-  { id: 'a', name: 'ISO', path: '/iso', type: 'iso', enabled: true },
-  { id: 'b', name: 'Images', path: '/img', type: 'image', enabled: true },
-  { id: 'c', name: 'Old', path: '/old', type: 'iso', enabled: false },
-];
-
 describe('the artifact types', () => {
-  it('knows the five kinds and which of them store per role', () => {
-    expect(ARTIFACT_TYPES).toEqual(['iso', 'image', 'installer', 'fixpack', 'hotfix']);
-    expect(ROLE_KEYED_TYPES).toEqual(['installer', 'fixpack', 'hotfix']);
-    expect(
-      roleFreePaths([
-        ...paths,
-        { id: 'd', name: 'Installers', path: '/inst', type: 'installer', enabled: true },
-      ]).map(path => path.id)
-    ).toEqual(['a', 'b']);
-  });
-
-  it('reads the type from the file type or the extension', () => {
+  it('reads the type from the file type or the extension and tones it', () => {
     expect(artifactTypeOf('iso', '.iso')).toBe('iso');
     expect(artifactTypeOf('', '.ISO')).toBe('iso');
     expect(artifactTypeOf('image', '')).toBe('image');
     expect(artifactTypeOf('', '.qcow2')).toBe('image');
     expect(artifactTypeOf('', '.txt')).toBe('file');
-    expect(extensionOf('a.VMDK')).toBe('.vmdk');
-    expect(extensionOf('none')).toBe('');
-  });
-
-  it('reads the checksum state', () => {
-    expect(checksumStateOf({ checksum_verified: true })).toBe('verified');
-    expect(checksumStateOf({ checksum_verified: false })).toBe('mismatch');
-    expect(checksumStateOf({ calculated_checksum: 'x' })).toBe('calculated');
-    expect(checksumStateOf({ calculated_checksum: 'x', user_provided_checksum: 'y' })).toBe('none');
-    expect(checksumStateOf({})).toBe('none');
-  });
-
-  it('tells a suitable storage location', () => {
-    expect(isStoragePathSuitable(paths[0], '.iso')).toBe(true);
-    expect(isStoragePathSuitable(paths[0], '.vmdk')).toBe(false);
-    expect(isStoragePathSuitable({ type: 'artifact' }, '.txt')).toBe(true);
-    expect(isStoragePathSuitable(null, '.iso')).toBe(false);
+    expect(artifactTypeTone('iso')).toBe('info');
+    expect(artifactTypeTone('image')).toBe('warning');
+    expect(artifactTypeTone('file')).toBe('light');
   });
 });
 
 describe('the URLs and the usage', () => {
-  it('reads a file name from a URL and tells a web URL', () => {
+  it('reads a file name from a URL', () => {
     expect(extractFilenameFromUrl('https://x.example/a/b.iso?x=1')).toBe('b.iso');
     expect(extractFilenameFromUrl('https://x.example/a/')).toBe('');
     expect(extractFilenameFromUrl('nope')).toBe('');
-    expect(isDownloadUrl('http://x')).toBe(true);
-    expect(isDownloadUrl('ftp://x')).toBe(false);
-    expect(isDownloadUrl('x')).toBe(false);
   });
 
   it('parses a usage percentage and tones it', () => {
@@ -166,126 +114,5 @@ describe('the storage path forms', () => {
       name: 'New',
       enabled: false,
     });
-  });
-});
-
-describe('the download and the upload', () => {
-  it('refuses a download without a URL, a valid one or a location', () => {
-    expect(downloadProblem(DOWNLOAD_FORM)).toBe('artifacts.artifactDownloadModal.urlRequired');
-    expect(downloadProblem({ ...DOWNLOAD_FORM, url: 'nope' })).toBe(
-      'artifacts.artifactDownloadModal.invalidUrl'
-    );
-    expect(downloadProblem({ ...DOWNLOAD_FORM, url: 'https://x/a.iso' })).toBe(
-      'artifacts.artifactDownloadModal.storageLocationRequired'
-    );
-    expect(
-      downloadProblem({ ...DOWNLOAD_FORM, url: 'https://x/a.iso', storage_path_id: 'a' })
-    ).toBe('');
-  });
-
-  it('sends the download body with the optional members where given', () => {
-    const form = { ...DOWNLOAD_FORM, url: ' https://x/a.iso ', storage_path_id: 'a' };
-    expect(downloadBody(form)).toEqual({
-      url: 'https://x/a.iso',
-      storage_path_id: 'a',
-      overwrite_existing: false,
-    });
-    expect(
-      downloadBody({ ...form, filename: 'b.iso', checksum: 'abc', overwrite_existing: true })
-    ).toEqual({
-      url: 'https://x/a.iso',
-      storage_path_id: 'a',
-      overwrite_existing: true,
-      filename: 'b.iso',
-      checksum: 'abc',
-      checksum_algorithm: 'sha256',
-    });
-  });
-
-  it('refuses an upload without files, a location or with a wrong extension', () => {
-    expect(uploadProblem(UPLOAD_FORM, [])).toEqual({
-      key: 'artifacts.artifactUploadModal.filesRequired',
-      values: {},
-    });
-    expect(uploadProblem(UPLOAD_FORM, [{ name: 'a.iso' }])).toEqual({
-      key: 'artifacts.artifactUploadModal.storageLocationRequired',
-      values: {},
-    });
-    expect(
-      uploadProblem({ ...UPLOAD_FORM, storage_path_id: 'a' }, [{ name: 'a.txt' }])
-    ).toMatchObject({
-      key: 'artifacts.artifactUploadModal.unsupportedFileType',
-      values: { filename: 'a.txt' },
-    });
-    expect(uploadProblem({ ...UPLOAD_FORM, storage_path_id: 'a' }, [{ name: 'a.iso' }])).toBeNull();
-  });
-
-  it('prepares an upload with the checksum where given', () => {
-    const file = { name: 'a.iso', size: 5 };
-    expect(uploadPrepareBody(file, { ...UPLOAD_FORM, storage_path_id: 'a' })).toEqual({
-      filename: 'a.iso',
-      size: 5,
-      storage_path_id: 'a',
-      overwrite_existing: false,
-    });
-    expect(
-      uploadPrepareBody(file, { storage_path_id: 'a', checksum: ' x ', checksum_algorithm: 'md5' })
-    ).toMatchObject({
-      checksum: 'x',
-      checksum_algorithm: 'md5',
-    });
-  });
-});
-
-describe('the locations and the query', () => {
-  it('offers the enabled locations other than the artifact own and opens on the one enabled', () => {
-    expect(destinationsOf(paths, { storage_location: { id: 'a' } }).map(path => path.id)).toEqual([
-      'b',
-    ]);
-    expect(defaultPathOf(paths)).toBe('');
-    expect(defaultPathOf([paths[0], paths[2]])).toBe('a');
-  });
-
-  it('builds the query with the chosen filters alone', () => {
-    expect(
-      artifactQuery(
-        { type: '', storage_location: '', sort_by: 'filename', sort_order: 'asc' },
-        { limit: 25, offset: 50 }
-      )
-    ).toEqual({ limit: 25, offset: 50, sort_by: 'filename', sort_order: 'asc' });
-    expect(
-      artifactQuery(
-        { type: 'iso', storage_location: 'a', sort_by: 'size', sort_order: 'desc' },
-        { limit: 25, offset: 0 }
-      )
-    ).toMatchObject({ type: 'iso', storage_location_id: 'a', sort_by: 'size' });
-  });
-
-  it('lays the registry file count and size over each location matched by path', () => {
-    const merged = storagePathsWithCounts(
-      [
-        { ...paths[0], file_count: 0, total_size: 0 },
-        { ...paths[1], file_count: 1, total_size: 9 },
-        paths[2],
-      ],
-      [
-        { id: 'x', path: '/iso', file_count: 2, total_size: 40 },
-        { id: 'y', path: '/img', file_count: 3 },
-      ]
-    );
-    expect(merged[0]).toMatchObject({ id: 'a', file_count: 2, total_size: 40 });
-    expect(merged[1]).toMatchObject({ id: 'b', file_count: 3, total_size: 9 });
-    expect(merged[2]).toBe(paths[2]);
-    expect(storagePathsWithCounts(paths, [])).toEqual(paths);
-  });
-
-  it('matches a row by its words', () => {
-    expect(matchesStoragePath(paths[0], 'iso')).toBe(true);
-    expect(matchesStoragePath(paths[1], 'iso')).toBe(false);
-    expect(
-      matchesArtifact({ filename: 'debian.iso', storage_location: { name: 'ISO' } }, 'deb')
-    ).toBe(true);
-    expect(matchesArtifact({ filename: 'x', source_url: 'https://mirror' }, 'mirror')).toBe(true);
-    expect(matchesArtifact({ filename: 'x' }, 'zzz')).toBe(false);
   });
 });

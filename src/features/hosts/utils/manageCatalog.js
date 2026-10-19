@@ -1,5 +1,4 @@
 import { sourceKeyOf } from './boxCatalog';
-import { artifactVersionOf } from './roleFiles';
 
 const lower = value => String(value ?? '').toLowerCase();
 
@@ -21,33 +20,6 @@ export const formatSize = bytes => {
   }
   const order = Math.min(SIZE_UNITS.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
   return `${(bytes / 1024 ** order).toFixed(order === 0 ? 0 : 1)} ${SIZE_UNITS[order]}`;
-};
-
-/**
- * The state a table draws in, the Manage page's rule: loading until the
- * read answered, failed when it did not, rows while any is left,
- * filtered while a query or a filter left none and empty otherwise.
- *
- * @param {Object} options - The read, whether the page filters and the rows
- * @returns {string} `loading`, `failed`, `rows`, `filtered` or `empty`
- */
-export const tableStateOf = ({ loaded, failed, filtering, rows }) => {
-  if (!loaded) {
-    return 'loading';
-  }
-  if (failed) {
-    return 'failed';
-  }
-  if (rows > 0) {
-    return 'rows';
-  }
-  return filtering ? 'filtered' : 'empty';
-};
-
-export const TABLE_STATE_KEYS = {
-  loading: 'pages.loading',
-  failed: 'hosts.overview.readError',
-  filtered: 'pages.noMatches',
 };
 
 export const ARTIFACT_TYPES = ['iso', 'image', 'installer', 'fixpack', 'hotfix'];
@@ -165,20 +137,6 @@ export const transferOptionsOf = (locations, artifact) =>
  */
 export const roleOptionsOf = artifacts =>
   [...new Set(artifacts.map(artifact => artifact.role).filter(Boolean))].sort();
-
-/**
- * The query of `GET artifacts`, hyperweaver-ui's: the page size, the
- * type and the location where chosen.
- *
- * @param {Object} params - `{ type, storage_path_id, limit }`
- * @returns {Object} The query
- */
-export const artifactFiltersOf = params => ({
-  limit: params.limit,
-  offset: 0,
-  ...(params.type ? { type: params.type } : {}),
-  ...(params.storage_path_id ? { storage_path_id: params.storage_path_id } : {}),
-});
 
 /**
  * The body of `POST artifacts/upload/prepare`, hyperweaver-ui's: the
@@ -433,14 +391,6 @@ export const matchesRegistryFile = matcher(row => [
 ]);
 
 export const matchesLocation = matcher(row => [row.name, row.path, row.type]);
-
-export const matchesArtifact = matcher(row => [
-  row.filename,
-  row.file_type,
-  row.role,
-  artifactVersionOf(row).full_version,
-  row.storage_location?.name,
-]);
 
 export const PACKAGE_PUBLISHERS = ['omnios', 'extra.omnios', 'ooce'];
 

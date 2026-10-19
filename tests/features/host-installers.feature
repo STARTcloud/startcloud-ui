@@ -1,19 +1,25 @@
 Feature: host installer files and provisioners
 
-  Scenario: Installer files: the section behind `artifacts` and `provisioner-registry` together, the storage locations table and the artifacts table from the one read each, beside the artifacts section of `artifacts` alone, on the Installer files page
+  Scenario: Installer files: the downloads collection over the host's cache through the one listing, every artifact one file row grouped by product, the files and the storage locations read once each
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
     Then the section page "installers" draws
     And the host column draws no "recipes" row
-    And the artifact section draws
-    And the "storage-paths" table of the section page lists 3 rows
-    And the "installers" table of the section page lists 4 rows
-    And the "installers" table of the section page draws the "status" column
-    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers "move"
-    And the host was sent GET to "/api/agents/3/artifacts/storage/paths"
-    And the host was sent GET to "/api/agents/3/artifacts"
+    And the installer files listing lists 4 files
+    And the installer files listing draws 2 groups
+    And the installer files listing draws the "status" column
+    And the installer files listing draws the "release" column
+    And the installer files listing draws the "patch" column
+    And the installer files listing draws no "product" column
+    And the file "Domino_14.5_Linux_English.tar" reads "14.5" in its "release" column
+    And the file "Domino_14.5_FP1_Linux.tar" reads "FP1" in its "patch" column
+    And the file "Domino_14.5_Linux_English.tar" offers "move"
+    And the file "Domino_14.5_Linux_English.tar" offers "details"
+    And the file "Domino_14.5_Linux_English.tar" offers "delete"
+    And the host was sent GET to "/api/agents/3/artifacts/storage/paths" 1 times
+    And the host was sent GET to "/api/agents/3/artifacts" 1 times
     And the host was not sent GET to "/api/agents/3/certs"
 
   Scenario: Installer files: the page draws on the agent role, the agent's own routes read once each and every row's version drawn as the text of the version object the agent answers
@@ -22,40 +28,39 @@ Feature: host installer files and provisioners
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/self/provisioning/installers"
     Then the section page "installers" draws
-    And the artifact section draws
-    And the "storage-paths" table of the section page lists 3 rows
-    And the "installers" table of the section page lists 5 rows
-    And the "installers" table of the section page draws the "version" column
-    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page reads "14.5.0" in its "version" column
-    And the row "Domino_1450FP1_Linux.tar" of the "installers" table of the section page reads "14.5.0FP1" in its "version" column
-    And the row "Domino_1450IF1_Linux.tar" of the "installers" table of the section page reads "14.5.0IF1" in its "version" column
-    And the row "debian-13.1.0-amd64-netinst.iso" of the "installers" table of the section page reads "-" in its "version" column
-    And the row "Domino_1450FP1_Linux.tar" of the "installers" table of the section page offers "artifact-fetch"
-    And the host was sent GET to "/api/artifacts/storage/paths"
-    And the host was sent GET to "/api/artifacts"
+    And the installer files listing lists 5 files
+    And the installer files listing draws the "version" column
+    And the file "Domino_14.5_Linux_English.tar" reads "14.5.0" in its "version" column
+    And the file "Domino_1450FP1_Linux.tar" reads "14.5.0FP1" in its "version" column
+    And the file "Domino_1450IF1_Linux.tar" reads "14.5.0IF1" in its "version" column
+    And the file "debian-13.1.0-amd64-netinst.iso" reads "-" in its "version" column
+    And the file "Domino_1450FP1_Linux.tar" offers "artifact-fetch"
+    And the host was sent GET to "/api/artifacts/storage/paths" 1 times
+    And the host was sent GET to "/api/artifacts" 1 times
     And the host was not sent GET to "/api/certs"
     And the host was sent GET to "/api/templates/sources"
 
-  Scenario: Installer files: the page's one search narrows the artifacts and a filter pill narrows them again
+  Scenario: Installer files: the page's one search narrows the files and a filter pill narrows them again
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    Then the "installers" table of the section page lists 4 rows
+    Then the installer files listing lists 4 files
     When I press "/"
     And I search the section page for "domino"
-    Then the "installers" table of the section page lists 2 rows
+    Then the installer files listing lists 2 files
     When I search the section page for ""
     And I open the filter panel
     And I toggle the filter pill "Missing"
-    Then the "installers" table of the section page lists 1 rows
+    Then the installer files listing lists 1 files
 
-  Scenario: Installer files: Register path sends the path, the location and the move switch, and reads the artifacts again
+  Scenario: Installer files: Register path sends the path, the location and the move switch, and reads the files again
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    And I press the section page's "artifact-register" action
+    Then the installer files listing lists 4 files
+    When I press the section page's "artifact-register" action
     Then the catalog dialog "artifact-register" draws
     When I pick "loc-iso" in the catalog dialog select "artifact-register-location"
     And I type "/rpool/drop/omnios.iso" into the field "artifact-register-path"
@@ -64,7 +69,7 @@ Feature: host installer files and provisioners
     Then the host was sent POST to "/api/agents/3/artifacts/register" carrying "path" as "/rpool/drop/omnios.iso"
     And the host was sent POST to "/api/agents/3/artifacts/register" carrying "move" as "true"
     And the catalog dialog "artifact-register" is gone
-    And the host was sent GET to "/api/agents/3/artifacts" 3 times
+    And the host was sent GET to "/api/agents/3/artifacts" 2 times
 
   Scenario: Installer files: a target of the installer family needs a role, the dialog says so and sends nothing, and the mirror credentials are a basic_auth row of the host's store picked through the secret pick dialog
     Given the host answers the hosts fixture
@@ -88,6 +93,7 @@ Feature: host installer files and provisioners
     When I submit the catalog dialog "artifact-download"
     Then the host was sent POST to "/api/agents/3/artifacts/download" carrying "role" as "domino_install"
     And the host was sent POST to "/api/agents/3/artifacts/download" carrying "resource_name" as "mirror-credentials"
+    And the host was sent POST to "/api/agents/3/artifacts/download" carrying "filename" as "Domino.tar"
 
   Scenario: Installer files: the HCL portal download keeps the portal's own body, its key an api_key row of the host's store picked through the secret pick dialog
     Given the host answers the hosts fixture
@@ -107,7 +113,7 @@ Feature: host installer files and provisioners
     Then the host was sent POST to "/api/agents/3/artifacts/hcl-download" carrying "key_name" as "hcl-portal"
     And the host was sent POST to "/api/agents/3/artifacts/hcl-download" carrying "kind" as "fixpack"
 
-  Scenario: Installer files: Scan all sends the re-hash switch, and a location's scan names the location
+  Scenario: Installer files: Scan all sends the re-hash switch
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -115,17 +121,28 @@ Feature: host installer files and provisioners
     And I check the section switch "artifact-scan-verify"
     And I press the section page's "artifact-scan" action
     Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "verify_checksums" as "true"
-    When I press the action "scan" of the catalog location "loc-installers"
-    Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "storage_path_id" as "loc-installers"
+    And the page raised 1 success notice
 
-  Scenario: Installer files: a location is added with its type and path, toggled with `enabled` alone, and a built-in one offers no edit and no delete
+  Scenario: Installer files: a location's scan from the Locations modal names the location
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    Then the catalog location "loc-iso" offers no "delete"
+    And I press the section page's "artifact-locations" action
+    And I press the action "scan" of the catalog location "loc-installers"
+    Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "storage_path_id" as "loc-installers"
+
+  Scenario: Installer files: in the Locations modal a location is added with its type and path, toggled with `enabled` alone, and a built-in one offers no edit and no delete
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/installers"
+    And I press the section page's "artifact-locations" action
+    Then the catalog dialog "storage-locations" draws
+    And the catalog location "loc-iso" offers no "delete"
+    And the catalog location "loc-iso" offers no "edit"
     And the catalog location "loc-installers" offers "delete"
-    When I press the section page's "storage-path-create" action
+    When I press the open dialog's "storage-path-create" action
     And I type "Images" into the field "storage-path-name"
     And I pick "image" in the catalog dialog select "storage-path-type"
     And I type "/rpool/images" into the field "storage-path-path"
@@ -135,47 +152,51 @@ Feature: host installer files and provisioners
     When I press the action "toggle" of the catalog location "loc-iso"
     Then the host was sent PUT to "/api/agents/3/artifacts/storage/paths/loc-iso" carrying "enabled" as "false"
 
-  Scenario: Installer files: a location's delete waits behind the typed confirmation and removes its records
+  Scenario: Installer files: a location's delete in the Locations modal waits behind the typed confirmation and removes its records
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
+    And I press the section page's "artifact-locations" action
     And I press the action "delete" of the catalog location "loc-installers"
     Then the host was not sent DELETE to "/api/agents/3/artifacts/storage/paths/loc-installers"
     When I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/3/artifacts/storage/paths/loc-installers" carrying "remove_db_records" as "true"
     And the host was sent DELETE to "/api/agents/3/artifacts/storage/paths/loc-installers" carrying "recursive" as "false"
 
-  Scenario: Installer files: the storage locations are one table, each row the registry's file count, its Scan and its Enable toggle, and no locations card beside it
+  Scenario: Installer files: the storage locations are one table in the Locations modal, each row its file count, its Scan and its Enable toggle, and no locations card on the page
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    Then the "storage-paths" table of the section page lists 3 rows
-    And the section page draws no "installer-locations" panel
-    And the section page offers no "location-add"
-    And the row "HCL installers" of the "storage-paths" table of the section page reads "1" in its "files" column
-    And the row "HCL installers" of the "storage-paths" table of the section page offers "scan"
-    And the row "HCL installers" of the "storage-paths" table of the section page offers "toggle"
-    And the row "ISO library" of the "storage-paths" table of the section page offers no "delete"
-    When I press "scan" on the row "HCL installers" of the "storage-paths" table of the section page
-    Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "storage_path_id" as "loc-installers"
-    When I press "toggle" on the row "ISO library" of the "storage-paths" table of the section page
+    Then the section page draws no "installer-locations" panel
+    And the section page offers no "storage-path-create"
+    When I press the section page's "artifact-locations" action
+    Then the dialog table "storage-paths" lists 3 rows
+    And the row "HCL installers" of the dialog table "storage-paths" reads "1" in its "files" column
+    And the catalog location "loc-installers" offers "scan"
+    And the catalog location "loc-installers" offers "toggle"
+    When I press the action "toggle" of the catalog location "loc-iso"
     Then the host was sent PUT to "/api/agents/3/artifacts/storage/paths/loc-iso" carrying "enabled" as "false"
 
-  Scenario: Installer files: picked rows are deleted together, the files with them when the switch says so
+  Scenario: Installer files: picked files are deleted together through the bulk pane in one request whatever registry they came from, the files with them when the switch says so
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    Then the section page offers no "artifact-delete"
-    When I tick the catalog row "Win11_24H2_English_x64.iso" of the "installers" table
-    And I tick the catalog row "Domino_14.5_FP1_Linux.tar" of the "installers" table
-    And I press the section page's "artifact-delete" action
-    And I check the field "artifact-delete-files-too"
+    Then the installer files listing lists 4 files
+    And the bulk pane offers no "bulk-delete"
+    When I tick the file "debian-13.1.0-amd64-netinst.iso"
+    And I tick the file "Domino_14.5_Linux_English.tar"
+    Then the bulk pane offers "bulk-delete"
+    When I press "bulk-delete" in the bulk pane
+    Then the catalog dialog "artifact-delete" draws
+    When I check the field "artifact-delete-files-too"
     And I submit the catalog dialog "artifact-delete"
     Then the host was sent DELETE to "/api/agents/3/artifacts/files" carrying "delete_files" as "true"
-    And the host was sent DELETE to "/api/agents/3/artifacts/files" carrying "artifact_ids" as "12,14"
+    And the host was sent DELETE to "/api/agents/3/artifacts/files" carrying "artifact_ids" as "11,13"
+    And the host was sent DELETE to "/api/agents/3/artifacts/files" 1 times
+    And the host was sent GET to "/api/agents/3/artifacts" 2 times
 
   Scenario: Installer files: From BoxVault lists the download files the host's registry offers the person, grouped by download, release and patch, and a row's Download sends the host's fetch into the kind's location under the role with the registry's sha256
     Given the host answers the hosts fixture
@@ -223,15 +244,17 @@ Feature: host installer files and provisioners
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    Then the row "Domino_14.5_FP1_Linux.tar" of the "installers" table of the section page offers "artifact-fetch"
-    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers no "artifact-fetch"
-    When I press "artifact-fetch" on the row "Domino_14.5_FP1_Linux.tar" of the "installers" table of the section page
+    Then the file "Domino_14.5_FP1_Linux.tar" offers "artifact-fetch"
+    And the file "Domino_14.5_Linux_English.tar" offers no "artifact-fetch"
+    When I press "artifact-fetch" on the file "Domino_14.5_FP1_Linux.tar"
     Then the catalog dialog "artifact-download" draws
     And the open dialog notes "missing-seed"
     And the field "artifact-download-filename" reads "Domino_14.5_FP1_Linux.tar"
     And the field "artifact-download-sha" reads "b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4"
     And the field "artifact-download-role" reads "domino_fixpack"
     And the field "artifact-download-location" reads "loc-installers"
+    When I type "https://mirror.example.com/other-name.tar" into the field "artifact-download-url"
+    Then the field "artifact-download-filename" reads "Domino_14.5_FP1_Linux.tar"
     When I press the open dialog's "source-hcl" action
     Then the catalog dialog "artifact-hcl" draws
     And the catalog dialog "artifact-download" is gone
@@ -253,18 +276,19 @@ Feature: host installer files and provisioners
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    Then the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page carries a "warning" badge
-    And the row "Win11_24H2_English_x64.iso" of the "installers" table of the section page carries a "warning" badge
-    And the row "debian-13.1.0-amd64-netinst.iso" of the "installers" table of the section page carries a "success" badge
-    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers "download"
-    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers "move"
+    Then the file "Domino_14.5_Linux_English.tar" carries a "warning" badge
+    And the file "Win11_24H2_English_x64.iso" carries a "warning" badge
+    And the file "debian-13.1.0-amd64-netinst.iso" carries a "success" badge
+    And the file "Domino_14.5_Linux_English.tar" offers "download"
+    And the file "Domino_14.5_Linux_English.tar" offers "move"
 
-  Scenario: Installer files: the storage location dialogs of the artifacts section offer every kind, an installer family location made with its type
+  Scenario: Installer files: the storage location dialog of the Locations modal offers every kind, an installer family location made with its type
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    And I press the section page's "storage-path-create" action
+    And I press the section page's "artifact-locations" action
+    And I press the open dialog's "storage-path-create" action
     Then the "storage-path-create" dialog is open
     And the catalog dialog select "storage-path-type" offers 5 options
     When I type "Fixpacks" into the field "storage-path-name"
@@ -279,12 +303,12 @@ Feature: host installer files and provisioners
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    And I press "move" on the row "debian-13.1.0-amd64-netinst.iso" of the "installers" table of the section page
+    And I press "move" on the file "debian-13.1.0-amd64-netinst.iso"
     Then the catalog dialog select "artifact-transfer-dest" offers 1 options
     When I pick "loc-old" in the catalog dialog select "artifact-transfer-dest"
     And I submit the catalog dialog "artifact-move"
     Then the host was sent POST to "/api/agents/3/artifacts/11/move" carrying "destination_storage_location_id" as "loc-old"
-    And the row "Domino_14.5_FP1_Linux.tar" of the "installers" table of the section page holds "move"
+    And the file "Domino_14.5_FP1_Linux.tar" holds "move"
 
   Scenario: Provisioners: the families of every enabled catalog source as cards, read once a source per load, a source that answers 401 drawing no family and named with the agent's message in one warning banner, the installed ones alone when the page opens, the Update glyph on a family behind the catalog and the glyph greyed on one at its newest, Add turning the Installed group off so every family draws with the missing greyed and their controls live, a second Add turning it back on, and the Installed pill off greying them
     Given the host answers the hosts fixture

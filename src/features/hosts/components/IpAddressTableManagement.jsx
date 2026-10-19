@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { FaPause, FaPlay, FaTrash } from 'react-icons/fa6';
+import { FaPause, FaPen, FaPlay, FaTrash } from 'react-icons/fa6';
 
 import { canDisableAddress, canEnableAddress } from '../utils/networkingManagement';
 
@@ -8,10 +8,11 @@ import { canDisableAddress, canEnableAddress } from '../utils/networkingManageme
  * The actions of one row of the addresses table, hyperweaver-ui's, on a
  * row the managed read answers alone and nothing on any other: Enable
  * while the managed address reads disabled, Disable while it reads ok,
- * and Delete always, each handed the managed row, every button held
- * while a request is in flight.
+ * Edit, opening the address form on the row, and Delete always, each
+ * handed the managed row, every button held while a request is in
+ * flight.
  */
-export const IpAddressRowActions = ({ row, busy, onEnable, onDisable, onDelete }) => {
+export const IpAddressRowActions = ({ row, busy, onEnable, onDisable, onEdit, onDelete }) => {
   const { t } = useTranslation();
   const own = row.managed;
   if (!own) {
@@ -45,6 +46,16 @@ export const IpAddressRowActions = ({ row, busy, onEnable, onDisable, onDelete }
       ) : null}
       <button
         type="button"
+        className="btn btn-sm btn-outline-secondary"
+        onClick={() => onEdit(own)}
+        disabled={busy}
+        title={t('host.ipAddressTableManagement.editAddress')}
+        data-tool="edit"
+      >
+        <FaPen aria-hidden="true" />
+      </button>
+      <button
+        type="button"
         className="btn btn-sm btn-danger"
         onClick={() => onDelete(own)}
         disabled={busy}
@@ -62,5 +73,6 @@ IpAddressRowActions.propTypes = {
   busy: PropTypes.bool.isRequired,
   onEnable: PropTypes.func.isRequired,
   onDisable: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
 };
