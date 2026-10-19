@@ -139,12 +139,13 @@ Feature: agent-settings
     And the release "v1.3.0" draws the notes with 2 headings and 2 items
     And I do not see "###"
     And I do not see "utm support"
+    And the assets of the release "v1.3.0" draw under the versions
     And the assets of the release "v1.3.0" are folded
     When I fold the assets of the release "v1.3.0"
     Then the assets of the release "v1.3.0" are open
     And the release "v1.3.0" lists the asset "hyperweaver-agent-1.3.0-linux-amd64.deb"
     And the release "v1.3.0" lists the asset "SHA256SUMS.txt"
-    And the release "v1.3.0" links to "https://github.com/Makr91/hyperweaver-agent/releases/download/v1.3.0/SHA256SUMS.txt"
+    And the agent page links to "https://github.com/Makr91/hyperweaver-agent/releases/download/v1.3.0/SHA256SUMS.txt"
     And the release "v1.3.0" shows the checksum "e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a3f0c9a1b7e4d2c8f5a6b1d0"
     And I see "36.9 MB"
     And I see "486 Bytes"
@@ -183,7 +184,7 @@ Feature: agent-settings
     And the release "v1.4.0-beta.1" shows the checksum "3f0c9a1b7e4d2c8f5a6b1d0e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a"
     And I see "37.3 MB"
 
-  Scenario: Agent pages: the Secrets page draws one heading row with Add, Copy from Vault, Reload and the view toggle in its pane in that order, no search box of its own, the navbar search narrowing its rows
+  Scenario: Agent pages: the Secrets page draws one heading row with Add, Pick secret, Reload and the view toggle in its pane in that order, no search box of its own, the navbar search narrowing its rows
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
@@ -192,7 +193,7 @@ Feature: agent-settings
     When I open "/hosts/1/agent/secrets"
     Then the section page "secrets" draws
     And the section page draws one heading
-    And the heading pane of the section page reads "secret-add,secret-copy-from-vault,secrets-reload,view-toggle"
+    And the heading pane of the section page reads "secret-add,secret-pick,secrets-reload,view-toggle"
     And the section page draws no search box
     And the agent page offers no "refresh"
     And the "secrets" table of the section page lists 2 rows
@@ -201,6 +202,26 @@ Feature: agent-settings
     Then the "secrets" table of the section page lists 1 rows
     And the navbar search count reads "1 / 2"
     And the heading of the networking page counts 1
+
+  Scenario: Agent pages: the Secrets page lists every kind of the host's store on one table, a certificate row beside a password row, the certificate row offering Pull to vault and the password row Edit, and the Kind pill narrows to one kind
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the host answers the hosts-search fixture
+    And the host answers the hosts-agent-store fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/secrets"
+    Then the section page "secrets" draws
+    And the "secrets" table of the section page lists 2 rows
+    And the secret row "leaf" is of kind "certificate"
+    And the secret row "admin-pass" is of kind "password"
+    And the row "leaf" of the "secrets" table of the section page offers "pull"
+    And the row "admin-pass" of the "secrets" table of the section page offers "secret-edit"
+    When I press "/"
+    And I open the filter panel
+    And I toggle the filter pill of the kind of the secret row "leaf"
+    Then the "secrets" table of the section page lists 1 rows
+    And the secret row "leaf" is of kind "certificate"
 
   Scenario: Agent pages: the Secrets page reads the host store's rows as it opens and lists them with their kind, Add saves one row as one POST carrying the kind, the name and the secret and reads again, Remove sends one DELETE behind the typed confirmation, and Reload reads again
     Given the host answers the hosts fixture

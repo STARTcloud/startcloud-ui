@@ -4,7 +4,12 @@ import { useTranslation } from 'react-i18next';
 
 import ViewToggle from '../../../components/common/ViewToggle';
 import { useClientFilters } from '../../../hooks/useClientFilters';
-import { SECRET_STORE_COLUMNS, SECRET_STORE_FILTERS, matchesStoreRow, nowOf } from '../../certs';
+import {
+  SECRET_STORE_COLUMNS,
+  SECRET_STORE_FILTERS,
+  matchesStoreRow,
+} from '../../certs/components/storeColumns';
+import { nowOf } from '../../certs/utils/records';
 
 import { DialogTable } from './ManageTable';
 import { FilterPills, RowCards } from './PickDialogParts';
@@ -12,8 +17,8 @@ import { FilterPills, RowCards } from './PickDialogParts';
 const rowKey = row => String(row.id);
 
 /**
- * The Vault's table over a host store's secret rows, the list the
- * secret pick dialog draws: a search over the
+ * The Vault's table over a store's secret rows, the list the Pick
+ * secret dialog draws: a search over the
  * rows, the Kind and Profile pills, the table or cards toggle, the
  * store's secret columns and the caller's row actions; `openers` draw
  * before the toggle, `name` is the table's `data-table` and the cards'

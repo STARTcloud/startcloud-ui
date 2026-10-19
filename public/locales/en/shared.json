@@ -2664,8 +2664,11 @@
         "take": "The snapshot is being taken.",
         "edit": "The snapshot is being updated.",
         "restore": "The restore is queued.",
-        "delete": "The snapshot is being deleted."
+        "delete": "The snapshot is being deleted.",
+        "deleteMany_one": "1 snapshot deleted.",
+        "deleteMany_other": "{{count}} snapshots deleted."
       },
+      "deleteManyFailed": "{{count}} of {{total}} snapshots could not be deleted: {{message}}",
       "confirm": {
         "destroysLater": "Every snapshot taken after {{snapshotName}} is destroyed by the restore."
       },
@@ -2759,6 +2762,8 @@
         "killed": "Process {{pid}} killed",
         "signalled": "Signal {{signal}} sent to {{pid}}",
         "batchKilled": "Processes matching {{pattern}} killed",
+        "pickedKilled_one": "Sent SIG{{signal}} to {{count}} process",
+        "pickedKilled_other": "Sent SIG{{signal}} to {{count}} processes",
         "failed": "The request failed: {{message}}"
       },
       "users": {
@@ -3142,8 +3147,7 @@
     "preferences": {
       "title": "Hosts",
       "defaultDomain": "Default domain for new machines",
-      "defaultDomainHint": "A bare machine name takes this domain before the host's own rows; kept in this browser only.",
-      "save": "Save hosts preferences"
+      "defaultDomainHint": "A bare machine name takes this domain before the host's own rows; kept in this browser only."
     }
   },
   "pages": {
@@ -4298,7 +4302,6 @@
       "deployTarget": "Deploy target",
       "deployTargetHint": "Where a Deploy opens: the agent on this computer, or one of your servers.",
       "local": "This computer (Hyperweaver agent)",
-      "save": "Save",
       "saved": "Hyperweaver settings saved.",
       "connected": "Hyperweaver is connected.",
       "disconnect": "Disconnect",
@@ -4486,15 +4489,13 @@
       "keyGeneratedMessage": "API Key generated successfully. Please copy it now, you will not be able to see it again.",
       "bootstrapKeyGeneratedMessage": "Bootstrap API Key generated successfully. Please copy it now.",
       "keyDeletedMessage": "API Key deleted successfully.",
-      "generateNewKeyTitle": "Generate New API Key",
       "labelName": "Name",
       "namePlaceholder": "e.g., My-App",
       "labelDescription": "Description",
       "descriptionPlaceholder": "e.g., API access for my application",
-      "generatingButton": "Generating...",
       "generateKeyButton": "Generate Key",
       "generateBootstrapKeyButton": "Generate Bootstrap Key",
-      "existingKeysTitle": "Existing API Keys",
+      "generateOptions": "More ways to generate a key",
       "loadingKeys": "Loading keys...",
       "columnName": "Name",
       "columnDescription": "Description",
@@ -4623,7 +4624,7 @@
       "reloadButton": "Reload",
       "addButton": "Add",
       "failedLoadSecrets": "Failed to load secrets: {{message}}",
-      "copyFromVault": "Copy from Vault",
+      "pickSecret": "Pick secret",
       "edit": "Edit",
       "remove": "Remove",
       "removeTitle": "Remove secret",
@@ -8000,8 +8001,9 @@
       "registerPath": "Register Path",
       "downloadUrl": "Download URL",
       "hclPortal": "HCL Portal",
-      "reHashAll": "Re-hash all",
       "scanAll": "Scan All",
+      "scanAllRehash": "Scan all and re-hash",
+      "scanOptions": "More scan options",
       "refresh": "Refresh",
       "allTypes": "All types",
       "allLocations": "All locations",
@@ -8152,6 +8154,8 @@
       "actionComplete": "{{action}} complete.",
       "title": "Agent Databases",
       "refresh": "Refresh",
+      "editSettings": "Edit settings",
+      "editSettingsTitle": "Edit the agent's database configuration",
       "vacuumTitle": "Rebuild the database files to reclaim free space",
       "vacuum": "Vacuum",
       "analyzeTitle": "Refresh the query planner statistics",
@@ -8476,7 +8480,6 @@
     },
     "interfacesTable": {
       "resetSortTitle": "Click to reset sorting to default",
-      "networkInterfaces": "Network Interfaces ({{total}} interfaces)",
       "expandSection": "Expand section",
       "collapseSection": "Collapse section",
       "sortByLink": "Click to sort by interface name",
@@ -8856,6 +8859,8 @@
       "warningLabel": "Warning:",
       "warningText": "This will affect multiple processes matching the pattern.",
       "warningDetail": "Use this feature carefully. Test with a specific pattern first.",
+      "pickedWarning_one": "This sends the chosen signal to the {{count}} selected process.",
+      "pickedWarning_other": "This sends the chosen signal to the {{count}} selected processes.",
       "processSelection": "Process Selection",
       "commandPatternLabel": "Command Pattern",
       "commandPatternPlaceholder": "e.g., apache, bhyve, nginx...",
@@ -8932,6 +8937,7 @@
       "clear": "Clear",
       "actions": "Actions",
       "batchKill": "Batch Kill",
+      "killSelected": "Kill selected",
       "processesCount": "Processes ({{count}})"
     },
     "roleCreateModal": {
@@ -10406,20 +10412,13 @@
       "policySimple": "Simple — keep the newest N",
       "policyAge": "Age — delete older than N days",
       "policyRotation": "Rotation — hourly/daily/weekly tiers",
-      "policyUpdateFailed": "Policy update failed: {{message}}",
-      "overrideCleared": "Override cleared — the agent default applies.",
-      "policySaved": "Policy saved.",
       "pickPolicyType": "Pick a policy type first.",
-      "retentionPolicyHeading": "Scheduled snapshots (retention policy)",
       "policyLabel": "Policy",
       "agentDefaultOption": "(agent default)",
       "keepLabel": "Keep",
       "maxAgeLabel": "Max age (days)",
       "tierKeepLabel": "{{tier}} keep",
       "quiesceLabel": "Quiesce (qga fsfreeze)",
-      "applyPolicyButton": "Apply policy",
-      "clearOverrideTooltip": "Remove this machine's override — the agent default applies",
-      "clearOverrideButton": "Clear override",
       "loadFailed": "Failed to load snapshots: {{message}}",
       "snapshotsHeading": "Snapshots ({{count}})",
       "noSnapshotsYet": "No snapshots yet.",
@@ -10958,7 +10957,8 @@
         "filesystems": "Filesystems",
         "advanced": "Advanced",
         "utm": "UTM",
-        "resources": "Resources"
+        "resources": "Resources",
+        "snapshots": "Snapshots"
       },
       "fieldsHint": "Fields show the machine's current values where the agent reports them; edits are cached across all tabs until you Apply, and only values you CHANGED are sent. Blank = the shown default stays in effect.",
       "field": {
@@ -11596,6 +11596,7 @@
       "tabHooks": "Hooks",
       "tabTransport": "Transport",
       "tabRawJson": "Raw JSON",
+      "tabHostsYml": "Hosts.yml",
       "invalidNameProblem": "{{label}} \"{{key}}\"",
       "variableLabel": "variable",
       "roleNameProblem": "role name \"{{name}}\"",
@@ -11606,7 +11607,6 @@
       "notValidJson": "Not valid JSON: {{message}}",
       "applyJsonFirst": "Apply the JSON first (button below the editor) — it differs from the stored form.",
       "fixInvalidNames": "Fix invalid names before storing: {{problems}}.",
-      "heading": "Provisioning Document",
       "varsIntro1": "Global variables — every role and script sees them. Values keep their JSON types; lists and dicts edit behind the",
       "varsIntro2": "button as YAML.",
       "addVariable": "Add Variable",
@@ -11657,7 +11657,6 @@
       "lineSuffix": "(line {{line}})",
       "documentSaved": "Document saved for {{machineName}}.",
       "savedWithAdvisories": "Saved — with advisories:",
-      "modalTitle": "Hosts.yml — {{machineName}}",
       "saveButton": "Save",
       "unsavedChanges": "unsaved changes",
       "loadingEditor": "Loading the editor…",
@@ -11675,8 +11674,6 @@
       "pipelineHint": "Provision (the full pipeline), Sync Files, and Run Provisioners (playbooks only) live in the Controls menu in the navbar. The document is edited below.",
       "noDocumentYet": "No provisioner document yet — provisioning is not configured for this machine. Machines created from a provisioner package carry one automatically",
       "noDocumentReshapeSuffix": "; storing a document below enables the pipeline (its actions then appear under Controls in the navbar)",
-      "editHostsYmlTitle": "Edit the WHOLE stored document as raw YAML — the emergency hatch between create-without-start and provision",
-      "editHostsYmlButton": "Edit Hosts.yml (raw)",
       "hookConfirmDeclined": "Provisioning not started — host hooks were not confirmed.",
       "hookConfirmTitle": "This package runs scripts on the agent host",
       "hookConfirmSuffix": "Confirming runs them and is remembered for this machine — future provisions will not ask again.",
@@ -12121,8 +12118,7 @@
     "preferences": {
       "title": "Certificates",
       "thresholdDays": "Expiring threshold (days)",
-      "thresholdHint": "A certificate ending within this many days reads as expiring.",
-      "save": "Save"
+      "thresholdHint": "A certificate ending within this many days reads as expiring."
     },
     "confirm": {
       "deleteTitle": "Delete record",
@@ -12195,11 +12191,10 @@
       "pullAgain": "Pull again"
     },
     "sync": {
-      "title": "Sync to {{name}}",
+      "destination": "Sync to {{name}}",
       "body": "Every vault record of a checked kind is sent to {{name}} under {{organization}} and kept in step.",
       "lastSynced": "last synced {{when}}",
       "never": "never synced",
-      "save": "Save",
       "noOrganization": "{{name}} keeps the records of the checked kinds in your own store on this host."
     },
     "input": {
@@ -12234,6 +12229,13 @@
       "about": "Turn certificates and keys into another format, or save them to the vault.",
       "input": "Input",
       "components": "Components",
+      "slot": {
+        "certificate": "Certificate",
+        "key": "Key",
+        "public_key": "Public key",
+        "request": "Request"
+      },
+      "slotNeeded": "needed · not loaded",
       "output": "Output",
       "format": "Format",
       "pickFormat": "Pick a format",
@@ -12312,7 +12314,6 @@
       "none": "No certificates loaded",
       "remove": "Remove",
       "build": "Build chain",
-      "built": "Chain",
       "issuedBy": "issued by {{name}}",
       "valid": "Valid",
       "invalid": "Invalid",
@@ -12456,6 +12457,9 @@
       "authorityCertificate": "Authority certificate",
       "authorityKey": "Authority key",
       "pastedRead": "{{label}} read."
+    },
+    "pick": {
+      "store": "Store"
     },
     "picker": {
       "button": "Pick from vault",

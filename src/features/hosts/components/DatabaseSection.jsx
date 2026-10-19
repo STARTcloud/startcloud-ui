@@ -1,14 +1,17 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaBroom, FaMagnifyingGlassChart, FaTrashArrowUp } from 'react-icons/fa6';
+import { FaBroom, FaMagnifyingGlassChart, FaSliders, FaTrashArrowUp } from 'react-icons/fa6';
+import { useNavigate } from 'react-router-dom';
 
 import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { runDatabaseMaintenance } from '../api/database';
 import { useManageSend } from '../hooks/useHostManage';
+import { configNamesOf, configPath } from '../utils/configNodes';
 import { MAINTENANCE_ACTIONS, formatDatabaseBytes, reclaimedText } from '../utils/database';
+import { isServerRole } from '../utils/hosts';
 
 import {
   DATABASE_COLUMNS,
@@ -25,12 +28,26 @@ const ACTIONS = {
   cleanup: { Icon: FaTrashArrowUp, tone: 'warning' },
 };
 
+const DB_CONFIG = 'db';
+
+const dbConfigRouteOf = ({ status, server, id }) => {
+  if (isServerRole(status)) {
+    return configNamesOf(server).includes(DB_CONFIG) ? configPath(id, DB_CONFIG) : null;
+  }
+  return Array.isArray(status?.config) && status.config.includes(DB_CONFIG)
+    ? `/admin/config/${DB_CONFIG}`
+    : null;
+};
+
 /**
  * The agent's databases, the body of the Database page under its one
  * heading: `title`, the totals of the statistics as the count once they
- * are read, and in the pane Vacuum, Analyze and Cleanup, each one request
- * and one notice, the vacuum's naming the space reclaimed, then
- * `actions`; under it the one table over the databases the page's search
+ * are read, and in the pane Edit settings, the config engine's page of the
+ * agent's `db` file, `/hosts/{id}/agent/config/db` on the server role
+ * while the host's row lists the file and `/admin/config/db` on an agent
+ * role while the status lists it, then Vacuum, Analyze and Cleanup, each
+ * one request and one notice, the vacuum's naming the space reclaimed,
+ * then `actions`; under it the one table over the databases the page's search
  * leaves, a row's Explore opening its tables in the detail row under that
  * row, with Browse into the row browser; the statistics read again on a
  * success.
@@ -39,6 +56,7 @@ const DatabaseSection = ({ id, ctx, table, reading, filtering, title, actions = 
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
+  const navigate = useNavigate();
   const { send, busy, task, closeTask } = useManageSend(id);
   const [expanded, setExpanded] = useState(null);
   const [browser, setBrowser] = useState(null);
@@ -87,8 +105,22 @@ const DatabaseSection = ({ id, ctx, table, reading, filtering, title, actions = 
     </span>
   ) : null;
 
+  const settings = dbConfigRouteOf({ status, server: ctx.server, id });
+
   const pane = (
     <>
+      {settings ? (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          data-action="database-settings"
+          title={t('host.databasePanel.editSettingsTitle')}
+          onClick={() => navigate(settings)}
+        >
+          <FaSliders className="me-1" aria-hidden="true" />
+          {t('host.databasePanel.editSettings')}
+        </button>
+      ) : null}
       {MAINTENANCE_ACTIONS.map(action => {
         const { Icon, tone } = ACTIONS[action];
         return (

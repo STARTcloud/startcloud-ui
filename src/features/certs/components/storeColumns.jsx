@@ -141,6 +141,45 @@ export const SECRET_STORE_FILTERS = [
 ];
 
 /**
+ * The filter groups of a table over the store's wire rows: the kind, the
+ * expiry status read at `ctx.now` against `ctx.thresholdDays`, the
+ * visibility and the organization.
+ *
+ * @param {Object} ctx - The context the table draws with, with `now` and `thresholdDays`
+ * @returns {Array<Object>} The groups
+ */
+export const storeFilterGroupsOf = ctx => [
+  {
+    key: 'kind',
+    labelKey: 'certs.filter.kind',
+    values: row => [row.kind],
+    activeClass: 'bg-primary',
+    labelFor: (value, t) => t(`certs.kind.${value}`),
+  },
+  {
+    key: 'status',
+    labelKey: 'certs.filter.status',
+    values: row => (rowStatus(row, ctx) ? [rowStatus(row, ctx)] : []),
+    activeClass: 'bg-success',
+    labelFor: (value, t) => t(`certs.status.${value}`),
+  },
+  {
+    key: 'visibility',
+    labelKey: 'pages.table.visibility',
+    values: row => [pickedOf(row)],
+    activeClass: 'bg-info',
+    labelFor: (value, t) => t(`pages.status.${value}`),
+  },
+  {
+    key: 'organization',
+    labelKey: 'certs.filter.organization',
+    values: row => [row.organization],
+    activeClass: 'bg-secondary',
+    labelFor: value => value,
+  },
+];
+
+/**
  * Whether a store row matches a query: its name, its subject, its
  * profile, who shared it and its organization.
  *

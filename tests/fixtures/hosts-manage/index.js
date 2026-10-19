@@ -29,6 +29,7 @@ export default {
   },
   'POST /api/agents/3/system/processes/128/kill': { status: 200, file: 'action-200.json' },
   'POST /api/agents/3/system/processes/128/signal': { status: 200, file: 'action-200.json' },
+  'POST /api/agents/3/system/processes/135/signal': { status: 200, file: 'action-200.json' },
   'POST /api/agents/3/system/processes/batch-kill': { status: 200, file: 'batch-kill-200.json' },
   'GET /api/agents/3/system/users': { status: 200, file: 'agents-3-users.json' },
   'GET /api/agents/3/system/users/mark/attributes': {

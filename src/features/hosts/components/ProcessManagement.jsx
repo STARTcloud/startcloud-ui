@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCircleStop } from 'react-icons/fa6';
 
+import { selectionShape } from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { batchKill, fetchProcess, killProcess, signalProcess } from '../api/manage';
@@ -41,15 +42,59 @@ BatchKillButton.propTypes = {
 };
 
 /**
+ * The picked-state group of the Processes heading's pane, drawn while
+ * rows are picked: "N selected", Clear selection and Kill selected, which
+ * opens the batch kill dialog over the picked processes.
+ */
+export const PickedProcesses = ({ selection, onKill }) => {
+  const { t } = useTranslation();
+  if (!selection.someSelected) {
+    return null;
+  }
+  return (
+    <>
+      <strong>{t('pages.bulk.selected', { count: selection.selected.size })}</strong>
+      <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
+        {t('pages.bulk.clearSelection')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        data-action="bulk-kill"
+        onClick={onKill}
+      >
+        <FaCircleStop className="me-1" aria-hidden="true" />
+        {t('host.processManagement.killSelected')}
+      </button>
+    </>
+  );
+};
+
+PickedProcesses.propTypes = {
+  selection: PropTypes.shape({
+    someSelected: PropTypes.bool.isRequired,
+    selected: PropTypes.instanceOf(Set).isRequired,
+    clear: PropTypes.func.isRequired,
+  }).isRequired,
+  onKill: PropTypes.func.isRequired,
+};
+
+/**
  * The processes of a host, hyperweaver-ui's process management as the
- * body of the Manage page's Processes section: the one table over the
- * rows the page's binding left, its request filters in the navbar's
- * panel, and on each row View details, Send signal and Kill process,
- * each dialog over the form dialog of the pages contract; a kill, a
- * signal and a batch kill each send their request, raise one notice
- * and read the processes again on a success. The signals offered are
- * the ones the host delivers, TERM and KILL alone on a Windows host,
- * and the zones of the batch kill the host's machines. Nothing polls.
+ * body of the Processes page: the one table over the rows the page's
+ * binding left with the select column of `selection`, its request filters
+ * in the navbar's panel, and on each row View details, Send signal and
+ * Kill process, each dialog over the form dialog of the pages contract; a
+ * kill, a signal and a batch kill each send their request, raise one
+ * notice and read the processes again on a success. `batch` opens the
+ * batch kill dialog: over a command pattern while its `pids` are empty,
+ * `POST system/processes/batch-kill`, and over the picked processes
+ * otherwise, one `POST system/processes/{pid}/signal` with the chosen
+ * signal a pid and one notice naming the count, because the batch kill
+ * takes a pattern alone; `onBatch` is called with true after a success
+ * and false on a close. The signals offered are the ones the host
+ * delivers, TERM and KILL alone on a Windows host, and the zones of the
+ * batch kill the host's machines. Nothing polls.
  */
 const ProcessManagement = ({
   id,
@@ -59,7 +104,8 @@ const ProcessManagement = ({
   reading,
   filtering,
   zones,
-  batch,
+  selection,
+  batch = null,
   onBatch,
 }) => {
   const { t } = useTranslation();
@@ -99,14 +145,21 @@ const ProcessManagement = ({
   };
 
   const killMany = async body => {
+    const { pids } = batch;
+    const picked = pids.length > 0;
     const { error } = await send({
-      call: () => batchKill(status, id, body),
-      doneKey: 'hosts.manage.processes.batchKilled',
-      values: { pattern: body.pattern },
+      call: () =>
+        picked
+          ? Promise.all(pids.map(pid => signalProcess(status, id, pid, body.signal)))
+          : batchKill(status, id, body),
+      doneKey: picked
+        ? 'hosts.manage.processes.pickedKilled'
+        : 'hosts.manage.processes.batchKilled',
+      values: picked ? { count: pids.length, signal: body.signal } : { pattern: body.pattern },
       failKey: 'hosts.manage.processes.failed',
     });
     if (!error) {
-      onBatch();
+      onBatch(true);
       reading.refresh();
     }
   };
@@ -143,6 +196,7 @@ const ProcessManagement = ({
         rowKey={rowKey}
         RowActions={ProcessRowActions}
         actionsProps={{ busy: busy || opening, onAction }}
+        selection={selection}
         ctx={ctx}
         emptyKey="host.processTable.noProcessesFound"
         reading={reading}
@@ -176,9 +230,10 @@ const ProcessManagement = ({
       {batch ? (
         <BatchKillModal
           zones={zones}
+          pids={batch.pids}
           signals={signalsFor(server, BATCH_SIGNALS)}
           busy={busy}
-          onClose={onBatch}
+          onClose={() => onBatch(false)}
           onConfirm={killMany}
         />
       ) : null}
@@ -199,7 +254,10 @@ ProcessManagement.propTypes = {
   }).isRequired,
   filtering: PropTypes.bool.isRequired,
   zones: PropTypes.arrayOf(PropTypes.string).isRequired,
-  batch: PropTypes.bool.isRequired,
+  selection: selectionShape.isRequired,
+  batch: PropTypes.shape({
+    pids: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.number])).isRequired,
+  }),
   onBatch: PropTypes.func.isRequired,
 };
 

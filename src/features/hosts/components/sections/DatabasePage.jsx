@@ -13,8 +13,9 @@ import SectionPane from '../SectionPane';
 
 /**
  * The Database page of a host: `DatabaseSection` drawing the one heading,
- * the section's title with the totals of the statistics, Vacuum, Analyze,
- * Cleanup and Refresh in its pane, and the one table under it, the
+ * the section's title with the totals of the statistics, Edit settings
+ * while the host names a `db` configuration file, Vacuum, Analyze, Cleanup
+ * and Refresh in its pane, and the one table under it, the
  * statistics read once for this page.
  */
 const DatabasePage = ({ id, server, context, section, onRefresh }) => {

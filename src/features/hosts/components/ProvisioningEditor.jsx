@@ -37,6 +37,7 @@ import {
   withPlaybookLists,
 } from '../utils/provisioning';
 
+import HostsYmlTab from './HostsYmlTab';
 import ProvisioningFoldersTab from './ProvisioningFoldersTab';
 import ProvisioningHooksTab from './ProvisioningHooksTab';
 import ProvisioningPlaybooksTab from './ProvisioningPlaybooksTab';
@@ -54,7 +55,10 @@ const TABS = [
   { key: 'hooks', labelKey: 'provisioning.provisioningEditor.tabHooks' },
   { key: 'transport', labelKey: 'provisioning.provisioningEditor.tabTransport' },
   { key: 'json', labelKey: 'provisioning.provisioningEditor.tabRawJson' },
+  { key: 'hosts-yml', labelKey: 'provisioning.provisioningEditor.tabHostsYml' },
 ];
+
+const HOSTS_YML = 'hosts-yml';
 
 const JSON_ROWS = 16;
 
@@ -423,12 +427,51 @@ JsonTab.propTypes = {
   onApply: PropTypes.func.isRequired,
 };
 
+const DocumentButtons = ({ busy, onStore, onDiscard }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="d-flex gap-2 mt-3 border-top pt-3">
+      <button
+        type="button"
+        className="btn btn-primary"
+        data-action="document-store"
+        onClick={onStore}
+        disabled={busy}
+      >
+        {busy ? (
+          <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />
+        ) : (
+          <FaCheck className="me-2" aria-hidden="true" />
+        )}
+        {t('provisioning.provisioningEditor.storeDocument')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-outline-secondary"
+        data-action="document-discard"
+        onClick={onDiscard}
+        disabled={busy}
+      >
+        {t('provisioning.provisioningEditor.discardEdits')}
+      </button>
+    </div>
+  );
+};
+
+DocumentButtons.propTypes = {
+  busy: PropTypes.bool.isRequired,
+  onStore: PropTypes.func.isRequired,
+  onDiscard: PropTypes.func.isRequired,
+};
+
 /**
  * The provisioner document editor of a machine, hyperweaver-ui's inline
  * editor: the stored document, a Hosts.yml host entry, edited structured
  * across the Folders, Variables, Scripts, Playbooks, Roles, Hooks and
  * Transport tabs with Raw JSON the escape hatch, keys no tab covers
- * riding untouched; the Roles tab is the one roles editor the create
+ * riding untouched, and the Hosts.yml tab, `HostsYmlTab`, the whole
+ * stored document as YAML with its own Save in place of Store and
+ * Discard, handing its notice to `onSaved`; the Roles tab is the one roles editor the create
  * wizard draws, its catalog, the manifest's roles, their defaults and
  * their argument specs read from the package registry while the host
  * lists `provisioner-registry`, the host's artifact rows read while it
@@ -594,7 +637,9 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved, onRun = null }
 
       {tab === 'json' ? (
         <JsonTab text={jsonText} busy={busy} onChange={setJsonText} onApply={applyJson} />
-      ) : (
+      ) : null}
+      {tab === HOSTS_YML ? <HostsYmlTab id={id} name={name} onSaved={onSaved} /> : null}
+      {tab === 'json' || tab === HOSTS_YML ? null : (
         <EditorTab
           tab={tab}
           doc={doc}
@@ -607,31 +652,9 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved, onRun = null }
         />
       )}
 
-      <div className="d-flex gap-2 mt-3 border-top pt-3">
-        <button
-          type="button"
-          className="btn btn-primary"
-          data-action="document-store"
-          onClick={store}
-          disabled={busy}
-        >
-          {busy ? (
-            <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />
-          ) : (
-            <FaCheck className="me-2" aria-hidden="true" />
-          )}
-          {t('provisioning.provisioningEditor.storeDocument')}
-        </button>
-        <button
-          type="button"
-          className="btn btn-outline-secondary"
-          data-action="document-discard"
-          onClick={discard}
-          disabled={busy}
-        >
-          {t('provisioning.provisioningEditor.discardEdits')}
-        </button>
-      </div>
+      {tab === HOSTS_YML ? null : (
+        <DocumentButtons busy={busy} onStore={store} onDiscard={discard} />
+      )}
     </div>
   );
 };

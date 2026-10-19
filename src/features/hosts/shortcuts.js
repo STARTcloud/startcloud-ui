@@ -1,7 +1,15 @@
 import { clickInCursor, clickInPage } from '../../lib/listCursor';
 import { authMethod, hasFeatureStrict } from '../../utils/capabilities';
 
+import { REFRESH_EVENT } from './hooks/useServers';
+
 const HOST_NODES = '.sidebar-tree [data-node^="host:"]';
+
+const refresh = root => {
+  if (!clickInPage(root, '[data-action="refresh"]')) {
+    root.dispatchEvent(new CustomEvent(REFRESH_EVENT));
+  }
+};
 
 const under = (pathname, to) => pathname === to || pathname.startsWith(`${to}/`);
 
@@ -23,7 +31,7 @@ const row = (category, key, keys, run) => ({
 
 const ROWS = [
   row('actions', 'create', [['c']], ({ root }) => clickInPage(root, '[data-action="new-machine"]')),
-  row('actions', 'refresh', [['.']], ({ root }) => clickInPage(root, '[data-action="refresh"]')),
+  row('actions', 'refresh', [['.']], ({ root }) => refresh(root)),
   row('actions', 'edit', [['e']], ({ root }) => clickInCursor(root, '[data-action="edit"]')),
   row('actions', 'delete', [['d']], ({ root }) => clickInCursor(root, '[data-action="delete"]')),
   row('navigation', 'nextHost', [['g', 'j']], ({ root }) => stepHost(root, 1)),
@@ -34,7 +42,8 @@ const ROWS = [
  * The hosts feature's `shortcuts` export: nothing unless the host
  * advertises `hosts` and, on a host that needs a session, a person is
  * signed in; else the rows `c` New machine where the page draws it, `.`
- * Refresh where the page draws it, `e` and `d` the Edit and Delete of
+ * Refresh where the page draws it and, where none is drawn, the Refresh a
+ * machine page published, `e` and `d` the Edit and Delete of
  * the selected row where it carries them, and `g j` / `g k` the next and
  * the previous host of the sidebar's tree.
  *

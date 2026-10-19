@@ -85,11 +85,11 @@ Feature: host installer files and provisioners
     And the host was not sent GET to "/api/agents/3/certs"
     When I type "domino_install" into the field "artifact-download-role"
     And I press the open dialog's "secret-pick" action
-    Then the catalog dialog "secret-pick" draws
+    Then the catalog dialog "pick-secret" draws
     And the host was sent GET to "/api/agents/3/certs" 1 times
     And the dialog table "secret-pick" lists 1 rows
     When I press "secret-pick-row" on the row "mirror-credentials" of the dialog table "secret-pick"
-    Then the catalog dialog "secret-pick" is gone
+    Then the catalog dialog "pick-secret" is gone
     When I submit the catalog dialog "artifact-download"
     Then the host was sent POST to "/api/agents/3/artifacts/download" carrying "role" as "domino_install"
     And the host was sent POST to "/api/agents/3/artifacts/download" carrying "resource_name" as "mirror-credentials"
@@ -105,21 +105,27 @@ Feature: host installer files and provisioners
     And I pick "fixpack" in the catalog dialog select "artifact-hcl-kind"
     And I type "Domino_14.5_FP1_Linux.tar" into the field "artifact-hcl-filename"
     And I press the open dialog's "secret-pick" action
-    Then the catalog dialog "secret-pick" draws
+    Then the catalog dialog "pick-secret" draws
     And the dialog table "secret-pick" lists 1 rows
     When I press "secret-pick-row" on the row "hcl-portal" of the dialog table "secret-pick"
-    Then the catalog dialog "secret-pick" is gone
+    Then the catalog dialog "pick-secret" is gone
     When I submit the catalog dialog "artifact-hcl"
     Then the host was sent POST to "/api/agents/3/artifacts/hcl-download" carrying "key_name" as "hcl-portal"
     And the host was sent POST to "/api/agents/3/artifacts/hcl-download" carrying "kind" as "fixpack"
 
-  Scenario: Installer files: Scan all sends the re-hash switch
+  Scenario: Installer files: Scan all is a split button, its press scanning without the re-hash and Scan all and re-hash in its menu scanning with it, no switch on the page
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    And I check the section switch "artifact-scan-verify"
-    And I press the section page's "artifact-scan" action
+    Then the section page draws one heading
+    And the section page draws no switch
+    When I press the section page's "artifact-scan" action
+    Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "verify_checksums" as "false"
+    And the page raised 1 success notice
+    When I dismiss the success notice
+    And I press the section page's "artifact-scan-menu" action
+    And I press the section page's "artifact-scan-rehash" action
     Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "verify_checksums" as "true"
     And the page raised 1 success notice
 

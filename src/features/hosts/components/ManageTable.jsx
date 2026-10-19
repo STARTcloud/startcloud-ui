@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import SubTable from '../../../components/common/SubTable';
+import SubTable, { selectionShape } from '../../../components/common/SubTable';
 import { sortShape } from '../../../utils/itemShape';
 import { nextSort, sortItems } from '../../../utils/sort';
 
@@ -32,9 +32,9 @@ const EMPTY_KEYS = {
 /**
  * One table of a page of a host: the `SubTable` over the rows the page's
  * search leaves, in the table's own sort, hidden columns and widths, the
- * row the URL's hash names brought into view, `data-table` naming the
- * table and `data-state` whether it is loading, failed, filtered, empty
- * or drawing rows.
+ * row the URL's hash names brought into view, the select column while
+ * `selection` is given, `data-table` naming the table and `data-state`
+ * whether it is loading, failed, filtered, empty or drawing rows.
  */
 const ManageTable = ({
   name,
@@ -47,6 +47,7 @@ const ManageTable = ({
   Detail = null,
   detailProps = NO_PROPS,
   expandedKeys = null,
+  selection = null,
   ctx,
   emptyKey,
   reading,
@@ -57,6 +58,7 @@ const ManageTable = ({
   return (
     <div data-table={name} data-state={state}>
       <SubTable
+        selection={selection}
         columns={columns}
         rows={table.rows}
         rowKey={rowKey}
@@ -98,6 +100,7 @@ ManageTable.propTypes = {
   Detail: PropTypes.elementType,
   detailProps: PropTypes.object,
   expandedKeys: PropTypes.instanceOf(Set),
+  selection: selectionShape,
   ctx: PropTypes.object.isRequired,
   emptyKey: PropTypes.string.isRequired,
   reading: PropTypes.shape({

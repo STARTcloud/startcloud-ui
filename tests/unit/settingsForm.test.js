@@ -137,6 +137,19 @@ describe('changesOf', () => {
     ).toBe('machineEdit.machineSettings.complexCpuTopologyRequired');
   });
 
+  it('seeds the retention policy from the configuration and sends it as snapshots while it changed', () => {
+    const { form, seed } = seededForm(
+      { zonename: 'web-1', snapshots: { type: 'simple', keep: 12 } },
+      knobCurrent
+    );
+    expect(form.snapshotPolicy.keep).toBe('12');
+    expect(changesOf({ form, seed, isUtm: false, server: bhyve, knobCurrent }).changes).toBeNull();
+    const cleared = { ...form, snapshotPolicy: { ...form.snapshotPolicy, type: '' } };
+    expect(
+      changesOf({ form: cleared, seed, isUtm: false, server: bhyve, knobCurrent }).changes
+    ).toEqual({ snapshots: null });
+  });
+
   it('merges a vbox passthrough over the hardware sections', () => {
     const { form, seed } = opened();
     const changed = {

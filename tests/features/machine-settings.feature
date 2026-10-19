@@ -15,6 +15,7 @@ Feature: machine settings
     And the settings tabs offer "usb"
     And the settings tabs offer "ports"
     And the settings tabs offer "advanced"
+    And the settings tabs offer "snapshots"
     And the settings tabs offer no "filesystems"
     And the settings tabs offer no "resources"
     And the settings tabs offer no "utm"
@@ -66,7 +67,7 @@ Feature: machine settings
     And the credential "sec-deploy" is the default
     And the credential "sec-deploy" is of kind "ssh_key"
     When I press the settings page's "credential-add" action
-    Then the "secret-pick" dialog is open
+    Then the "pick-secret" dialog is open
     And the open dialog is for the kind "credential" with the preset "machine_login"
     And the host was sent GET to "/api/agents/1/certs" 3 times
     When I press "secret-pick-row" on the row "domino-admin" of the dialog table "secret-pick"

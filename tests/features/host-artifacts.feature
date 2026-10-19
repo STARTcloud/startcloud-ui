@@ -102,7 +102,7 @@ Feature: host artifacts
     And the artifact transfers list 1 rows
     And I see "rocky-9.4.iso"
 
-  Scenario: Installer files: a write one request and one notice, Scan all sends the re-hash switch off and a row's Delete waits behind the delete dialog
+  Scenario: Installer files: a write one request and one notice, Scan all's own press sends no re-hash and a row's Delete waits behind the delete dialog
     Given the host answers the hosts fixture
     And the host answers the hosts-artifacts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"

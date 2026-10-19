@@ -8,7 +8,7 @@ import {
   removeHostCert,
   updateHostCert,
 } from '../api/agentSettings';
-import { pickKindsOf, secretRowsOf } from '../utils/agentSettings';
+import { pickKindsOf, secretRowsOf, storeRowsOf } from '../utils/agentSettings';
 import { secretKindsOf } from '../utils/provisionerFieldDsl';
 
 import { useManageRead, useManageSend } from './useHostManage';
@@ -51,15 +51,17 @@ export const readSecretRowsOf = (status, id, config) =>
   ).then(Object.fromEntries);
 
 /**
- * The secret rows of one host's store and their writes: the rows read
- * through `GET certs`, once for each kind the field's `kind` admits,
- * narrowed to `kind` and `profile`, as the host's
+ * The rows of one host's store and their writes: the rows read through
+ * `GET certs`, once for each kind the field's `kind` admits, narrowed to
+ * `kind` and `profile`, or every row of the store, all fourteen kinds,
+ * while `every` is set, as the host's
  * reads are, once as the caller draws, on the stream's fresh `ready`, on
  * `reset`, on the page's Refresh and after every write; `add(record)`
  * sends `POST certs` with the record's wire row under no organization,
  * `save(row, record)` sends `PUT certs/{id}`, `remove(row)` sends
  * `DELETE certs/{id}`, and `copy(record)` sends a copy of a record of
- * the browser's vault as `POST certs` with its own store's members
+ * another store, the browser's Vault or the serving backend's, as
+ * `POST certs` with its own store's members
  * cleared, so the copy reaches the host under no organization; each one
  * request and one notice, the rows read again on success, answering the
  * row the store answered or null.
@@ -68,9 +70,10 @@ export const readSecretRowsOf = (status, id, config) =>
  * @param {string} options.id - The registry id, or `self` on an agent role
  * @param {string} [options.kind] - The field's kind, empty for every secret kind
  * @param {string} [options.profile] - The profile wanted, empty for every row
+ * @param {boolean} [options.every] - Whether every row of the store is answered, unnarrowed
  * @returns {{ rows: Array<Object>, reading: Object, busy: boolean, add: Function, save: Function, remove: Function, copy: Function, task: Object|null, closeTask: Function }} The store
  */
-export const useHostSecrets = ({ id, kind = '', profile = '' }) => {
+export const useHostSecrets = ({ id, kind = '', profile = '', every = false }) => {
   const status = useStatus();
   const reading = useManageRead(
     useCallback(() => readSecretRows(status, id, kind), [status, id, kind]),
@@ -125,7 +128,7 @@ export const useHostSecrets = ({ id, kind = '', profile = '' }) => {
   const copy = useCallback(record => add({ ...record, ...DETACHED }), [add]);
 
   return {
-    rows: secretRowsOf(reading.data, kind, profile),
+    rows: every ? storeRowsOf(reading.data) : secretRowsOf(reading.data, kind, profile),
     reading,
     busy,
     add,

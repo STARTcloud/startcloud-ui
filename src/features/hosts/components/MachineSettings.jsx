@@ -38,6 +38,7 @@ import MachineSettingsStatus from './MachineSettingsStatus';
 import NetworkAdaptersEditor from './NetworkAdaptersEditor';
 import ResourceControlsEditor from './ResourceControlsEditor';
 import SecretPickModal from './SecretPickModal';
+import SnapshotPolicyTab from './SnapshotPolicyTab';
 import StorageDevicesEditor from './StorageDevicesEditor';
 import TaskDialog from './TaskDialog';
 import UsbPanel from './UsbPanel';
@@ -520,6 +521,13 @@ const KnobTabs = ({ page }) => {
       ) : null}
       {tab === 'utm' ? <UtmSection page={page} /> : null}
       {tab === 'advanced' ? <AdvancedTab page={page} /> : null}
+      {tab === 'snapshots' ? (
+        <SnapshotPolicyTab
+          form={form.snapshotPolicy}
+          disabled={formDisabled}
+          onChange={patch => tools.update('snapshotPolicy', current => ({ ...current, ...patch }))}
+        />
+      ) : null}
     </>
   );
 };
@@ -685,7 +693,10 @@ const useSettingsFeeds = ({ status, hostId, server }) => {
  * username, its use, its Default switch, one default a use, and Remove,
  * Add credential picking a password, SSH key or key pair row through the
  * secret pick dialog, sent whole as `credentials` while the list
- * changed, and Apply sending the changed members alone as one
+ * changed, the Snapshots tab while `snapshots` offers it, the retention
+ * policy of `SnapshotPolicyTab` seeded from the configuration's
+ * `snapshots` and sent as `snapshots` while it changed, and Apply
+ * sending the changed members alone as one
  * `PUT machines/{name}`, the modify wire of both agents, through
  * `useSettingsApply`. The form seeds itself again from the detail the
  * held copies answer after a write, and Reset seeds it again by hand.
@@ -701,6 +712,7 @@ const MachineSettings = ({
   credentials = null,
   pendingChanges = null,
   rawDetails = null,
+  snapshots = false,
   running,
   onDone,
 }) => {
@@ -794,10 +806,12 @@ const MachineSettings = ({
     setResourceChanges,
     onManageDisk: setManageDisk,
   };
-  const tabs = visibleTabs(isUtm, server).map(entry => ({
-    key: entry.id,
-    label: t(`machineEdit.machineSettings.tab.${entry.id}`),
-  }));
+  const tabs = [...visibleTabs(isUtm, server), ...(snapshots ? [{ id: 'snapshots' }] : [])].map(
+    entry => ({
+      key: entry.id,
+      label: t(`machineEdit.machineSettings.tab.${entry.id}`),
+    })
+  );
 
   return (
     <div data-settings={name}>
@@ -887,6 +901,7 @@ MachineSettings.propTypes = {
   credentials: PropTypes.arrayOf(PropTypes.object),
   pendingChanges: PropTypes.object,
   rawDetails: PropTypes.object,
+  snapshots: PropTypes.bool,
   running: PropTypes.bool.isRequired,
   onDone: PropTypes.func.isRequired,
 };

@@ -11,7 +11,20 @@ Feature: host-database
     And the "databases" table of the section page lists 1 rows
     And the database page draws its totals
     And the section page draws one heading
+    And the section page offers no "database-settings"
     And the host was sent GET to "/api/agents/1/database/stats" 1 times
+
+  Scenario: Database: Edit settings draws first in the heading's pane while the host's row names a db configuration file and opens the host's db configuration page
+    Given the host answers the hosts fixture
+    And the host answers the hosts-database fixture
+    And the host answers the hosts-database-config fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/agent/database"
+    Then the "databases" table of the section page lists 2 rows
+    And the section page draws one heading
+    And the heading pane of the section page reads "database-settings,database-vacuum,database-analyze,database-cleanup,refresh"
+    When I press the section page's "database-settings" action
+    Then the path is "/hosts/3/agent/config/db"
 
   Scenario: Database: Vacuum, Analyze and Cleanup each one request and one notice, the vacuum naming the space reclaimed, the statistics read again
     Given the host answers the hosts fixture

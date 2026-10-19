@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useSelection } from '../../../../hooks/useSelection';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { useHostMachines } from '../../hooks/useHostMachines';
 import { useHostManageData } from '../../hooks/useHostManageData';
@@ -13,25 +14,32 @@ import {
 } from '../../hooks/useHostManageSearch';
 import { hostHasFeature, hostHasHypervisor } from '../../utils/capabilities';
 import { matchesProcess } from '../../utils/manage';
-import ProcessManagement, { BatchKillButton } from '../ProcessManagement';
+import ProcessManagement, { BatchKillButton, PickedProcesses } from '../ProcessManagement';
 import { PROCESS_COLUMNS } from '../ProcessTable';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
 
 const namesOf = rows => [...new Set(rows.map(row => row.username).filter(Boolean))].sort();
 
+const pidOf = row => String(row.pid);
+
+const NO_PIDS = [];
+
 /**
  * The Processes page of a host: the heading counting the processes the
- * search leaves, Batch kill then Refresh in its pane, and
- * `ProcessManagement` under it, the processes read once for this page,
- * the zone, user and detail filters in the navbar's panel, the zones
- * the host's machines.
+ * search leaves, and in its pane, while rows are picked, "N selected",
+ * Clear selection and Kill selected, the batch kill dialog over the picked
+ * processes, then Batch kill, the dialog over a command pattern, and
+ * Refresh; `ProcessManagement` under it with the select column, the
+ * processes read once for this page, the zone, user and detail filters in
+ * the navbar's panel, the zones the host's machines. A kill of the picked
+ * processes clears the pick.
  */
 const ProcessesPage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
   const data = useHostManageData({ id, server, only: ['processes'] });
   const { machines } = useHostMachines(id, hostHasFeature(server, 'machines'));
-  const [batch, setBatch] = useState(false);
+  const [batch, setBatch] = useState(null);
   const zones = useMemo(() => zonesOf(machines), [machines]);
   const users = useMemo(() => namesOf(data.rows.processes), [data.rows.processes]);
   const groups = manageParamGroups({
@@ -70,21 +78,29 @@ const ProcessesPage = ({ id, server, context, section, onRefresh }) => {
     prefsPrefix: context.prefsPrefix,
     placeholderKey: 'hosts.manage.search',
   });
+  const { rows } = search.tables.processes;
+  const selection = useSelection(rows, { keyOf: pidOf, labelOf: pidOf });
+
+  const killPicked = () =>
+    setBatch({ pids: rows.filter(row => selection.selected.has(pidOf(row))).map(row => row.pid) });
+
+  const closeBatch = done => {
+    if (done && batch?.pids.length > 0) {
+      selection.clear();
+    }
+    setBatch(null);
+  };
 
   const actions = (
     <>
-      <BatchKillButton onClick={() => setBatch(true)} />
+      <PickedProcesses selection={selection} onKill={killPicked} />
+      <BatchKillButton onClick={() => setBatch({ pids: NO_PIDS })} />
       <RefreshButton onRefresh={onRefresh} />
     </>
   );
 
   return (
-    <SectionPane
-      section={section}
-      server={server}
-      count={search.tables.processes.rows.length}
-      actions={actions}
-    >
+    <SectionPane section={section} server={server} count={rows.length} actions={actions}>
       <ProcessManagement
         id={id}
         server={server}
@@ -93,8 +109,9 @@ const ProcessesPage = ({ id, server, context, section, onRefresh }) => {
         reading={data.reads.processes}
         filtering={search.filtering}
         zones={zones}
+        selection={selection.subtable}
         batch={batch}
-        onBatch={() => setBatch(false)}
+        onBatch={closeBatch}
       />
     </SectionPane>
   );

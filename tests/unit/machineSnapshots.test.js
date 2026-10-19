@@ -7,6 +7,7 @@ import {
   matchesSnapshot,
   modifyBody,
   policyBody,
+  policyChangeOf,
   policyFormOf,
   policyOf,
   snapshotDepth,
@@ -216,5 +217,14 @@ describe('the retention policy', () => {
     const form = policyFormOf(null);
     expect(policyBody({ ...form, type: 'simple' })).toEqual({ type: 'simple' });
     expect(policyBody({ ...form, type: 'rotation' })).toEqual({ type: 'rotation' });
+  });
+
+  it('is a member of the modify body only while it changed, null for the agent default', () => {
+    const seeded = policyFormOf({ type: 'simple', keep: 12 });
+    expect(policyChangeOf(seeded, seeded)).toBeUndefined();
+    expect(policyChangeOf({ ...seeded, keep: '6' }, seeded)).toEqual({ type: 'simple', keep: 6 });
+    expect(policyChangeOf({ ...seeded, type: '' }, seeded)).toBeNull();
+    const none = policyFormOf(null);
+    expect(policyChangeOf({ ...none, keep: '6' }, none)).toBeUndefined();
   });
 });

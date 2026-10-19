@@ -44,7 +44,8 @@ const answered = (epoch, patch) => current =>
  * `refresh`, the
  * serving agent alone on an agent role, narrowed to the chosen
  * organization with every answered row kept as `held`; the store of the
- * feature's command list and whether the Controls menu is open; and
+ * feature's command list, the store of the machine page's Refresh and
+ * whether the Controls menu is open; and
  * inside it the providers of the stats,
  * machine rows, machine detail, host applications, readings, series,
  * snapshots, restores and zone terminals, and the keeper of the console
@@ -58,6 +59,7 @@ const ServersProvider = ({ signedIn, organization, person = '', children }) => {
   const open = signedIn || authMethod(status) === 'none';
   const [state, setState] = useState(() => emptyFor(signedIn, 0));
   const [commands] = useState(createStore);
+  const [refresher] = useState(createStore);
   const [menuOpen, setMenuOpen] = useState(false);
   const flight = useRef(IDLE);
 
@@ -105,7 +107,7 @@ const ServersProvider = ({ signedIn, organization, person = '', children }) => {
   });
 
   const value = useMemo(() => {
-    const menu = { commands, menuOpen, setMenuOpen };
+    const menu = { commands, refresher, menuOpen, setMenuOpen };
     if (!server) {
       const servers = [selfServer(status)];
       return { servers, held: servers, loaded: true, failed: false, epoch: 0, read, ...menu };
@@ -119,7 +121,7 @@ const ServersProvider = ({ signedIn, organization, person = '', children }) => {
       read,
       ...menu,
     };
-  }, [server, status, state, read, organization, commands, menuOpen]);
+  }, [server, status, state, read, organization, commands, refresher, menuOpen]);
 
   return (
     <ServersContext.Provider value={value}>

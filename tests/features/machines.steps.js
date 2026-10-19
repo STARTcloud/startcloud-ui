@@ -276,16 +276,27 @@ When('I choose {string} in the field {string}', async ({ page }, value, id) => {
   await dialogOf(page).locator(`[id="${id}"]`).selectOption(value);
 });
 
+const policyTabOf = page => machineOf(page).locator('[data-tab-body="snapshots"]');
+
 When('I choose {string} as the retention policy', async ({ page }, value) => {
-  await panelOf(page, 'machine-snapshot-policy')
-    .locator('#snapshot-policy-type')
-    .selectOption(value);
+  await policyTabOf(page).locator('#snapshot-policy-type').selectOption(value);
 });
 
 When("I type {string} as the retention policy's {string}", async ({ page }, text, field) => {
-  await panelOf(page, 'machine-snapshot-policy')
-    .locator(`[id="snapshot-policy-${field}"]`)
-    .fill(text);
+  await policyTabOf(page).locator(`[id="snapshot-policy-${field}"]`).fill(text);
+});
+
+When('I pick the snapshot {string}', async ({ page }, name) => {
+  await snapshotsOf(page)
+    .locator('tbody tr')
+    .filter({ hasText: name })
+    .locator('td.col-select input')
+    .check();
+});
+
+Then('the machine page draws no heading row', async ({ page }) => {
+  await expect(panelOf(page, 'machine-info')).toBeVisible();
+  await expect(machineOf(page).locator('.section-heading')).toHaveCount(0);
 });
 
 When("I refresh the machine's {string} chart", async ({ page }, name) => {

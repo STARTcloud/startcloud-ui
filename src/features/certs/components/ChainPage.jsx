@@ -5,7 +5,6 @@ import { FaDownload, FaLink, FaXmark } from 'react-icons/fa6';
 
 import MethodList, { MethodRow } from '../../../components/common/MethodList';
 import SectionCard from '../../../components/common/SectionCard';
-import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFolds } from '../../../hooks/useFolds';
 import { pageContextShape } from '../../../utils/itemShape';
@@ -24,7 +23,7 @@ const labelOf = component => component.facts?.subject_dn || component.kind;
 const Loaded = ({ certs, onRemove }) => {
   const { t } = useTranslation();
   return (
-    <MethodList empty={t('certs.chain.none')} className="mb-3">
+    <MethodList empty={t('certs.chain.none')} className="mb-0">
       {certs.map(cert => {
         const remove = (
           <button
@@ -57,12 +56,14 @@ Loaded.propTypes = {
 };
 
 /**
- * The Chain page at `/certs/chain`: one line saying what the page does,
- * then the Input card taking certificates
- * one file or paste at a time, a duplicate and a key each ignored with
- * one notice line, the list of the certificates loaded with a remove
- * control each, Build drawing the chain the engine orders, the leaf
- * first, with a badge a hop, valid, self-signed, missing issuer or
+ * The Chain page at `/certs/chain`, the Convert page's three cards: one
+ * line saying what the page does, then the Input card taking
+ * certificates one file or paste at a time, a duplicate and a key each
+ * ignored with one notice line; the Components card counting the
+ * certificates loaded in its heading and listing them with a remove
+ * control each; and the Chain card, Build and Download fullchain as its
+ * button row, Build drawing under them the chain the engine orders, the
+ * leaf first, with a badge a hop, valid, self-signed, missing issuer or
  * invalid, and Download fullchain handing the browser the ordered PEM
  * named by the first file loaded.
  */
@@ -115,48 +116,60 @@ const ChainPage = ({ context }) => {
       engine.save(answer, fileStemOf(certs[0].source), 'fullchain');
     });
 
-  const actions = (
-    <>
-      <button
-        type="button"
-        className="btn btn-sm btn-primary"
-        data-action="build-chain"
-        disabled={engine.busy || certs.length === 0}
-        onClick={build}
-      >
-        <FaLink className="me-1" aria-hidden="true" />
-        {t('certs.chain.build')}
-      </button>
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary"
-        data-action="download-fullchain"
-        disabled={engine.busy || certs.length === 0}
-        onClick={download}
-      >
-        <FaDownload className="me-1" aria-hidden="true" />
-        {t('certs.convert.fullchain')}
-      </button>
-    </>
-  );
+  const held = engine.busy || certs.length === 0;
 
   return (
     <div className="list row" data-page="certs-chain">
       <p className="text-body-secondary">{t('certs.chain.about')}</p>
       <div>
-        <SectionCard title={t('certs.chain.input')} {...foldOf(folds, 'input')}>
+        <SectionCard
+          title={t('certs.chain.input')}
+          id="certs-chain-input"
+          {...foldOf(folds, 'input')}
+        >
           <InputZone onDetected={detected} />
         </SectionCard>
-        <SectionHeading title={t('certs.chain.loaded')} count={certs.length} actions={actions} />
-        <Loaded certs={certs} onRemove={remove} />
-        {chain ? (
-          <>
-            <SectionHeading title={t('certs.chain.built')} />
-            <div data-list="chain">
+        <SectionCard
+          title={t('certs.chain.loaded')}
+          badge={<span className="badge text-bg-secondary rounded-pill">{certs.length}</span>}
+          id="certs-chain-components"
+          {...foldOf(folds, 'components')}
+        >
+          <Loaded certs={certs} onRemove={remove} />
+        </SectionCard>
+        <SectionCard
+          title={t('certs.sidebar.chain')}
+          id="certs-chain-chain"
+          {...foldOf(folds, 'chain')}
+        >
+          <div className="d-flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="btn btn-primary"
+              data-action="build-chain"
+              disabled={held}
+              onClick={build}
+            >
+              <FaLink className="me-1" aria-hidden="true" />
+              {t('certs.chain.build')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              data-action="download-fullchain"
+              disabled={held}
+              onClick={download}
+            >
+              <FaDownload className="me-1" aria-hidden="true" />
+              {t('certs.convert.fullchain')}
+            </button>
+          </div>
+          {chain ? (
+            <div className="mt-3" data-list="chain">
               <ChainView chain={chain} labels={certs.map(labelOf)} />
             </div>
-          </>
-        ) : null}
+          ) : null}
+        </SectionCard>
       </div>
     </div>
   );

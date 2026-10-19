@@ -442,13 +442,15 @@ the language, the mode, the motion, the theme, the time zone, the region,
 the sign-in approval channel and the PIN of the write path above, and
 under it one card a feature of the host, named for that feature, each a
 browser preference kept in the browser alone and never sent to a host,
-drawn editable under a read-only record too:
+drawn editable under a read-only record too; every card is one form
+ending in one Save preferences, a primary submit at the form's bottom
+left, because a person who learned one card's Save has learned them all:
 
-| Card         | Host lists                        | Field                                 | Browser key   | Read by                                                                                                                                                          |
-| ------------ | --------------------------------- | ------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Certificates | `certs`                           | Expiry threshold in days              | `certs-vault` | the vault's Expiring                                                                                                                                             |
-| Certificates | `certs-store`, a person signed in | Sync, one switch a kind in a row grid | `certs-vault` | the mirror, its own Save sending every unsent record of the kinds newly checked to the active organization, or to the person's own store on the host without one |
-| Hosts        | `hosts`                           | Default domain for new machines       | `hosts_prefs` | the create wizard, a bare name taking it before the host's own rows                                                                                              |
+| Card         | Host lists                        | Field                                                                                     | Browser key   | Read by                                                                                                                                                                               |
+| ------------ | --------------------------------- | ----------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Certificates | `certs`                           | Expiry threshold in days                                                                  | `certs-vault` | the vault's Expiring                                                                                                                                                                  |
+| Certificates | `certs-store`, a person signed in | Sync to the backend, one switch a destination keyed by its role name, on until turned off | `certs-vault` | the mirror, every kind sent while the destination is on, the card's Save sending every unsent record to the active organization, or to the person's own store on the host without one |
+| Hosts        | `hosts`                           | Default domain for new machines                                                           | `hosts_prefs` | the create wizard, a bare name taking it before the host's own rows                                                                                                                   |
 
 ---
 

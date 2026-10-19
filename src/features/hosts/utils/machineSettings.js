@@ -58,7 +58,13 @@ export const TABS = [
 
 export const CREDENTIAL_USES = ['ssh', 'rdp', 'console', 'vagrant'];
 
-export const IMMEDIATE_KEYS = ['boot_priority', 'consoleport', 'consolehost', 'credentials'];
+export const IMMEDIATE_KEYS = [
+  'boot_priority',
+  'consoleport',
+  'consolehost',
+  'credentials',
+  'snapshots',
+];
 
 let credentialKeySeq = 0;
 

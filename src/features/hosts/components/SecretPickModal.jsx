@@ -1,36 +1,36 @@
 import PropTypes from 'prop-types';
-import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaArrowsRotate, FaPlus, FaXmark } from 'react-icons/fa6';
 
 import { useStatus } from '../../../contexts/StatusContext';
+import { PickSecretModal } from '../../certs';
 import { useHostSecrets } from '../hooks/useHostSecrets';
+import { pickKindsOf } from '../utils/agentSettings';
+import { hostLabel, isServerRole } from '../utils/hosts';
 
 import SecretOpeners from './SecretOpeners';
-import SecretRowsList from './SecretRowsList';
 import TaskDialog from './TaskDialog';
 
-const PickActions = ({ row, busy, onPick }) => {
-  const { t } = useTranslation();
-  return (
-    <button
-      type="button"
-      className="btn btn-sm btn-primary"
-      data-action="secret-pick-row"
-      data-secret-kind={row.kind}
-      disabled={busy}
-      onClick={() => onPick(row)}
-    >
-      {t('provisioning.provisioningRolesTab.pickRow')}
-    </button>
-  );
-};
-
-PickActions.propTypes = {
-  row: PropTypes.object.isRequired,
-  busy: PropTypes.bool.isRequired,
-  onPick: PropTypes.func.isRequired,
-};
+/**
+ * The host side of the Pick secret dialog: the dialog's host store as
+ * `{ label, rows, loaded, failed, message, served }` over one host
+ * store's reading, its label the host's own, `served` true off the
+ * server role, where the host's store is the serving backend's.
+ *
+ * @param {Object} store - The store of `useHostSecrets`
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {Object|null} server - The host's registry row
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Object} The host store
+ */
+export const pickHostOf = (store, status, server, id) => ({
+  label: server ? hostLabel(server) : status.hostname || id,
+  rows: store.rows,
+  loaded: store.reading.loaded,
+  failed: Boolean(store.reading.failed),
+  message: store.reading.message || '',
+  served: !isServerRole(status),
+});
 
 /**
  * One picked secret as a row, the shape of the artifact pick row: the
@@ -98,17 +98,17 @@ SecretPickRow.propTypes = {
 };
 
 /**
- * The dialog that picks one row of a host's store for a `secret` field:
- * the Vault's table over the rows `GET certs?kind=` answers for each kind
- * the field's `kind` admits, a `certificate` field the certificate and
- * authority rows and a `key` field the key and SSH certificate rows,
- * read as the dialog opens, with the search, the pills and the cards
- * toggle, Add on a secret kind opening the secret record form seeded
- * with the kind and `profile` and writing `POST certs`, Copy from Vault
- * writing a browser record of the admitted kinds the same way, each
- * landing a row the store is read again for, and Pick on a row handing
- * it to `onPick`. `host` is `{ status, hostId }`; `data-dialog` is
- * `secret-pick`.
+ * Pick secret for a `secret` field or a machine's credential: the Pick
+ * secret dialog over the host's store read as `GET certs?kind=` for each
+ * kind the field's `kind` admits, a `certificate` field the certificate
+ * and authority rows and a `key` field the key and SSH certificate rows,
+ * read as the dialog opens, Add on a secret kind opening the secret
+ * record form seeded with the kind and `profile` and writing
+ * `POST certs`, a row picked from the Vault or the serving backend's
+ * store written to the host's store the same way, under no organization,
+ * and the host store's row handed to `onPick`. `host` is
+ * `{ status, hostId, server }`; the dialog carries `data-kind` and
+ * `data-profile`.
  */
 const SecretPickModal = ({
   kind,
@@ -119,52 +119,25 @@ const SecretPickModal = ({
   onPick,
   onClose,
 }) => {
-  const { t } = useTranslation();
   const status = useStatus();
   const { hostId: id } = host;
   const store = useHostSecrets({ id, kind, profile });
   const busy = disabled || store.busy;
-  const openers = (
-    <SecretOpeners
-      kind={kind}
-      profile={profile}
-      busy={busy}
-      prefsKey="table_prefs_secret_pick_vault"
-      onAdd={store.add}
-      onCopy={store.copy}
-    />
-  );
+  const openers = <SecretOpeners kind={kind} profile={profile} busy={busy} onAdd={store.add} />;
   return (
     <>
-      <Modal show onHide={onClose} size="lg" scrollable>
-        <div data-dialog="secret-pick" data-kind={kind} data-profile={profile}>
-          <Modal.Header closeButton>
-            <Modal.Title as="h5">{title}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {store.reading.failed ? (
-              <div className="alert alert-danger py-2" role="alert" data-note="secrets-failed">
-                {t('agentSettings.agentSecretsTab.failedLoadSecrets', {
-                  message: store.reading.message,
-                })}
-              </div>
-            ) : null}
-            <SecretRowsList
-              name="secret-pick"
-              rows={store.rows}
-              loaded={store.reading.loaded}
-              RowActions={PickActions}
-              actionsProps={{ busy, onPick }}
-              openers={openers}
-            />
-          </Modal.Body>
-          <Modal.Footer>
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              {t('pages.confirm.cancel')}
-            </button>
-          </Modal.Footer>
-        </div>
-      </Modal>
+      <PickSecretModal
+        kinds={pickKindsOf(kind)}
+        profile={profile}
+        title={title}
+        host={pickHostOf(store, status, host.server || null, id)}
+        busy={busy}
+        openers={openers}
+        attributes={{ 'data-kind': kind, 'data-profile': profile }}
+        onPick={onPick}
+        onCopy={store.copy}
+        onClose={onClose}
+      />
       {store.task ? (
         <TaskDialog status={status} id={id} task={store.task.row} onHide={store.closeTask} />
       ) : null}

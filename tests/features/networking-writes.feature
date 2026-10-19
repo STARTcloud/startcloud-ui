@@ -487,6 +487,7 @@ Feature: networking writes
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/topology"
     Then the networking page draws the "topology" section
+    And the section page draws one heading
     And the topology draws 3 consumers
     And the topology draws the consumer "web-1"
     And the topology draws the consumer "global"

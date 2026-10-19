@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import NotAvailableStub from '../../../components/common/NotAvailableStub';
 import { useStatus } from '../../../contexts/StatusContext';
 import { pageContextShape } from '../../../utils/itemShape';
 import { useMachineRow } from '../hooks/useHostMachines';
@@ -11,6 +12,7 @@ import { useMachineDetail } from '../hooks/useMachineDetail';
 import { hostHasFeature } from '../utils/capabilities';
 import { isRunning } from '../utils/hosts';
 import { configurationOf } from '../utils/machines';
+import { machineToolGates } from '../utils/machineTools';
 import { canCreateMachines } from '../utils/permissions';
 
 import MachineSettings from './MachineSettings';
@@ -22,7 +24,10 @@ import MachineSettings from './MachineSettings';
  * hosts feature's hooks hold, handed to `MachineSettings`, and after a
  * write the machine's row, its detail and the host's stats are read
  * again once. It draws behind `machine-modify` for a person who may
- * create machines, once the detail answered.
+ * create machines, the not-available stub naming that token for anyone
+ * else, once the detail answered, the Snapshots tab offered by
+ * `machineToolGates`' `policy`: `machine-snapshots`, never of a machine
+ * on UTM.
  */
 const MachineSettingsView = ({ id, name, context }) => {
   const { t } = useTranslation();
@@ -31,12 +36,15 @@ const MachineSettingsView = ({ id, name, context }) => {
   const { stats, refresh: refreshStats } = useHostStats(id);
   const row = useMachineRow(id, name);
   const answer = useMachineDetail(id, name);
-  const offered = hostHasFeature(server, 'machine-modify') && canCreateMachines(context.user?.role);
+  const role = context.user?.role;
+  const offered = hostHasFeature(server, 'machine-modify') && canCreateMachines(role);
   const { detail } = answer;
   const configuration = useMemo(() => configurationOf(detail), [detail]);
 
   if (!offered) {
-    return null;
+    return (
+      <NotAvailableStub title={t('navbar.contextTabs.settings')} tokenLabel="machine-modify" />
+    );
   }
   if (!detail) {
     return answer.loaded ? null : <div data-view="machine-settings">{t('pages.loading')}</div>;
@@ -61,6 +69,7 @@ const MachineSettingsView = ({ id, name, context }) => {
         credentials={detail.credentials ?? null}
         pendingChanges={detail.pending_changes || null}
         rawDetails={detail}
+        snapshots={machineToolGates({ server, machine: row.machine, role }).policy}
         running={isRunning(stats, name)}
         onDone={reread}
       />

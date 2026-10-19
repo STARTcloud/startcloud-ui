@@ -1,107 +1,19 @@
-import PropTypes from 'prop-types';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaCloudArrowDown, FaRotate } from 'react-icons/fa6';
+import { FaRotate } from 'react-icons/fa6';
 
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
-import { pickedOf } from '../../../components/common/VisibilityPicker';
-import { useNotify } from '../../../contexts/NoticeContext';
 import { useArrival } from '../../../hooks/useArrival';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
-import { useEventStream } from '../../../hooks/useEventStream';
-import { log } from '../../../lib/logger';
 import { pageContextShape } from '../../../utils/itemShape';
-import { fetchCerts } from '../api/certsStore';
+import { usePullToVault } from '../hooks/usePullToVault';
+import { useSharedRows } from '../hooks/useSharedRows';
 import { useVault } from '../hooks/useVault';
-import { nowOf, statusOf } from '../utils/records';
-import { recordOf, rowNotAfter } from '../utils/sync';
+import { nowOf } from '../utils/records';
 
-import { STORE_COLUMNS, matchesStoreRow } from './storeColumns';
-
-const rowStatus = (row, ctx) => statusOf(rowNotAfter(row), ctx.now, ctx.thresholdDays);
-
-const groupsOf = ctx => [
-  {
-    key: 'kind',
-    labelKey: 'certs.filter.kind',
-    values: row => [row.kind],
-    activeClass: 'bg-primary',
-    labelFor: (value, t) => t(`certs.kind.${value}`),
-  },
-  {
-    key: 'status',
-    labelKey: 'certs.filter.status',
-    values: row => (rowStatus(row, ctx) ? [rowStatus(row, ctx)] : []),
-    activeClass: 'bg-success',
-    labelFor: (value, t) => t(`certs.status.${value}`),
-  },
-  {
-    key: 'visibility',
-    labelKey: 'pages.table.visibility',
-    values: row => [pickedOf(row)],
-    activeClass: 'bg-info',
-    labelFor: (value, t) => t(`pages.status.${value}`),
-  },
-  {
-    key: 'organization',
-    labelKey: 'certs.filter.organization',
-    values: row => [row.organization],
-    activeClass: 'bg-secondary',
-    labelFor: value => value,
-  },
-];
-
-const PullAction = ({ row, held, onPull }) => {
-  const { t } = useTranslation();
-  return (
-    <button
-      type="button"
-      className="btn btn-sm btn-outline-primary"
-      data-action="pull"
-      onClick={() => onPull(row)}
-    >
-      <FaCloudArrowDown className="me-1" aria-hidden="true" />
-      {t(held.has(row.id) ? 'certs.shared.pullAgain' : 'certs.shared.pull')}
-    </button>
-  );
-};
-
-PullAction.propTypes = {
-  row: PropTypes.object.isRequired,
-  held: PropTypes.instanceOf(Set).isRequired,
-  onPull: PropTypes.func.isRequired,
-};
-
-const useSharedRows = organizations => {
-  const [state, setState] = useState({ rows: [], loaded: false, failed: false });
-  const names = organizations.map(organization => organization.name).join(',');
-
-  const read = useCallback(() => {
-    const list = names ? names.split(',') : [''];
-    Promise.all(list.map(name => fetchCerts(name).catch(() => [])))
-      .then(answers => {
-        const seen = new Set();
-        const rows = answers
-          .flat()
-          .filter(row => Array.isArray(answers) && row && !seen.has(row.id) && seen.add(row.id));
-        setState({ rows, loaded: true, failed: false });
-      })
-      .catch(error => {
-        log.api.error('Error fetching shared certificates', { error: error.message });
-        setState(current => ({ ...current, loaded: true, failed: true }));
-      });
-  }, [names]);
-
-  useEffect(() => {
-    read();
-  }, [read]);
-
-  useEventStream('cert-updated', () => read());
-  useEventStream('cert-removed', () => read());
-
-  return { ...state, read };
-};
+import PullAction from './PullAction';
+import { STORE_COLUMNS, matchesStoreRow, storeFilterGroupsOf } from './storeColumns';
 
 const groupRows = (organizations, rows) =>
   organizations.length > 0
@@ -126,9 +38,9 @@ const groupRows = (organizations, rows) =>
  */
 const SharedPage = ({ context }) => {
   const { t, i18n } = useTranslation();
-  const notify = useNotify();
   const vault = useVault();
   const shared = useSharedRows(vault.organizations);
+  const puller = usePullToVault();
   const [collapsed, setCollapsed] = useState({});
   const thresholdDays = vault.preferences.threshold_days;
   const ctx = { ...context, t, language: i18n.language, now: nowOf(), thresholdDays };
@@ -139,23 +51,13 @@ const SharedPage = ({ context }) => {
     columns: STORE_COLUMNS,
     ctx,
     prefsKey: `${context.prefsPrefix}_certs_shared`,
-    filterGroups: groupsOf(ctx),
+    filterGroups: storeFilterGroupsOf(ctx),
   });
   const arrival = useArrival(search.rows);
-  const held = new Set(vault.records.map(record => record.remote_id).filter(Boolean));
 
   useEffect(() => {
     document.title = `${t('certs.sidebar.shared')} · ${context.appName}`;
   }, [context.appName, t]);
-
-  const pull = row => {
-    const record = recordOf(row);
-    const existing = vault.records.find(entry => entry.remote_id === row.id) || null;
-    const write = existing
-      ? vault.update(existing, { ...record, id: existing.id }, { source: 'sync' })
-      : vault.add(record, { source: 'sync' });
-    write.then(() => notify('success', t('certs.notice.pulled', { name: row.name })));
-  };
 
   const refresh = (
     <button
@@ -193,7 +95,7 @@ const SharedPage = ({ context }) => {
         rowRef={arrival.ref}
         rowProp="row"
         RowActions={PullAction}
-        actionsProps={{ held, onPull: pull }}
+        actionsProps={{ held: puller.held, onPull: puller.pull }}
         sort={search.sort}
         onSort={search.setSort}
         hiddenColumns={search.hiddenColumns}

@@ -166,6 +166,22 @@ Feature: machines
     And the machine page draws no "machine-hardware" panel
     And the machine page draws no "machine-tags-notes" panel
 
+  Scenario: Machine page: the body starts under the crumbs with no heading row, and the Controls menu carries the power verbs, the console doors and Refresh, which reads the machine again
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1"
+    Then the machine page draws the "machine-info" panel
+    And the machine page draws no heading row
+    And the machine page offers no "shutdown"
+    When I click "Machine controls"
+    Then the Controls menu offers "refresh"
+    And the Controls menu offers "console-vnc"
+    When I press the Controls menu's "refresh" row
+    Then the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
+    And the host was sent GET to "/api/agents/1/machines" 2 times
+
   Scenario: Machine page: the read surfaces by what the agent answers, a machine the host does not have draws the placard saying so and no surface
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
@@ -198,7 +214,8 @@ Feature: machines
     And the screenshot was read at "/api/machines/dev-1/vnc/screenshot" 1 times
     When I press the machine page's "console-screenshot" action
     Then the screenshot was read at "/api/machines/dev-1/vnc/screenshot" 2 times
-    When I click "Refresh"
+    When I click "Machine controls"
+    And I press the Controls menu's "refresh" row
     Then the screenshot was read at "/api/machines/dev-1/vnc/screenshot" at least 3 times
     And the host was sent GET to "/api/machines/dev-1" 2 times
     And the host was sent GET to "/api/machines/dev-1/guest-properties" 2 times
@@ -288,7 +305,8 @@ Feature: machines
     And the host was not sent GET to "/api/agents/1/monitoring/zones/usage"
     When I refresh the machine's "cpu" chart
     Then the host was sent GET to "/api/agents/1/monitoring/machines/usage" 2 times
-    When I click "Refresh"
+    When I click "Machine controls"
+    And I press the Controls menu's "refresh" row
     Then the host was sent GET to "/api/agents/1/monitoring/machines/usage" 3 times
 
   Scenario: Machine page: the charts behind `monitoring` by the host's hypervisor, a guest without the additions draws the note in the memory chart's place and no point for a rate the first sample carries as null
@@ -345,7 +363,6 @@ Feature: machines
     And the machine column draws no "snapshots" row
     And the machine page draws no "cpu" chart
     And the machine page draws no "machine-snapshots" panel
-    And the machine page draws no "machine-snapshot-policy" panel
     And the host was not sent GET to "/api/agents/1/monitoring/machines/usage"
     And the host was not sent GET to "/api/agents/1/machines/dev-1/snapshots"
     When I click "Machine controls"
@@ -406,7 +423,6 @@ Feature: machines
     When I open "/hosts/1/machines/dev-1/snapshots"
     Then the snapshots list draws 2 rows
     And the snapshots list offers no action
-    And the snapshots page draws no "machine-snapshot-policy" panel
     When I open "/hosts/1/machines/dev-1"
     And I click "Machine controls"
     Then the Controls menu offers no "tool-take"
@@ -420,7 +436,6 @@ Feature: machines
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/mac-1/snapshots"
     Then the snapshots say the machine must be off
-    And the snapshots page draws no "machine-snapshot-policy" panel
     And the host was not sent GET to "/api/agents/1/machines/mac-1/snapshots"
     When I open "/hosts/1/machines/mac-1"
     Then the machine reads "running"
@@ -437,6 +452,9 @@ Feature: machines
     And I send the open dialog
     Then the open dialog notes "problem"
     And the host was not sent POST to "/api/agents/1/machines/mac-1/snapshots"
+    When I open "/hosts/1/machines/mac-1/settings"
+    Then the settings page draws
+    And the settings tabs offer no "snapshots"
 
   Scenario: Machine page: a write one request and one notice, Take snapshot sends the name alone, reads the held copies again once and opens the task
     Given the host answers the hosts fixture
@@ -515,6 +533,24 @@ Feature: machines
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/1/machines/dev-1/snapshots" 2 times
 
+  Scenario: Machine page: a write one request a row and one notice, two picked snapshots are deleted together behind the typed confirmation and the rows are read again once
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-tools fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/snapshots"
+    Then the machine page offers no "bulk-delete"
+    When I pick the snapshot "clean-install"
+    And I pick the snapshot "before-upgrade"
+    And I press the machine page's "bulk-delete" action
+    Then the host was not sent DELETE to "/api/agents/1/machines/dev-1/snapshots/before-upgrade"
+    When I confirm the open dialog
+    Then the host was sent DELETE to "/api/agents/1/machines/dev-1/snapshots/clean-install" 1 times
+    And the host was sent DELETE to "/api/agents/1/machines/dev-1/snapshots/before-upgrade" 1 times
+    And the page raised 1 success notice
+    And the host was sent GET to "/api/agents/1/machines/dev-1/snapshots" 2 times
+    And the machine page offers no "bulk-delete"
+
   Scenario: Machine page: a write one request and one notice, the restore of a machine that is off waits behind the typed confirmation on a zone
     Given the host answers the zones fixture
     And the host answers the zones-machines fixture
@@ -546,36 +582,35 @@ Feature: machines
     Then the host was sent POST to "/api/agents/1/machines/dev-2/snapshots/nightly/restore" 1 times
     And the host was sent POST to "/api/agents/1/machines/dev-2/start" at least 1 times
 
-  Scenario: Machine page: a write one request and one notice, the retention policy sends the numbers of its kind alone and Clear override sends null
+  Scenario: Machine page: a write one request and one notice, the retention policy is the Settings page's Snapshots tab and Apply sends the numbers of its kind alone at once while the machine runs
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-tools fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/machines/dev-1/snapshots"
-    Then the machine page draws the "machine-snapshot-policy" panel
-    And the machine's "policy-apply" action is held
-    When I choose "simple" as the retention policy
+    When I open "/hosts/1/machines/dev-1/settings"
+    And I pick the settings tab "snapshots"
+    And I choose "simple" as the retention policy
     And I type "12" as the retention policy's "keep"
-    And I press the machine page's "policy-apply" action
+    And I press the settings page's "apply-settings" action
     Then the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "simple" at "/snapshots/type"
     And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "12" at "/snapshots/keep"
     And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying nothing at "/snapshots/tiers"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying nothing at "/vcpus"
     And the host was sent PUT to "/api/agents/1/machines/dev-1" 1 times
+    And the settings page notes no "running-choice"
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
-    When I press the machine page's "policy-clear" action
-    Then the host was sent PUT to "/api/agents/1/machines/dev-1" carrying null at "/snapshots"
-    And the host was sent PUT to "/api/agents/1/machines/dev-1" 2 times
 
   Scenario: Machine page: a write one request and one notice, the retention policy of a zone is written at the agent's own /api path
     Given the host answers the zones fixture
     And the host answers the zones-machines fixture
     And the host answers the zones-tools fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/self/machines/web-1/snapshots"
+    When I open "/hosts/self/machines/web-1/settings"
+    And I pick the settings tab "snapshots"
     And I choose "rotation" as the retention policy
     And I type "6" as the retention policy's "hourly"
-    And I press the machine page's "policy-apply" action
+    And I press the settings page's "apply-settings" action
     Then the host was sent PUT to "/api/machines/web-1" carrying "rotation" at "/snapshots/type"
     And the host was sent PUT to "/api/machines/web-1" carrying "6" at "/snapshots/tiers/hourly/keep"
     And the host was sent PUT to "/api/machines/web-1" carrying nothing at "/snapshots/tiers/daily"
@@ -1149,7 +1184,7 @@ Feature: machines
     Then the path is "/hosts/1/machines/dev-1/snapshots"
     And the machine row "snapshots" is the active one
     And the machine page draws the "machine-snapshots" panel
-    And the machine page draws the "machine-snapshot-policy" panel
+    And the snapshots page draws no "machine-snapshot-policy" panel
     And the snapshots page draws no "machine-info" panel
     And the host was sent GET to "/api/agents/1/machines/dev-1/snapshots" 1 times
     And the host was sent GET to "/api/agents/1/machines/dev-1" 1 times

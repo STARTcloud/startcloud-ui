@@ -1,17 +1,21 @@
 import { lazy } from 'react';
 
 export { default as CertsPreferencesCard } from './components/CertsPreferencesCard';
+export { default as PickSecretModal } from './components/PickSecretModal';
+export { default as PullAction } from './components/PullAction';
 export { default as SecretRecordModal } from './components/SecretRecordModal';
 export {
   SECRET_STORE_COLUMNS,
   SECRET_STORE_FILTERS,
+  STORE_COLUMNS,
   matchesStoreRow,
+  storeFilterGroupsOf,
 } from './components/storeColumns';
-export { default as VaultPickModal } from './components/VaultPickModal';
+export { usePullToVault } from './hooks/usePullToVault';
 export { default as VaultProvider } from './hooks/useVault';
 export { useVault } from './hooks/useVault';
 export { sidebar } from './sidebar';
-export { DER_KINDS, SECRET_KINDS, newRecord, nowOf } from './utils/records';
+export { DER_KINDS, SECRET_KINDS, isSecretKind, newRecord, nowOf } from './utils/records';
 export { profileOf } from './utils/secretProfiles';
 export { DETACHED, recordOf, rowOf } from './utils/sync';
 

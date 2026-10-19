@@ -264,3 +264,20 @@ export const policyBody = form => ({
   ...(form.type !== 'none' && form.quiesce ? { quiesce: true } : {}),
   ...NUMBERS[form.type](form),
 });
+
+const wireOf = form => (form.type ? policyBody(form) : null);
+
+/**
+ * The `snapshots` member of `PUT machines/{name}` a policy form sends
+ * against the form it was seeded with: undefined while both send the
+ * same, null while the form follows the agent's policy, the policy of
+ * `policyBody` otherwise.
+ *
+ * @param {Object} form - The form of `policyFormOf`
+ * @param {Object} seeded - The form the detail seeded
+ * @returns {Object|null|undefined} The member, or undefined for none
+ */
+export const policyChangeOf = (form, seeded) => {
+  const next = wireOf(form);
+  return JSON.stringify(next) === JSON.stringify(wireOf(seeded)) ? undefined : next;
+};

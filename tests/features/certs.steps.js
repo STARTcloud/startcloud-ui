@@ -118,6 +118,48 @@ const duplicateIds = () => {
     .filter(id => id && (seen.has(id) || !seen.add(id)));
 };
 
+Given("the browser keeps the vault's sync to {string} off", async ({ page }, destination) => {
+  await page.addInitScript(key => {
+    const request = window.indexedDB.open('certs-vault', 1);
+    request.onupgradeneeded = () => {
+      const records = request.result.createObjectStore('records', { keyPath: 'id' });
+      records.createIndex('kind', 'kind');
+      records.createIndex('updated_at', 'updated_at');
+      request.result.createObjectStore('preferences');
+    };
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction('preferences', 'readwrite');
+      transaction.objectStore('preferences').put({ [key]: false }, 'sync');
+      transaction.oncomplete = () => db.close();
+    };
+  }, destination);
+});
+
+Then(
+  'the certs preferences draw one Save and {int} destination switch(es)',
+  async ({ page }, count) => {
+    const card = page.locator('[data-panel="certs-preferences"]');
+    await expect(card.locator('button[type="submit"]')).toHaveCount(1);
+    await expect(
+      card.locator('button[type="submit"][data-action="save-certs-preferences"]')
+    ).toBeVisible();
+    await expect(card.locator('[data-panel="certs-sync"] input[role="switch"]')).toHaveCount(count);
+  }
+);
+
+Then('the certs format slot {string} reads needed', async ({ page }, slot) => {
+  await expect(
+    certsPage(page).locator(`[data-list="certs-slots"] [data-slot="${slot}"]`)
+  ).toHaveAttribute('data-slot-state', 'needed');
+});
+
+Then('the certs format slot {string} reads loaded', async ({ page }, slot) => {
+  await expect(
+    certsPage(page).locator(`[data-list="certs-slots"] [data-slot="${slot}"]`)
+  ).toHaveAttribute('data-slot-state', 'loaded');
+});
+
 Given('the browser records its downloads', ({ page }) => {
   page.on('download', download => listOf(downloads, page).push(download.suggestedFilename()));
 });

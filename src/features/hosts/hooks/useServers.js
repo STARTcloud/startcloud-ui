@@ -12,6 +12,7 @@ const NO_PROVIDER = {
   epoch: 0,
   read: () => undefined,
   commands: null,
+  refresher: null,
 };
 
 const NO_PUBLISHED = { label: '', commands: [], disabled: true };
@@ -77,6 +78,46 @@ export const useControlCommandsPublish = published => {
     },
     [store]
   );
+};
+
+/**
+ * The DOM event the `.` shortcut raises on the document while the page
+ * draws no Refresh control, so a published Refresh runs.
+ */
+export const REFRESH_EVENT = 'hosts-refresh';
+
+/**
+ * Publishes the machine page's Refresh to the hosts feature's context
+ * while the page is mounted, so the Controls menu's Refresh row and the
+ * `.` shortcut's `hosts-refresh` event run the page's own reads.
+ *
+ * @param {Function} refresh - The page's Refresh
+ */
+export const useMachineRefreshPublish = refresh => {
+  const store = (useContext(ServersContext) || NO_PROVIDER).refresher;
+
+  useEffect(() => {
+    store?.replace(refresh);
+  });
+
+  useEffect(() => () => store?.replace(null), [store]);
+
+  useEffect(() => {
+    const run = () => store?.get()?.();
+    document.addEventListener(REFRESH_EVENT, run);
+    return () => document.removeEventListener(REFRESH_EVENT, run);
+  }, [store]);
+};
+
+/**
+ * The runner of the Refresh the machine page published, nothing while no
+ * machine page is mounted.
+ *
+ * @returns {Function} `refresh()`
+ */
+export const useMachineRefresh = () => {
+  const store = (useContext(ServersContext) || NO_PROVIDER).refresher;
+  return useCallback(() => store?.get()?.(), [store]);
 };
 
 /**

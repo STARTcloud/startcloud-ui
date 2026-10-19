@@ -807,11 +807,11 @@ Feature: machine create
     And the secret field "USER_SAFE_ID" names "sec-safe"
     And the host was sent GET to "/api/agents/1/certs" 2 times
     When I press the "secret-pick" action of the secret field "USER_SAFE_ID"
-    Then the "secret-pick" dialog is open
+    Then the "pick-secret" dialog is open
     And the host was sent GET to "/api/agents/1/certs" 3 times
     And the dialog table "secret-pick" lists 1 rows
     When I press "secret-pick-row" on the row "SAFE.ids" of the dialog table "secret-pick"
-    Then the "secret-pick" dialog is closed
+    Then the "pick-secret" dialog is closed
     And the secret field "USER_SAFE_ID" reads "picked"
     When I type "proxy.example.com" into the field "prov-field-PROXY_SERVER"
     And I send the open dialog
@@ -943,11 +943,11 @@ Feature: machine create
     And the secret field "INSTALLER_BEARER" reads "picked"
     And the secret field "INSTALLER_BEARER" names "sec-bearer"
     When I press the "secret-pick" action of the secret field "INSTALLER_BEARER"
-    Then the "secret-pick" dialog is open
+    Then the "pick-secret" dialog is open
     And the host was sent GET to "/api/agents/1/certs" 3 times
     And the dialog table "secret-pick" lists 1 rows
     When I press "secret-pick-row" on the row "installer-bearer" of the dialog table "secret-pick"
-    Then the "secret-pick" dialog is closed
+    Then the "pick-secret" dialog is closed
     And the secret field "INSTALLER_BEARER" names "installer-bearer"
     When I press the "secret-clear" action of the secret field "INSTALLER_BEARER"
     Then the secret field "INSTALLER_BEARER" reads "none"
@@ -976,7 +976,7 @@ Feature: machine create
     And I send the open dialog
     Then the wizard is on the step "provisioning"
     When I press the "secret-pick" action of the secret field "USER_SAFE_ID"
-    Then the "secret-pick" dialog is open
+    Then the "pick-secret" dialog is open
     When I press the open dialog's "secret-add" action
     Then the "secret-record" dialog is open
     And the open dialog scrolls its body within the viewport

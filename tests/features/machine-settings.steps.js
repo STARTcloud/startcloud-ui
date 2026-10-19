@@ -65,7 +65,7 @@ Then('the credential {string} is for the use {string}', async ({ page }, id, use
 Then(
   'the open dialog is for the kind {string} with the preset {string}',
   async ({ page }, kind, profile) => {
-    const dialog = dialogOf(page).locator('[data-dialog="secret-pick"]');
+    const dialog = dialogOf(page).locator('[data-dialog="pick-secret"]');
     await expect(dialog).toHaveAttribute('data-kind', kind);
     await expect(dialog).toHaveAttribute('data-profile', profile);
   }
@@ -80,7 +80,8 @@ Then('the settings page draws', async ({ page }) => {
 });
 
 Then('the page draws no settings view', async ({ page }) => {
-  await expect(page.locator('[data-page="machine"]')).toBeVisible();
+  await expect(page.locator('[data-nav="machine"]')).toBeVisible();
+  await expect(page.locator('[data-page="machine"]')).toBeAttached();
   await expect(viewOf(page)).toHaveCount(0);
 });
 

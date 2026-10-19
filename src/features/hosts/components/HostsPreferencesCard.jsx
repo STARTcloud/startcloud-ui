@@ -21,13 +21,12 @@ const DomainForm = ({ defaultDomain, onSave }) => {
 
   return (
     <form onSubmit={submit} noValidate>
-      <div className="row g-3 align-items-end">
+      <div className="row">
         <div className="col-md-4">
           <Field
             id="hosts-preferences-default_domain"
             label={t('hosts.preferences.defaultDomain')}
             hint={t('hosts.preferences.defaultDomainHint')}
-            className="mb-0"
           >
             {aria => (
               <input
@@ -40,12 +39,10 @@ const DomainForm = ({ defaultDomain, onSave }) => {
             )}
           </Field>
         </div>
-        <div className="col-auto">
-          <button type="submit" className="btn btn-primary" data-action="save-hosts-preferences">
-            {t('hosts.preferences.save')}
-          </button>
-        </div>
       </div>
+      <button type="submit" className="btn btn-primary" data-action="save-hosts-preferences">
+        {t('profile.preferences.save')}
+      </button>
     </form>
   );
 };
@@ -59,8 +56,9 @@ DomainForm.propTypes = {
  * The Hosts card of the Preferences section, drawn under the Preferences
  * card while the host lists `hosts`: the default domain for new machines
  * the create wizard's bare name takes before the host's own rows, kept in
- * the browser under `hosts_prefs` and never sent to a host, its fold
- * under `table_prefs_hosts_preferences`.
+ * the browser under `hosts_prefs` and never sent to a host, Save
+ * preferences at the form's foot, its fold under
+ * `table_prefs_hosts_preferences`.
  */
 const HostsPreferencesCard = ({ className = 'mt-3 mb-0' }) => {
   const { t } = useTranslation();

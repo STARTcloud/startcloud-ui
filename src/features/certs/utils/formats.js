@@ -205,6 +205,28 @@ export const formatsFor = kinds =>
   FORMATS.filter(format => kinds.length > 0 && kinds.every(kind => format.carries.includes(kind)));
 
 /**
+ * The slots a format's components fill, each the component kinds that
+ * fill it: a certificate, a root or an intermediate CA the certificate,
+ * a key in the clear or encrypted the key, the public key and the
+ * request.
+ */
+export const SLOTS = [
+  { id: 'certificate', kinds: ['certificate', 'ca', 'intermediate'] },
+  { id: 'key', kinds: ['key', 'encrypted_key'] },
+  { id: 'public_key', kinds: ['public_key'] },
+  { id: 'request', kinds: ['csr'] },
+];
+
+/**
+ * The slots a format carries, in `SLOTS` order, none for no format.
+ *
+ * @param {Object|null} format - The format
+ * @returns {Array<{ id: string, kinds: Array<string> }>} The slots
+ */
+export const slotsOf = format =>
+  format ? SLOTS.filter(slot => slot.kinds.some(kind => format.carries.includes(kind))) : [];
+
+/**
  * The components a format carries out of the ones given, the rest left
  * behind.
  *

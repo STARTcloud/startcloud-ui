@@ -44,14 +44,25 @@ Then('the agent route draws the host that did not answer', async ({ page }) => {
   await expect(frameOf(page)).toHaveCount(0);
 });
 
+const secretRowOf = (page, name) =>
+  frameOf(page).locator('[data-panel="secrets"] tbody tr').filter({ hasText: name }).first();
+
+const escaped = text => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+
 Then('the secret row {string} is of kind {string}', async ({ page }, name, kind) => {
-  await expect(
-    frameOf(page)
-      .locator('[data-panel="secrets"] tbody tr')
-      .filter({ hasText: name })
-      .first()
-      .locator('[data-secret-kind]')
-  ).toHaveAttribute('data-secret-kind', kind);
+  await expect(secretRowOf(page, name).locator('[data-secret-kind]')).toHaveAttribute(
+    'data-secret-kind',
+    kind
+  );
+});
+
+When('I toggle the filter pill of the kind of the secret row {string}', async ({ page }, name) => {
+  const label = (await secretRowOf(page, name).locator('td.col-kind').innerText()).trim();
+  await page
+    .locator('.navbar-search-panel .navbar-search-pills [role="button"]')
+    .filter({ hasText: new RegExp(`^${escaped(label)} \\(`, 'u') })
+    .first()
+    .click();
 });
 
 Then('the heading pane of the section page reads {string}', async ({ page }, names) => {
@@ -183,33 +194,37 @@ Then(
   }
 );
 
+const assetsOf = (page, tag) =>
+  frameOf(page).locator(`[data-panel="update-assets"][data-assets-of="${tag}"]`);
+
 When('I fold the assets of the release {string}', async ({ page }, tag) => {
-  await releaseOf(page, tag).locator('[data-panel="update-assets"] .section-card-chevron').click();
+  await assetsOf(page, tag).locator('.section-card-chevron').click();
 });
 
 Then('the assets of the release {string} are folded', async ({ page }, tag) => {
-  await expect(releaseOf(page, tag).locator('[data-panel="update-assets"]')).toHaveAttribute(
-    'data-folded',
-    'true'
-  );
+  await expect(assetsOf(page, tag)).toHaveAttribute('data-folded', 'true');
 });
 
 Then('the assets of the release {string} are open', async ({ page }, tag) => {
-  await expect(releaseOf(page, tag).locator('[data-panel="update-assets"]')).toHaveAttribute(
-    'data-folded',
-    'false'
-  );
+  await expect(assetsOf(page, tag)).toHaveAttribute('data-folded', 'false');
+});
+
+Then('the assets of the release {string} draw under the versions', async ({ page }, tag) => {
+  const side = frameOf(page).locator('.upd-side-card');
+  await expect(side.locator(`[data-panel="update-assets"][data-assets-of="${tag}"]`)).toBeVisible();
+  await expect(side.locator('.upd-foot-links + [data-panel="update-assets"]')).toHaveCount(1);
+  await expect(releaseOf(page, tag).locator('[data-panel="update-assets"]')).toHaveCount(0);
 });
 
 Then('the release {string} lists the asset {string}', async ({ page }, tag, name) => {
   await expect(
-    releaseOf(page, tag).locator('.upd-asset').filter({ hasText: name }).first()
+    assetsOf(page, tag).locator('.upd-asset').filter({ hasText: name }).first()
   ).toBeVisible();
 });
 
 Then('the release {string} shows the checksum {string}', async ({ page }, tag, checksum) => {
   await expect(
-    releaseOf(page, tag).locator(`.upd-asset-checksum[title="${checksum}"]`)
+    assetsOf(page, tag).locator(`.upd-asset-checksum[title="${checksum}"]`)
   ).toBeVisible();
 });
 

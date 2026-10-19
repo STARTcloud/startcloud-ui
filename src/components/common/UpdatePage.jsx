@@ -195,62 +195,6 @@ FootLink.propTypes = {
   Icon: PropTypes.elementType.isRequired,
 };
 
-const SideCard = ({ data, language }) => {
-  const { t } = useTranslation();
-  const published = String(data.release_date ?? '');
-  const release = httpsUrl(data.release_url);
-  const changelog = httpsUrl(data.changelog);
-  return (
-    <div className="card upd-side-card">
-      <div className="card-body">
-        <dl className="upd-side-rows">
-          <dt>{t('hosts.nav.updateCurrentVersion')}</dt>
-          <dd>
-            <code>{String(data.current_version ?? '')}</code>
-          </dd>
-          <dt>{t('hosts.nav.updateLatestVersion')}</dt>
-          <dd>
-            <code>{String(data.latest_version ?? '')}</code>
-          </dd>
-          {published ? (
-            <>
-              <dt>{t('hosts.nav.updatePublished')}</dt>
-              <dd>
-                <span title={absoluteTime(published, language)}>
-                  {formatRelativeTime(published, language)}
-                </span>
-              </dd>
-            </>
-          ) : null}
-        </dl>
-        {release || changelog ? (
-          <div className="upd-foot-links">
-            {release ? (
-              <FootLink
-                href={release}
-                label={t('hosts.nav.updateReleaseNotes')}
-                Icon={FaArrowUpRightFromSquare}
-              />
-            ) : null}
-            {changelog ? (
-              <FootLink
-                href={changelog}
-                label={t('hosts.nav.updateChangelog')}
-                Icon={FaListCheck}
-              />
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-};
-
-SideCard.propTypes = {
-  data: PropTypes.object.isRequired,
-  language: PropTypes.string.isRequired,
-};
-
 const AssetRow = ({ asset }) => {
   const url = httpsUrl(asset.url);
   return (
@@ -277,11 +221,11 @@ AssetRow.propTypes = {
   asset: assetShape.isRequired,
 };
 
-const Assets = ({ assets, foldId, folds }) => {
+const Assets = ({ assets, tag, foldId, folds }) => {
   const { t } = useTranslation();
   const folded = !folds.folded(foldId);
   return (
-    <div data-panel="update-assets" data-folded={folded}>
+    <div data-panel="update-assets" data-assets-of={tag} data-folded={folded}>
       <SectionCard
         title={t('hosts.nav.updateAssets')}
         badge={<span className="badge text-bg-secondary rounded-pill">{assets.length}</span>}
@@ -301,11 +245,78 @@ const Assets = ({ assets, foldId, folds }) => {
 
 Assets.propTypes = {
   assets: PropTypes.arrayOf(assetShape).isRequired,
+  tag: PropTypes.string.isRequired,
   foldId: PropTypes.string.isRequired,
   folds: foldsShape.isRequired,
 };
 
-const ReleaseCard = ({ release, folds, language }) => {
+const SideCard = ({ data, release = null, folds, language }) => {
+  const { t } = useTranslation();
+  const published = String(data.release_date ?? '');
+  const releaseUrl = httpsUrl(data.release_url);
+  const changelog = httpsUrl(data.changelog);
+  return (
+    <div className="card upd-side-card">
+      <div className="card-body">
+        <dl className="upd-side-rows">
+          <dt>{t('hosts.nav.updateCurrentVersion')}</dt>
+          <dd>
+            <code>{String(data.current_version ?? '')}</code>
+          </dd>
+          <dt>{t('hosts.nav.updateLatestVersion')}</dt>
+          <dd>
+            <code>{String(data.latest_version ?? '')}</code>
+          </dd>
+          {published ? (
+            <>
+              <dt>{t('hosts.nav.updatePublished')}</dt>
+              <dd>
+                <span title={absoluteTime(published, language)}>
+                  {formatRelativeTime(published, language)}
+                </span>
+              </dd>
+            </>
+          ) : null}
+        </dl>
+        {releaseUrl || changelog ? (
+          <div className="upd-foot-links">
+            {releaseUrl ? (
+              <FootLink
+                href={releaseUrl}
+                label={t('hosts.nav.updateReleaseNotes')}
+                Icon={FaArrowUpRightFromSquare}
+              />
+            ) : null}
+            {changelog ? (
+              <FootLink
+                href={changelog}
+                label={t('hosts.nav.updateChangelog')}
+                Icon={FaListCheck}
+              />
+            ) : null}
+          </div>
+        ) : null}
+        {release?.assets.length ? (
+          <Assets
+            assets={release.assets}
+            tag={release.tag}
+            foldId={`${ASSETS_OPEN}:${release.tag}`}
+            folds={folds}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+SideCard.propTypes = {
+  data: PropTypes.object.isRequired,
+  release: releaseShape,
+  folds: foldsShape.isRequired,
+  language: PropTypes.string.isRequired,
+};
+
+const ReleaseCard = ({ release, language }) => {
   const { t } = useTranslation();
   const url = httpsUrl(release.url);
   const title = release.name || release.tag;
@@ -356,9 +367,6 @@ const ReleaseCard = ({ release, folds, language }) => {
           </div>
         ) : null}
         {release.body ? <MarkdownText text={release.body} className="prose upd-notes" /> : null}
-        {release.assets.length ? (
-          <Assets assets={release.assets} foldId={`${ASSETS_OPEN}:${release.tag}`} folds={folds} />
-        ) : null}
       </div>
     </article>
   );
@@ -366,7 +374,6 @@ const ReleaseCard = ({ release, folds, language }) => {
 
 ReleaseCard.propTypes = {
   release: releaseShape.isRequired,
-  folds: foldsShape.isRequired,
   language: PropTypes.string.isRequired,
 };
 
@@ -414,20 +421,20 @@ UpdateButton.propTypes = {
  * Update behind the typed confirmation while one is, then Refresh in its
  * pane; under it two columns, stacked under the large breakpoint: at the
  * side a card with the current and the latest version, the published
- * date as a relative time with the absolute time in its tooltip, and the
+ * date as a relative time with the absolute time in its tooltip, the
  * release link and the changelog link as small text links, each drawn
- * only while the check carries its member; beside it the one release
+ * only while the check carries its member, and under them the release's
+ * Assets fold listing its assets, each a name link with its size and its
+ * sha256 where one is carried, folded until opened, the fold kept per tag
+ * under `prefsKey` like the page's other folds; beside it the one release
  * whose tag is the check's `latest_version`, the entry of `releases`
  * with that tag where the check lists them and the release the check's
  * own members name otherwise, a card with its name or its tag as the
  * title linking to its page where it names one, the tag beside a name,
  * the Pre-release badge on a pre-release and the Latest badge otherwise,
  * who released it and when as a relative time with the absolute time in
- * its tooltip, its body rendered as markdown with every link opening
- * its own tab, and its Assets fold listing the release's assets, each a
- * name link with its size and its sha256 where one is carried, folded
- * until opened, the fold kept per tag under `prefsKey` like the page's
- * other folds; no other release draws. A pre-release draws, and offers
+ * its tooltip, and its body rendered as markdown with every link opening
+ * its own tab; no other release draws. A pre-release draws, and offers
  * Update, only while the running version is itself a pre-release, one
  * carrying a `-` suffix; on a production version the page says the
  * host is current and draws no release.
@@ -553,12 +560,15 @@ const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefres
         {check.data ? (
           <div className="row g-3">
             <div className="col-lg-4 col-xl-3">
-              <SideCard data={check.data} language={i18n.language} />
+              <SideCard
+                data={check.data}
+                release={release}
+                folds={folds}
+                language={i18n.language}
+              />
             </div>
             <div className="col-lg-8 col-xl-9">
-              {release ? (
-                <ReleaseCard release={release} folds={folds} language={i18n.language} />
-              ) : null}
+              {release ? <ReleaseCard release={release} language={i18n.language} /> : null}
             </div>
           </div>
         ) : null}

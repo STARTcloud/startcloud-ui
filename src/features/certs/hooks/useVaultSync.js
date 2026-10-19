@@ -13,7 +13,19 @@ import { DETACHED, newerThan, recordOf, rowOf } from '../utils/sync';
 
 const SYNC = { source: 'sync' };
 
-const checkedKinds = sync => KINDS.filter(kind => Boolean(sync?.[kind]));
+const NO_KINDS = [];
+
+/**
+ * Whether the `sync` preference has the mirror to a destination on: on
+ * unless the person turned it off, so a person who never chose syncs.
+ *
+ * @param {Object|null} sync - The `sync` preference, `{ [destination]: boolean }`
+ * @param {string} destination - The backend's role name
+ * @returns {boolean} True while the mirror runs to the destination
+ */
+export const syncsTo = (sync, destination) => sync?.[destination] !== false;
+
+const checkedKinds = (sync, destination) => (syncsTo(sync, destination) ? KINDS : NO_KINDS);
 
 const failed = (what, error) => log.api.error(what, { error: error.message });
 
@@ -26,7 +38,9 @@ const mirrored = (record, kinds, user) =>
  * The mirror of the vault into the shared store, run while the host
  * lists `certs-store` and a person is signed in: every vault write of a
  * record carrying a `remote_id` the person manages (`canManageRecord`),
- * or of a kind the `sync` preference checks, is sent as a PUT or a POST
+ * or of any kind while the `sync` preference has the destination on, the
+ * backend's role name keying it and an absent key reading on, is sent as
+ * a PUT or a POST
  * to the organization given, or under no organization to the person's own
  * store on the host while none is given, a write on a pulled copy of another
  * creator's row staying local, one
@@ -44,9 +58,10 @@ const mirrored = (record, kinds, user) =>
  * @param {Object} options - The session's side
  * @param {string} options.organization - The organization the rows are sent to, empty for none
  * @param {Object|null} options.user - The session's user
+ * @param {string} options.destination - The serving backend's role name, the key of its `sync` switch
  * @returns {{ mirror: Function, pull: Function }} `mirror(kinds)` sends every unsent record of the kinds and pulls, answering how many sends were refused; `pull()` reads the rows of the organization, or of none
  */
-export const useVaultSync = ({ organization, user }) => {
+export const useVaultSync = ({ organization, user, destination }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const inflight = useRef(new Map());
@@ -151,12 +166,12 @@ export const useVaultSync = ({ organization, user }) => {
 
   useEffect(() => {
     vaultDb.readPreference('sync', {}).then(sync => {
-      kindsRef.current = checkedKinds(sync);
+      kindsRef.current = checkedKinds(sync, destination);
       pull();
     });
     return vaultDb.subscribe(event => {
       if (event.type === 'preference' && event.key === 'sync') {
-        kindsRef.current = checkedKinds(event.value);
+        kindsRef.current = checkedKinds(event.value, destination);
         return;
       }
       if (event.source === 'sync' || !event.record || event.type === 'removed') {
@@ -166,7 +181,7 @@ export const useVaultSync = ({ organization, user }) => {
         send(event.record);
       }
     });
-  }, [pull, send]);
+  }, [pull, send, destination]);
 
   useEventStream('ready', (data, resumed) => {
     if (data && !resumed) {

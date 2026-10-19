@@ -6,8 +6,9 @@ import SectionPane from '../SectionPane';
 
 /**
  * The Secrets page of a host, behind `certs-store`: `AgentSecretsTab`
- * draws the one heading row and the host store's secret rows under it,
- * its Reload the page's `onRefresh`.
+ * draws the one heading row and every row of the host's store under it,
+ * the six certificate kinds and the eight secret kinds, its Reload the
+ * page's `onRefresh`.
  */
 const SecretsPage = ({ id, server, context, section, onRefresh }) => (
   <SectionPane section={section} server={server} headed={false}>

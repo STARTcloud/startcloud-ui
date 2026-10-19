@@ -379,6 +379,7 @@ describe('buildUtmSection', () => {
 describe('immediateOnlyChanges', () => {
   it('is true for the keys an agent keeps at once and flag-only NIC entries', () => {
     expect(immediateOnlyChanges({ boot_priority: 50, credentials: [] })).toBe(true);
+    expect(immediateOnlyChanges({ snapshots: null })).toBe(true);
     expect(immediateOnlyChanges({ vagrant_user: 'x' })).toBe(false);
     expect(immediateOnlyChanges({ nics: [{ adapter: 1, remove_on_completion: true }] })).toBe(true);
     expect(immediateOnlyChanges({ nics: [{ adapter: 1, speed: 100 }] })).toBe(false);

@@ -185,37 +185,10 @@ const batchSignalLabel = (name, t) => {
   return name === 'KILL' ? `SIG${name} ${t('host.batchKillModal.force')}` : `SIG${name}`;
 };
 
-/**
- * Kill every process matching a command pattern, hyperweaver-ui's
- * dialog over the form dialog of the pages contract: the warning, the
- * pattern, the zone among the host's machines where the host lists
- * `machines`, the signal among the ones the host delivers and the
- * examples, and Kill processes as the danger action, held until a
- * pattern is typed, which sends `POST system/processes/batch-kill`.
- */
-export const BatchKillModal = ({ zones, signals, busy, onClose, onConfirm }) => {
+const PatternFields = ({ zones, pattern, setPattern, zone, setZone }) => {
   const { t } = useTranslation();
-  const [pattern, setPattern] = useState('');
-  const [zone, setZone] = useState('');
-  const [signal, setSignal] = useState('TERM');
   return (
-    <ToolFormDialog
-      dialog="process-batch-kill"
-      title={t('host.batchKillModal.title')}
-      submitKey="host.batchKillModal.killProcesses"
-      variant="danger"
-      disabled={!pattern.trim()}
-      busy={busy}
-      onClose={onClose}
-      onSubmit={() => onConfirm({ pattern: pattern.trim(), signal, zone })}
-    >
-      <div className="alert alert-danger" role="alert">
-        <p className="mb-1">
-          <strong>{t('host.batchKillModal.warningLabel')}</strong>{' '}
-          {t('host.batchKillModal.warningText')}
-        </p>
-        <p className="mb-0">{t('host.batchKillModal.warningDetail')}</p>
-      </div>
+    <>
       <h6 className="fw-bold">{t('host.batchKillModal.processSelection')}</h6>
       <div className="mb-3">
         <label className="form-label" htmlFor="batch-kill-pattern">
@@ -253,6 +226,89 @@ export const BatchKillModal = ({ zones, signals, busy, onClose, onConfirm }) => 
           <p className="form-text text-muted">{t('host.batchKillModal.zoneFilterHelp')}</p>
         </div>
       ) : null}
+    </>
+  );
+};
+
+PatternFields.propTypes = {
+  zones: PropTypes.arrayOf(PropTypes.string).isRequired,
+  pattern: PropTypes.string.isRequired,
+  setPattern: PropTypes.func.isRequired,
+  zone: PropTypes.string.isRequired,
+  setZone: PropTypes.func.isRequired,
+};
+
+const PatternExamples = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="alert alert-info mb-0" role="note">
+      <p className="mb-1">
+        <strong>{t('host.batchKillModal.patternExamples')}</strong>
+      </p>
+      <ul className="mb-0">
+        <li>
+          <code>apache</code> - {t('host.batchKillModal.exampleApache')}
+        </li>
+        <li>
+          <code>bhyve</code> - {t('host.batchKillModal.exampleBhyve')}
+        </li>
+        <li>
+          <code>java</code> - {t('host.batchKillModal.exampleJava')}
+        </li>
+        <li>
+          <code>python</code> - {t('host.batchKillModal.examplePython')}
+        </li>
+      </ul>
+    </div>
+  );
+};
+
+const NO_PIDS = [];
+
+/**
+ * Kill many processes, hyperweaver-ui's batch kill dialog over the form
+ * dialog of the pages contract: with no `pids`, the warning, the pattern,
+ * the zone among the host's machines where the host lists `machines`, the
+ * signal among the ones the host delivers and the examples, and Kill
+ * processes as the danger action, held until a pattern is typed, handing
+ * up `{ pattern, signal, zone }`; with `pids`, the picked processes
+ * counted in the warning and the signal alone, handing up `{ signal }`.
+ */
+export const BatchKillModal = ({ zones, pids = NO_PIDS, signals, busy, onClose, onConfirm }) => {
+  const { t } = useTranslation();
+  const [pattern, setPattern] = useState('');
+  const [zone, setZone] = useState('');
+  const [signal, setSignal] = useState('TERM');
+  const picked = pids.length > 0;
+  return (
+    <ToolFormDialog
+      dialog="process-batch-kill"
+      title={t('host.batchKillModal.title')}
+      submitKey="host.batchKillModal.killProcesses"
+      variant="danger"
+      disabled={!picked && !pattern.trim()}
+      busy={busy}
+      onClose={onClose}
+      onSubmit={() => onConfirm(picked ? { signal } : { pattern: pattern.trim(), signal, zone })}
+    >
+      <div className="alert alert-danger" role="alert">
+        <p className="mb-1">
+          <strong>{t('host.batchKillModal.warningLabel')}</strong>{' '}
+          {picked
+            ? t('host.batchKillModal.pickedWarning', { count: pids.length })
+            : t('host.batchKillModal.warningText')}
+        </p>
+        <p className="mb-0">{t('host.batchKillModal.warningDetail')}</p>
+      </div>
+      {picked ? null : (
+        <PatternFields
+          zones={zones}
+          pattern={pattern}
+          setPattern={setPattern}
+          zone={zone}
+          setZone={setZone}
+        />
+      )}
       <h6 className="fw-bold">{t('host.batchKillModal.signalOptions')}</h6>
       <div className="mb-3">
         <label className="form-label" htmlFor="batch-kill-signal">
@@ -272,31 +328,14 @@ export const BatchKillModal = ({ zones, signals, busy, onClose, onConfirm }) => 
         </select>
         <p className="form-text text-muted">{t('host.batchKillModal.signalHelp')}</p>
       </div>
-      <div className="alert alert-info mb-0" role="note">
-        <p className="mb-1">
-          <strong>{t('host.batchKillModal.patternExamples')}</strong>
-        </p>
-        <ul className="mb-0">
-          <li>
-            <code>apache</code> - {t('host.batchKillModal.exampleApache')}
-          </li>
-          <li>
-            <code>bhyve</code> - {t('host.batchKillModal.exampleBhyve')}
-          </li>
-          <li>
-            <code>java</code> - {t('host.batchKillModal.exampleJava')}
-          </li>
-          <li>
-            <code>python</code> - {t('host.batchKillModal.examplePython')}
-          </li>
-        </ul>
-      </div>
+      {picked ? null : <PatternExamples />}
     </ToolFormDialog>
   );
 };
 
 BatchKillModal.propTypes = {
   zones: PropTypes.arrayOf(PropTypes.string).isRequired,
+  pids: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.number])),
   signals: PropTypes.arrayOf(PropTypes.oneOf(BATCH_SIGNALS)).isRequired,
   busy: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,

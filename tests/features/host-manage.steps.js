@@ -26,6 +26,13 @@ When(
   }
 );
 
+When(
+  'I tick the row {string} of the {string} table of the section page',
+  async ({ page }, text, name) => {
+    await rowOf(page, name, text).locator('.col-select input').check();
+  }
+);
+
 When("I press the section page's {string} action", async ({ page }, action) => {
   await frameOf(page).locator(`[data-action="${action}"]`).first().click();
 });
@@ -84,6 +91,11 @@ Then('the section page draws the {string} panel', async ({ page }, name) => {
 Then('the section page draws no {string} panel', async ({ page }, name) => {
   await expect(frameOf(page)).toBeVisible();
   await expect(frameOf(page).locator(`[data-panel="${name}"]`)).toHaveCount(0);
+});
+
+Then('the section page draws no switch', async ({ page }) => {
+  await expect(frameOf(page).locator('.section-heading').first()).toBeVisible();
+  await expect(frameOf(page).locator('input[type="checkbox"][role="switch"]')).toHaveCount(0);
 });
 
 Then('the section page draws no folding section', async ({ page }) => {

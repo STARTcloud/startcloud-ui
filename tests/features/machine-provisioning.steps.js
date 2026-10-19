@@ -36,8 +36,10 @@ When("I press the editor's {string} action", async ({ page }, action) => {
   await editorOf(page).locator(`[data-action="${action}"]`).first().click();
 });
 
+const hostsYmlOf = page => editorOf(page).locator('[data-tab-body="hosts-yml"]');
+
 When('I replace the Hosts.yml with {string}', async ({ page }, text) => {
-  const content = dialogOf(page).locator('.cm-content');
+  const content = hostsYmlOf(page).locator('.cm-content');
   await content.click();
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.press('Delete');
@@ -106,5 +108,23 @@ Then('the roles catalog draws no search box', async ({ page }) => {
 });
 
 Then('the Hosts.yml editor reads {string}', async ({ page }, text) => {
-  await expect(dialogOf(page).locator('.cm-content')).toContainText(text);
+  await expect(hostsYmlOf(page).locator('.cm-content')).toContainText(text);
+});
+
+Then('the Hosts.yml tab draws no {string} action', async ({ page }, action) => {
+  await expect(hostsYmlOf(page).locator('[data-action="hosts-yml-save"]')).toBeVisible();
+  await expect(editorOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);
+});
+
+Then('the editor notes {string}', async ({ page }, note) => {
+  await expect(editorOf(page).locator(`[data-note="${note}"]`)).toBeVisible();
+});
+
+Then('the editor offers the tab {string}', async ({ page }, key) => {
+  await expect(editorOf(page).locator(`.nav-tabs [data-tab="${key}"]`)).toBeVisible();
+});
+
+Then('the editor draws on glass', async ({ page }) => {
+  await expect(editorOf(page)).toBeVisible();
+  await expect(viewOf(page).locator('.card [data-panel="provisioning-editor"]')).toHaveCount(0);
 });

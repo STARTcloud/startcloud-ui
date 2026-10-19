@@ -353,7 +353,8 @@ DisconnectButton.propTypes = {
  * as the Integrations page draws them, the servers in the one `SubTable`
  * (origin, label, the default picked by radio, Remove on each row), Add
  * server with an origin and a label, the deploy target as a select of
- * `local` and the listed origins, Save and Disconnect. Every write is one
+ * `local` and the listed origins, Save preferences at the form's foot and
+ * Disconnect. Every write is one
  * request in the issuer's own shape: Add server sends
  * `POST /api/user/integrations/hyperweaver/connect` `{ origin, label }`
  * while the person is not yet connected (no `hyperweaver` row) and
@@ -457,7 +458,7 @@ const HyperweaverServiceCard = ({
           </div>
           {readOnly || !service ? null : (
             <button type="submit" className="btn btn-primary" disabled={busy} data-action="save">
-              {t('integrations.hyperweaver.save')}
+              {t('profile.preferences.save')}
             </button>
           )}
         </form>

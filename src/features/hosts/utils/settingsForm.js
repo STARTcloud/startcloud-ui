@@ -13,6 +13,7 @@ import {
   patchedCredentialRows,
   seededUtmArgs,
 } from './machineSettings';
+import { policyChangeOf, policyFormOf, policyOf } from './snapshots';
 
 export const EMPTY_TOPO = { sockets: '', cores: '', threads: '' };
 
@@ -55,12 +56,14 @@ export const initialForm = () => ({
   cloudInit: {},
   utmNotes: '',
   utmQemuArgs: '',
+  snapshotPolicy: policyFormOf(null),
 });
 
 /**
  * The Settings form seeded from a machine's detail, `knob_current` over
- * the configuration and the detail's `credentials`, with the seed it is
- * diffed against.
+ * the configuration, the detail's `credentials` and the retention policy
+ * the configuration's `snapshots` carries, with the seed it is diffed
+ * against.
  *
  * @param {Object|null} configuration - The detail's `configuration`
  * @param {Object|null} knobCurrent - The detail's `knob_current`
@@ -68,7 +71,10 @@ export const initialForm = () => ({
  * @returns {{ form: Object, seed: Object }} The form and its seed
  */
 export const seededForm = (configuration, knobCurrent, credentials = null) => {
-  const seed = buildSeed(configuration, knobCurrent, credentials);
+  const seed = {
+    ...buildSeed(configuration, knobCurrent, credentials),
+    snapshotPolicy: policyFormOf(policyOf({ configuration })),
+  };
   return {
     seed,
     form: {
@@ -89,6 +95,7 @@ export const seededForm = (configuration, knobCurrent, credentials = null) => {
       credentials: seed.credentials,
       utmNotes: asFormString(knobCurrent?.utm?.notes ?? configuration?.utm?.notes),
       utmQemuArgs: seededUtmArgs(knobCurrent, configuration),
+      snapshotPolicy: seed.snapshotPolicy,
     },
   };
 };
@@ -166,7 +173,8 @@ export const formTools = setForm => {
 
 /**
  * The body of `PUT machines/{name}` a Settings form sends, the changed
- * members alone, or the key of the sentence that says why none can be
+ * members alone, the retention policy as `snapshots` while it changed,
+ * or the key of the sentence that says why none can be
  * sent: a complex CPU topology with a field blank, a `vbox` passthrough
  * that is no JSON, or nothing changed.
  *
@@ -222,6 +230,10 @@ export const changesOf = ({
   }
   if (!isUtm && hostHasHypervisor(server, 'bhyve') && resourceChanges) {
     Object.assign(changes, resourceChanges);
+  }
+  const snapshots = policyChangeOf(form.snapshotPolicy, seed.snapshotPolicy);
+  if (snapshots !== undefined) {
+    changes.snapshots = snapshots;
   }
   if (Object.keys(changes).length === 0) {
     return { changes: null, problemKey: 'machineEdit.machineSettings.nothingChanged' };

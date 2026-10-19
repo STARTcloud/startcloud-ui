@@ -45,6 +45,7 @@ Feature: networking
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/interfaces"
     Then the heading of the networking page counts 3
+    And the section page draws one heading
     And the "interfaces" table is the first section of the networking page
     And the networking page draws no network summary
     And the page draws no key of hyperweaver-ui in place of its text
@@ -235,7 +236,9 @@ Feature: networking
     And the host answers the hosts-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/bandwidth"
-    Then the first row of the "bandwidth" table of the networking page reads "vnic0"
+    Then the "bandwidth" table is the first section of the networking page
+    And the heading of the networking page counts 2
+    And the first row of the "bandwidth" table of the networking page reads "vnic0"
     When I sort the "bandwidth" table of the networking page by "link"
     Then the first row of the "bandwidth" table of the networking page reads "igb0"
     When I reset the sort of the "bandwidth" table of the networking page

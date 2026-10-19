@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaPlus, FaVault } from 'react-icons/fa6';
+import { FaKey, FaPlus } from 'react-icons/fa6';
 
-import { DER_KINDS, SECRET_KINDS, SecretRecordModal, VaultPickModal } from '../../certs';
+import { DER_KINDS, PickSecretModal, SECRET_KINDS, SecretRecordModal } from '../../certs';
 import { pickKindsOf } from '../utils/agentSettings';
 
 const SHARED_KINDS = [...SECRET_KINDS, ...DER_KINDS.filter(kind => kind !== 'request')];
@@ -12,18 +12,20 @@ const addableKindsOf = kind =>
   kind ? pickKindsOf(kind).filter(entry => SECRET_KINDS.includes(entry)) : SECRET_KINDS;
 
 /**
- * The two openers of a host store's secret list, Add and Copy from
- * Vault: Add, drawn while `kind` names a secret kind, a group of secret
- * kinds such as a machine's `credential`, or none, opens the secret
- * record form over the secret kinds `kind` admits, the one kind fixed
- * while it admits one alone and the select open over the group
- * otherwise, seeded with `profile`, and hands `onAdd` the record; Copy
- * from Vault opens the pick over the browser's vault records of the
+ * The openers of a host store's list, Add and Pick secret: Add, drawn
+ * while `kind` names a secret kind, a group of secret kinds such as a
+ * machine's `credential`, or none, opens the secret record form over the
+ * secret kinds `kind` admits, the one kind fixed while it admits one
+ * alone and the select open over the group otherwise, seeded with
+ * `profile`, and hands `onAdd` the record; Pick secret, drawn while
+ * `host` and `onPick` are given, opens the Pick secret dialog over the
  * kinds `kind` admits, every secret, key, certificate, authority and SSH
- * certificate kind for none, and hands `onCopy` the record picked; each
- * answers a promise, the dialog closing on a row answered.
+ * certificate kind for none, a row of the host's store closing it and a
+ * row of any other store handed to `onPick` as its record, the write
+ * that lands it in the host's store; each answers a promise, the dialog
+ * closing on a row answered.
  */
-const SecretOpeners = ({ kind = '', profile = '', busy, prefsKey, onAdd, onCopy }) => {
+const SecretOpeners = ({ kind = '', profile = '', busy, host = null, onAdd, onPick = null }) => {
   const { t } = useTranslation();
   const [dialog, setDialog] = useState(null);
   const addable = addableKindsOf(kind);
@@ -32,6 +34,7 @@ const SecretOpeners = ({ kind = '', profile = '', busy, prefsKey, onAdd, onCopy 
       if (row) {
         setDialog(null);
       }
+      return row;
     });
   return (
     <>
@@ -47,16 +50,18 @@ const SecretOpeners = ({ kind = '', profile = '', busy, prefsKey, onAdd, onCopy 
           {t('agentSettings.agentSecretsTab.addButton')}
         </button>
       ) : null}
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-primary"
-        data-action="secret-copy-from-vault"
-        disabled={busy}
-        onClick={() => setDialog('vault')}
-      >
-        <FaVault className="me-1" aria-hidden="true" />
-        {t('agentSettings.agentSecretsTab.copyFromVault')}
-      </button>
+      {host && onPick ? (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-primary"
+          data-action="secret-pick"
+          disabled={busy}
+          onClick={() => setDialog('pick')}
+        >
+          <FaKey className="me-1" aria-hidden="true" />
+          {t('agentSettings.agentSecretsTab.pickSecret')}
+        </button>
+      ) : null}
       {dialog === 'add' ? (
         <SecretRecordModal
           kind={addable.length === 1 ? addable[0] : ''}
@@ -67,13 +72,15 @@ const SecretOpeners = ({ kind = '', profile = '', busy, prefsKey, onAdd, onCopy 
           onClose={() => setDialog(null)}
         />
       ) : null}
-      {dialog === 'vault' ? (
-        <VaultPickModal
+      {dialog === 'pick' ? (
+        <PickSecretModal
           kinds={kind ? pickKindsOf(kind) : SHARED_KINDS}
-          title={t('agentSettings.agentSecretsTab.copyFromVault')}
-          prefsKey={prefsKey}
+          profile={profile}
+          title={t('agentSettings.agentSecretsTab.pickSecret')}
+          host={host}
           busy={busy}
-          onPick={record => settle(onCopy(record))}
+          onPick={() => setDialog(null)}
+          onCopy={record => settle(onPick(record))}
           onClose={() => setDialog(null)}
         />
       ) : null}
@@ -85,9 +92,9 @@ SecretOpeners.propTypes = {
   kind: PropTypes.string,
   profile: PropTypes.string,
   busy: PropTypes.bool.isRequired,
-  prefsKey: PropTypes.string.isRequired,
+  host: PropTypes.object,
   onAdd: PropTypes.func.isRequired,
-  onCopy: PropTypes.func.isRequired,
+  onPick: PropTypes.func,
 };
 
 export default SecretOpeners;

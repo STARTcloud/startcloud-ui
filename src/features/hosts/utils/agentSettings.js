@@ -47,6 +47,14 @@ export const pickKindsOf = kind => {
 };
 
 /**
+ * Every row of a host store's answer, all fourteen kinds.
+ *
+ * @param {Array<Object>|null} answer - The answer of `GET certs`
+ * @returns {Array<Object>} The rows
+ */
+export const storeRowsOf = answer => listOf(answer).filter(Boolean);
+
+/**
  * The rows of a host store's answer a `secret` pick admits: the rows of
  * the kinds `pickKindsOf` names for `kind` and, where `profile` is given,
  * the ones that name that profile or none.

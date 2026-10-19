@@ -1,12 +1,11 @@
 import PropTypes from 'prop-types';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaCheck } from 'react-icons/fa6';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { fetchHostsYml, saveHostsYml } from '../api/provisioning';
 import { yamlProblemPosition, yamlProblemText } from '../utils/provisioning';
-
-import ToolFormDialog from './ToolFormDialog';
 
 const HostsYmlEditor = lazy(() => import('./HostsYmlEditor'));
 
@@ -33,16 +32,17 @@ const EditorLoading = () => {
 };
 
 /**
- * The raw Hosts.yml dialog of a machine, hyperweaver-ui's emergency
- * hatch over our form dialog: the whole stored document as YAML, read by
- * `GET machines/{name}/hosts-yml` on open and saved verbatim by
- * `PUT machines/{name}/hosts-yml`, the editor lazy so CodeMirror
- * downloads when the dialog opens and never with the page; a refused
- * save draws the agent's own error and lands the cursor on the line it
- * names, a save with advisories keeps the dialog open and lists them,
- * and a 403 says the editor is the manager's alone.
+ * The Hosts.yml tab of the provisioning editor, the whole stored document
+ * as YAML over CodeMirror: read by `GET machines/{name}/hosts-yml` each
+ * time the tab opens and saved verbatim by `PUT machines/{name}/hosts-yml`
+ * with the tab's own Save, Discard taking the text read back; the editor
+ * is lazy so CodeMirror downloads when the tab opens and never with the
+ * page. A refused save draws the agent's own error and lands the cursor on
+ * the line it names, a save with advisories lists them, and a 403 says
+ * the editor is the manager's alone. `onSaved` is handed the notice's
+ * sentence after a save.
  */
-const HostsYmlModal = ({ id, name, onClose, onSaved }) => {
+const HostsYmlTab = ({ id, name, onSaved }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [held, setHeld] = useState(OPENING);
@@ -86,18 +86,14 @@ const HostsYmlModal = ({ id, name, onClose, onSaved }) => {
     try {
       const answer = await saveHostsYml(status, id, name, held.yaml);
       const advisories = Array.isArray(answer?.warnings) ? answer.warnings : [];
+      setHeld(previous => ({
+        ...previous,
+        loading: false,
+        original: previous.yaml,
+        warnings: advisories,
+        savedNote: advisories.length > 0 ? t('provisioning.hostsYmlModal.savedWithAdvisories') : '',
+      }));
       onSaved(t('provisioning.hostsYmlModal.documentSaved', { machineName: name }));
-      if (advisories.length > 0) {
-        setHeld(previous => ({
-          ...previous,
-          loading: false,
-          original: previous.yaml,
-          warnings: advisories,
-          savedNote: t('provisioning.hostsYmlModal.savedWithAdvisories'),
-        }));
-        return;
-      }
-      onClose();
     } catch (error) {
       setHeld(previous => ({ ...previous, loading: false, error: yamlProblemText(error, t) }));
       const position = yamlProblemPosition(error);
@@ -107,15 +103,11 @@ const HostsYmlModal = ({ id, name, onClose, onSaved }) => {
     }
   };
 
+  const discard = () =>
+    setHeld(previous => ({ ...previous, yaml: previous.original, error: '', savedNote: '' }));
+
   return (
-    <ToolFormDialog
-      dialog="hosts-yml"
-      title={t('provisioning.hostsYmlModal.modalTitle', { machineName: name })}
-      submitKey="provisioning.hostsYmlModal.saveButton"
-      busy={held.loading || held.forbidden}
-      onClose={onClose}
-      onSubmit={save}
-    >
+    <div data-tab-body="hosts-yml">
       {held.forbidden ? (
         <div className="alert alert-info py-2" role="status" data-note="hosts-yml-forbidden">
           {t('provisioning.hostsYmlModal.managerOnly')}
@@ -160,15 +152,39 @@ const HostsYmlModal = ({ id, name, onClose, onSaved }) => {
           </p>
         </>
       )}
-    </ToolFormDialog>
+      <div className="d-flex gap-2 mt-3 border-top pt-3">
+        <button
+          type="button"
+          className="btn btn-primary"
+          data-action="hosts-yml-save"
+          onClick={save}
+          disabled={held.loading || held.forbidden}
+        >
+          {held.loading ? (
+            <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />
+          ) : (
+            <FaCheck className="me-2" aria-hidden="true" />
+          )}
+          {t('provisioning.hostsYmlModal.saveButton')}
+        </button>
+        <button
+          type="button"
+          className="btn btn-outline-secondary"
+          data-action="hosts-yml-discard"
+          onClick={discard}
+          disabled={held.loading || held.forbidden || !dirty}
+        >
+          {t('provisioning.provisioningEditor.discardEdits')}
+        </button>
+      </div>
+    </div>
   );
 };
 
-HostsYmlModal.propTypes = {
+HostsYmlTab.propTypes = {
   id: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
-  onClose: PropTypes.func.isRequired,
   onSaved: PropTypes.func.isRequired,
 };
 
-export default HostsYmlModal;
+export default HostsYmlTab;

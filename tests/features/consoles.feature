@@ -182,7 +182,8 @@ Feature: consoles
     When I press the console panel's "console-switch-zlogin" action
     Then the console panel draws the "zlogin" display
     And the console panel offers "console-switch-vnc"
-    When I click "Refresh"
+    When I click "Zone controls"
+    And I press the Controls menu's "refresh" row
     Then the host was sent GET to "/api/machines/web-1/vnc/info" 2 times
     And the host was sent GET to "/api/zlogin/sessions" 2 times
 
@@ -380,23 +381,6 @@ Feature: consoles
     Then the console panel draws the "inactive" display
     And the document carries "data-brand" as "shi"
     And the console placeholder mark is "/brand/hyperweaver/mark.svg"
-
-  Scenario: Console doors: the machine heading's SSH door of a machine holding two SSH credentials asks Connect as, the default first, before it starts
-    Given the host answers the agent fixture
-    And the host answers the agent-machines fixture
-    And the host answers the agent-consoles fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/self/machines/dev-1"
-    Then the console panel draws the "inactive" display
-    When I press the machine heading's "console-ssh" door
-    Then the Connect as dialog lists "sec-deploy,sec-domino"
-    And the host was not sent POST to "/api/machines/dev-1/ssh/start"
-    And the path is "/hosts/self/machines/dev-1"
-    When I connect as "sec-domino" in the Connect as dialog
-    Then the host was sent POST to "/api/machines/dev-1/ssh/start" carrying "credential_id" as "sec-domino"
-    And the host was sent POST to "/api/machines/dev-1/ssh/start" 1 times
-    And no Connect as dialog is open
-    And the console panel draws the "ssh" display
 
   Scenario: Console doors: the hardware card's SSH door of a machine holding two SSH credentials asks Connect as before it starts
     Given the host answers the agent fixture

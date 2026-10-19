@@ -8,6 +8,7 @@ import { ChartControlsContext, useChartControlsState } from '../../hooks/useChar
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useHostSeries, useHostSeriesQuery, useHostSeriesRefresh } from '../../hooks/useHostSeries';
+import { sectionTitle } from '../../pages';
 import { matchesUsage, usageRows } from '../../utils/networking';
 import { networkSeries } from '../../utils/series';
 import ChartControls from '../ChartControls';
@@ -33,15 +34,16 @@ const foldOf = ({ folds, key, t }) => {
 };
 
 /**
- * The Bandwidth page of a host: the heading counting the interfaces
- * with a sample, the time window, Refresh and Pause in its pane, and
- * under it the bandwidth table, a folding glass section over the one
- * table narrowed by the page's search, its trend column a sparkline an
- * interface, and the bandwidth charts under the page's chart controls,
- * all from the one series `useHostSeries` holds of the host's network
- * usage, its points per interface drawn once for both; the folds kept under
- * `table_prefs_bandwidth`. Refresh reads every held answer of the host
- * and every drawn series again.
+ * The Bandwidth page of a host: one heading, the bandwidth table's own,
+ * the section's title, its press dropping a sort a person chose,
+ * counting the interfaces the page's search leaves with the time window,
+ * Refresh and Pause in its pane and the chevron last; under it the one
+ * table, a folding glass section, its trend column a sparkline an
+ * interface, and then the bandwidth charts under their own folding
+ * heading, all from the one series `useHostSeries` holds of the host's
+ * network usage, its points per interface drawn once for both; the folds
+ * kept under `table_prefs_bandwidth`. Refresh reads every held answer of
+ * the host and every drawn series again.
  */
 const BandwidthPage = ({ id, server, context, section, host, onRefresh }) => {
   const { t, i18n } = useTranslation();
@@ -92,16 +94,13 @@ const BandwidthPage = ({ id, server, context, section, host, onRefresh }) => {
 
   return (
     <ChartControlsContext.Provider value={controls}>
-      <SectionPane
-        section={section}
-        server={server}
-        count={usage.offered && usage.loaded ? usageList.length : null}
-        actions={actions}
-      >
+      <SectionPane section={section} server={server} headed={!usage.offered} actions={actions}>
         {usage.offered ? (
           <NetworkingTable
             panel="networking-bandwidth"
-            title={t('host.bandwidthTable.title')}
+            title={sectionTitle(section, server, '', t)}
+            count={usage.loaded ? search.tables.bandwidth.rows.length : null}
+            actions={actions}
             columns={columns}
             table={search.tables.bandwidth}
             rowKey={row => row.link}

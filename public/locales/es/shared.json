@@ -2664,8 +2664,11 @@
         "take": "La instantánea se está tomando.",
         "edit": "La instantánea se está actualizando.",
         "restore": "La restauración está en cola.",
-        "delete": "La instantánea se está eliminando."
+        "delete": "La instantánea se está eliminando.",
+        "deleteMany_one": "1 instantánea eliminada.",
+        "deleteMany_other": "{{count}} instantáneas eliminadas."
       },
+      "deleteManyFailed": "No se pudieron eliminar {{count}} de {{total}} instantáneas: {{message}}",
       "confirm": {
         "destroysLater": "Toda instantánea tomada después de {{snapshotName}} se destruye con la restauración."
       },
@@ -2759,6 +2762,8 @@
         "killed": "Proceso {{pid}} terminado",
         "signalled": "Señal {{signal}} enviada a {{pid}}",
         "batchKilled": "Procesos que coinciden con {{pattern}} terminados",
+        "pickedKilled_one": "Se envió SIG{{signal}} a {{count}} proceso",
+        "pickedKilled_other": "Se envió SIG{{signal}} a {{count}} procesos",
         "failed": "La solicitud falló: {{message}}"
       },
       "users": {
@@ -3142,8 +3147,7 @@
     "preferences": {
       "title": "Hosts",
       "defaultDomain": "Dominio predeterminado para máquinas nuevas",
-      "defaultDomainHint": "Un nombre de máquina sin punto toma este dominio antes que las filas propias del host; se guarda solo en este navegador.",
-      "save": "Guardar preferencias de hosts"
+      "defaultDomainHint": "Un nombre de máquina sin punto toma este dominio antes que las filas propias del host; se guarda solo en este navegador."
     }
   },
   "pages": {
@@ -4298,7 +4302,6 @@
       "deployTarget": "Destino del Deploy",
       "deployTargetHint": "Dónde se abre un Deploy: el agente en esta computadora, o uno de tus servidores.",
       "local": "Esta computadora (agente Hyperweaver)",
-      "save": "Guardar",
       "saved": "Configuración de Hyperweaver guardada.",
       "connected": "Hyperweaver está conectado.",
       "disconnect": "Desconectar",
@@ -4486,15 +4489,13 @@
       "keyGeneratedMessage": "Clave de API generada con éxito. Por favor, cópiala ahora, no podrás verla de nuevo.",
       "bootstrapKeyGeneratedMessage": "Clave de API Bootstrap generada con éxito. Por favor, cópiala ahora.",
       "keyDeletedMessage": "Clave de API eliminada con éxito.",
-      "generateNewKeyTitle": "Generar nueva clave de API",
       "labelName": "Nombre",
       "namePlaceholder": "ej., Mi-Aplicación",
       "labelDescription": "Descripción",
       "descriptionPlaceholder": "ej., acceso a la API para mi aplicación",
-      "generatingButton": "Generando...",
       "generateKeyButton": "Generar clave",
       "generateBootstrapKeyButton": "Generar clave Bootstrap",
-      "existingKeysTitle": "Claves de API existentes",
+      "generateOptions": "Más formas de generar una clave",
       "loadingKeys": "Cargando claves...",
       "columnName": "Nombre",
       "columnDescription": "Descripción",
@@ -4623,7 +4624,7 @@
       "reloadButton": "Recargar",
       "addButton": "Agregar",
       "failedLoadSecrets": "Fallo al cargar los secretos: {{message}}",
-      "copyFromVault": "Copiar desde la bóveda",
+      "pickSecret": "Elegir secreto",
       "edit": "Editar",
       "remove": "Quitar",
       "removeTitle": "Quitar secreto",
@@ -8000,8 +8001,9 @@
       "registerPath": "Registrar ruta",
       "downloadUrl": "URL de descarga",
       "hclPortal": "HCL Portal",
-      "reHashAll": "Recalcular todos los hashes",
       "scanAll": "Escanear todo",
+      "scanAllRehash": "Escanear todo y recalcular hashes",
+      "scanOptions": "Más opciones de escaneo",
       "refresh": "Actualizar",
       "allTypes": "Todos los tipos",
       "allLocations": "Todas las ubicaciones",
@@ -8152,6 +8154,8 @@
       "actionComplete": "{{action}} completo.",
       "title": "Bases de datos del agente",
       "refresh": "Actualizar",
+      "editSettings": "Editar ajustes",
+      "editSettingsTitle": "Editar la configuración de base de datos del agente",
       "vacuumTitle": "Reconstruir los archivos de la base de datos para recuperar espacio libre",
       "vacuum": "Vacuum",
       "analyzeTitle": "Actualizar las estadísticas del planificador de consultas",
@@ -8476,7 +8480,6 @@
     },
     "interfacesTable": {
       "resetSortTitle": "Haz clic para restablecer el orden predeterminado",
-      "networkInterfaces": "Interfaces de red ({{total}} interfaces)",
       "expandSection": "Expandir sección",
       "collapseSection": "Contraer sección",
       "sortByLink": "Haz clic para ordenar por nombre de interfaz",
@@ -8856,6 +8859,8 @@
       "warningLabel": "Advertencia:",
       "warningText": "Esto afectará a varios procesos que coincidan con el patrón.",
       "warningDetail": "Usa esta función con cuidado. Prueba primero con un patrón específico.",
+      "pickedWarning_one": "Esto envía la señal elegida al {{count}} proceso seleccionado.",
+      "pickedWarning_other": "Esto envía la señal elegida a los {{count}} procesos seleccionados.",
       "processSelection": "Selección de procesos",
       "commandPatternLabel": "Patrón de comando",
       "commandPatternPlaceholder": "p. ej., apache, bhyve, nginx...",
@@ -8932,6 +8937,7 @@
       "clear": "Limpiar",
       "actions": "Acciones",
       "batchKill": "Terminar en lote",
+      "killSelected": "Terminar seleccionados",
       "processesCount": "Procesos ({{count}})"
     },
     "roleCreateModal": {
@@ -10406,20 +10412,13 @@
       "policySimple": "Simple — conservar las N más recientes",
       "policyAge": "Antigüedad — eliminar las de más de N días",
       "policyRotation": "Rotación — niveles por hora/día/semana",
-      "policyUpdateFailed": "Falló la actualización de política: {{message}}",
-      "overrideCleared": "Anulación eliminada — se aplica el valor predeterminado del agente.",
-      "policySaved": "Política guardada.",
       "pickPolicyType": "Selecciona primero un tipo de política.",
-      "retentionPolicyHeading": "Instantáneas programadas (política de retención)",
       "policyLabel": "Política",
       "agentDefaultOption": "(predeterminado del agente)",
       "keepLabel": "Conservar",
       "maxAgeLabel": "Antigüedad máxima (días)",
       "tierKeepLabel": "Conservar {{tier}}",
       "quiesceLabel": "Quiesce (fsfreeze de qga)",
-      "applyPolicyButton": "Aplicar política",
-      "clearOverrideTooltip": "Quitar la anulación de esta máquina — se aplica el valor predeterminado del agente",
-      "clearOverrideButton": "Quitar anulación",
       "loadFailed": "Falló la carga de instantáneas: {{message}}",
       "snapshotsHeading": "Instantáneas ({{count}})",
       "noSnapshotsYet": "Aún no hay instantáneas.",
@@ -10958,7 +10957,8 @@
         "filesystems": "Sistemas de archivos",
         "advanced": "Avanzado",
         "utm": "UTM",
-        "resources": "Recursos"
+        "resources": "Recursos",
+        "snapshots": "Instantáneas"
       },
       "fieldsHint": "Los campos muestran los valores actuales de la máquina donde el agente los reporta; las ediciones se guardan en caché entre pestañas hasta que hagas Aplicar, y solo se envían los valores que CAMBIASTE. En blanco = se mantiene el valor predeterminado mostrado.",
       "field": {
@@ -11596,6 +11596,7 @@
       "tabHooks": "Hooks",
       "tabTransport": "Transporte",
       "tabRawJson": "JSON sin procesar",
+      "tabHostsYml": "Hosts.yml",
       "invalidNameProblem": "{{label}} \"{{key}}\"",
       "variableLabel": "variable",
       "roleNameProblem": "nombre de rol \"{{name}}\"",
@@ -11606,7 +11607,6 @@
       "notValidJson": "JSON no válido: {{message}}",
       "applyJsonFirst": "Aplica el JSON primero (botón debajo del editor) — difiere del formulario guardado.",
       "fixInvalidNames": "Corrige los nombres no válidos antes de guardar: {{problems}}.",
-      "heading": "Documento de aprovisionamiento",
       "varsIntro1": "Variables globales — todos los roles y scripts las ven. Los valores conservan sus tipos JSON; las listas y diccionarios se editan detrás del",
       "varsIntro2": "botón, como YAML.",
       "addVariable": "Agregar variable",
@@ -11657,7 +11657,6 @@
       "lineSuffix": "(línea {{line}})",
       "documentSaved": "Documento guardado para {{machineName}}.",
       "savedWithAdvisories": "Guardado — con observaciones:",
-      "modalTitle": "Hosts.yml — {{machineName}}",
       "saveButton": "Guardar",
       "unsavedChanges": "cambios sin guardar",
       "loadingEditor": "Cargando el editor…",
@@ -11675,8 +11674,6 @@
       "pipelineHint": "Aprovisionar (el pipeline completo), Sincronizar archivos y Ejecutar aprovisionadores (solo playbooks) están en el menú Controles de la barra de navegación. El documento se edita abajo.",
       "noDocumentYet": "Aún no hay documento de aprovisionamiento — el aprovisionamiento no está configurado para esta máquina. Las máquinas creadas a partir de un paquete de aprovisionamiento lo traen automáticamente",
       "noDocumentReshapeSuffix": "; guardar un documento abajo habilita el pipeline (sus acciones aparecen luego bajo Controles en la barra de navegación)",
-      "editHostsYmlTitle": "Edita TODO el documento guardado como YAML sin procesar — la salida de emergencia entre crear-sin-iniciar y aprovisionar",
-      "editHostsYmlButton": "Editar Hosts.yml (sin procesar)",
       "hookConfirmDeclined": "Aprovisionamiento no iniciado — los hooks del host no fueron confirmados.",
       "hookConfirmTitle": "Este paquete ejecuta scripts en el host del agente",
       "hookConfirmSuffix": "Confirmar los ejecuta y se recuerda para esta máquina — los futuros aprovisionamientos no volverán a preguntar.",
@@ -12121,8 +12118,7 @@
     "preferences": {
       "title": "Certificados",
       "thresholdDays": "Umbral de expiración (días)",
-      "thresholdHint": "Un certificado que vence dentro de este número de días se muestra como por expirar.",
-      "save": "Guardar"
+      "thresholdHint": "Un certificado que vence dentro de este número de días se muestra como por expirar."
     },
     "confirm": {
       "deleteTitle": "Eliminar registro",
@@ -12195,11 +12191,10 @@
       "pullAgain": "Traer de nuevo"
     },
     "sync": {
-      "title": "Sincronizar con {{name}}",
+      "destination": "Sincronizar con {{name}}",
       "body": "Cada registro de la bóveda de un tipo marcado se envía a {{name}} bajo {{organization}} y se mantiene sincronizado.",
       "lastSynced": "última sincronización {{when}}",
       "never": "nunca sincronizado",
-      "save": "Guardar",
       "noOrganization": "{{name}} conserva los registros de los tipos marcados en tu propio almacén de este host."
     },
     "input": {
@@ -12234,6 +12229,13 @@
       "about": "Convierte certificados y claves a otro formato, o guárdalos en la bóveda.",
       "input": "Entrada",
       "components": "Componentes",
+      "slot": {
+        "certificate": "Certificado",
+        "key": "Clave",
+        "public_key": "Clave pública",
+        "request": "Solicitud"
+      },
+      "slotNeeded": "hace falta · sin cargar",
       "output": "Salida",
       "format": "Formato",
       "pickFormat": "Elige un formato",
@@ -12312,7 +12314,6 @@
       "none": "No hay certificados cargados",
       "remove": "Quitar",
       "build": "Construir cadena",
-      "built": "Cadena",
       "issuedBy": "emitido por {{name}}",
       "valid": "Válida",
       "invalid": "No válida",
@@ -12456,6 +12457,9 @@
       "authorityCertificate": "Certificado de la autoridad",
       "authorityKey": "Clave de la autoridad",
       "pastedRead": "Se leyó {{label}}."
+    },
+    "pick": {
+      "store": "Almacén"
     },
     "picker": {
       "button": "Elegir de la bóveda",

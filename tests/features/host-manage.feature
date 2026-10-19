@@ -151,6 +151,28 @@ Feature: host-manage
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/system/processes" 3 times
 
+  Scenario: Processes: two picked rows draw the picked-state group, Kill selected opens the batch kill dialog over them with the signal alone, one signal request a pid and one notice, and the pick cleared
+    Given the host answers the hosts fixture
+    And the host answers the hosts-manage fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/system/processes"
+    Then the "processes" table of the section page lists 4 rows
+    And the section page offers no "bulk-kill"
+    When I tick the row "bhyve" of the "processes" table of the section page
+    And I tick the row "postgres" of the "processes" table of the section page
+    Then I see "2 selected"
+    When I press the section page's "bulk-kill" action
+    Then the "process-batch-kill" dialog is open
+    And the open dialog draws no field "batch-kill-pattern"
+    When I choose "KILL" in the field "batch-kill-signal"
+    And I press the open dialog's "submit" action
+    Then the host was sent POST to "/api/agents/3/system/processes/128/signal" carrying "signal" as "KILL"
+    And the host was sent POST to "/api/agents/3/system/processes/135/signal" carrying "signal" as "KILL"
+    And the host was not sent POST to "/api/agents/3/system/processes/batch-kill"
+    And the page raised 1 success notice
+    And no dialog is open
+    And the section page offers no "bulk-kill"
+
   Scenario: Processes: the signal dialog on a host whose platform is not Windows offers every signal
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture

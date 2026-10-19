@@ -267,6 +267,7 @@ const ConvertBody = ({ record, folds, onClear }) => {
         <FormErrorSummary errors={rules.summary} />
         <FormatPicker
           kinds={[...new Set(chosen.map(component => component.kind))]}
+          components={held.components.filter(component => picked.includes(idOf(component)))}
           draft={draft}
           rules={rules}
           onChange={patch => setDraft(current => ({ ...current, ...patch }))}
@@ -296,7 +297,9 @@ ConvertBody.propTypes = {
  * drawn disabled, the line reading that nothing was understood when a
  * read found no component; and the Output card, drawn from the start
  * with Convert and Save to vault disabled while nothing is picked, picking a format that
- * carries every picked kind, its password required where the format
+ * carries every picked kind, any format while nothing is read, the slots
+ * the picked format carries drawn under it as needed until a read fills
+ * them, its password required where the format
  * cannot be written without one and emptied on a change of format, the
  * legacy switch and the friendly name, Convert handing the browser the
  * file once the rules pass, Download fullchain and Download combined

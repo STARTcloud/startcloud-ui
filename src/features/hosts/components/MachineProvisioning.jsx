@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaArrowUpRightFromSquare, FaFileCode } from 'react-icons/fa6';
+import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import { useSearchParams } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
@@ -32,13 +32,10 @@ import {
 } from '../utils/provisioning';
 import { TERMINAL_TASK_STATUSES, formatTaskDate } from '../utils/tasks';
 
-import HostsYmlModal from './HostsYmlModal';
 import ProvisioningEditor from './ProvisioningEditor';
 import TaskDialog from './TaskDialog';
 
 const STATUS_FOLD = 'machine-provisioning';
-
-const EDITOR_FOLD = 'machine-provisioning-editor';
 
 const HOOK_KEYWORD = 'provision';
 
@@ -144,8 +141,9 @@ const useProvisionStatus = ({ status, id, name, offered }) => {
  * `GET machines/{name}/provision/status` while the host lists
  * `provisioning` and the machine's detail carries a document, and the
  * welcome page where the agent answers one; under it, for a person who
- * may create machines on a host that lists `machine-create`, Edit
- * Hosts.yml and the document editor. A pipeline action handed in `run`
+ * may create machines on a host that lists `machine-create`, the
+ * document editor on glass, its tabs with no card around them, Hosts.yml
+ * among them. A pipeline action handed in `run`
  * by the Controls menu, the tree or a row is sent once as the page
  * opens, `POST machines/{name}/provision`, `/sync`, `/sync` with
  * `syncback` or `/run-provisioners`, one notice reporting the queued
@@ -176,7 +174,6 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
   const [busy, setBusy] = useState(false);
   const [hookReason, setHookReason] = useState('');
   const [hookOptions, setHookOptions] = useState({});
-  const [hostsYml, setHostsYml] = useState(false);
   const [task, setTask] = useState(null);
   const [watched, setWatched] = useState('');
   const confirmedRef = useRef(false);
@@ -303,21 +300,6 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
               </span>
             ) : null
           }
-          actions={
-            gates.reshape ? (
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-secondary"
-                data-action="hosts-yml-edit"
-                title={t('provisioning.machineProvisioning.editHostsYmlTitle')}
-                disabled={busy}
-                onClick={() => setHostsYml(true)}
-              >
-                <FaFileCode className="me-2" aria-hidden="true" />
-                {t('provisioning.machineProvisioning.editHostsYmlButton')}
-              </button>
-            ) : null
-          }
           className="mb-0"
           folded={folds.folded(STATUS_FOLD)}
           onFold={() => folds.toggle(STATUS_FOLD)}
@@ -342,24 +324,14 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
       </div>
       {gates.reshape ? (
         <div className="col-12">
-          <SectionCard
-            title={t('provisioning.provisioningEditor.heading')}
-            className="mb-0"
-            folded={folds.folded(EDITOR_FOLD)}
-            onFold={() => folds.toggle(EDITOR_FOLD)}
-          >
-            <ProvisioningEditor
-              id={id}
-              name={name}
-              document={document}
-              onSaved={saved}
-              onRun={runOne}
-            />
-          </SectionCard>
+          <ProvisioningEditor
+            id={id}
+            name={name}
+            document={document}
+            onSaved={saved}
+            onRun={runOne}
+          />
         </div>
-      ) : null}
-      {hostsYml ? (
-        <HostsYmlModal id={id} name={name} onClose={() => setHostsYml(false)} onSaved={saved} />
       ) : null}
       <ConfirmModal
         show={hookReason !== ''}

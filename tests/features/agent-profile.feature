@@ -122,24 +122,43 @@ Feature: agent-profile
     And I see "Mark"
     And the host was not sent GET to "/api/user/favorites"
 
-  Scenario: Agent profile: the Certificates card's sync form for a person of an organization on a backend that lists certs-store, ticking one kind and saving sends every unsent record of that kind as one POST to the active organization
+  Scenario: Agent profile: the Certificates card is one form with one Save preferences and one destination switch, Sync to the backend on for a person who never chose, so a bundle dropped into the vault reaches the active organization as one POST a record and Save sends nothing more
     Given the host answers the certs fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"provider\":\"oidc-auth\",\"access_token\":\"t\"}"
     When I open "/certs"
     And I click "Add New"
     And I drop "vault.certs.json" into the vault
-    Then the vault lists 2 rows
+    Then I see "2 records imported"
+    And the host was sent POST to "/api/certs" carrying "kind" as "certificate"
+    And the host was sent POST to "/api/certs" carrying "kind" as "key"
+    And the host was sent POST to "/api/certs" carrying "organization" as "acme"
+    And the host was sent POST to "/api/certs" 2 times
     When I open "/profile/preferences"
     Then the page draws the panel "certs-preferences"
-    And the page draws the panel "certs-sync"
-    When I check the control "certs-sync/certificate"
-    And I press the page's "save-sync" action
-    Then the host was sent POST to "/api/certs" carrying "kind" as "certificate"
-    And the host was sent POST to "/api/certs" carrying "organization" as "acme"
-    And the host was sent POST to "/api/certs" 1 times
+    And the certs preferences draw one Save and 1 destination switch
+    And the certs control "certs-sync/hyperweaver-server" is checked
+    When I press the page's "save-certs-preferences" action
+    Then I see "Sync settings saved."
+    And the host was sent POST to "/api/certs" 2 times
+
+  Scenario: Agent profile: a destination switched off sends nothing on a drop, and switched on again its Save sends every unsent record of the vault
+    Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"provider\":\"oidc-auth\",\"access_token\":\"t\"}"
+    When I open "/certs"
+    And I click "Add New"
+    And I drop "vault.certs.json" into the vault
+    Then the vault lists 2 rows
+    And the host was not sent POST to "/api/certs"
+    When I open "/profile/preferences"
+    Then the certs control "certs-sync/hyperweaver-server" is not checked
+    When I check the control "certs-sync/hyperweaver-server"
+    And I press the page's "save-certs-preferences" action
+    Then the host was sent POST to "/api/certs" carrying "organization" as "acme"
+    And the host was sent POST to "/api/certs" 2 times
     And I see "Sync settings saved."
 
-  Scenario: Agent profile: on an agent that lists certs-store for a person in no organization, the Vault sits under Account after Profile, the tools under System, no Browse store row, the host column's Certificates row beside Secrets opens the store read from the host with no organization, and the card's Save sends the kind under no organization
+  Scenario: Agent profile: on an agent that lists certs-store for a person in no organization, the Vault sits under Account after Profile, the tools under System, no Browse store row, the host column's one store row Secrets, and the vault's records reach the host's own store under no organization
     Given the host answers the agent-signins fixture
     And the host answers the agent-profile-plain fixture
     And the host answers the agent-profile-certs fixture
@@ -152,17 +171,35 @@ Feature: agent-profile
     When I click "Add New"
     And I drop "vault.certs.json" into the vault
     Then the vault lists 2 rows
+    And the host was sent POST to "/api/certs" carrying "kind" as "certificate"
+    And the host was sent POST to "/api/certs" carrying "organization" as ""
     When I open "/hosts/self/agent/api-keys"
     Then the host column draws the "secrets" row to "/hosts/self/agent/secrets"
-    And the host column draws the "certificates" row to "/certs/shared"
-    When I follow the host row "certificates"
-    Then the pathname is "/certs/shared"
-    And the host was sent GET to "/api/certs"
+    And the host column draws no "certificates" row
     When I open "/profile/preferences"
-    Then the page draws the panel "certs-sync"
-    When I check the control "certs-sync/certificate"
-    And I press the page's "save-sync" action
+    Then the certs preferences draw one Save and 1 destination switch
+    And the certs control "certs-sync/hyperweaver-agent" is checked
+    When I press the page's "save-certs-preferences" action
+    Then I see "Sync settings saved."
+
+  Scenario: Agent profile: on an agent that lists certs-store, the Secrets page's Pick secret from the Vault store writes the picked record to the host's store as one POST under no organization and closes
+    Given the host answers the agent-signins fixture
+    And the host answers the agent-profile-plain fixture
+    And the host answers the agent-profile-certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-agent" off
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/certs"
+    And I click "Add New"
+    And I drop "vault.certs.json" into the vault
+    Then the vault lists 2 rows
+    And the host was not sent POST to "/api/certs"
+    When I open "/hosts/self/agent/secrets"
+    Then the section page "secrets" draws
+    When I press the agent page's "secret-pick" action
+    Then the "pick-secret" dialog is open
+    When I choose "vault" in the control "pick-secret-store"
+    And I press "secret-pick-row" on the row "Local leaf" of the dialog table "secret-pick"
     Then the host was sent POST to "/api/certs" carrying "kind" as "certificate"
     And the host was sent POST to "/api/certs" carrying "organization" as ""
     And the host was sent POST to "/api/certs" 1 times
-    And I see "Sync settings saved."
+    And the "pick-secret" dialog is closed

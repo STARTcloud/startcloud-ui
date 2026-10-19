@@ -23,7 +23,8 @@ Feature: machine provisioning
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-1/provisioning"
     Then the machine page draws the "provisioning-editor" panel
-    And the machine page offers "hosts-yml-edit"
+    And the editor draws on glass
+    And the editor offers the tab "hosts-yml"
     And the editor lists 2 step cards
     When I pick the editor tab "roles"
     Then the editor lists 2 step cards
@@ -188,37 +189,37 @@ Feature: machine provisioning
     Then the host was sent POST to "/api/agents/1/machines/dev-2/provision" carrying "true" at "/confirm_host_hooks"
     And the host was sent POST to "/api/agents/1/machines/dev-2/provision" 2 times
 
-  Scenario: Provisioning page: Hosts.yml behind `machine-create`, the dialog reads the YAML once, saves it verbatim and closes on a clean answer
+  Scenario: Provisioning page: the Hosts.yml tab behind `machine-create` reads the YAML once as it opens, saves it verbatim through the PUT with its own Save and reads the detail again once
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-provisioning fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-1/provisioning"
-    And I press the machine page's "hosts-yml-edit" action
-    Then the "hosts-yml" dialog is open
-    And the host was sent GET to "/api/agents/1/machines/dev-1/hosts-yml" 1 times
+    Then the host was not sent GET to "/api/agents/1/machines/dev-1/hosts-yml"
+    When I pick the editor tab "hosts-yml"
+    Then the host was sent GET to "/api/agents/1/machines/dev-1/hosts-yml" 1 times
     And the Hosts.yml editor reads "provisioner_name: startcloud"
+    And the Hosts.yml tab draws no "document-store" action
     When I replace the Hosts.yml with "hosts: [{dev-1: {provisioner_name: startcloud}}]"
-    And I send the open dialog
+    And I press the editor's "hosts-yml-save" action
     Then the host was sent PUT to "/api/agents/1/machines/dev-1/hosts-yml" carrying "hosts: [{dev-1: {provisioner_name: startcloud}}]" at "/yaml"
     And the host was sent PUT to "/api/agents/1/machines/dev-1/hosts-yml" 1 times
+    And the host was not sent PUT to "/api/agents/1/machines/dev-1"
     And the page raised 1 success notice
     And no dialog is open
     And the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
 
-  Scenario: Provisioning page: Hosts.yml behind `machine-create`, a refused YAML keeps the dialog open with the agent's error and its line
+  Scenario: Provisioning page: the Hosts.yml tab behind `machine-create`, a refused YAML keeps the text with the agent's error and its line
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-provisioning fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-2/provisioning"
-    And I press the machine page's "hosts-yml-edit" action
-    Then the "hosts-yml" dialog is open
-    When I send the open dialog
+    And I pick the editor tab "hosts-yml"
+    And I press the editor's "hosts-yml-save" action
     Then the host was sent PUT to "/api/agents/1/machines/dev-2/hosts-yml" 1 times
-    And the open dialog notes "hosts-yml-problem"
+    And the editor notes "hosts-yml-problem"
     And I see "Nested mappings are not allowed"
-    And the "hosts-yml" dialog is open
     And the page raised 0 success notices
 
   Scenario: Provisioning page: a person who may not create machines reads the status and is offered no editor and no Hosts.yml
@@ -231,7 +232,6 @@ Feature: machine provisioning
     Then the machine page draws the "machine-provisioning" panel
     And the provisioning status reads "provisioned"
     And the provisioning page draws no "provisioning-editor" panel
-    And the machine page offers no "hosts-yml-edit"
     And the host was not sent GET to "/api/agents/1/provisioning/provisioners"
 
   Scenario: Provisioning page: a machine without a document says so, asks for no status and offers no pipeline row
@@ -331,12 +331,11 @@ Feature: machine provisioning
     And the host was sent PUT to "/api/machines/web-1" carrying "startcloud.hcl_roles.leap" at "/provisioner/roles/1/name"
     And the host was sent PUT to "/api/machines/web-1" 1 times
     And the page raised 1 success notice
-    When I press the machine page's "hosts-yml-edit" action
-    And I send the open dialog
+    When I pick the editor tab "hosts-yml"
+    And I press the editor's "hosts-yml-save" action
     Then the host was sent PUT to "/api/machines/web-1/hosts-yml" 1 times
-    And the open dialog notes "hosts-yml-advisories"
+    And the editor notes "hosts-yml-advisories"
     And I see "The entry names no vcpus"
-    And the "hosts-yml" dialog is open
 
   Scenario: Provisioning page: on the hyperweaver-agent role served directly, Provision is sent at the agent's own /api path and no registry is asked of a host that lists none
     Given the host answers the agent fixture

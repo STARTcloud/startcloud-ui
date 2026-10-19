@@ -8,6 +8,7 @@ import { ChartControlsContext, useChartControlsState } from '../../hooks/useChar
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useHostSeries, useHostSeriesQuery, useHostSeriesRefresh } from '../../hooks/useHostSeries';
+import { sectionTitle } from '../../pages';
 import { hostHasFeature } from '../../utils/capabilities';
 import { INTERFACE_FILTERS, matchesInterface } from '../../utils/networking';
 import { latestPer } from '../../utils/resources';
@@ -34,14 +35,14 @@ const foldOf = ({ folds, key, t }) => {
 };
 
 /**
- * The Interfaces page of a host: the heading counting the interfaces
- * and Refresh in its pane, and under it the interfaces table, a folding
- * glass section over the one table narrowed
- * by the page's search, its trend column a sparkline an interface over
- * the host's window from the one network series `useHostSeries` holds;
- * the folds kept under `table_prefs_interfaces`.
- * Refresh reads every held answer of the host and every drawn series
- * again.
+ * The Interfaces page of a host: one heading, the interfaces table's own,
+ * the section's title, its press dropping a sort a person chose, counting
+ * the interfaces the page's search leaves with Refresh in its pane and the
+ * chevron last, and under it the one table, a folding glass section, its
+ * trend column a sparkline an interface over the host's window from the
+ * one network series `useHostSeries` holds; the fold kept under
+ * `table_prefs_interfaces`. Refresh reads every held answer of the host
+ * and every drawn series again.
  */
 const InterfacesPage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
@@ -90,16 +91,13 @@ const InterfacesPage = ({ id, server, context, section, onRefresh }) => {
 
   return (
     <ChartControlsContext.Provider value={controls}>
-      <SectionPane
-        section={section}
-        server={server}
-        count={interfaces.offered && interfaces.loaded ? interfaceList.length : null}
-        actions={<RefreshButton onRefresh={refresh} />}
-      >
+      <SectionPane section={section} server={server} headed={!interfaces.offered}>
         {interfaces.offered ? (
           <NetworkingTable
             panel="networking-interfaces"
-            title={t('host.interfacesTable.networkInterfaces', { total: interfaceList.length })}
+            title={sectionTitle(section, server, '', t)}
+            count={interfaces.loaded ? search.tables.interfaces.rows.length : null}
+            actions={<RefreshButton onRefresh={refresh} />}
             columns={interfaceColumns}
             table={search.tables.interfaces}
             rowKey={row => row.link}

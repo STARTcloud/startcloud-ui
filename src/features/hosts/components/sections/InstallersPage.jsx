@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaFolderOpen, FaMagnifyingGlass } from 'react-icons/fa6';
 
+import SplitButton from '../../../../components/common/SplitButton';
 import { useNotify } from '../../../../contexts/NoticeContext';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { pageContextShape } from '../../../../utils/itemShape';
@@ -112,8 +113,9 @@ const SOURCE_KINDS = ['upload', 'register', 'registry', 'download', 'hcl'];
  * status groups, the table by default and cards as the toggle; the
  * heading counting the files shown, then Upload, Register path, From
  * BoxVault while the host lists `templates`, Download URL, HCL portal
- * while it lists `provisioner-registry`, the re-hash switch, Scan all
- * `POST artifacts/scan` with `verify_checksums`, Locations opening the
+ * while it lists `provisioner-registry`, the split Scan all,
+ * `POST artifacts/scan` with `verify_checksums` false, with Scan all and
+ * re-hash, the same with `verify_checksums` true, in its menu, Locations opening the
  * one modal of the storage locations, Refresh and the view toggle; Delete
  * selected the listing's bulk action behind the delete dialog; each
  * row's Details reading `GET artifacts/{id}`, Download carrying the file
@@ -131,7 +133,6 @@ const InstallersPage = ({ id, server, context, section, onRefresh }) => {
   const notify = useNotify();
   const [nonce, setNonce] = useState(0);
   const [dialog, setDialog] = useState(null);
-  const [verify, setVerify] = useState(false);
   const [saving, setSaving] = useState(false);
   const registries = hostHasFeature(server, 'templates');
   const locations = useManageRead(
@@ -227,9 +228,9 @@ const InstallersPage = ({ id, server, context, section, onRefresh }) => {
       failKey: 'host.installerFiles.deleteFailed',
     });
 
-  const scanAll = () =>
+  const scanAll = rehash =>
     write({
-      call: () => scanArtifacts(status, id, { verify_checksums: verify }),
+      call: () => scanArtifacts(status, id, { verify_checksums: rehash }),
       doneKey: 'host.installerFiles.scanQueuedDefault',
       failKey: 'host.installerFiles.scanFailed',
     });
@@ -265,25 +266,22 @@ const InstallersPage = ({ id, server, context, section, onRefresh }) => {
           busy={busy}
         />
       ))}
-      <span className="form-check form-switch mb-0 d-inline-flex align-items-center gap-1">
-        <input
-          id="artifact-scan-verify"
-          className="form-check-input"
-          type="checkbox"
-          role="switch"
-          checked={verify}
-          onChange={event => setVerify(event.target.checked)}
-        />
-        <label className="form-check-label small" htmlFor="artifact-scan-verify">
-          {t('host.installerFiles.reHashAll')}
-        </label>
-      </span>
-      <PaneButton
+      <SplitButton
         icon={FaMagnifyingGlass}
+        glyph
         labelKey="host.installerFiles.scanAll"
         action="artifact-scan"
         variant="warning"
-        onClick={scanAll}
+        onClick={() => scanAll(false)}
+        menuAction="artifact-scan-menu"
+        menuLabelKey="host.installerFiles.scanOptions"
+        items={[
+          {
+            action: 'artifact-scan-rehash',
+            labelKey: 'host.installerFiles.scanAllRehash',
+            onClick: () => scanAll(true),
+          },
+        ]}
         busy={busy}
       />
       <PaneButton

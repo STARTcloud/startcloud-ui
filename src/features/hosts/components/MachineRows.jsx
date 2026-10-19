@@ -21,6 +21,7 @@ import { useHostActions } from '../hooks/useHostActions';
 import { useMachineRow } from '../hooks/useHostMachines';
 import { useHostStats } from '../hooks/useHostStats';
 import { useMachineDetailRefresh } from '../hooks/useMachineDetail';
+import { useMachineRefresh } from '../hooks/useServers';
 import { gatesOf } from '../utils/capabilities';
 import { guestToolsOf } from '../utils/guestTools';
 import { isRunning } from '../utils/hosts';
@@ -244,7 +245,7 @@ const withRun = (commands, busy, runOf) =>
 
 /**
  * The commands of the Controls menu on `/hosts/{id}/machines/{name}`:
- * Share link; Power on, Shutdown, Restart, Reset and Inject NMI, Pause,
+ * Share link and Refresh, the machine page's own reads; Power on, Shutdown, Restart, Reset and Inject NMI, Pause,
  * Suspend and Resume, Guest shutdown and Guest reboot, Run in guest and
  * Set display size, each by the machine's state and the host's gates; the
  * console commands with their Connect as dialog, the application, tool,
@@ -279,6 +280,12 @@ export const useMachineCommands = ({ status, id, name, server, user, wanted }) =
   const gates = gatesOf({ server, machine });
   const guestTools = guestToolsOf({ server, machine, role, running });
   const share = useShareCommand();
+  const refreshPage = useMachineRefresh();
+  const reload = {
+    ...command('refresh', 'share', FaRotate, 'text-secondary', 'hosts.page.refresh'),
+    action: 'refresh',
+    run: refreshPage,
+  };
   const consoles = useConsoleCommands({ id, name, server, busy });
   const applications = useApplicationCommands({
     id,
@@ -293,6 +300,7 @@ export const useMachineCommands = ({ status, id, name, server, user, wanted }) =
 
   const commands = [
     share,
+    reload,
     ...withRun(
       [...powerCommands(state), ...holdCommands(state), ...guestCommands(state)],
       busy,

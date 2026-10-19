@@ -466,7 +466,9 @@ Then('the heading row carries the window select, Refresh and Pause as glyphs', a
   await expect(headingOf(page).locator('select[name="window"]')).toBeVisible();
   await glyphOnly(headingOf(page).locator('[data-tool="refresh"]'));
   await glyphOnly(pauseOf(page));
-  await expect(headingOf(page).locator('.btn')).toHaveCount(2);
+  await expect(
+    headingOf(page).locator('.btn:not([data-tool="fold"]):not([data-tool="reset-sort"])')
+  ).toHaveCount(2);
 });
 
 Then('the {string} series of the expanded chart is shown', async ({ page }, group) => {

@@ -375,20 +375,6 @@ export const importMachine = (status, id, body) =>
   client.post(agentPath(status, id, 'machines/import'), body);
 
 /**
- * Write one machine's own retention policy, `PUT machines/{name}` with
- * `snapshots`, kept at once with no task; null clears it, the machine
- * following the agent's policy again.
- *
- * @param {Object} status - The payload from `probeStatus`
- * @param {string} id - The registry id, or `self` on an agent role
- * @param {string} name - The machine name
- * @param {Object|null} policy - The policy of `policyBody`, or null
- * @returns {Promise<Object>} `{ success, machine_name, operation, status, message, requires_restart }`
- */
-export const saveSnapshotPolicy = (status, id, name, policy) =>
-  client.put(machinePath(status, id, name), { snapshots: policy });
-
-/**
  * Modify one machine, `PUT machines/{name}` with the changed members
  * alone, hyperweaver-ui's modify wire: a queued `machine_modify` or
  * `zone_modify` task answered `{ task_id, operation, status, message,

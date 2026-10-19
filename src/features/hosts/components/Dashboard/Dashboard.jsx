@@ -373,6 +373,7 @@ const Dashboard = ({ context }) => {
     return (
       <TopologyPanel
         id={String(servers[0].id)}
+        title={t('pages.hostNetworking.topologyHeading')}
         fold={{
           folded: folds.folded('topology'),
           onFold: () => folds.toggle('topology'),

@@ -11,6 +11,10 @@ export default {
     status: 200,
     file: 'snapshot-delete-200.json',
   },
+  'DELETE /api/agents/1/machines/dev-1/snapshots/clean-install': {
+    status: 200,
+    file: 'snapshot-delete-200.json',
+  },
   'POST /api/agents/1/machines/dev-2/snapshots/nightly/restore': {
     status: 200,
     file: 'snapshot-restore-200.json',

@@ -58,6 +58,7 @@ Feature: certs
 
   Scenario: Convert: a certificate and its key from two files meet in the components, the PKCS#12 saves under the first file's stem, and Save to vault keeps both as records
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its downloads
     When I open "/certs/convert"
@@ -106,6 +107,22 @@ Feature: certs
     And the certs card "certs-convert-output" is open
     And the certs page's "convert" action is free
     And the certs page's "save-vault" action is free
+
+  Scenario: Convert: the format select offers every format before any read, PKCS#12 picked with nothing read draws its certificate and key slots as needed, each slot turning loaded as a read fills it, Convert held until a read is picked
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/convert"
+    Then the certs control "certs-convert/to" is enabled
+    When I choose "pkcs12" in the control "certs-convert/to"
+    Then the certs format slot "certificate" reads needed
+    And the certs format slot "key" reads needed
+    And the certs page's "convert" action is held
+    When I drop "leaf.pem" into the input zone
+    Then the certs format slot "certificate" reads loaded
+    And the certs format slot "key" reads needed
+    When I drop "leaf.key" into the input zone
+    Then the certs format slot "key" reads loaded
+    And the certs page's "convert" action is free
 
   Scenario: Convert: an Input card the person folded and opened again in the visit stays open after a read
     Given the host answers the certs fixture
@@ -280,6 +297,7 @@ Feature: certs
 
   Scenario: Generate: a request signed with an authority of the vault is issued by it, downloads under its common name and lands in the vault linked to it, its page naming the authority as its issuer
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its downloads
     When I open "/certs/generate"
@@ -385,6 +403,7 @@ Feature: certs
 
   Scenario: Vault: a record renamed on its page, a #id arrival landing on its row, and a row's Delete behind the typed confirmation leaving the focus on the heading
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs"
     And I click "Add New"
@@ -405,6 +424,7 @@ Feature: certs
 
   Scenario: Vault: a secret of the api_key kind added through the record form lists under the Secrets narrowing with its profile, and its page draws the secret section
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs?kind=api_key"
     Then the vault lists 0 rows
@@ -440,6 +460,7 @@ Feature: certs
 
   Scenario: Vault: the bulk Delete of the picked rows behind the typed confirmation, the focus on the heading after
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs"
     And I click "Add New"
@@ -456,6 +477,7 @@ Feature: certs
 
   Scenario: Vault: the record page's Delete of a pulled row sends no DELETE and lands on the vault with the heading focused, and the vault row's Delete does the same from the vault narrowed to Authorities
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/shared"
     And I pull the shared row "Fixture Root CA"
@@ -480,6 +502,7 @@ Feature: certs
 
   Scenario: Vault: the Visibility and Status pickers over the picked synced rows the person manages, one PUT a row a pick
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the host answers the certs-access-public fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/shared"
@@ -508,6 +531,7 @@ Feature: certs
 
   Scenario: Record: Publish, Guests and Public from the header are three PUTs of the synced record, each answer's words drawn on the header
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the host answers the certs-own-published fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/shared"
@@ -529,6 +553,7 @@ Feature: certs
 
   Scenario: Record: a manager's Unpublish then Publish of another person's row, both answered 200, the status drawn from each answer
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the host answers the certs-leaf-unpublished fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/shared"
@@ -547,6 +572,7 @@ Feature: certs
 
   Scenario: Record: Remove from the organization sends the one DELETE and keeps the pulled copy in the vault
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/shared"
     And I pull the shared row "Fixture Root CA"
@@ -562,6 +588,7 @@ Feature: certs
 
   Scenario: Mirror: a member renaming a pulled copy of another person's row sends no PUT, while a manager renaming their own sends one
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the host answers the certs-user fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"user\",\"access_token\":\"t\"}"
     When I open "/certs/shared"
@@ -575,6 +602,7 @@ Feature: certs
 
   Scenario: Mirror: a manager renaming a record they shared sends one PUT answered with the new name
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the host answers the certs-own-renamed fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/shared"
@@ -635,6 +663,7 @@ Feature: certs
 
   Scenario: Shared: Pull again replaces the pulled copy with the row as the store holds it
     Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
     And the host answers the certs-user fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"user\",\"access_token\":\"t\"}"
     When I open "/certs/shared"

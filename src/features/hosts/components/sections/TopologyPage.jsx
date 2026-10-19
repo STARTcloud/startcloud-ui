@@ -5,6 +5,7 @@ import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useHostSeriesRefresh } from '../../hooks/useHostSeries';
+import { sectionTitle } from '../../pages';
 import TopologyPanel from '../NetworkTopology/TopologyPanel';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
@@ -24,11 +25,12 @@ const foldOf = ({ folds, key, t }) => {
 };
 
 /**
- * The Topology page of a host: the heading with Refresh in its pane,
- * and under it the network topology as a folding section over the
- * copies the hosts feature's context holds; the fold kept under
- * `table_prefs_topology`. Refresh reads every held answer of the host
- * and every drawn series again.
+ * The Topology page of a host: one heading, the topology's own, the
+ * section's title with the topology's controls then Refresh in its pane
+ * and the chevron last, and under it the network topology as a folding
+ * section over the copies the hosts feature's context holds; the fold
+ * kept under `table_prefs_topology`. Refresh reads every held answer of
+ * the host and every drawn series again.
  */
 const TopologyPage = ({ id, server, context, section, onRefresh }) => {
   const { t } = useTranslation();
@@ -43,13 +45,13 @@ const TopologyPage = ({ id, server, context, section, onRefresh }) => {
   };
 
   return (
-    <SectionPane
-      section={section}
-      server={server}
-      count={null}
-      actions={<RefreshButton onRefresh={refresh} />}
-    >
-      <TopologyPanel id={id} fold={foldOf({ folds, key: 'topology', t })} />
+    <SectionPane section={section} server={server} headed={false}>
+      <TopologyPanel
+        id={id}
+        fold={foldOf({ folds, key: 'topology', t })}
+        title={sectionTitle(section, server, '', t)}
+        actions={<RefreshButton onRefresh={refresh} />}
+      />
     </SectionPane>
   );
 };

@@ -52,7 +52,8 @@ const applied = (current, event) => {
  * through the store's own events, the preferences store beside them, and
  * the keeper of the shared store's mirror while the host lists
  * `certs-store` and a person is signed in, handed the organization the
- * rows are sent to and the memberships the Shared page lists.
+ * rows are sent to, the backend's role name its `sync` switch is keyed
+ * by, and the memberships the Shared page lists.
  */
 const VaultProvider = ({ signedIn, user = null, organization, organizations, children }) => {
   const status = useStatus();
@@ -160,7 +161,12 @@ const VaultProvider = ({ signedIn, user = null, organization, organizations, chi
   return (
     <VaultContext.Provider value={value}>
       {enabled && stored && signedIn ? (
-        <VaultSyncKeeper organization={organization} user={user} onApi={setSync} />
+        <VaultSyncKeeper
+          organization={organization}
+          user={user}
+          destination={status.role || ''}
+          onApi={setSync}
+        />
       ) : null}
       {children}
     </VaultContext.Provider>
@@ -180,7 +186,8 @@ export default VaultProvider;
 /**
  * The vault every certs page draws from: `records`, whether they are
  * `loaded`, the `version` raised on every write, the `preferences`
- * (`threshold_days` and `sync`), whether the host `stored` rows, whether
+ * (`threshold_days` and `sync`, `{ [destination]: boolean }`), whether
+ * the host `stored` rows, whether
  * a person is `signedIn`, the active `organization` and the person's
  * `organizations`, the mirror's `sync` (`mirror`, `pull`) while it runs
  * and null otherwise, and the writes `add(record)`, `update(record, patch)`, `remove(record)`,

@@ -9,6 +9,7 @@ import {
   fileStemOf,
   formatOf,
   formatsFor,
+  slotsOf,
 } from '../../src/features/certs/utils/formats.js';
 
 describe('fileStemOf', () => {
@@ -65,6 +66,17 @@ describe('formatsFor', () => {
       'jwks_public',
     ]);
     expect(formatsFor(['encrypted_key']).map(format => format.id)).toEqual(['pem']);
+  });
+});
+
+describe('slotsOf', () => {
+  it('answers the slots a format carries in order and none for no format', () => {
+    const idsOf = id => slotsOf(formatOf(id)).map(slot => slot.id);
+    expect(idsOf('pkcs12')).toEqual(['certificate', 'key']);
+    expect(idsOf('pkcs7')).toEqual(['certificate']);
+    expect(idsOf('pkcs8')).toEqual(['key']);
+    expect(idsOf('pem')).toEqual(['certificate', 'key', 'public_key', 'request']);
+    expect(slotsOf(null)).toEqual([]);
   });
 });
 

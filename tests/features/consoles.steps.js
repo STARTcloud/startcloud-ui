@@ -253,10 +253,6 @@ Then('the stored {string} carries {string} as {string}', async ({ page }, key, m
 
 const connectAsOf = page => page.locator('[data-dialog="connect-as"]');
 
-When("I press the machine heading's {string} door", async ({ page }, action) => {
-  await page.locator(`[data-page="machine"] .section-heading [data-action="${action}"]`).click();
-});
-
 When("I press the hardware card's {string} door", async ({ page }, action) => {
   await page.locator(`[data-panel="machine-hardware"] [data-action="${action}"]`).click();
 });

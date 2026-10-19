@@ -2,12 +2,12 @@ import PropTypes from 'prop-types';
 import { useCallback, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaTrash } from 'react-icons/fa6';
+import { FaKey, FaTrash } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import CopyButton from '../../../components/common/CopyButton';
-import SectionCard, { foldsShape } from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
+import SplitButton from '../../../components/common/SplitButton';
 import SubTable from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
 import { dayOf } from '../../../hooks/useClientFilters';
@@ -16,6 +16,8 @@ import { bootstrapApiKey, deleteApiKey, generateApiKey, getApiKeys } from '../ap
 import { useManageRead, useManageSend } from '../hooks/useHostManage';
 import { apiKeysOf } from '../utils/agentSettings';
 import { formatTaskDate } from '../utils/tasks';
+
+import ToolFormDialog from './ToolFormDialog';
 
 const PREFS_KEY = 'table_prefs_api_keys';
 
@@ -158,23 +160,77 @@ GeneratedKeyModal.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
+const NO_FORM = { name: '', description: '' };
+
+const GenerateKeyDialog = ({ busy, onClose, onSubmit }) => {
+  const { t } = useTranslation();
+  const [form, setForm] = useState(NO_FORM);
+  return (
+    <ToolFormDialog
+      dialog="api-key-generate"
+      title={t('accounts.apiKeysTab.generateKeyButton')}
+      submitKey="accounts.apiKeysTab.generateKeyButton"
+      disabled={!form.name.trim()}
+      dirty={Boolean(form.name || form.description)}
+      busy={busy}
+      onClose={onClose}
+      onSubmit={() => onSubmit(form)}
+    >
+      <div className="mb-3">
+        <label htmlFor="api-key-name" className="form-label">
+          {t('accounts.apiKeysTab.labelName')}
+        </label>
+        <input
+          id="api-key-name"
+          className="form-control"
+          type="text"
+          value={form.name}
+          onChange={event => setForm(current => ({ ...current, name: event.target.value }))}
+          placeholder={t('accounts.apiKeysTab.namePlaceholder')}
+          required
+        />
+      </div>
+      <div className="mb-3">
+        <label htmlFor="api-key-description" className="form-label">
+          {t('accounts.apiKeysTab.labelDescription')}
+        </label>
+        <input
+          id="api-key-description"
+          className="form-control"
+          type="text"
+          value={form.description}
+          onChange={event => setForm(current => ({ ...current, description: event.target.value }))}
+          placeholder={t('accounts.apiKeysTab.descriptionPlaceholder')}
+        />
+      </div>
+    </ToolFormDialog>
+  );
+};
+
+GenerateKeyDialog.propTypes = {
+  busy: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+};
+
 /**
- * The API management tab of the Agent settings page, hyperweaver-ui's
- * `ApiKeysTab`: the generate form in a section card, its name and
- * description sent as `POST api-keys/generate` and the bootstrap key as
- * `POST api-keys/bootstrap`, the one-time key drawn in a list dialog
- * with Copy; then the keys of `GET api-keys` in the one table, each
- * with Delete behind the typed confirmation, `DELETE api-keys/{id}`.
- * Every write is one request and one notice, the keys read again once
- * after a success; the list reads once as the tab draws, again when the
- * stream opens fresh or answers `reset` and on the page's Refresh. The
- * navbar search is bound over the key's name and description, with the
- * Active `toggle` group and the Last used and Created `date-range`
- * groups narrowing the rows client-side, and the Columns group, the
- * sort, hidden columns and widths under `table_prefs_api_keys` through
- * `useDetailSearch`.
+ * The API keys of a host under the API keys page's one heading: `title`,
+ * the count of the keys once read, and in its pane the split Generate key,
+ * which opens the form dialog of the name and the description sent as
+ * `POST api-keys/generate`, with Generate bootstrap key in its menu,
+ * `POST api-keys/bootstrap`, then `actions`; the one-time key drawn in a
+ * list dialog with Copy; under the heading the keys of `GET api-keys` in
+ * the one table, each with Delete behind the typed confirmation,
+ * `DELETE api-keys/{id}`. Every write is one request and one notice, the
+ * keys read again once after a success; the list reads once as the page
+ * draws, again when the stream opens fresh or answers `reset` and on the
+ * page's Refresh. The navbar search is bound over the key's name and
+ * description, with the Active `toggle` group and the Last used and
+ * Created `date-range` groups narrowing the rows client-side, and the
+ * Columns group, the sort, hidden columns and widths under
+ * `table_prefs_api_keys` through `useDetailSearch`.
  */
-const ApiKeysTab = ({ id, folds }) => {
+const ApiKeysTab = ({ id, title, actions = null }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
   const keys = useManageRead(
@@ -182,7 +238,7 @@ const ApiKeysTab = ({ id, folds }) => {
     true
   );
   const { send, busy } = useManageSend(id);
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState('');
   const [deleting, setDeleting] = useState(null);
   const ctx = useMemo(() => ({ t, language: i18n.language }), [t, i18n.language]);
@@ -198,15 +254,14 @@ const ApiKeysTab = ({ id, folds }) => {
     defaultSort: DEFAULT_SORT,
   });
 
-  const generate = async event => {
-    event.preventDefault();
+  const generate = async form => {
     const { answer, error } = await send({
-      call: () => generateApiKey(status, id, form.name, form.description),
+      call: () => generateApiKey(status, id, form.name.trim(), form.description),
       doneKey: 'accounts.apiKeysTab.keyGeneratedMessage',
     });
     if (!error) {
+      setGenerating(false);
       setGenerated(String(answer?.api_key || ''));
-      setForm({ name: '', description: '' });
       keys.refresh();
     }
   };
@@ -234,72 +289,31 @@ const ApiKeysTab = ({ id, folds }) => {
     }
   };
 
+  const pane = (
+    <>
+      <SplitButton
+        action="api-key-generate"
+        labelKey="accounts.apiKeysTab.generateKeyButton"
+        icon={FaKey}
+        onClick={() => setGenerating(true)}
+        menuAction="api-key-generate-menu"
+        menuLabelKey="accounts.apiKeysTab.generateOptions"
+        items={[
+          {
+            action: 'api-key-bootstrap',
+            labelKey: 'accounts.apiKeysTab.generateBootstrapKeyButton',
+            onClick: bootstrap,
+          },
+        ]}
+        busy={busy}
+      />
+      {actions}
+    </>
+  );
+
   return (
     <div data-panel="api-keys">
-      <SectionCard
-        title={t('accounts.apiKeysTab.generateNewKeyTitle')}
-        folded={folds.folded('api-keys-generate')}
-        onFold={() => folds.toggle('api-keys-generate')}
-      >
-        <form onSubmit={generate} data-form="api-key-generate">
-          <div className="mb-3">
-            <label htmlFor="api-key-name" className="form-label">
-              {t('accounts.apiKeysTab.labelName')}
-            </label>
-            <input
-              id="api-key-name"
-              className="form-control"
-              type="text"
-              value={form.name}
-              onChange={event => setForm(current => ({ ...current, name: event.target.value }))}
-              placeholder={t('accounts.apiKeysTab.namePlaceholder')}
-              required
-            />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="api-key-description" className="form-label">
-              {t('accounts.apiKeysTab.labelDescription')}
-            </label>
-            <input
-              id="api-key-description"
-              className="form-control"
-              type="text"
-              value={form.description}
-              onChange={event =>
-                setForm(current => ({ ...current, description: event.target.value }))
-              }
-              placeholder={t('accounts.apiKeysTab.descriptionPlaceholder')}
-            />
-          </div>
-          <div className="d-flex gap-2">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              data-action="api-key-generate"
-              disabled={busy}
-            >
-              {t(
-                busy
-                  ? 'accounts.apiKeysTab.generatingButton'
-                  : 'accounts.apiKeysTab.generateKeyButton'
-              )}
-            </button>
-            <button
-              type="button"
-              className="btn btn-warning"
-              data-action="api-key-bootstrap"
-              onClick={bootstrap}
-              disabled={busy}
-            >
-              {t('accounts.apiKeysTab.generateBootstrapKeyButton')}
-            </button>
-          </div>
-        </form>
-      </SectionCard>
-      <SectionHeading
-        title={t('accounts.apiKeysTab.existingKeysTitle')}
-        count={keys.loaded ? rows.length : null}
-      />
+      <SectionHeading title={title} count={keys.loaded ? rows.length : null} actions={pane} />
       {keys.failed ? (
         <div className="alert alert-danger" role="alert" data-note="api-keys-failed">
           {keys.message}
@@ -320,6 +334,9 @@ const ApiKeysTab = ({ id, folds }) => {
         ctx={ctx}
         emptyText={t(emptyKeyOf(keys.loaded, search.filtering))}
       />
+      {generating ? (
+        <GenerateKeyDialog busy={busy} onClose={() => setGenerating(false)} onSubmit={generate} />
+      ) : null}
       {generated ? <GeneratedKeyModal apiKey={generated} onClose={() => setGenerated('')} /> : null}
       <ConfirmModal
         show={deleting !== null}
@@ -336,7 +353,8 @@ const ApiKeysTab = ({ id, folds }) => {
 
 ApiKeysTab.propTypes = {
   id: PropTypes.string.isRequired,
-  folds: foldsShape.isRequired,
+  title: PropTypes.string.isRequired,
+  actions: PropTypes.node,
 };
 
 export default ApiKeysTab;

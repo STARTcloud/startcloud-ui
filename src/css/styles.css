@@ -8052,7 +8052,7 @@ button.hw-bay:focus-visible {
   text-decoration: underline;
 }
 
-.upd-side-card .card-body {
+.upd-side-card > .card-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -8129,4 +8129,13 @@ button.hw-bay:focus-visible {
 .upd-asset-glyph {
   color: var(--bs-secondary-color);
   flex-shrink: 0;
+}
+
+.upd-side-card .upd-asset {
+  flex-wrap: wrap;
+}
+
+.upd-side-card .upd-asset-checksum {
+  order: 1;
+  flex-basis: 100%;
 }

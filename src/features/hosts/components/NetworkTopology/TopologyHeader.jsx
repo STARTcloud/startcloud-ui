@@ -18,10 +18,10 @@ const LENSES = [
 ];
 
 /**
- * The topology's controls, hyperweaver-ui's: the scope toggle where more
- * than one host offers networking, the two lenses, the effect select,
- * the clear of an isolation, the feed pulse naming the seconds the
- * newest sample spans, and fullscreen.
+ * The topology's controls, drawn in the pane of the Topology page's
+ * heading: the scope toggle where more than one host offers networking,
+ * the two lenses, the effect select, the clear of an isolation, the feed
+ * pulse naming the seconds the newest sample spans, and fullscreen.
  */
 const TopologyHeader = ({
   scope,
@@ -44,7 +44,7 @@ const TopologyHeader = ({
     : t('hostTools.topology.pulseNoFeed');
 
   return (
-    <div className="hw-topo-header d-flex flex-wrap align-items-center gap-2">
+    <>
       {multiHostAvailable ? (
         <div className="btn-group">
           <button
@@ -106,7 +106,7 @@ const TopologyHeader = ({
         </button>
       ) : null}
       <span
-        className={`hw-topo-pulse ms-auto ${feedLive ? 'hw-topo-pulse-live' : ''}`}
+        className={`hw-topo-pulse ${feedLive ? 'hw-topo-pulse-live' : ''}`}
         title={pulseText}
         data-pulse={feedLive ? 'live' : 'none'}
       >
@@ -126,7 +126,7 @@ const TopologyHeader = ({
       >
         {isFullscreen ? <FaCompress aria-hidden="true" /> : <FaExpand aria-hidden="true" />}
       </button>
-    </div>
+    </>
   );
 };
 

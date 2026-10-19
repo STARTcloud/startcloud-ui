@@ -135,6 +135,42 @@ ChipBar.propTypes = {
   onIsolate: PropTypes.func.isRequired,
 };
 
+const TopologyStrips = ({ shared, debug, issueTotals }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {shared.length > 0 ? (
+        <div className="hw-topo-shared-strip" data-note="shared">
+          <span className="fw-semibold">{t('hostTools.topology.sharedNetworks')}</span>
+          {shared.map(entry => (
+            <span key={entry.key} className="font-monospace">
+              {entry.vlanId > 0 ? `VLAN ${entry.vlanId} · ` : ''}
+              {entry.subnet} — {entry.hosts.join(', ')}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {debug ? (
+        <div className="hw-topo-issues-strip" data-note="issues">
+          <span>{t('hostTools.topology.issueDown', { count: issueTotals.down })}</span>
+          <span>{t('hostTools.topology.issueEmpty', { count: issueTotals.empty })}</span>
+          <span>{t('hostTools.topology.issueStale', { count: issueTotals.ghosts })}</span>
+          <span>
+            {t('hostTools.topology.issueDisconnected', { count: issueTotals.disconnected })}
+          </span>
+          <span>{t('hostTools.topology.issueUnassigned', { count: issueTotals.unassigned })}</span>
+        </div>
+      ) : null}
+    </>
+  );
+};
+
+TopologyStrips.propTypes = {
+  shared: PropTypes.array.isRequired,
+  debug: PropTypes.bool.isRequired,
+  issueTotals: PropTypes.objectOf(PropTypes.number).isRequired,
+};
+
 const applyOne = async ({ status, hostKey, machineName, moves, t }) => {
   const built = buildNicBody(moves[0].hostKind, moves);
   if (built.error) {
@@ -170,10 +206,11 @@ const applyOne = async ({ status, hostKey, machineName, moves, t }) => {
 };
 
 /**
- * The network topology of the networking page, hyperweaver-ui's
- * `TopologyPanel` as a folding section after the summary: the header
- * with the scope, the lenses, the effect, the pulse and fullscreen; the
- * shared-networks strip over more than one host; the debug lens's issue
+ * The network topology of the Topology page, a folding section under the
+ * page's one heading: `title`, and in its pane the scope, the lenses, the
+ * effect, the pulse and fullscreen, then the page's `actions`, the
+ * chevron last; under it the shared-networks strip over more than one
+ * host; the debug lens's issue
  * strip; the armed banner and the remove drop of a drag; the staged
  * tray; then one host after another, its title where more than one is
  * drawn, its chip bar, its canvas and its drill panel; and the legend.
@@ -188,7 +225,7 @@ const applyOne = async ({ status, hostKey, machineName, moves, t }) => {
  * with `buildNicBody` per machine, then reads the host's machines and
  * each machine's detail again.
  */
-const TopologyPanel = ({ id, fold }) => {
+const TopologyPanel = ({ id, fold, title, actions = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const navigate = useNavigate();
@@ -342,7 +379,33 @@ const TopologyPanel = ({ id, fold }) => {
     },
   });
 
-  const heading = t('pages.hostNetworking.topologyHeading');
+  const pane = (
+    <>
+      <TopologyHeader
+        scope={scope}
+        onScopeChange={next => {
+          setScope(next);
+          setIsolation(null);
+          setDrill(null);
+        }}
+        multiHostAvailable={multiHostAvailable}
+        lens={lens}
+        onLensChange={setLens}
+        effectStyle={effectStyle}
+        onEffectChange={next => {
+          setEffectStyle(next);
+          writeEffect(next);
+        }}
+        isolatedNet={isolation ? isolation.netId : null}
+        onClearIsolation={() => setIsolation(null)}
+        feedLive={feedLive}
+        seconds={seconds}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={() => setIsFullscreen(prev => !prev)}
+      />
+      {actions}
+    </>
+  );
 
   return (
     <div
@@ -355,59 +418,15 @@ const TopologyPanel = ({ id, fold }) => {
         <TopologyHostFeed key={hostId} id={hostId} onHost={onHost} />
       ))}
       <SectionHeading
-        title={heading}
+        title={title}
+        actions={pane}
         folded={fold.folded}
         onFold={fold.onFold}
         foldTitle={fold.title}
       />
       {fold.folded ? null : (
         <>
-          <TopologyHeader
-            scope={scope}
-            onScopeChange={next => {
-              setScope(next);
-              setIsolation(null);
-              setDrill(null);
-            }}
-            multiHostAvailable={multiHostAvailable}
-            lens={lens}
-            onLensChange={setLens}
-            effectStyle={effectStyle}
-            onEffectChange={next => {
-              setEffectStyle(next);
-              writeEffect(next);
-            }}
-            isolatedNet={isolation ? isolation.netId : null}
-            onClearIsolation={() => setIsolation(null)}
-            feedLive={feedLive}
-            seconds={seconds}
-            isFullscreen={isFullscreen}
-            onToggleFullscreen={() => setIsFullscreen(prev => !prev)}
-          />
-          {shared.length > 0 ? (
-            <div className="hw-topo-shared-strip" data-note="shared">
-              <span className="fw-semibold">{t('hostTools.topology.sharedNetworks')}</span>
-              {shared.map(entry => (
-                <span key={entry.key} className="font-monospace">
-                  {entry.vlanId > 0 ? `VLAN ${entry.vlanId} · ` : ''}
-                  {entry.subnet} — {entry.hosts.join(', ')}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          {lens === 'debug' ? (
-            <div className="hw-topo-issues-strip" data-note="issues">
-              <span>{t('hostTools.topology.issueDown', { count: issueTotals.down })}</span>
-              <span>{t('hostTools.topology.issueEmpty', { count: issueTotals.empty })}</span>
-              <span>{t('hostTools.topology.issueStale', { count: issueTotals.ghosts })}</span>
-              <span>
-                {t('hostTools.topology.issueDisconnected', { count: issueTotals.disconnected })}
-              </span>
-              <span>
-                {t('hostTools.topology.issueUnassigned', { count: issueTotals.unassigned })}
-              </span>
-            </div>
-          ) : null}
+          <TopologyStrips shared={shared} debug={lens === 'debug'} issueTotals={issueTotals} />
           {dragging?.drag?.pinnedCarrier ? (
             <div className="hw-topo-tray hw-topo-armed font-monospace" data-note="armed">
               {t('hostTools.topology.armedBanner', {
@@ -530,6 +549,8 @@ TopologyPanel.propTypes = {
     onFold: PropTypes.func.isRequired,
     title: PropTypes.string.isRequired,
   }).isRequired,
+  title: PropTypes.string.isRequired,
+  actions: PropTypes.node,
 };
 
 export default TopologyPanel;
