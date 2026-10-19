@@ -6,7 +6,7 @@ const FILES = '__APP_FILES__';
 const CACHE_NAME = `startcloud-ui-${VERSION}-${BUILD}`;
 const SHELL = '/';
 const STATUS = '/api/status';
-const PRECACHE = [SHELL, ...(Array.isArray(FILES) ? FILES : [])];
+const PRECACHE = [SHELL, STATUS, ...(Array.isArray(FILES) ? FILES : [])];
 const KEPT = ['/assets/', '/locales/', '/brand/', '/themes/', '/fonts/', '/manifest.json'];
 
 self.addEventListener('install', event => {

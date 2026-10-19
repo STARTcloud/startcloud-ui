@@ -2514,7 +2514,9 @@ Each test answers through an in-app notice card, "Test sent." or
   lacks it and never keeping it, so one loaded build stays whole and the
   app opens with no network; `GET /api/status` alone is asked of the
   server first and answered from its last copy only while the server does
-  not answer, that copy marked `X-Served-From: cache`, so the boot reaches
+  not answer, that copy stored at install beside the build, because the
+  first load's status was asked before the worker held the page, and
+  replaced by every answer after, marked `X-Served-From: cache`, so the boot reaches
   the app offline with the tokens it last saw and the shell raises one
   sticky warning banner, in the new-version banner's shape with its
   dismiss, saying the host is offline and the page is the copy this
