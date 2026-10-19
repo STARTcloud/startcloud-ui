@@ -206,7 +206,7 @@ const listedChoicesOf = defaults =>
     .map(row => ({ source: row.source, domain: trimmed(row.domain) }));
 
 /**
- * The rows of the Domain source select, one a source in the order of
+ * The rows of the domain input's list, one a source in the order of
  * `DOMAIN_SOURCES`: the browser preference while one is set, then the
  * `user`, `organization` and `agent` rows of `settings.domain_choices`,
  * the agent's row standing in from `settings.domain` while the list
@@ -250,17 +250,6 @@ export const defaultDomainOf = ({ preference = '', choices = [], agentDomain = '
   );
   return row ? trimmed(row.domain) : trimmed(agentDomain);
 };
-
-/**
- * The source the Domain source select reads for a domain: the first row
- * whose domain is the one held, `custom` while none is.
- *
- * @param {Array<{ source: string, domain: string }>} choices - The rows of `domainChoicesOf`
- * @param {string} domain - The domain held
- * @returns {string} The source word, or `custom`
- */
-export const domainSourceOf = (choices, domain) =>
-  choices.find(row => row.domain === trimmed(domain))?.source || 'custom';
 
 /**
  * The route of the agent's `machines` configuration, where the default

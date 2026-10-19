@@ -1,0 +1,41 @@
+{
+  "id": "row-own-host",
+  "organization": "",
+  "kind": "certificate",
+  "name": "Local leaf",
+  "subject": "C=US, O=Fixture, CN=www.fixture.test",
+  "not_after": "2027-10-17T11:32:30Z",
+  "published": false,
+  "is_public": false,
+  "guest_access": false,
+  "created_by": "Mark",
+  "updated_at": "2026-10-11T09:00:00.000Z",
+  "record": {
+    "id": "rec-cert-1",
+    "kind": "certificate",
+    "name": "Local leaf",
+    "tags": [],
+    "notes": "",
+    "created_at": "2026-10-10T09:00:00.000Z",
+    "updated_at": "2026-10-11T09:00:00.000Z",
+    "facts": null,
+    "links": {
+      "key_id": null,
+      "issuer_id": null,
+      "request_id": null,
+      "chain_ids": []
+    },
+    "history": [],
+    "public_der_b64": null,
+    "private_der_b64": null,
+    "template": null,
+    "origin": "shared",
+    "remote_id": "row-own-host",
+    "organization": "",
+    "created_by": "Mark",
+    "synced_at": "2026-10-11T09:00:00.000Z",
+    "published": false,
+    "is_public": false,
+    "guest_access": false
+  }
+}

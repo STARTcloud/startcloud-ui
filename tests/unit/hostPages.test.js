@@ -42,7 +42,7 @@ describe('HOST_PAGES', () => {
       const group = HOST_PAGES.find(entry => entry.key === key);
       const pages = typeof group.pages === 'function' ? group.pages(null) : group.pages;
       expect(pages.every(page => typeof page.icon === 'function')).toBe(true);
-      return pages.map(page => page.segment);
+      return pages.map(page => page.segment ?? page.to);
     };
     expect(segmentsOf('network')).toEqual([
       'network/interfaces',
@@ -90,6 +90,7 @@ describe('HOST_PAGES', () => {
     expect(segmentsOf('files')).toEqual(['files']);
     expect(segmentsOf('agent')).toEqual([
       'agent/secrets',
+      '/certs/shared',
       'agent/api-keys',
       'agent/database',
       'agent/update',
@@ -216,7 +217,7 @@ describe('hostPagesFor', () => {
     expect(pagesOf(rowOf(['artifacts']), 1).provisioning).toEqual(['installers']);
   });
 
-  it('offers the agent rows to a row that names a hypervisor, the secrets behind certs-store and one row a configuration file', () => {
+  it('offers the agent rows to a row that names a hypervisor, the secrets behind certs-store, the Certificates store beside them on the self row alone, and one row a configuration file', () => {
     expect(pagesOf(rowOf([], ['virtualbox']), 1).agent).toEqual(['api-keys', 'database', 'update']);
     expect(pagesOf(rowOf(['certs-store'], ['virtualbox']), 1).agent).toEqual([
       'secrets',
@@ -225,6 +226,16 @@ describe('hostPagesFor', () => {
       'update',
     ]);
     expect(pagesOf(rowOf(['vnics'], []), 1).agent).toBeUndefined();
+    expect(
+      pagesOf({ id: 'self', ...rowOf(['certs-store'], ['virtualbox']) }, 'self').agent
+    ).toEqual(['secrets', 'certificates', 'api-keys', 'database', 'update']);
+    const own = hostPagesFor({ id: 'self', ...rowOf(['certs-store']) }, 'self').find(
+      group => group.key === 'agent'
+    );
+    expect(own.pages.map(page => [page.key, page.to, page.end])).toEqual([
+      ['secrets', '/hosts/self/agent/secrets', false],
+      ['certificates', '/certs/shared', false],
+    ]);
     const configured = hostPagesFor(rowOf([], ['virtualbox'], ['app', 'machines']), 1);
     const agent = configured.find(group => group.key === 'agent');
     expect(agent.pages.slice(0, 2)).toEqual([

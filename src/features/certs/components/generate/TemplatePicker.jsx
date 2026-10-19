@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaFloppyDisk } from 'react-icons/fa6';
+import { FaFileImport, FaFloppyDisk } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Field from '../../../../components/common/Field';
@@ -12,10 +12,10 @@ import { TEMPLATE_LABELS, templateSchemaOf } from '../../utils/schemas';
 const EMPTY_NAME = { name: '' };
 
 /**
- * The optional templates of the vault under a subject form, opening
- * with one line saying they are optional: a select loading one into the
- * form with Delete behind the typed confirmation removing the one
- * picked, drawn only while the vault holds a template, and a name with
+ * The templates of the vault under a subject form: while the vault
+ * holds a template, the Template select with Load putting the one picked
+ * into the form and Delete behind the typed confirmation removing it,
+ * nothing loaded on a pick alone; then the Save as template name with
  * Save in its input group keeping the form as a new one, the name
  * required and refused while a template already carries it, the refusal
  * drawn under the name and in the summary over the picker on Save;
@@ -49,7 +49,6 @@ const TemplatePicker = ({ idPrefix, templates, onLoad, onSave, onDelete }) => {
 
   return (
     <div className="mt-3" data-panel="templates">
-      <p className="text-body-secondary small mb-2">{t('certs.generate.templatesOptional')}</p>
       <FormErrorSummary errors={rules.summary} />
       <div className="row g-3 align-items-start mb-3">
         {templates.length > 0 ? (
@@ -61,13 +60,7 @@ const TemplatePicker = ({ idPrefix, templates, onLoad, onSave, onDelete }) => {
                     {...aria}
                     className="form-select"
                     value={picked}
-                    onChange={event => {
-                      setPicked(event.target.value);
-                      const template = templates.find(entry => entry.id === event.target.value);
-                      if (template) {
-                        onLoad(template);
-                      }
-                    }}
+                    onChange={event => setPicked(event.target.value)}
                   >
                     <option value="">{t('certs.generate.pickTemplate')}</option>
                     {templates.map(template => (
@@ -76,6 +69,16 @@ const TemplatePicker = ({ idPrefix, templates, onLoad, onSave, onDelete }) => {
                       </option>
                     ))}
                   </select>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    data-action="load-template"
+                    disabled={!held}
+                    onClick={() => onLoad(held)}
+                  >
+                    <FaFileImport className="me-1" aria-hidden="true" />
+                    {t('certs.generate.loadTemplate')}
+                  </button>
                   <button
                     type="button"
                     className="btn btn-outline-danger"

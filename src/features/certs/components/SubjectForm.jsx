@@ -120,8 +120,9 @@ const withSan = (draft, index, name, value) => ({
  * rules: the common name, organization, unit, locality, state, country
  * and email fields, the subject alternative names as rows of a kind and
  * a value with a remove control and an add control under them, and the
- * extended key usages as one scope list, server, client, code signing
- * and email; `onChange(draft)` answers the whole draft.
+ * extended key usages as one scope list in a wrapping row, server,
+ * client, code signing and email; `onChange(draft)` answers the whole
+ * draft.
  */
 const SubjectForm = ({ draft, rules, onChange }) => {
   const { t } = useTranslation();
@@ -181,6 +182,7 @@ const SubjectForm = ({ draft, rules, onChange }) => {
           checked={draft.ext_key_usage}
           onToggle={toggleEku}
           name="eku"
+          inline
         />
       </fieldset>
     </div>

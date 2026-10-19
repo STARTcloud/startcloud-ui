@@ -78,7 +78,7 @@ const useSharedRows = organizations => {
   const names = organizations.map(organization => organization.name).join(',');
 
   const read = useCallback(() => {
-    const list = names ? names.split(',') : [];
+    const list = names ? names.split(',') : [''];
     Promise.all(list.map(name => fetchCerts(name).catch(() => [])))
       .then(answers => {
         const seen = new Set();
@@ -104,17 +104,20 @@ const useSharedRows = organizations => {
 };
 
 const groupRows = (organizations, rows) =>
-  organizations.map(organization => ({
-    key: organization.name,
-    organization: { name: organization.name, logo: organization.logo || '' },
-    items: rows.filter(row => row.organization === organization.name),
-  }));
+  organizations.length > 0
+    ? organizations.map(organization => ({
+        key: organization.name,
+        organization: { name: organization.name, logo: organization.logo || '' },
+        items: rows.filter(row => row.organization === organization.name),
+      }))
+    : null;
 
 /**
- * The shared store at `/certs/shared`, drawn while the host lists
- * `certs-store` and a person is signed in: the rows of every
- * organization the person belongs to, read on open, on Refresh and on
- * the `certs` topic's events, one organization group row per
+ * The Certificates page of the backend's store at `/certs/shared`, drawn
+ * while the host lists `certs-store` and a person is signed in: the rows
+ * of every organization the person belongs to, or of the person's own
+ * store on the host while they belong to none, read on open, on Refresh
+ * and on the `certs` topic's events, one organization group row per
  * organization the way the listings group their rows, narrowed by the
  * navbar binding under `table_prefs_certs_shared` with the Kind,
  * Status, Visibility and Organization groups, a `#<id>` in the URL

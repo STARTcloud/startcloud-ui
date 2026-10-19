@@ -196,6 +196,17 @@ Then('the wizard draws no step {string}', async ({ page }, step) => {
   await expect(pillOf(page, step)).toHaveCount(0);
 });
 
+Then('the field {string} lists the options {string}', async ({ page }, id, options) => {
+  const list = await dialogOf(page).locator(`[id="${id}"]`).getAttribute('list');
+  await expect
+    .poll(() =>
+      dialogOf(page)
+        .locator(`datalist[id="${list}"] option`)
+        .evaluateAll(nodes => nodes.map(node => node.value).join(','))
+    )
+    .toBe(options);
+});
+
 Then('the wizard step {string} is open', async ({ page }, step) => {
   await expect(pillOf(page, step)).toBeEnabled();
 });

@@ -27,12 +27,14 @@ const mirrored = (record, kinds, user) =>
  * lists `certs-store` and a person is signed in: every vault write of a
  * record carrying a `remote_id` the person manages (`canManageRecord`),
  * or of a kind the `sync` preference checks, is sent as a PUT or a POST
- * to the organization given, a write on a pulled copy of another
+ * to the organization given, or under no organization to the person's own
+ * store on the host while none is given, a write on a pulled copy of another
  * creator's row staying local, one
  * request in flight per record and a write landing meanwhile sent after
  * the answer, the answer's `updated_at` kept on the record as
  * `synced_at`; a refused send is one danger notice and the record stays
- * as it was; a local remove sends nothing; the organization's rows are
+ * as it was; a local remove sends nothing; the rows of the organization,
+ * or of no organization while none is given, are
  * pulled on sign-in, on the stream's fresh `ready` and on `reset`, and
  * the `certs` topic's `cert-updated` is merged by `remote_id`, a newer
  * row replacing the record held, while `cert-removed` detaches the
@@ -40,9 +42,9 @@ const mirrored = (record, kinds, user) =>
  * `sync` source and are never sent back.
  *
  * @param {Object} options - The session's side
- * @param {string} options.organization - The organization the rows are sent to
+ * @param {string} options.organization - The organization the rows are sent to, empty for none
  * @param {Object|null} options.user - The session's user
- * @returns {{ mirror: Function, pull: Function }} `mirror(kinds)` sends every unsent record of the kinds and pulls, answering how many sends were refused; `pull()` reads the organization's rows
+ * @returns {{ mirror: Function, pull: Function }} `mirror(kinds)` sends every unsent record of the kinds and pulls, answering how many sends were refused; `pull()` reads the rows of the organization, or of none
  */
 export const useVaultSync = ({ organization, user }) => {
   const { t } = useTranslation();
@@ -80,14 +82,13 @@ export const useVaultSync = ({ organization, user }) => {
 
   const pull = useCallback(async () => {
     const own = organizationRef.current;
-    if (!own) {
-      return;
-    }
     try {
       const rows = await fetchCerts(own);
       const kinds = kindsRef.current;
       await Promise.all(
-        (Array.isArray(rows) ? rows : []).filter(row => kinds.includes(row.kind)).map(merge)
+        (Array.isArray(rows) ? rows : [])
+          .filter(row => kinds.includes(row.kind) && (row.organization || '') === own)
+          .map(merge)
       );
     } catch (error) {
       failed('Certs pull failed', error);

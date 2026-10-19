@@ -4,6 +4,7 @@ import {
   FaBoxArchive,
   FaBoxesStacked,
   FaCamera,
+  FaCertificate,
   FaChartLine,
   FaCircleUp,
   FaClock,
@@ -43,12 +44,13 @@ import {
 
 import { hasFeatureStrict } from '../../utils/capabilities';
 import { arrivalPath } from '../../utils/searchRow';
+import { STORE_ROUTE } from '../certs/sidebar';
 
 import { MACHINE_PAGES } from './machinePages';
 import { hostHasSettings } from './utils/agentSettings';
 import { hostHasFeature } from './utils/capabilities';
 import { configNamesOf } from './utils/configNodes';
-import { machineNoun } from './utils/hosts';
+import { SELF, machineNoun } from './utils/hosts';
 import { machineRoute, nounKeyOf } from './utils/machines';
 import { MANAGE_SECTIONS, sectionOffered as manageSectionOffered } from './utils/manage';
 
@@ -88,6 +90,11 @@ const anySection = sectionKeys => {
 
 const settings = gate(['hypervisors'], hostHasSettings);
 
+const ownStore = gate(
+  ['certs-store'],
+  server => server?.id === SELF && hostHasFeature(server, 'certs-store')
+);
+
 const configPages = server =>
   configNamesOf(server).map(name => ({
     key: `config:${name}`,
@@ -99,8 +106,10 @@ const configPages = server =>
 
 /**
  * The pages of a host, in groups of `{ key, labelKey(server), icon, flat?,
- * pages }`, a page `{ key, segment, icon, labelKey(server) | label,
- * offered(server), tokens }`, `segment` its route under `/hosts/{id}`.
+ * pages }`, a page `{ key, segment | to, icon, labelKey(server) | label,
+ * offered(server), tokens }`, `segment` its route under `/hosts/{id}` and
+ * `to` the route of a page that lies outside the host's routes, the
+ * Certificates page of an agent's own store beside its Secrets.
  */
 export const HOST_PAGES = [
   {
@@ -434,6 +443,13 @@ export const HOST_PAGES = [
         ...feature('certs-store'),
       },
       {
+        key: 'certificates',
+        to: STORE_ROUTE,
+        icon: FaCertificate,
+        labelKey: key('certs.sidebar.shared'),
+        ...ownStore,
+      },
+      {
         key: 'api-keys',
         segment: 'agent/api-keys',
         icon: FaIdBadge,
@@ -477,7 +493,7 @@ const offeredPage = (server, id, page) => ({
   key: page.key,
   icon: page.icon,
   ...(page.label === undefined ? { labelKey: page.labelKey(server) } : { label: page.label }),
-  to: hostPagePath(id, page),
+  to: page.to || hostPagePath(id, page),
   end: page.segment === '',
 });
 

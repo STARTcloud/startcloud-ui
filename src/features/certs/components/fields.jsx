@@ -219,7 +219,15 @@ SecretField.propTypes = {
 /**
  * One labelled switch of a certs form over a boolean member.
  */
-export const SwitchField = ({ name, draft, rules, onChange, hint = '', className = 'mb-3' }) => (
+export const SwitchField = ({
+  name,
+  draft,
+  rules,
+  onChange,
+  hint = '',
+  className = 'mb-3',
+  disabled = false,
+}) => (
   <Field
     id={rules.idFor(name)}
     label={rules.labelFor(name)}
@@ -235,6 +243,7 @@ export const SwitchField = ({ name, draft, rules, onChange, hint = '', className
           className="form-check-input"
           name={name}
           checked={Boolean(valueAt(draft, name))}
+          disabled={disabled}
           onChange={event => onChange(name, event.target.checked)}
           onBlur={() => rules.onBlur(name)}
         />
@@ -250,4 +259,5 @@ SwitchField.propTypes = {
   onChange: PropTypes.func.isRequired,
   hint: PropTypes.node,
   className: PropTypes.string,
+  disabled: PropTypes.bool,
 };

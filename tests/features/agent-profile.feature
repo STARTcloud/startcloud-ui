@@ -121,3 +121,48 @@ Feature: agent-profile
     And the profile page draws no Manage link
     And I see "Mark"
     And the host was not sent GET to "/api/user/favorites"
+
+  Scenario: Agent profile: the Certificates card's sync form for a person of an organization on a backend that lists certs-store, ticking one kind and saving sends every unsent record of that kind as one POST to the active organization
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"provider\":\"oidc-auth\",\"access_token\":\"t\"}"
+    When I open "/certs"
+    And I click "Add New"
+    And I drop "vault.certs.json" into the vault
+    Then the vault lists 2 rows
+    When I open "/profile/preferences"
+    Then the page draws the panel "certs-preferences"
+    And the page draws the panel "certs-sync"
+    When I check the control "certs-sync/certificate"
+    And I press the page's "save-sync" action
+    Then the host was sent POST to "/api/certs" carrying "kind" as "certificate"
+    And the host was sent POST to "/api/certs" carrying "organization" as "acme"
+    And the host was sent POST to "/api/certs" 1 times
+    And I see "Sync settings saved."
+
+  Scenario: Agent profile: on an agent that lists certs-store for a person in no organization, the Vault sits under Account after Profile, the tools under System, no Browse store row, the host column's Certificates row beside Secrets opens the store read from the host with no organization, and the card's Save sends the kind under no organization
+    Given the host answers the agent-signins fixture
+    And the host answers the agent-profile-plain fixture
+    And the host answers the agent-profile-certs fixture
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/certs"
+    Then the sidebar section "account" opens with the row to "/profile"
+    And the sidebar section "account" holds the row to "/certs"
+    And the sidebar section "system" holds the row to "/certs/convert"
+    And the sidebar draws no section "browse"
+    When I click "Add New"
+    And I drop "vault.certs.json" into the vault
+    Then the vault lists 2 rows
+    When I open "/hosts/self/agent/api-keys"
+    Then the host column draws the "secrets" row to "/hosts/self/agent/secrets"
+    And the host column draws the "certificates" row to "/certs/shared"
+    When I follow the host row "certificates"
+    Then the pathname is "/certs/shared"
+    And the host was sent GET to "/api/certs"
+    When I open "/profile/preferences"
+    Then the page draws the panel "certs-sync"
+    When I check the control "certs-sync/certificate"
+    And I press the page's "save-sync" action
+    Then the host was sent POST to "/api/certs" carrying "kind" as "certificate"
+    And the host was sent POST to "/api/certs" carrying "organization" as ""
+    And the host was sent POST to "/api/certs" 1 times
+    And I see "Sync settings saved."

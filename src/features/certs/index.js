@@ -17,7 +17,6 @@ export { DETACHED, recordOf, rowOf } from './utils/sync';
 
 export const VaultPage = lazy(() => import('./components/VaultPage'));
 export const SharedPage = lazy(() => import('./components/SharedPage'));
-export const SyncPage = lazy(() => import('./components/SyncPage'));
 export const RecordPage = lazy(() => import('./components/RecordPage'));
 export const ConvertPage = lazy(() => import('./components/ConvertPage'));
 export const DecodePage = lazy(() => import('./components/DecodePage'));

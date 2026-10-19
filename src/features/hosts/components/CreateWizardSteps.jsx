@@ -233,49 +233,19 @@ const domainShape = PropTypes.shape({
       domain: PropTypes.string.isRequired,
     })
   ).isRequired,
-  source: PropTypes.string.isRequired,
-  onSourceChange: PropTypes.func.isRequired,
   missing: PropTypes.bool.isRequired,
   configRoute: PropTypes.string,
 });
 
-const DomainSourceSelect = ({ domain, loading }) => {
-  const { t } = useTranslation();
-  return (
-    <div className="col-12 col-md-4">
-      <label className="form-label" htmlFor="machine-create-domain-source">
-        {t('machineEdit.createWizardSteps.domainSource')}
-      </label>
-      <select
-        id="machine-create-domain-source"
-        className="form-select"
-        value={domain.source}
-        onChange={event => domain.onSourceChange(event.target.value)}
-        disabled={loading}
-      >
-        {domain.choices.map(row => (
-          <option key={row.source} value={row.source}>
-            {`${t(`machineEdit.createWizardSteps.domainSourceWord.${row.source}`)} · ${row.domain}`}
-          </option>
-        ))}
-        <option value="custom">{t('machineEdit.createWizardSteps.domainSourceCustom')}</option>
-      </select>
-    </div>
-  );
-};
-
-DomainSourceSelect.propTypes = {
-  domain: domainShape.isRequired,
-  loading: PropTypes.bool,
-};
+const DOMAIN_LIST = 'machine-setting-domain-list';
 
 /**
- * The Edit parts fold of the General step: the server id, the hostname,
- * the domain and the Domain source select over every source that yields
- * a domain plus Custom; the fold opens itself while a bare name has no
- * domain to take, the domain input then invalid with the sentence that
- * says so and, where the host's `machines` configuration has a route,
- * the link to it.
+ * The Edit parts fold of the General step: the server id, the hostname
+ * and the domain, the domain input offering every domain of the chain
+ * in the chain's order as its list; the fold opens itself while a bare
+ * name has no domain to take, the domain input then invalid with the
+ * sentence that says so and, where the host's `machines` configuration
+ * has a route, the link to it.
  */
 const NameParts = ({ settings, setSetting, onPartChange, domain, loading }) => {
   const { t } = useTranslation();
@@ -310,9 +280,14 @@ const NameParts = ({ settings, setSetting, onPartChange, domain, loading }) => {
           onChange={event => onPartChange('domain', event.target.value)}
           required
           disabled={loading}
+          list={DOMAIN_LIST}
           feedback={domain.missing ? <NoDomainFeedback configRoute={domain.configRoute} /> : null}
         />
-        <DomainSourceSelect domain={domain} loading={loading} />
+        <datalist id={DOMAIN_LIST}>
+          {domain.choices.map(row => (
+            <option key={row.source} value={row.domain} />
+          ))}
+        </datalist>
       </div>
     </details>
   );

@@ -20,7 +20,6 @@ import {
   defaultExternalNetwork,
   domainChoicesOf,
   domainConfigRouteOf,
-  domainSourceOf,
   emptyCloudInit,
   emptyDiskConfig,
   emptySettings,
@@ -1110,16 +1109,6 @@ describe('the default domain', () => {
     expect(defaultDomainOf({ choices: [], agentDomain: 'startcloud.com' })).toBe('startcloud.com');
     expect(defaultDomainOf({})).toBe('');
     expect(defaultDomainOf({ preference: '  ', choices: [], agentDomain: '' })).toBe('');
-  });
-
-  it('names the source the select reads for a domain, custom while none matches', () => {
-    const choices = domainChoicesOf(defaults, 'pref.example.com');
-    expect(domainSourceOf(choices, 'lab.example.com')).toBe('user');
-    expect(domainSourceOf(choices, 'pref.example.com')).toBe('preference');
-    expect(domainSourceOf(choices, ' startcloud.com ')).toBe('agent');
-    expect(domainSourceOf(choices, 'mine.example.com')).toBe('custom');
-    expect(domainSourceOf(choices, '')).toBe('custom');
-    expect(domainSourceOf([], 'lab.example.com')).toBe('custom');
   });
 
   it('routes to the machines configuration where the host has one and nowhere otherwise', () => {

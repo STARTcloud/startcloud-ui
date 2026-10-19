@@ -444,10 +444,11 @@ under it one card a feature of the host, named for that feature, each a
 browser preference kept in the browser alone and never sent to a host,
 drawn editable under a read-only record too:
 
-| Card         | Host lists | Field                           | Browser key   | Read by                                                             |
-| ------------ | ---------- | ------------------------------- | ------------- | ------------------------------------------------------------------- |
-| Certificates | `certs`    | Expiry threshold in days        | `certs-vault` | the vault's Expiring                                                |
-| Hosts        | `hosts`    | Default domain for new machines | `hosts_prefs` | the create wizard, a bare name taking it before the host's own rows |
+| Card         | Host lists                        | Field                                 | Browser key   | Read by                                                                                                                                                          |
+| ------------ | --------------------------------- | ------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Certificates | `certs`                           | Expiry threshold in days              | `certs-vault` | the vault's Expiring                                                                                                                                             |
+| Certificates | `certs-store`, a person signed in | Sync, one switch a kind in a row grid | `certs-vault` | the mirror, its own Save sending every unsent record of the kinds newly checked to the active organization, or to the person's own store on the host without one |
+| Hosts        | `hosts`                           | Default domain for new machines       | `hosts_prefs` | the create wizard, a bare name taking it before the host's own rows                                                                                              |
 
 ---
 

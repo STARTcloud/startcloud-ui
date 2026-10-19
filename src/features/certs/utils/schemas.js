@@ -67,7 +67,7 @@ const KEY_SOURCE_PROPERTIES = {
 };
 
 const KEY_SOURCE_LABELS = {
-  mode: 'certs.generate.keySource',
+  mode: 'certs.generate.keyMode.vault',
   keyId: 'certs.generate.vaultKey',
   alg: 'certs.generate.algorithm',
   signature: 'certs.generate.signature',
@@ -159,11 +159,11 @@ export const SIGN_SCHEMA = {
 };
 
 export const SIGN_LABELS = {
-  request_mode: 'certs.generate.request',
+  request_mode: 'certs.generate.pasteInstead',
   request_id: 'certs.generate.request',
   request: 'certs.generate.pasteRequest',
-  authority_mode: 'certs.generate.authorityPick',
-  authority_id: 'certs.generate.authorityPick',
+  authority_mode: 'certs.generate.pasteInstead',
+  authority_id: 'certs.generate.signingAuthority',
   authority_cert: 'certs.generate.authorityCertificate',
   authority_key: 'certs.generate.authorityKey',
   signature: 'certs.generate.signature',
@@ -192,7 +192,7 @@ export const templateSchemaOf = (names, scope) => ({
   properties: { name: { ...NON_BLANK, custom: taken(names, scope) } },
 });
 
-export const TEMPLATE_LABELS = { name: 'certs.generate.templateName' };
+export const TEMPLATE_LABELS = { name: 'certs.generate.saveAsTemplate' };
 
 /**
  * The page schema and label keys of a conversion's output: the format

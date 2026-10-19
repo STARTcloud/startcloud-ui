@@ -75,7 +75,6 @@ import {
   MatchPage,
   RecordPage,
   SharedPage,
-  SyncPage,
   VaultPage,
   sidebar as certsSidebar,
 } from '../features/certs';
@@ -512,7 +511,6 @@ const PAGE_TITLES = {
   '/vm/:instance': 'vdi.vm.title',
   '/certs': 'certs.sidebar.vault',
   '/certs/shared': 'certs.sidebar.shared',
-  '/certs/sync': 'certs.sidebar.sync',
   '/certs/convert': 'certs.sidebar.convert',
   '/certs/decode': 'certs.sidebar.decode',
   '/certs/match': 'certs.sidebar.match',
@@ -813,7 +811,7 @@ const foldGroups = groups => groups.reduce(foldInto, []).map(oneHeading);
 
 /**
  * Every mounted feature's sidebar groups in the order catalog, hosts,
- * profile, identity (on a `cookie` host), vdi, certs and admin, folded
+ * profile, identity (on a `cookie` host), vdi, admin and certs, folded
  * by key; empty while the host does not list `sidebar`.
  *
  * @param {Object} options - The shell's side
@@ -834,8 +832,8 @@ export const sidebarEntries = ({ status, account, collections }) => {
     ...profileSidebar(status, account, issuerIntegrations, profileAccountFor({ status, account })),
     ...(cookie ? identitySidebar(status, account, admin) : []),
     ...vdiSidebar(status, account),
-    ...certsSidebar(status, account),
     ...adminSidebar(status, account, admin),
+    ...certsSidebar(status, account),
   ]);
 };
 
@@ -1718,7 +1716,7 @@ const hostsRoutes = ({ hosts, signedOut, context, organizations }) => {
 /**
  * The certs feature's routes, each open while the host advertises
  * `certs`, the six tool pages open while it advertises `tools` as well,
- * the Shared and Sync pages open while it advertises `certs-store` as
+ * the Certificates store page open while it advertises `certs-store` as
  * well and drawing the sign-in placard while a needed session is not
  * held.
  *
@@ -1760,7 +1758,6 @@ const certsRoutes = ({ status, signedOut, context }) => {
         toolRow('/certs/chain', <ChainPage context={context} />),
         toolRow('/certs/generate', <GeneratePage context={context} />),
         storeRow('/certs/shared', <SharedPage context={context} />),
-        storeRow('/certs/sync', <SyncPage context={context} />),
       ])
   );
 };

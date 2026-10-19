@@ -11540,14 +11540,6 @@
       "editParts": "Editar partes",
       "noDefaultDomain": "Este host no tiene un dominio predeterminado. Escribe uno, o define el dominio predeterminado del host en su configuración.",
       "setDefaultDomain": "Definir el dominio predeterminado del host",
-      "domainSource": "Origen del dominio",
-      "domainSourceWord": {
-        "preference": "Preferencia del navegador",
-        "user": "Usuario",
-        "organization": "Organización",
-        "agent": "Agente"
-      },
-      "domainSourceCustom": "Personalizado",
       "useProvisioner": "Usar un aprovisionador",
       "useProvisionerHint": "Sin un aprovisionador no se dibuja el paso Aprovisionamiento.",
       "mount": "Montaje",
@@ -12249,9 +12241,7 @@
     "sidebar": {
       "title": "Certificados",
       "vault": "Bóveda",
-      "shared": "Compartidos",
-      "sync": "Sincronización",
-      "tools": "Herramientas",
+      "shared": "Certificados",
       "convert": "Convertir",
       "decode": "Decodificar",
       "match": "Coincidencia",
@@ -12407,7 +12397,7 @@
       "activate": "Activar"
     },
     "shared": {
-      "title": "Certificados compartidos",
+      "title": "Certificados",
       "refresh": "Actualizar",
       "loadError": "No se pudo leer el almacén compartido.",
       "count_one": "{{count}} registro",
@@ -12421,7 +12411,7 @@
       "lastSynced": "última sincronización {{when}}",
       "never": "nunca sincronizado",
       "save": "Guardar",
-      "noOrganization": "Únete a una organización para sincronizar tu bóveda con {{name}}."
+      "noOrganization": "{{name}} conserva los registros de los tipos marcados en tu propio almacén de este host."
     },
     "input": {
       "drop": "Suelta un certificado, una clave o un paquete aquí",
@@ -12643,30 +12633,30 @@
       "saved": "guardado",
       "keySource": "Clave",
       "keyMode": {
-        "generate": "Generar una clave nueva",
         "vault": "Usar una clave de la bóveda"
       },
       "vaultKey": "Clave de la bóveda",
       "pickKey": "Elige una clave",
+      "noVaultKey": "La bóveda no contiene ninguna clave con su mitad privada.",
+      "pasteInstead": "Pegar en su lugar",
       "template": "Plantilla",
       "pickTemplate": "Elige una plantilla",
-      "templateName": "Nombre de la plantilla",
       "templates": "Plantillas",
       "saveTemplate": "Guardar",
       "deleteTemplate": "Eliminar plantilla",
-      "templatesOptional": "Las plantillas son opcionales: carga una en el formulario, o guarda el formulario como plantilla.",
+      "loadTemplate": "Cargar",
+      "saveAsTemplate": "Guardar como plantilla",
       "days": "Válido durante (días)",
       "authority": "Autoridad",
       "pathLen": "Longitud de ruta",
       "pathLenAny": "cualquiera",
       "request": "Solicitud",
-      "authorityPick": "Autoridad",
+      "signingAuthority": "Autoridad firmante",
+      "noVaultRequest": "La bóveda no contiene ninguna solicitud; pega una.",
+      "noVaultAuthority": "La bóveda no contiene ninguna autoridad cuya clave guarde; pega una.",
+      "authorityQualifies": "Una autoridad de la bóveda cuya clave guarda la bóveda, o un certificado pegado y su clave.",
       "pasteRequest": "Pega la solicitud",
       "pasteAuthority": "Pega el certificado y la clave de la autoridad",
-      "sourceMode": {
-        "vault": "Desde la bóveda",
-        "paste": "Pegar"
-      },
       "signatureScheme": {
         "pkcs1": "PKCS#1 v1.5",
         "pss": "RSASSA-PSS"

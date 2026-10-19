@@ -1,15 +1,11 @@
 import PropTypes from 'prop-types';
-import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import OptionList, { Option } from '../../../../components/common/OptionList';
 import { formRulesShape } from '../../../../hooks/useFormRules';
 import { nameOf, newRecord } from '../../utils/records';
-import { SelectField } from '../fields';
+import { SelectField, SwitchField } from '../fields';
 import KeyTypeSelect from '../KeyTypeSelect';
 import SignatureSelect from '../SignatureSelect';
-
-const MODES = ['generate', 'vault'];
 
 /**
  * The key source members a form starts from: a fresh RSA 2048 key
@@ -61,49 +57,43 @@ export const resolveKey = (engine, source, keys, name) => {
 
 /**
  * The key a request or a certificate is made with, over the form's
- * rules: two option cards, a new key of the algorithm picked, generated
- * as the form runs and saved beside what it signed, or a key of the
- * vault picked from the keys held with their private half, required
- * while that card is on; the signature scheme under either while the
+ * rules: the Use a key of the vault switch, off by default and disabled
+ * with its hint while the vault holds no key with its private half; off
+ * draws the algorithm of the key generated as the form runs and saved
+ * beside what it signed, on draws the vault's keys with their private
+ * half, the pick required; the signature scheme under either while the
  * key is RSA.
  */
 const KeySource = ({ draft, rules, onChange, keys }) => {
   const { t } = useTranslation();
-  const name = useId();
   const held = keys.filter(key => key.private_der_b64);
+  const none = held.length === 0;
   return (
     <fieldset className="mb-3" data-panel="key-source">
-      <legend className="form-label fs-6">{rules.labelFor('mode')}</legend>
-      <OptionList label={rules.labelFor('mode')}>
-        {MODES.map(mode => (
-          <Option
-            key={mode}
-            name={name}
-            value={mode}
-            checked={draft.mode === mode}
-            disabled={mode === 'vault' && held.length === 0}
-            onChange={value => onChange('mode', value)}
-            label={t(`certs.generate.keyMode.${mode}`)}
-          />
-        ))}
-      </OptionList>
-      <div className="mt-3">
-        {draft.mode === 'generate' ? (
-          <KeyTypeSelect draft={draft} rules={rules} onChange={onChange} />
-        ) : (
-          <SelectField
-            name="keyId"
-            options={held.map(key => ({ value: key.id, label: nameOf(key) }))}
-            blank={t('certs.generate.pickKey')}
-            draft={draft}
-            rules={rules}
-            onChange={onChange}
-          />
-        )}
-        {sourceIsRsa(draft, held) ? (
-          <SignatureSelect draft={draft} rules={rules} onChange={onChange} />
-        ) : null}
-      </div>
+      <legend className="form-label fs-6">{t('certs.generate.keySource')}</legend>
+      <SwitchField
+        name="mode"
+        draft={{ mode: draft.mode === 'vault' }}
+        rules={rules}
+        onChange={(name, on) => onChange(name, on ? 'vault' : 'generate')}
+        disabled={none}
+        hint={none ? t('certs.generate.noVaultKey') : ''}
+      />
+      {draft.mode === 'vault' ? (
+        <SelectField
+          name="keyId"
+          options={held.map(key => ({ value: key.id, label: nameOf(key) }))}
+          blank={t('certs.generate.pickKey')}
+          draft={draft}
+          rules={rules}
+          onChange={onChange}
+        />
+      ) : (
+        <KeyTypeSelect draft={draft} rules={rules} onChange={onChange} />
+      )}
+      {sourceIsRsa(draft, held) ? (
+        <SignatureSelect draft={draft} rules={rules} onChange={onChange} />
+      ) : null}
     </fieldset>
   );
 };

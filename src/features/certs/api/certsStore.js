@@ -3,7 +3,8 @@ import { client } from '../../../lib/runtime';
 
 const rowPath = id => encodePath('api', 'certs', id);
 
-export const fetchCerts = organization => client.get('/api/certs', { params: { organization } });
+export const fetchCerts = organization =>
+  client.get('/api/certs', organization ? { params: { organization } } : {});
 
 export const fetchCert = id => client.get(rowPath(id));
 

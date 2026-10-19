@@ -996,7 +996,6 @@ Feature: machine create
     When I type "zeus-01" into the field "machine-create-name-input"
     Then the field "machine-setting-hostname" reads "zeus-01"
     And the field "machine-setting-domain" reads "lab.example.com"
-    And the field "machine-create-domain-source" reads "user"
     And the wizard fold "name-parts" is closed
     And the wizard step "os-disks" is open
     And the wizard step "confirm" is open
@@ -1011,7 +1010,7 @@ Feature: machine create
     And the host was sent POST to "/api/agents/1/machines" carrying "false" at "/provision_after_create"
     And the host was sent POST to "/api/agents/1/machines" 1 times
 
-  Scenario: Create wizard: the Domain source select, the agent row picked writes its domain into the Name, a dotted name reads Custom, and a bare name typed again takes the picked row
+  Scenario: Create wizard: the domain input lists the chain's domains in order, a domain typed from the list writes into the Name, a dotted name keeps its own, and a bare name typed again takes the chain's first
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-create fixture
@@ -1020,17 +1019,14 @@ Feature: machine create
     And I type "zeus-01" into the field "machine-create-name-input"
     And I open the wizard fold "name-parts"
     Then the wizard fold "name-parts" is open
-    And the field "machine-create-domain-source" reads "user"
-    When I choose "agent" in the field "machine-create-domain-source"
-    Then the field "machine-setting-domain" reads "startcloud.com"
-    And the field "machine-create-name-input" reads "zeus-01.startcloud.com"
-    And the field "machine-create-domain-source" reads "agent"
+    And the field "machine-setting-domain" lists the options "lab.example.com,startcloud.com"
+    And the open dialog draws no field "machine-create-domain-source"
+    When I type "startcloud.com" into the field "machine-setting-domain"
+    Then the field "machine-create-name-input" reads "zeus-01.startcloud.com"
     When I type "web-3.example.com" into the field "machine-create-name-input"
     Then the field "machine-setting-domain" reads "example.com"
-    And the field "machine-create-domain-source" reads "custom"
     When I type "zeus-02" into the field "machine-create-name-input"
-    Then the field "machine-setting-domain" reads "startcloud.com"
-    And the field "machine-create-domain-source" reads "agent"
+    Then the field "machine-setting-domain" reads "lab.example.com"
 
   Scenario: Create wizard: the browser's default domain preference wins over every row of the host
     Given the host answers the hosts fixture
@@ -1041,7 +1037,8 @@ Feature: machine create
     When I open "/hosts/1?create=machine"
     And I type "zeus-01" into the field "machine-create-name-input"
     Then the field "machine-setting-domain" reads "pref.example.com"
-    And the field "machine-create-domain-source" reads "preference"
+    When I open the wizard fold "name-parts"
+    Then the field "machine-setting-domain" lists the options "pref.example.com,lab.example.com,startcloud.com"
     And the wizard step "confirm" is open
 
   Scenario: Create wizard: no domain anywhere, a bare name opens Edit parts with the domain invalid and the link to the host's machines configuration, and Next is refused

@@ -96,6 +96,17 @@ const differences = page => page.locator('[data-panel="differences"] li');
 
 const chainRows = page => page.locator('[data-page="certs-chain"] [data-list="chain"] li');
 
+const controlOf = (page, id) => page.locator(`[id="${id}"]`);
+
+const cardChevron = (page, id) => page.locator(`[id="${id}"] .section-card-chevron`);
+
+const ekuRows = page =>
+  page.locator('[data-panel="certs-subject"] .scope-list .scope-row').filter({ visible: true });
+
+const sidebarRows = page => page.locator('.sidebar a[data-sidebar-row]');
+
+const sectionOf = (page, key) => page.locator(`.sidebar [data-section="${key}"]`);
+
 const duplicateIds = () => {
   const seen = new Set();
   return [...document.querySelectorAll('[id]')]
@@ -163,6 +174,24 @@ When('I pick {string} in the {string} menu', async ({ page }, action, menu) => {
 
 When('I follow the vault row {string} issued by {string}', async ({ page }, text, issuer) => {
   await issuedRow(page, text, issuer).locator('td.col-name a').click();
+});
+
+Then('the sidebar section {string} holds the row to {string}', async ({ page }, key, href) => {
+  await expect(
+    sectionOf(page, key).locator(`a[data-sidebar-row][href="${href}"]`).first()
+  ).toBeVisible();
+});
+
+Then('the sidebar section {string} opens with the row to {string}', async ({ page }, key, href) => {
+  await expect(sectionOf(page, key).locator('a[data-sidebar-row]').first()).toHaveAttribute(
+    'href',
+    href
+  );
+});
+
+Then('the sidebar draws no section {string}', async ({ page }, key) => {
+  await expect(sidebarRows(page).first()).toBeVisible();
+  await expect(sectionOf(page, key)).toHaveCount(0);
 });
 
 Then('the {string} menu is drawn', async ({ page }, menu) => {
@@ -248,8 +277,56 @@ Then("the certs page's {string} action is held", async ({ page }, action) => {
   await expect(actionOf(page, action)).toBeDisabled();
 });
 
+Then("the certs page's {string} action is free", async ({ page }, action) => {
+  await expect(actionOf(page, action)).toBeEnabled();
+});
+
+When('I press the chevron of the certs card {string}', async ({ page }, id) => {
+  await cardChevron(page, id).click();
+});
+
 Then('the outcome made reads {string}', async ({ page }, text) => {
   await expect(outcomeOf(page)).toContainText(text);
+});
+
+Then('the certs control {string} is checked', async ({ page }, id) => {
+  await expect(controlOf(page, id)).toBeChecked();
+});
+
+Then('the certs control {string} is not checked', async ({ page }, id) => {
+  await expect(controlOf(page, id)).not.toBeChecked();
+});
+
+Then('the certs control {string} is disabled', async ({ page }, id) => {
+  await expect(controlOf(page, id)).toBeDisabled();
+});
+
+Then('the certs control {string} is enabled', async ({ page }, id) => {
+  await expect(controlOf(page, id)).toBeEnabled();
+});
+
+Then('the certs control {string} is not drawn', async ({ page }, id) => {
+  await expect(controlOf(page, id)).toHaveCount(0);
+});
+
+Then('the certs panel {string} is drawn', async ({ page }, panel) => {
+  await expect(certsPage(page).locator(`[data-panel="${panel}"]`)).toBeVisible();
+});
+
+Then('the certs card {string} is folded', async ({ page }, id) => {
+  await expect(cardChevron(page, id)).toHaveAttribute('aria-expanded', 'false');
+});
+
+Then('the certs card {string} is open', async ({ page }, id) => {
+  await expect(cardChevron(page, id)).toHaveAttribute('aria-expanded', 'true');
+});
+
+Then('the extended key usages draw in one row', async ({ page }) => {
+  await expect(ekuRows(page)).toHaveCount(4);
+  const tops = await ekuRows(page).evaluateAll(nodes =>
+    nodes.map(node => Math.round(node.getBoundingClientRect().top))
+  );
+  expect(new Set(tops).size).toBe(1);
 });
 
 Then('the differences list {string}', async ({ page }, field) => {

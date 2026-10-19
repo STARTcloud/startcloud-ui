@@ -51,7 +51,6 @@ import {
   defaultExternalNetwork,
   domainChoicesOf,
   domainConfigRouteOf,
-  domainSourceOf,
   emptyCloudInit,
   emptyDiskConfig,
   emptySettings,
@@ -478,9 +477,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
 
 /**
  * The wizard's own state, one member a field, opened empty on the
- * external network every provisioned machine begins with; `domainSource`
- * the person's pick on the Domain source select for this session, empty
- * while the chain resolves it, Custom picked clearing it;
+ * external network every provisioned machine begins with;
  * `typed` the member paths the person edited, `settings.<key>`,
  * `disks.boot.<member>`, `disks.additional`, `networks`, `tags` and
  * `sourceFilter`, which a package's prefill and the registry default
@@ -490,7 +487,6 @@ const useCreateForm = () => {
   const [form, setForm] = useState(() => ({
     name: '',
     nameText: '',
-    domainSource: '',
     machineHypervisor: '',
     useProvisioner: false,
     familyName: '',
@@ -632,28 +628,12 @@ const seededAnswers = (manifest, inventory) => {
   return { ...seedAnswers(config), ...seedInventoryAnswers(config, inventory) };
 };
 
-const domainPicked = (current, choices, word) => {
-  const row = choices.find(entry => entry.source === word);
-  if (!row) {
-    return { domainSource: '' };
-  }
-  const settings = { ...current.settings, domain: row.domain };
-  return {
-    domainSource: word,
-    settings,
-    nameText: settings.hostname ? `${settings.hostname}.${row.domain}` : current.nameText,
-    typed: withTyped(current.typed, ['settings.domain']),
-  };
-};
-
 /**
- * The default domain chain of the General step: the rows of the Domain
- * source select from the browser's `hosts_prefs` preference and the
- * host's `settings.domain_choices`, the domain a bare name takes, the
- * person's pick for this dialog first, the source the select reads, the
- * row whose domain is held and Custom while none is, whether a bare
- * name is left without a domain, and the route of the
- * host's `machines` configuration where it has one.
+ * The default domain chain of the General step: the rows of the domain
+ * input's list from the browser's `hosts_prefs` preference and the host's
+ * `settings.domain_choices`, the domain a bare name takes, the first
+ * non-empty of the chain, whether a bare name is left without a domain,
+ * and the route of the host's `machines` configuration where it has one.
  */
 const useDomainChain = ({ agentDefaults, form, aggregated, status, server, id }) => {
   const prefs = useHostPrefs();
@@ -661,19 +641,15 @@ const useDomainChain = ({ agentDefaults, form, aggregated, status, server, id })
     () => domainChoicesOf(agentDefaults, prefs.defaultDomain),
     [agentDefaults, prefs.defaultDomain]
   );
-  const pickedDomain = choices.find(row => row.source === form.domainSource)?.domain || '';
-  const defaultDomain =
-    pickedDomain ||
-    defaultDomainOf({
-      preference: prefs.defaultDomain,
-      choices,
-      agentDomain: agentDefaults?.settings?.domain || '',
-    });
+  const defaultDomain = defaultDomainOf({
+    preference: prefs.defaultDomain,
+    choices,
+    agentDomain: agentDefaults?.settings?.domain || '',
+  });
   const bare = Boolean(form.nameText) && !form.nameText.includes('.');
   return {
     choices,
     defaultDomain,
-    source: domainSourceOf(choices, form.settings.domain),
     missing: bare && !form.settings.domain && !defaultDomain,
     configRoute: domainConfigRouteOf({ aggregated, status, server, id }),
   };
@@ -1581,13 +1557,10 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
           typed: withTyped(current.typed, [`settings.${key}`]),
         };
       }),
-    setDomainSource: word => update(current => domainPicked(current, chain.choices, word)),
   };
 
   const domain = {
     choices: chain.choices,
-    source: chain.source,
-    onSourceChange: naming.setDomainSource,
     missing: chain.missing,
     configRoute: chain.configRoute,
   };

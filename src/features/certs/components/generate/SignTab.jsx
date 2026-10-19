@@ -1,12 +1,11 @@
 import PropTypes from 'prop-types';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaFileSignature, FaStamp } from 'react-icons/fa6';
 
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
 import MethodList, { MethodRow } from '../../../../components/common/MethodList';
-import OptionList, { Option } from '../../../../components/common/OptionList';
 import SectionCard from '../../../../components/common/SectionCard';
 import { useNotify } from '../../../../contexts/NoticeContext';
 import { formRulesShape, useFormRules } from '../../../../hooks/useFormRules';
@@ -25,8 +24,6 @@ import IssueFields, { EMPTY_ISSUE, issueOf } from './IssueFields';
 import Outcome from './Outcome';
 
 const PEM = 'application/x-pem-file';
-
-const MODES = ['vault', 'paste'];
 
 const EMPTY_DRAFT = {
   request_mode: '',
@@ -49,45 +46,50 @@ const withModes = (draft, requests, authorities) => ({
   authority_mode: modeOf(draft.authority_mode, authorities),
 });
 
-const Picker = ({ prefix, options, draft, rules, onChange, pasteLabel, onDetected, children }) => {
+const Picker = ({
+  prefix,
+  options,
+  draft,
+  rules,
+  onChange,
+  pasteLabel,
+  emptyHint,
+  onDetected,
+  note = '',
+  children,
+}) => {
   const { t } = useTranslation();
-  const name = useId();
   const mode = `${prefix}_mode`;
   const id = `${prefix}_id`;
+  const none = options.length === 0;
   return (
-    <fieldset className="mb-3">
-      <legend className="form-label fs-6">{rules.labelFor(mode)}</legend>
-      <OptionList label={rules.labelFor(mode)}>
-        {MODES.map(entry => (
-          <Option
-            key={entry}
-            name={name}
-            value={entry}
-            checked={draft[mode] === entry}
-            disabled={entry === 'vault' && options.length === 0}
-            onChange={value => onChange(mode, value)}
-            label={t(`certs.generate.sourceMode.${entry}`)}
-          />
-        ))}
-      </OptionList>
-      <div className="mt-3">
-        {draft[mode] === 'vault' ? (
-          <SelectField
-            name={id}
-            options={options.map(option => ({ value: option.id, label: nameOf(option) }))}
-            blank={t('certs.generate.pickOne')}
-            draft={draft}
-            rules={rules}
-            onChange={onChange}
-          />
-        ) : (
-          <>
-            <p className="form-label">{pasteLabel}</p>
-            <InputZone idPrefix={`${prefix}-zone`} onDetected={onDetected} />
-            {children}
-          </>
-        )}
-      </div>
+    <fieldset className="mb-3" data-panel={`${prefix}-pick`}>
+      <legend className="form-label fs-6">{rules.labelFor(id)}</legend>
+      <SwitchField
+        name={mode}
+        draft={{ [mode]: draft[mode] === 'paste' }}
+        rules={rules}
+        onChange={(name, on) => onChange(name, on ? 'paste' : 'vault')}
+        disabled={none}
+        hint={none ? emptyHint : ''}
+      />
+      {draft[mode] === 'vault' ? (
+        <SelectField
+          name={id}
+          options={options.map(option => ({ value: option.id, label: nameOf(option) }))}
+          blank={t('certs.generate.pickOne')}
+          draft={draft}
+          rules={rules}
+          onChange={onChange}
+        />
+      ) : (
+        <>
+          <p className="form-label">{pasteLabel}</p>
+          <InputZone idPrefix={`${prefix}-zone`} onDetected={onDetected} />
+          {children}
+        </>
+      )}
+      {note ? <p className="form-text mb-0 mt-2">{note}</p> : null}
     </fieldset>
   );
 };
@@ -99,7 +101,9 @@ Picker.propTypes = {
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,
   pasteLabel: PropTypes.string.isRequired,
+  emptyHint: PropTypes.string.isRequired,
   onDetected: PropTypes.func.isRequired,
+  note: PropTypes.string,
   children: PropTypes.node,
 };
 
@@ -204,12 +208,14 @@ const authorityIsRsa = (draft, authorities, records) => {
  * The Sign CSR tab of the Generate page: one line saying what it does,
  * the pending requests, the vault's requests no certificate of the vault
  * was issued from, one line each with Sign picking it as the request
- * below, then the request from the vault or pasted, the vault card
- * picked by default while the vault holds a request and the paste card
- * otherwise, read from the vault's records as they stand, the authority
- * the same way, from the vault, one whose key the vault holds, or pasted
- * as a certificate and its key, each drop adding what it carried so the
- * two may come from two files, the signature scheme while that key is
+ * below, then the request, the vault's select under the Paste instead
+ * switch, off while the vault holds a request and on and disabled with
+ * its hint otherwise, the paste zone while it is on, read from the
+ * vault's records as they stand, then the signing authority the same
+ * way, from the vault, one whose key the vault holds, or pasted as a
+ * certificate and its key, one line under it saying so, each drop adding
+ * what it carried so the two may come from two files, the signature
+ * scheme while that key is
  * RSA, the validity, the Authority switch and Copy extensions, Sign
  * issuing the certificate through the engine once
  * the rules say what is held and what is missing, its glyph a spinner
@@ -307,6 +313,7 @@ const SignTab = ({ fold }) => {
           rules={rules}
           onChange={set}
           pasteLabel={t('certs.generate.pasteRequest')}
+          emptyHint={t('certs.generate.noVaultRequest')}
           onDetected={onRequest}
         >
           <PastedLine rules={rules} names={['request']} />
@@ -318,6 +325,8 @@ const SignTab = ({ fold }) => {
           rules={rules}
           onChange={set}
           pasteLabel={t('certs.generate.pasteAuthority')}
+          emptyHint={t('certs.generate.noVaultAuthority')}
+          note={t('certs.generate.authorityQualifies')}
           onDetected={onAuthority}
         >
           <PastedLine rules={rules} names={['authority_cert', 'authority_key']} />

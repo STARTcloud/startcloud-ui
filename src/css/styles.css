@@ -435,9 +435,10 @@ button::-moz-focus-inner {
 
 .user-menu-badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  font-size: 11px;
+  top: -3px;
+  right: -3px;
+  font-size: 8px;
+  padding: 0.15em 0.35em;
 }
 
 .user-menu-id {

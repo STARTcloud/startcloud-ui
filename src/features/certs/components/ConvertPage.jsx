@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaDownload, FaRightLeft, FaVault } from 'react-icons/fa6';
 import { useSearchParams } from 'react-router-dom';
@@ -109,9 +109,10 @@ const Downloads = ({ chosen, busy, onConvert, onSave }) => {
   const { t } = useTranslation();
   const hasCert = chosen.some(component => CERT_COMPONENT_KINDS.includes(component.kind));
   const hasKey = chosen.some(component => component.kind === 'key');
+  const held = busy || chosen.length === 0;
   return (
     <div className="d-flex flex-wrap gap-2">
-      <button type="submit" className="btn btn-primary" data-action="convert" disabled={busy}>
+      <button type="submit" className="btn btn-primary" data-action="convert" disabled={held}>
         <FaRightLeft className="me-1" aria-hidden="true" />
         {t('certs.convert.convert')}
       </button>
@@ -143,7 +144,7 @@ const Downloads = ({ chosen, busy, onConvert, onSave }) => {
         type="button"
         className="btn btn-outline-success"
         data-action="save-vault"
-        disabled={busy}
+        disabled={held}
         onClick={onSave}
       >
         <FaVault className="me-1" aria-hidden="true" />
@@ -180,12 +181,27 @@ const ConvertBody = ({ record, folds, onClear }) => {
   });
   const chosen = chosenOf(held.components, picked);
   const stem = record ? stemOf(record) : fileStemOf(held.name);
+  const inputFoldable = useRef(true);
+  const inputFold = {
+    folded: folds.folded(FOLDS[0]),
+    onFold: () => {
+      inputFoldable.current = false;
+      folds.toggle(FOLDS[0]);
+    },
+  };
 
   const detected = (answer, { name }) => {
     setInput(afterRead(answer, name));
     if (!answer) {
       setDraft(EMPTY_OUTPUT);
       onClear();
+      return;
+    }
+    if (answer.components?.length > 0 && inputFoldable.current) {
+      inputFoldable.current = false;
+      if (!folds.folded(FOLDS[0])) {
+        folds.toggle(FOLDS[0]);
+      }
     }
   };
 
@@ -224,7 +240,7 @@ const ConvertBody = ({ record, folds, onClear }) => {
 
   return (
     <form onSubmit={submit} noValidate>
-      <SectionCard title={t('certs.convert.input')} {...foldOf(folds, FOLDS[0])}>
+      <SectionCard title={t('certs.convert.input')} id="certs-convert-input" {...inputFold}>
         {record ? (
           <p className="text-body-secondary">
             {t('certs.convert.fromVault', { name: nameOf(record) })}
@@ -243,7 +259,11 @@ const ConvertBody = ({ record, folds, onClear }) => {
           }
         />
       </SectionCard>
-      <SectionCard title={t('certs.convert.output')} {...foldOf(folds, FOLDS[2])}>
+      <SectionCard
+        title={t('certs.convert.output')}
+        id="certs-convert-output"
+        {...foldOf(folds, FOLDS[2])}
+      >
         <FormErrorSummary errors={rules.summary} />
         <FormatPicker
           kinds={[...new Set(chosen.map(component => component.kind))]}
@@ -269,10 +289,13 @@ ConvertBody.propTypes = {
  * taking files, a paste and a password, every read adding its
  * components to the ones held so a certificate and its key from two
  * files meet, an unlocked read replacing the locked component of the
- * same file, Clear emptying them and the output; the Components card
+ * same file, Clear emptying them and the output, the card folding itself
+ * once a read first brings components unless the person folded or opened
+ * it in this visit; the Components card
  * listing what the engine detected as one scope list, a locked key
  * drawn disabled, the line reading that nothing was understood when a
- * read found no component; and the Output card picking a format that
+ * read found no component; and the Output card, drawn from the start
+ * with Convert and Save to vault disabled while nothing is picked, picking a format that
  * carries every picked kind, its password required where the format
  * cannot be written without one and emptied on a change of format, the
  * legacy switch and the friendly name, Convert handing the browser the

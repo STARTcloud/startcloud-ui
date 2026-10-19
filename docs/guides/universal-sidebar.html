@@ -1387,17 +1387,19 @@
         without the member reads once, as the catalog's and the fleet's do.
       </div>
       <div class="callout changed">
-        <strong>Changed: the Tools group.</strong> A host that lists the `tools` token draws one
-        TOOLS heading, a group every mounted feature folds its own parent row into, the feature's
-        name as the row and its tools as the row's children; without the token no feature's tools
-        draw and their routes are stubs, and with the token alone the heading waits for whatever the
-        mounted features add. The certs feature's Certificates row folds Convert, Decode, Match,
-        Compare, Chain and Generate, and its own `certs` token draws the Certificates section: the
-        Vault row folding Certificates, Authorities, Requests, Keys and Secrets, each the vault's
-        table narrowed to that kind at `/certs?kind=…`, Secrets to the eight secret kinds, the one
-        lit the kind the route carries, then Shared and Sync while the host lists `certs-store`; no
-        record is a row of the column, the table being the view that scales. BoxVault · admin and
-        Hyperweaver above draw both.
+        <strong>The certs feature's rows.</strong> A host that lists the `tools` token draws every
+        mounted feature's tools as one parent row in the Admin group's System section, beside
+        Configuration and Update, the feature's name as the row and its tools as the row's children,
+        the Admin group drawn for that row alone where the person administers nothing; without the
+        token no feature's tools draw and their routes are stubs. The certs feature's Certificates
+        row folds Convert, Decode, Match, Compare, Chain and Generate. Its own `certs` token draws
+        the Vault row in the Account section after Profile while a person is signed in, folding
+        Certificates, Authorities, Requests, Keys and Secrets, each the vault's table narrowed to
+        that kind at `/certs?kind=…`, Secrets to the eight secret kinds, the one lit the kind the
+        route carries; while the host lists `certs-store` the Certificates row of the backend's
+        store at `/certs/shared` draws in the Browse section, and its sync switches live in the
+        Certificates card of the Preferences section. No record is a row of the column, the table
+        being the view that scales. BoxVault · admin and Hyperweaver above draw them.
       </div>
       <div class="callout changed">
         <strong>Changed: the corner.</strong> Where the column's right edge meets the top edge of
@@ -1481,67 +1483,58 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
     };
-    var certsSection = function (store) {
-      return {
-        label: 'Certificates',
-        items: [
-          {
-            key: 'vault',
-            icon: '🗄',
-            label: 'Vault',
-            to: '/certs',
-            open: true,
-            children: [
-              {
-                key: 'kind-certificate',
-                icon: '📜',
-                label: 'Certificates',
-                to: '/certs?kind=certificate',
-              },
-              {
-                key: 'kind-authority',
-                icon: '⛨',
-                label: 'Authorities',
-                to: '/certs?kind=authority',
-              },
-              { key: 'kind-request', icon: '✎', label: 'Requests', to: '/certs?kind=request' },
-              { key: 'kind-key', icon: '🔑', label: 'Keys', to: '/certs?kind=key' },
-              {
-                key: 'secrets',
-                icon: '🕵',
-                label: 'Secrets',
-                to: '/certs?kind=password,api_key,basic_auth,key_pair,oauth_client,ssh_key,file,custom',
-              },
-            ],
-          },
-        ].concat(
-          store
-            ? [
-                { key: 'shared', icon: '☁', label: 'Shared', to: '/certs/shared' },
-                { key: 'sync', icon: '⟳', label: 'Sync', to: '/certs/sync' },
-              ]
-            : []
-        ),
-      };
-    };
-    var certsTools = {
-      label: 'Tools',
+    var accountSection = {
+      label: 'Account',
       items: [
+        { key: 'myprofile', icon: '👤', label: 'Profile', to: '/profile' },
         {
-          key: 'tools-certs',
-          icon: '📜',
-          label: 'Certificates',
-          to: '/certs/convert',
+          key: 'vault',
+          icon: '🗄',
+          label: 'Vault',
+          to: '/certs',
           open: true,
           children: [
-            { key: 'convert', icon: '⇄', label: 'Convert', to: '/certs/convert' },
-            { key: 'decode', icon: '🔍', label: 'Decode', to: '/certs/decode' },
-            { key: 'match', icon: '⚭', label: 'Match', to: '/certs/match' },
-            { key: 'compare', icon: '⇔', label: 'Compare', to: '/certs/compare' },
-            { key: 'chain', icon: '⛓', label: 'Chain', to: '/certs/chain' },
-            { key: 'generate', icon: '✦', label: 'Generate', to: '/certs/generate' },
+            {
+              key: 'kind-certificate',
+              icon: '📜',
+              label: 'Certificates',
+              to: '/certs?kind=certificate',
+            },
+            {
+              key: 'kind-authority',
+              icon: '⛨',
+              label: 'Authorities',
+              to: '/certs?kind=authority',
+            },
+            { key: 'kind-request', icon: '✎', label: 'Requests', to: '/certs?kind=request' },
+            { key: 'kind-key', icon: '🔑', label: 'Keys', to: '/certs?kind=key' },
+            {
+              key: 'secrets',
+              icon: '🕵',
+              label: 'Secrets',
+              to: '/certs?kind=password,api_key,basic_auth,key_pair,oauth_client,ssh_key,file,custom',
+            },
           ],
         },
+      ],
+    };
+    var browseSection = {
+      label: 'Browse',
+      items: [{ key: 'certs-store', icon: '📜', label: 'Certificates', to: '/certs/shared' }],
+    };
+    var certsTools = {
+      key: 'tools-certs',
+      icon: '📜',
+      label: 'Certificates',
+      to: '/certs/convert',
+      open: true,
+      children: [
+        { key: 'convert', icon: '⇄', label: 'Convert', to: '/certs/convert' },
+        { key: 'decode', icon: '🔍', label: 'Decode', to: '/certs/decode' },
+        { key: 'match', icon: '⚭', label: 'Match', to: '/certs/match' },
+        { key: 'compare', icon: '⇔', label: 'Compare', to: '/certs/compare' },
+        { key: 'chain', icon: '⛓', label: 'Chain', to: '/certs/chain' },
+        { key: 'generate', icon: '✦', label: 'Generate', to: '/certs/generate' },
       ],
     };
     var backends = {
@@ -1630,17 +1623,18 @@
         active: 'boxorgs',
         homeTitle: 'Home',
         sections: [
+          browseSection,
+          accountSection,
           {
-            label: 'Admin',
+            label: 'System',
             items: [
               { key: 'boxusers', icon: '👥', label: 'Users', to: '/admin/users' },
               { key: 'boxorgs', icon: '🏢', label: 'Organizations', to: '/admin/organizations' },
               { key: 'boxconfig', icon: '⚙', label: 'Configuration', to: '/admin/config' },
               { key: 'boxsystem', icon: '▤', label: 'System', to: '/admin/system' },
+              certsTools,
             ],
           },
-          certsSection(true),
-          certsTools,
         ],
         ctx: { boxconfig: ['app', 'auth', 'db', 'mail'] },
         crumbs: function (item, path) {
@@ -1739,7 +1733,7 @@
         title: 'Datacenter',
         active: 'zone-1',
         home: 'dc',
-        sections: [certsSection(false), certsTools],
+        sections: [accountSection, { label: 'System', items: [certsTools] }],
         actionMenu: {
           'zone-1': 'Machine controls',
           'zone-2': 'Machine controls',

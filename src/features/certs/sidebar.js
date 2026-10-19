@@ -1,6 +1,5 @@
 import {
   FaCertificate,
-  FaCloud,
   FaCodeCompare,
   FaFileSignature,
   FaKey,
@@ -8,7 +7,6 @@ import {
   FaMagnifyingGlass,
   FaPuzzlePiece,
   FaRightLeft,
-  FaRotate,
   FaShieldHalved,
   FaUserSecret,
   FaVault,
@@ -21,11 +19,18 @@ import { SECRET_KINDS } from './utils/records';
 
 const VAULT_ROUTE = '/certs';
 
+const AGENT_ROLES = ['hyperweaver-agent', 'zoneweaver-agent'];
+
 /**
  * The route of the vault narrowed to the secret kinds, every one of them
  * under the one `kind` filter.
  */
 export const SECRETS_ROUTE = `${VAULT_ROUTE}?kind=${SECRET_KINDS.join(',')}`;
+
+/**
+ * The route of the backend's Certificates store.
+ */
+export const STORE_ROUTE = '/certs/shared';
 
 const KINDS = [
   { key: 'certificate', icon: FaCertificate, labelKey: 'certs.sidebar.certificates' },
@@ -61,43 +66,52 @@ const VAULT = {
   children: KINDS,
 };
 
-const STORE = [
-  { key: 'shared', icon: FaCloud, labelKey: 'certs.sidebar.shared', to: '/certs/shared' },
-  { key: 'sync', icon: FaRotate, labelKey: 'certs.sidebar.sync', to: '/certs/sync' },
-];
+const STORE = {
+  key: 'certs-store',
+  icon: FaCertificate,
+  labelKey: 'certs.sidebar.shared',
+  to: STORE_ROUTE,
+};
 
-const toolsGroup = {
-  key: 'tools',
-  labelKey: 'certs.sidebar.tools',
-  sections: [
-    {
-      key: 'tools',
-      labelKey: 'certs.sidebar.tools',
-      items: [
-        {
-          key: 'certs',
-          icon: FaCertificate,
-          labelKey: 'certs.sidebar.title',
-          to: '/certs/convert',
-          children: TOOLS,
-        },
-      ],
-    },
-  ],
+const TOOLS_ROW = {
+  key: 'certs',
+  icon: FaCertificate,
+  labelKey: 'certs.sidebar.title',
+  to: '/certs/convert',
+  children: TOOLS,
+};
+
+const accountGroup = {
+  key: 'account',
+  labelKey: 'account.sidebar.title',
+  sections: [{ key: 'account', labelKey: 'account.sidebar.title', items: [VAULT] }],
+};
+
+const browseGroup = {
+  key: 'browse',
+  labelKey: 'pages.sidebar.browse',
+  sections: [{ key: 'browse', labelKey: 'pages.sidebar.browse', items: [STORE] }],
+};
+
+const adminGroup = {
+  key: 'admin',
+  labelKey: 'admin.sidebar.title',
+  sections: [{ key: 'system', labelKey: 'admin.sidebar.system', items: [TOOLS_ROW] }],
 };
 
 /**
  * The certs feature's sidebar export of the navbar contract's Sidebar
- * section: nothing unless the host advertises `certs`; else a
- * Certificates group of one section under the CERTIFICATES heading, the
- * Vault row at `/certs` folding the Certificates, Authorities, Requests
- * and Keys rows, each the vault narrowed to that kind at
- * `/certs?kind=<kind>`, and the Secrets row, the vault narrowed to the
- * eight secret kinds, the one lit the kind the route carries, then the
- * Shared and Sync rows while the host advertises `certs-store` and a
- * person is signed in; and, while the host advertises `tools` as well,
- * the shared Tools group with one Certificates row opening Convert and
- * folding Convert, Decode, Match, Compare, Chain and Generate.
+ * section, nothing unless the host advertises `certs`: while a person is
+ * signed in, the Vault row at `/certs` in the Account group, folding the
+ * Certificates, Authorities, Requests and Keys rows, each the vault
+ * narrowed to that kind at `/certs?kind=<kind>`, and the Secrets row, the
+ * vault narrowed to the eight secret kinds, the one lit the kind the
+ * route carries; while the host advertises `certs-store` as well and is
+ * no agent role, the Certificates row of the backend's store at
+ * `/certs/shared` in the Browse group; and while the host advertises
+ * `tools`, the Certificates row opening Convert and folding Convert,
+ * Decode, Match, Compare, Chain and Generate in the Admin group's System
+ * section.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Object} account - The session state from `useSession`
@@ -108,19 +122,11 @@ export const sidebar = (status, account) => {
     return [];
   }
   const signedIn = authMethod(status) === 'none' || Boolean(account?.user);
-  const stored = hasFeatureStrict(status, 'certs-store') && signedIn;
+  const browsed =
+    signedIn && hasFeatureStrict(status, 'certs-store') && !AGENT_ROLES.includes(status.role);
   return [
-    {
-      key: 'certs',
-      labelKey: 'certs.sidebar.title',
-      sections: [
-        {
-          key: 'certs',
-          labelKey: 'certs.sidebar.title',
-          items: [VAULT, ...(stored ? STORE : [])],
-        },
-      ],
-    },
-    ...(hasFeatureStrict(status, 'tools') ? [toolsGroup] : []),
+    ...(signedIn ? [accountGroup] : []),
+    ...(browsed ? [browseGroup] : []),
+    ...(hasFeatureStrict(status, 'tools') ? [adminGroup] : []),
   ];
 };

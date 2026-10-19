@@ -225,7 +225,7 @@ const created = ctx => {
   const organization = String(body.organization || '');
   const membership = membershipIn(person, organization);
   const member = Boolean(membership) && membership.role !== 'guest';
-  if (!organizations.has(organization) || !member) {
+  if (organization && (!organizations.has(organization) || !member)) {
     return denied(NOT_MEMBER);
   }
   const row = rowOf({
@@ -290,9 +290,10 @@ const removed = ctx => {
  * or an owner or admin of the organization, a published private row by
  * the organization's members, a
  * published private row marked for guests by its guests too, a
- * published public row by anyone; a member shares, the sharer or an
- * owner or admin of the organization changes and removes, a guest and a
- * global admin by role alone refused 403, and every write is sent on
+ * published public row by anyone; a row under no organization is the
+ * person's own, read and changed by them alone; a member shares, the
+ * sharer or an owner or admin of the organization changes and removes, a
+ * guest and a global admin by role alone refused 403, and every write is sent on
  * the `certs` topic as `cert-updated` or `cert-removed`.
  *
  * @param {Object} router - `sessionRoute`

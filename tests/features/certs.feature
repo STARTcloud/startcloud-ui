@@ -1,53 +1,53 @@
 Feature: certs
 
-  Scenario: Sidebar: a host that lists no certs draws no Certificates rows
+  Scenario: Sidebar: a host that lists no certs draws no Vault, tool or Certificates store row
     Given the host answers the certs fixture
     And the host answers the certs-nocerts fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/"
-    Then the chrome draws no sidebar row "Vault"
-    And the chrome draws no sidebar row "Convert"
-    And the chrome draws no sidebar row "Shared"
+    Then the sidebar draws no row to "/certs"
+    And the sidebar draws no row to "/certs/convert"
+    And the sidebar draws no row to "/certs/shared"
 
-  Scenario: Sidebar: a host that lists certs and tools without certs-store draws the Vault and the Tools group's Certificates row with the six tools under it, and no Shared or Sync row
+  Scenario: Sidebar: a host that lists certs and tools without certs-store draws the Vault under Account after Profile and the Certificates tools row under the Admin group's System section with the six tools under it, no Tools or Certificates section and no store row
     Given the host answers the certs fixture
     And the host answers the certs-nostore fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/convert"
-    Then the chrome draws the sidebar row "Vault"
-    And the chrome draws the sidebar row "Convert"
-    And the chrome draws the sidebar row "Generate"
-    And the sidebar row "Convert" links to "/certs/convert"
-    And the chrome draws no sidebar row "Shared"
-    And the chrome draws no sidebar row "Sync"
+    Then the sidebar section "account" opens with the row to "/profile"
+    And the sidebar section "account" holds the row to "/certs"
+    And the sidebar section "system" holds the row to "/certs/convert"
+    And the sidebar section "system" holds the row to "/certs/generate"
+    And the sidebar draws no section "tools"
+    And the sidebar draws no section "certs"
+    And the sidebar draws no row to "/certs/shared"
+    And the sidebar draws no row to "/certs/sync"
 
-  Scenario: Sidebar: a host that lists certs without tools draws the Vault and no tool row, and the tool routes are stubs
+  Scenario: Sidebar: a host that lists certs without tools draws the Vault and the store row and no tool row, and the tool routes are stubs
     Given the host answers the certs fixture
     And the host answers the certs-notools fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs"
-    Then the chrome draws the sidebar row "Vault"
-    And the chrome draws the sidebar row "Shared"
-    And the chrome draws no sidebar row "Convert"
-    And the chrome draws no sidebar row "Generate"
+    Then the sidebar section "account" holds the row to "/certs"
+    And the sidebar section "browse" holds the row to "/certs/shared"
+    And the sidebar draws no row to "/certs/convert"
+    And the sidebar draws no row to "/certs/generate"
+    And the sidebar draws no section "system"
     When I open "/certs/convert"
-    Then the chrome draws no sidebar row "Convert"
-    And the chrome draws the sidebar row "Vault"
+    Then the sidebar draws no row to "/certs/convert"
+    And the sidebar section "account" holds the row to "/certs"
 
-  Scenario: Sidebar: a host that lists certs-store draws Shared and Sync for a signed-in person, and the Vault row folds the four kinds, each linking to the vault narrowed to it
+  Scenario: Sidebar: a host that lists certs-store draws the Certificates store row in the Browse section for a signed-in person and no Sync row, and the Vault row under Account folds the four kinds, each linking to the vault narrowed to it
     Given the host answers the certs fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs?kind=authority"
-    Then the chrome draws the sidebar row "Shared"
-    And the chrome draws the sidebar row "Sync"
-    And the sidebar row "Shared" links to "/certs/shared"
-    And the sidebar row "Sync" links to "/certs/sync"
-    And the chrome draws the sidebar row "Certificates"
-    And the chrome draws the sidebar row "Authorities"
-    And the chrome draws the sidebar row "Requests"
-    And the chrome draws the sidebar row "Keys"
-    And the sidebar row "Authorities" links to "/certs?kind=authority"
-    And the sidebar row "Keys" links to "/certs?kind=key"
+    Then the sidebar section "browse" holds the row to "/certs/shared"
+    And the sidebar draws no row to "/certs/sync"
+    And the sidebar section "account" holds the row to "/certs?kind=certificate"
+    And the sidebar section "account" holds the row to "/certs?kind=authority"
+    And the sidebar section "account" holds the row to "/certs?kind=request"
+    And the sidebar section "account" holds the row to "/certs?kind=key"
+    And the sidebar section "system" holds the row to "/certs/convert"
 
   Scenario: Visitor: a person who never signed in is sent from the vault to sign in with the page as the return path, no banner drawn and the list of servers never asked for
     Given the host answers the certs fixture
@@ -63,6 +63,7 @@ Feature: certs
     When I open "/certs/convert"
     And I drop "leaf.pem" into the input zone
     Then I see "www.fixture.test"
+    And the certs card "certs-convert-input" is folded
     When I drop "leaf.key" into the input zone
     Then the components list 2 rows
     And the component "Certificate" is ticked
@@ -89,6 +90,34 @@ Feature: certs
     When I choose "pkcs12" in the control "certs-convert/to"
     And I press the certs page's "convert" action
     Then the download is named "int.pkcs12.pfx"
+
+  Scenario: Convert: the Output card draws its format and its buttons before any read, held while nothing is picked, and the Input card folds itself once a read lands
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/convert"
+    Then the certs card "certs-convert-output" is open
+    And the certs control "certs-convert/to" is enabled
+    And the certs page's "convert" action is held
+    And the certs page's "save-vault" action is held
+    And the certs card "certs-convert-input" is open
+    When I drop "leaf.pem" into the input zone
+    Then the components list 1 rows
+    And the certs card "certs-convert-input" is folded
+    And the certs card "certs-convert-output" is open
+    And the certs page's "convert" action is free
+    And the certs page's "save-vault" action is free
+
+  Scenario: Convert: an Input card the person folded and opened again in the visit stays open after a read
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/convert"
+    And I press the chevron of the certs card "certs-convert-input"
+    Then the certs card "certs-convert-input" is folded
+    When I press the chevron of the certs card "certs-convert-input"
+    Then the certs card "certs-convert-input" is open
+    When I drop "leaf.pem" into the input zone
+    Then the components list 1 rows
+    And the certs card "certs-convert-input" is open
 
   Scenario: Decode: a certificate and its key dropped together in one drop are both listed, the last read picked
     Given the host answers the certs fixture
@@ -231,7 +260,9 @@ Feature: certs
     And I press the certs page's "make-request" action
     And I press the certs page's "save-vault" action
     And I pick the generate tab "sign"
-    And I choose "www.vault.test" in the control "certs-sign/request_id"
+    Then the certs control "certs-sign/request_mode" is not checked
+    And the certs control "certs-sign/authority_mode" is enabled
+    When I choose "www.vault.test" in the control "certs-sign/request_id"
     And I choose "Fixture Vault CA" in the control "certs-sign/authority_id"
     And I press the certs page's "sign" action
     Then the outcome made reads "Fixture Vault CA"
@@ -260,6 +291,61 @@ Feature: certs
     And I press the certs page's "save-template" action
     Then the error summary is focused
     And the error summary lists "web is already taken in Templates"
+
+  Scenario: Generate: with no template held only the Save as template group draws, and a held template is put into the form by Load and never by the pick alone
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/generate"
+    And I pick the generate tab "request"
+    Then the certs control "certs-request-template/pick" is not drawn
+    When I fill the control "certs-request/CN" with "web.test"
+    And I fill the control "certs-request-template/name" with "web"
+    And I press the certs page's "save-template" action
+    Then I see "Saved to the vault."
+    And the certs control "certs-request-template/pick" is enabled
+    And the certs page's "load-template" action is held
+    When I fill the control "certs-request/CN" with "other.test"
+    And I choose "web" in the control "certs-request-template/pick"
+    Then the control "certs-request/CN" holds "other.test"
+    When I press the certs page's "load-template" action
+    Then the control "certs-request/CN" holds "web.test"
+
+  Scenario: Generate: the key source is one switch, disabled while the vault holds no key, and on draws the vault's keys in place of the algorithm
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/generate"
+    And I pick the generate tab "request"
+    Then the certs control "certs-request/mode" is disabled
+    And the certs control "certs-request/mode" is not checked
+    And the certs control "certs-request/keyId" is not drawn
+    And the extended key usages draw in one row
+    When I pick the generate tab "key"
+    And I choose "p256" in the control "certs-key/alg"
+    And I press the certs page's "generate-key" action
+    And I press the certs page's "save-vault" action
+    Then I see "Saved to the vault."
+    When I pick the generate tab "request"
+    Then the certs control "certs-request/mode" is enabled
+    When I check the control "certs-request/mode"
+    Then the certs control "certs-request/keyId" is enabled
+    And the certs control "certs-request/alg" is not drawn
+    When I choose "p256 key" in the control "certs-request/keyId"
+    And I fill the control "certs-request/CN" with "keyed.test"
+    And I press the certs page's "make-request" action
+    Then the outcome made reads "keyed.test"
+
+  Scenario: Generate: the Sign CSR tab with an empty vault draws both Paste instead switches on and disabled with the paste zones open
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/generate"
+    And I pick the generate tab "sign"
+    Then the certs control "certs-sign/request_mode" is checked
+    And the certs control "certs-sign/request_mode" is disabled
+    And the certs control "certs-sign/authority_mode" is checked
+    And the certs control "certs-sign/authority_mode" is disabled
+    And the certs panel "request-zone" is drawn
+    And the certs panel "authority-zone" is drawn
+    And the certs control "certs-sign/request_id" is not drawn
 
   Scenario: Vault: a record renamed on its page, a #id arrival landing on its row, and a row's Delete behind the typed confirmation leaving the focus on the heading
     Given the host answers the certs fixture
@@ -465,21 +551,6 @@ Feature: certs
     And the host was sent PUT to "/api/certs/row-own" carrying "name" as "Dana renamed"
     And the host was sent PUT to "/api/certs/row-own" 1 times
     And the page raised 0 danger notices
-
-  Scenario: Sync: ticking one kind and saving sends every unsent record of that kind as one POST each
-    Given the host answers the certs fixture
-    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/certs"
-    And I click "Add New"
-    And I drop "vault.certs.json" into the vault
-    Then the vault lists 2 rows
-    When I open "/certs/sync"
-    And I check the control "certs-sync/certificate"
-    And I press the certs page's "save" action
-    Then the host was sent POST to "/api/certs" carrying "kind" as "certificate"
-    And the host was sent POST to "/api/certs" carrying "organization" as "acme"
-    And the host was sent POST to "/api/certs" 1 times
-    And I see "Sync settings saved."
 
   Scenario: Shared: an admin of the organization reads every row, with the Published and Visibility columns
     Given the host answers the certs fixture

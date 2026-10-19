@@ -240,7 +240,7 @@ const SectionRows = ({ section, badges, pathname, search, opened }) => {
     return null;
   }
   return (
-    <div className="sidebar-section">
+    <div className="sidebar-section" data-section={section.key}>
       {section.labelKey ? <div className="sidebar-section-label">{t(section.labelKey)}</div> : null}
       {section.items.map(row => (
         <SectionEntry
@@ -585,8 +585,8 @@ const sizeShape = PropTypes.shape({
  * The entries' `nav` carries the host's name, version and hostname as
  * `data-app`, `data-version` and `data-host`, the same three the header
  * row carries, drawn by nothing until a pack's rules give them a place;
- * a tree node's row carries its key as `data-node` and its route as
- * `data-to`.
+ * a section carries its key as `data-section`, and a tree node's row
+ * carries its key as `data-node` and its route as `data-to`.
  */
 const Sidebar = ({ entries, brand, badges, open, onClose, size, readout = null, foot = null }) => {
   const { t } = useTranslation();

@@ -11540,14 +11540,6 @@
       "editParts": "Edit parts",
       "noDefaultDomain": "No default domain is set for this host. Type one, or set the host's default domain in its configuration.",
       "setDefaultDomain": "Set the host's default domain",
-      "domainSource": "Domain source",
-      "domainSourceWord": {
-        "preference": "Browser preference",
-        "user": "User",
-        "organization": "Organization",
-        "agent": "Agent"
-      },
-      "domainSourceCustom": "Custom",
       "useProvisioner": "Use a provisioner",
       "useProvisionerHint": "Without a provisioner the Provisioning step is not drawn.",
       "mount": "Mount",
@@ -12249,9 +12241,7 @@
     "sidebar": {
       "title": "Certificates",
       "vault": "Vault",
-      "shared": "Shared",
-      "sync": "Sync",
-      "tools": "Tools",
+      "shared": "Certificates",
       "convert": "Convert",
       "decode": "Decode",
       "match": "Match",
@@ -12407,7 +12397,7 @@
       "activate": "Activate"
     },
     "shared": {
-      "title": "Shared certificates",
+      "title": "Certificates",
       "refresh": "Refresh",
       "loadError": "The shared store could not be read.",
       "count_one": "{{count}} record",
@@ -12421,7 +12411,7 @@
       "lastSynced": "last synced {{when}}",
       "never": "never synced",
       "save": "Save",
-      "noOrganization": "Join an organization to sync your vault to {{name}}."
+      "noOrganization": "{{name}} keeps the records of the checked kinds in your own store on this host."
     },
     "input": {
       "drop": "Drop a certificate, key or bundle here",
@@ -12643,30 +12633,30 @@
       "saved": "saved",
       "keySource": "Key",
       "keyMode": {
-        "generate": "Generate a new key",
         "vault": "Use a key of the vault"
       },
       "vaultKey": "Vault key",
       "pickKey": "Pick a key",
+      "noVaultKey": "The vault holds no key with its private half.",
+      "pasteInstead": "Paste instead",
       "template": "Template",
       "pickTemplate": "Pick a template",
-      "templateName": "Template name",
       "templates": "Templates",
       "saveTemplate": "Save",
       "deleteTemplate": "Delete template",
-      "templatesOptional": "Templates are optional: load one into the form, or save the form as one.",
+      "loadTemplate": "Load",
+      "saveAsTemplate": "Save as template",
       "days": "Valid for (days)",
       "authority": "Authority",
       "pathLen": "Path length",
       "pathLenAny": "any",
       "request": "Request",
-      "authorityPick": "Authority",
+      "signingAuthority": "Signing authority",
+      "noVaultRequest": "The vault holds no request; paste one.",
+      "noVaultAuthority": "The vault holds no authority whose key it holds; paste one.",
+      "authorityQualifies": "An authority of the vault whose key the vault holds, or a pasted certificate and its key.",
       "pasteRequest": "Paste the request",
       "pasteAuthority": "Paste the authority's certificate and key",
-      "sourceMode": {
-        "vault": "From the vault",
-        "paste": "Paste"
-      },
       "signatureScheme": {
         "pkcs1": "PKCS#1 v1.5",
         "pss": "RSASSA-PSS"

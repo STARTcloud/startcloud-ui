@@ -100,7 +100,8 @@ DetailRow.propTypes = {
  * The list of scope rows the consent and CIBA pages draw, and a later
  * connected-applications list draws read-only: `checked` holds the ids
  * on, `locked` the ids that cannot be turned off, `disabled` the ids that
- * cannot be turned on; `id` names the list for a form summary's link.
+ * cannot be turned on; `id` names the list for a form summary's link;
+ * `inline` lays the rows out in one wrapping row instead of a column.
  */
 const ScopeList = ({
   scopes,
@@ -111,8 +112,13 @@ const ScopeList = ({
   readOnly = false,
   name = 'scope',
   id = undefined,
+  inline = false,
 }) => (
-  <div className="scope-list" id={id} tabIndex={id ? -1 : undefined}>
+  <div
+    className={inline ? 'scope-list flex-row flex-wrap' : 'scope-list'}
+    id={id}
+    tabIndex={id ? -1 : undefined}
+  >
     {scopes.map(scope => (
       <ScopeRow
         key={scope.id}
@@ -137,6 +143,7 @@ ScopeList.propTypes = {
   readOnly: PropTypes.bool,
   name: PropTypes.string,
   id: PropTypes.string,
+  inline: PropTypes.bool,
 };
 
 export default ScopeList;

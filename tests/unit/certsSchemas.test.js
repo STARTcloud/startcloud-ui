@@ -139,7 +139,7 @@ describe('templateSchemaOf', () => {
   it('requires the name and labels it', () => {
     expect(schema.required).toEqual(['name']);
     expect(pointersOf(schema, { name: '' })).toEqual(['/name']);
-    expect(TEMPLATE_LABELS).toEqual({ name: 'certs.generate.templateName' });
+    expect(TEMPLATE_LABELS).toEqual({ name: 'certs.generate.saveAsTemplate' });
   });
 });
 
