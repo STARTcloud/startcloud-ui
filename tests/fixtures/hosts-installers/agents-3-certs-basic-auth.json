@@ -1,0 +1,23 @@
+[
+  {
+    "id": "sec-mirror",
+    "organization": "",
+    "kind": "basic_auth",
+    "name": "mirror-credentials",
+    "profile": "installer_server",
+    "subject": "",
+    "not_after": "",
+    "published": true,
+    "is_public": false,
+    "guest_access": false,
+    "created_by": "mark",
+    "updated_at": "2026-10-10T09:00:00.000Z",
+    "record": {
+      "kind": "basic_auth",
+      "name": "mirror-credentials",
+      "profile": "installer_server",
+      "secret": { "user": "user", "password": "pass", "url": "https://mirror.example.com" },
+      "extra": {}
+    }
+  }
+]

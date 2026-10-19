@@ -442,9 +442,10 @@ Update to.
   the host's enabled box registries the person can reach, read as the
   person, the forwarded person's token first, the host's bound account's
   token second and the registry's own key last, exactly as a template is
-  pulled; the HCL portal through the person's portal key in the host's
-  secrets; a URL; a URL with the credentials of a custom resource in the
-  host's secrets; and the person's own upload or a path registered on
+  pulled; the HCL portal through an `api_key` row of profile `hcl_portal`
+  in the host's store; a URL; a URL with the credentials of an
+  `installer_server` row of the host's store, a `basic_auth` or an
+  `api_key`; and the person's own upload or a path registered on
   the host, taken with a warning that nothing is guaranteed. A pick from
   the registry, the portal or a URL queues the host's own fetch into the
   kind's location under the role with the checksum, the page follows the
@@ -457,7 +458,8 @@ Update to.
   refused, because a person who overrides a file is told what they gave
   up and not stopped. The wire of the cache, as hyperweaver-agent
   answers it: an artifact row's `version` is `{ "major", "minor",
-"patch", "fix_pack", "ea_access_release", "full_version" }`; a
+"patch", "fix_pack", "ea_access_release", "full_version" }` on every
+  route that answers a row; a
   known-but-missing row, `file_exists: false`, carries `source`, one of
   `boxvault`, `hcl` and `custom`, and `POST artifacts/{id}/fetch` with
   no body queues its download, `202` `{ "task_id", "artifact_id",
@@ -470,26 +472,23 @@ Update to.
   and `wait_for: [ "<task id>", ... ]`, the downloads chained in that
   order, the create's first task waiting on the last, a failed or
   cancelled download cancelling the build with `Dependency failed`, the
-  answer carrying `waited_on`. ID files are one kind, `id_file`, the
-  row's `role` the id type, `safe_id`, `server_id` or `user_id`; an upload
-  goes through `POST artifacts/upload/prepare` with the `storage_path_id`
-  of an `id_file` location and `role` the type, the safe IDs listed by
-  `GET artifacts?type=id_file&role=safe_id`; the create carries
-  `id_files: [{ "artifact_id", "name" }]`, each landing at
-  `id-files/<folder of its type>/<name>`, a `safe_id` under the manifest's
-  `id_files.safe_id_dir`, `name` absent taking the `USER_SAFE_ID` answer
-  for a safe ID, else `safe.ids` unless `id_files.keep_original_name`;
-  `safe_id_path` stays the agent-host file door.
+  answer carrying `waited_on`. A manifest field of type `file` names a
+  cached file by its `kind` and `role`, the answer the file name, and a
+  field of type `secret` names a row of the host's store by its `kind`
+  and `profile`, the answer the row's id, a Notes ID among them a `file`
+  row of profile `notes_id` whose bytes the agent places under
+  `id-files/<folder of its id type>/<filename>` at prepare; the answers
+  ride `properties` and the create carries no file beside `roles[]`.
 
 **`machine`** lands on the host's page, which opens the create wizard over
 itself while the host offers a create, the query's members seeding the
 wizard, and stays where it is with one notice while no host offers one:
-the box members land on the Box step as a custom pick, `box` with its three
+the box members land on the OS & Disks step as a custom pick, `box` with its three
 members where the query carries it, else the `box_<provider>` member the
 host's hypervisor picks, a VirtualBox host `box_virtualbox`, a bhyve host
 `box_zone` then `box_bhyve`, a UTM host `box_utm` then `box_virtualbox`,
 its four parts the box, the version, the architecture and the registry
-URL, so the Box step shows the box the catalog verified the version with;
+URL, so the OS & Disks step shows the box the catalog verified the version with;
 `provisioner` names the
 host's family by the part after its slash, picked on the Provisioning
 step once the host's provisioners have answered, and
@@ -500,7 +499,7 @@ it again only when asked.
 
 A handed box whose registry the host does not hold, none of the host's
 template sources being one the box's URL starts with, puts one card on
-the Box step, **Add registry and continue**, whose press writes the
+the OS & Disks step, **Add registry and continue**, whose press writes the
 registry through the host's `PUT config/storage`, the registry's host as
 its id and display name and its origin as its URL, and reads the
 registries again; a refused write says so with Retry. The agent's create resolves `settings.box_url` against its
@@ -566,7 +565,7 @@ A receiver:
   or `self`, makes the hosts page the pick under the banner while several
   do, and says so under the banner while none does;
 - opens the wizard or the dialog seeded, the box of the host's hypervisor
-  on the Box step, the family's card marked, asks, and writes nothing on
+  on the OS & Disks step, the family's card marked, asks, and writes nothing on
   its own;
 - installs a family it does not hold, pulls a template, adds a registry
   or a catalog source only on the person's press, through its catalog

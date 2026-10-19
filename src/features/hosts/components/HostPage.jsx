@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -26,11 +26,12 @@ import { uptimeParts } from '../utils/resources';
 import ChartControls from './ChartControls';
 import HostNav from './HostNav';
 import HostOverview from './HostOverview';
-import MachineCreateModal from './MachineCreateModal';
 import MonitoringDatabase from './MonitoringDatabase';
 import NetworkStorageSummary from './NetworkStorageSummary';
 import PerformanceCharts from './PerformanceCharts';
 import TaskDialog from './TaskDialog';
+
+const MachineCreateModal = lazy(() => import('./MachineCreateModal'));
 
 const SEPARATOR = ' · ';
 
@@ -173,6 +174,11 @@ const HostPage = ({ id, context }) => {
   const charted = hostOffers(server, SERIES.cpu.tokens);
   const [searchParams, setSearchParams] = useSearchParams();
   const seed = createSeedOf(searchParams);
+  const creating = Boolean(seed) && hostCreates(server, context.user?.role);
+  const [wizardMounted, setWizardMounted] = useState(false);
+  if (creating && !wizardMounted) {
+    setWizardMounted(true);
+  }
   const arrivedTask = useArrivedTask({ status, id, taskId: searchParams.get(TASK_PARAM) || '' });
   const columns = useMemo(() => columnsFor(id), [id]);
   const machines = useMemo(() => machinesOf(stats), [stats]);
@@ -271,14 +277,18 @@ const HostPage = ({ id, context }) => {
           <NetworkStorageSummary id={id} />
           <PerformanceCharts id={id} host={label} folds={folds} />
           <MonitoringDatabase id={id} />
-          <MachineCreateModal
-            status={status}
-            id={id}
-            open={Boolean(seed) && hostCreates(server, context.user?.role)}
-            user={context.user}
-            seed={seed}
-            onClose={() => setSearchParams(withoutCreateSeed(searchParams), { replace: true })}
-          />
+          {wizardMounted ? (
+            <Suspense fallback={null}>
+              <MachineCreateModal
+                status={status}
+                id={id}
+                open={creating}
+                user={context.user}
+                seed={seed}
+                onClose={() => setSearchParams(withoutCreateSeed(searchParams), { replace: true })}
+              />
+            </Suspense>
+          ) : null}
           {arrivedTask ? (
             <TaskDialog
               status={status}

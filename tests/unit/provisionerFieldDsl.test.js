@@ -4,11 +4,17 @@ import {
   DSL_TYPES,
   dslConfiguration,
   evaluateShowIf,
+  hypervisorRowsOf,
   optionRows,
   pruneHidden,
   roleFlagScope,
+  roleGroupsOf,
   rowsFor,
+  secretFieldsOf,
+  secretKindsOf,
   seedAnswers,
+  seedInventoryAnswers,
+  seedSecretAnswers,
   validateAnswers,
   validateField,
   visibility,
@@ -78,7 +84,100 @@ describe('dslConfiguration', () => {
       'ipaddr',
       'cidr',
       'path',
+      'list',
+      'file',
+      'secret',
     ]);
+  });
+
+  it('names the secret fields with their kind, profile and secret key, the certificate and key kinds among them', () => {
+    const shaped = {
+      fields: [
+        {
+          name: 'INSTALLER_BEARER',
+          type: 'secret',
+          kind: 'api_key',
+          profile: 'installer_server',
+          secret_key: 'installer_url_bearer',
+        },
+        { name: 'USER_SAFE_ID', type: 'secret', kind: 'file', secret_key: 'user_safe_id' },
+        { name: 'TLS_CERT', type: 'secret', kind: 'certificate', secret_key: 'tls_cert' },
+        { name: 'TLS_KEY', type: 'secret', kind: 'key', secret_key: 'tls_key' },
+        { name: 'OTHER', type: 'text' },
+      ],
+    };
+    expect(secretFieldsOf(shaped).map(field => field.secret_key)).toEqual([
+      'installer_url_bearer',
+      'user_safe_id',
+      'tls_cert',
+      'tls_key',
+    ]);
+    expect(secretKindsOf(shaped)).toEqual(['api_key', 'file', 'certificate', 'key']);
+    expect(secretFieldsOf(null)).toEqual([]);
+    expect(secretKindsOf(null)).toEqual([]);
+  });
+
+  it('names the groups a role draws', () => {
+    const shaped = {
+      groups: [
+        { name: 'domino', label: 'Domino' },
+        { name: 'ssl', label: 'SSL', role: 'ssl' },
+        { name: 'iq', label: 'IQ', role: '' },
+      ],
+      fields: [{ name: 'NAMES', type: 'list', items: 'fqdn' }],
+    };
+    expect(roleGroupsOf(shaped).map(group => group.name)).toEqual(['ssl']);
+    expect(roleGroupsOf(null)).toEqual([]);
+  });
+});
+
+describe('seedSecretAnswers', () => {
+  const shaped = {
+    fields: [
+      { name: 'INSTALLER_BEARER', type: 'secret', kind: 'api_key', profile: 'installer_server' },
+      { name: 'DOMINO_IQ_API_KEY', type: 'secret', kind: 'api_key', profile: 'openai' },
+      { name: 'USER_SAFE_ID', type: 'secret', kind: 'file', profile: 'notes_id' },
+      { name: 'TLS_CERT', type: 'secret', kind: 'certificate' },
+      { name: 'OTHER', type: 'text' },
+    ],
+  };
+  const bearer = { id: 'sec-bearer', kind: 'api_key', profile: 'installer_server' };
+  const openai = { id: 'sec-openai', kind: 'api_key', profile: 'openai' };
+  const plain = { id: 'sec-plain', kind: 'api_key' };
+
+  it('picks the one row that matches the kind and the profile', () => {
+    expect(
+      seedSecretAnswers(shaped, {
+        api_key: [bearer, openai],
+        file: [{ id: 'sec-safe', kind: 'file', profile: 'notes_id' }],
+        certificate: [{ id: 'ca-1', kind: 'authority' }],
+      })
+    ).toEqual({
+      INSTALLER_BEARER: 'sec-bearer',
+      DOMINO_IQ_API_KEY: 'sec-openai',
+      USER_SAFE_ID: 'sec-safe',
+      TLS_CERT: 'ca-1',
+    });
+  });
+
+  it('leaves a field unpicked while no row matches', () => {
+    expect(seedSecretAnswers(shaped, { api_key: [bearer], file: [] })).toEqual({
+      INSTALLER_BEARER: 'sec-bearer',
+    });
+    expect(seedSecretAnswers(shaped, {})).toEqual({});
+    expect(seedSecretAnswers(null, { api_key: [bearer] })).toEqual({});
+  });
+
+  it('leaves a field unpicked while two rows match, a row naming no profile among them', () => {
+    expect(seedSecretAnswers(shaped, { api_key: [bearer, openai, plain] })).toEqual({});
+    expect(
+      seedSecretAnswers(shaped, {
+        file: [
+          { id: 'sec-safe', kind: 'file', profile: 'notes_id' },
+          { id: 'sec-server', kind: 'file', record: { profile: 'notes_id' } },
+        ],
+      })
+    ).toEqual({});
   });
 });
 
@@ -103,6 +202,39 @@ describe('the options of a field', () => {
     ]);
     expect(rowsFor(field, {})).toEqual([{ value: 'a', label: 'a' }]);
     expect(rowsFor(field, null)).toEqual([{ value: 'a', label: 'a' }]);
+  });
+
+  it('draws the hypervisor inventory as the rows of a select sourced from it, objects and strings alike', () => {
+    const field = { name: 'VAGRANT_PROVIDER', type: 'select', options_source: 'hypervisor' };
+    expect(rowsFor(field, { hypervisor: ['virtualbox', 'zones'] })).toEqual([
+      { value: 'virtualbox', label: 'virtualbox' },
+      { value: 'zones', label: 'zones' },
+    ]);
+    expect(rowsFor(field, { hypervisor: [{ value: 'utm', label: 'UTM' }] })).toEqual([
+      { value: 'utm', label: 'UTM' },
+    ]);
+    expect(rowsFor(field, {})).toEqual([]);
+  });
+
+  it('names the host hypervisors as the provider names, bhyve as zones, the detected first, each once', () => {
+    expect(hypervisorRowsOf(['bhyve', 'virtualbox', 'bhyve'])).toEqual(['zones', 'virtualbox']);
+    expect(hypervisorRowsOf(['utm', 'xen'])).toEqual(['utm']);
+    expect(hypervisorRowsOf(undefined)).toEqual([]);
+  });
+
+  it('seeds a select sourced from an inventory on the first row and leaves the rest alone', () => {
+    const shaped = {
+      fields: [
+        { name: 'VAGRANT_PROVIDER', type: 'select', options_source: 'hypervisor' },
+        { name: 'NET', type: 'select', options_source: 'networks' },
+        { name: 'SIZE', type: 'select', options: ['small'] },
+      ],
+    };
+    expect(
+      seedInventoryAnswers(shaped, { hypervisor: ['zones', 'virtualbox'], networks: [] })
+    ).toEqual({ VAGRANT_PROVIDER: 'zones' });
+    expect(seedInventoryAnswers(shaped, null)).toEqual({});
+    expect(seedInventoryAnswers(null, { hypervisor: ['utm'] })).toEqual({});
   });
 });
 
@@ -137,6 +269,27 @@ describe('evaluateShowIf', () => {
     expect(evaluateShowIf({ disks: { gte: 5 } }, { disks: 4 })).toBe(false);
     expect(evaluateShowIf({ disks: { lt: 1 } }, { disks: '' })).toBe(false);
     expect(evaluateShowIf({ disks: { between: 1 } }, { disks: 2 })).toBe(false);
+  });
+
+  it('reads min_items and max_items over the member count of a list answer, alone and together', () => {
+    expect(evaluateShowIf({ names: { min_items: 1 } }, { names: ['a.example.com'] })).toBe(true);
+    expect(evaluateShowIf({ names: { min_items: 2 } }, { names: ['a.example.com'] })).toBe(false);
+    expect(evaluateShowIf({ names: { max_items: 1 } }, { names: ['a.example.com'] })).toBe(true);
+    expect(evaluateShowIf({ names: { max_items: 1 } }, { names: ['a', 'b'] })).toBe(false);
+    expect(evaluateShowIf({ names: { min_items: 1, max_items: 2 } }, { names: ['a', 'b'] })).toBe(
+      true
+    );
+    expect(
+      evaluateShowIf({ names: { min_items: 1, max_items: 2 } }, { names: ['a', 'b', 'c'] })
+    ).toBe(false);
+  });
+
+  it('counts a non-list answer as no members', () => {
+    expect(evaluateShowIf({ names: { min_items: 1 } }, {})).toBe(false);
+    expect(evaluateShowIf({ names: { min_items: 1 } }, { names: 'a.example.com' })).toBe(false);
+    expect(evaluateShowIf({ names: { max_items: 0 } }, { names: undefined })).toBe(true);
+    expect(evaluateShowIf({ names: { max_items: 0 } }, { names: 'a.example.com' })).toBe(true);
+    expect(evaluateShowIf({ names: { min_items: 'one' } }, { names: ['a'] })).toBe(false);
   });
 
   it('reads any as an or of maps and a number against the number the answer reads as', () => {
@@ -237,6 +390,72 @@ describe('validateField', () => {
     );
     expect(validateField({ name: 'c', type: 'cidr' }, '10.0.0.0', t)).toBe(
       'provisioning.provisionerFieldDsl.errNotCidr'
+    );
+  });
+
+  it('checks a list by its member count and each member as the items type', () => {
+    const names = {
+      name: 'NAMES',
+      label: 'Names',
+      type: 'list',
+      items: 'fqdn',
+      validate: { min_items: 1, max_items: 2 },
+    };
+    expect(validateField(names, [], t)).toBe(
+      'provisioning.provisionerFieldDsl.errMinItems {"count":1}'
+    );
+    expect(validateField(names, undefined, t)).toBe(
+      'provisioning.provisionerFieldDsl.errMinItems {"count":1}'
+    );
+    expect(validateField(names, ['a.example.com', 'b.example.com', 'c.example.com'], t)).toBe(
+      'provisioning.provisionerFieldDsl.errMaxItems {"count":2}'
+    );
+    expect(validateField(names, ['a.example.com', 'bare'], t)).toBe(
+      'provisioning.provisionerFieldDsl.errNotFqdn'
+    );
+    expect(validateField(names, ['a.example.com', ''], t)).toBe(
+      'provisioning.provisionerFieldDsl.errRequired {"label":"Names"}'
+    );
+    expect(validateField(names, ['a.example.com'], t)).toBe('');
+    expect(validateField({ name: 'free', type: 'list' }, [], t)).toBe('');
+    expect(
+      validateField({ name: 'free', label: 'Free', type: 'list', required: true }, [], t)
+    ).toBe('provisioning.provisionerFieldDsl.errRequired {"label":"Free"}');
+    expect(validateField({ name: 'ips', type: 'list', items: 'ipaddr' }, ['10.0.0.1'], t)).toBe('');
+  });
+
+  it('checks a file by its name as text', () => {
+    const field = {
+      name: 'DOMINO_INSTALLER',
+      label: 'Installer',
+      type: 'file',
+      kind: 'installer',
+      role: 'domino',
+    };
+    expect(validateField(field, 'Domino_14.0_Linux_English.tar', t)).toBe('');
+    expect(validateField({ ...field, required: true }, '', t)).toBe(
+      'provisioning.provisionerFieldDsl.errRequired {"label":"Installer"}'
+    );
+    expect(validateField({ ...field, validate: { max_length: 4 } }, 'Domino.tar', t)).toBe(
+      'provisioning.provisionerFieldDsl.errMaxLength {"count":4}'
+    );
+  });
+
+  it("checks a secret by its answer, the picked row's id, required only when required", () => {
+    const field = {
+      name: 'INSTALLER_BEARER',
+      label: 'Bearer',
+      type: 'secret',
+      kind: 'api_key',
+      secret_key: 'installer_url_bearer',
+    };
+    expect(validateField(field, 'sec-bearer', t)).toBe('');
+    expect(validateField(field, undefined, t)).toBe('');
+    expect(validateField({ ...field, required: true }, '', t)).toBe(
+      'provisioning.provisionerFieldDsl.errRequired {"label":"Bearer"}'
+    );
+    expect(validateField(field, { id: 'sec-bearer' }, t)).toBe(
+      'provisioning.provisionerFieldDsl.errNotSecret'
     );
   });
 

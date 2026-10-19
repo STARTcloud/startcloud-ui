@@ -41,8 +41,11 @@ describe('flattenBoxCatalog', () => {
         boxName: 'debian13',
         versions: ['13.1.0', '13.0.0'],
         architectures: ['amd64', 'arm64'],
+        disk_size: '',
       },
     ]);
+    expect(flattenBoxCatalog([{ ...box, disk_size: '64G' }])[0].disk_size).toBe('64G');
+    expect(flattenBoxCatalog([{ ...box, disk_size: 64 }])[0].disk_size).toBe('');
   });
 
   it('reads the list under boxes or data and skips an entry without a name', () => {

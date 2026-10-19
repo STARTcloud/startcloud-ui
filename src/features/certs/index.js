@@ -1,8 +1,19 @@
 import { lazy } from 'react';
 
 export { default as CertsPreferencesCard } from './components/CertsPreferencesCard';
+export { default as SecretRecordModal } from './components/SecretRecordModal';
+export {
+  SECRET_STORE_COLUMNS,
+  SECRET_STORE_FILTERS,
+  matchesStoreRow,
+} from './components/storeColumns';
+export { default as VaultPickModal } from './components/VaultPickModal';
 export { default as VaultProvider } from './hooks/useVault';
+export { useVault } from './hooks/useVault';
 export { sidebar } from './sidebar';
+export { DER_KINDS, SECRET_KINDS, newRecord, nowOf } from './utils/records';
+export { profileOf } from './utils/secretProfiles';
+export { DETACHED, recordOf, rowOf } from './utils/sync';
 
 export const VaultPage = lazy(() => import('./components/VaultPage'));
 export const SharedPage = lazy(() => import('./components/SharedPage'));

@@ -2,7 +2,7 @@ import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { algorithmOf, issuerOf, matchesRecord, recordStatus } from '../utils/records';
 
-const FILTER_KEYS = ['kind', 'status', 'algorithm', 'issuer', 'tags'];
+const FILTER_KEYS = ['kind', 'profile', 'status', 'algorithm', 'issuer', 'tags'];
 
 const NAME_SORT = [{ column: 'name', direction: 'asc' }];
 
@@ -20,6 +20,13 @@ const groupsOf = ctx => [
     values: record => [record.kind],
     activeClass: 'bg-primary',
     labelFor: (value, t) => t(`certs.kind.${value}`),
+  },
+  {
+    key: 'profile',
+    labelKey: 'certs.filter.profile',
+    values: record => (record.profile ? [record.profile] : []),
+    activeClass: 'bg-info',
+    labelFor: (value, t) => t(`certs.profile.${value}.label`),
   },
   {
     key: 'status',
@@ -54,7 +61,7 @@ const groupsOf = ctx => [
 /**
  * The vault page's navbar binding over `useDetailSearch`: the query over
  * the records' names, subjects, issuers, serials, fingerprints, tags and
- * notes, the Kind, Status, Algorithm, Issuer and Tags groups held in the
+ * notes, the Kind, Profile, Status, Algorithm, Issuer and Tags groups held in the
  * URL, so a stat tile's link narrows the table, each drawing the values
  * present alone, then Columns, the sort, the hidden columns and the
  * widths kept under `prefsKey`, and the panel's actions the page hands

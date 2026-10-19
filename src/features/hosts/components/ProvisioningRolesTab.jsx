@@ -4,30 +4,29 @@ import { useTranslation } from 'react-i18next';
 import {
   FaChevronDown,
   FaClone,
-  FaDownload,
   FaGripVertical,
   FaPlus,
   FaTrash,
   FaTriangleExclamation,
 } from 'react-icons/fa6';
 
-import { changedRolesOf, manifestRoleOf } from '../utils/provisioning';
+import { roleGroupsOf } from '../utils/provisionerFieldDsl';
+import { changedRolesOf, dependencyWarnings, manifestRoleOf } from '../utils/provisioning';
 import {
-  artifactHashOf,
-  artifactPresent,
-  artifactSourceOf,
   bareRoleName,
   downloadKeyOf,
   fileKindsOf,
   pickAnswersOf,
-  pickTextOf,
   pickedArtifactOf,
   roleArtifactsOf,
   roleFilesPatch,
   roleNeedsAttention,
+  withSpecDefaults,
 } from '../utils/roleFiles';
 
-import { DslFieldInput } from './ProvisionerFieldDsl';
+import ArtifactPickModal from './ArtifactPickModal';
+import ArtifactPickRow from './ArtifactPickRow';
+import DslConfigForm, { DslFieldInput } from './ProvisionerFieldDsl';
 import { VarRowList, ROLE_NAME_PATTERN, applyPatch } from './ProvisioningVarRows';
 
 const NO_COLLECTION = 'no collection';
@@ -57,25 +56,6 @@ const specFor = (specs, name) => {
   return spec;
 };
 
-const dependencyWarnings = (roles, hints, index) => {
-  const deps = hints?.[bareRoleName(roles[index].name)];
-  if (!Array.isArray(deps) || deps.length === 0) {
-    return [];
-  }
-  const warnings = [];
-  deps.forEach(dep => {
-    const first = roles.findIndex(row => bareRoleName(row.name) === dep);
-    if (first === -1) {
-      warnings.push({ dep, kind: 'absent' });
-    } else if (first > index) {
-      warnings.push({ dep, kind: 'below' });
-    } else if (roles[first].enabled === false) {
-      warnings.push({ dep, kind: 'off' });
-    }
-  });
-  return warnings;
-};
-
 const blankToUndefined = value => (value === '' ? undefined : value);
 
 const isOn = role => role.enabled !== false;
@@ -92,6 +72,18 @@ const specFieldOf = (name, option) => {
   }
   return { name, type: 'text' };
 };
+
+const fieldsShape = PropTypes.shape({
+  config: PropTypes.object.isRequired,
+  answers: PropTypes.object.isRequired,
+  errors: PropTypes.object,
+  onAnswerChange: PropTypes.func.isRequired,
+  inventory: PropTypes.object,
+  onArtifactsReload: PropTypes.func,
+  host: PropTypes.object,
+  artifacts: PropTypes.array,
+  roles: PropTypes.array.isRequired,
+});
 
 const PackagePicker = ({ packages, packageName, packageVersion, disabled, onPicked }) => {
   const { t } = useTranslation();
@@ -267,7 +259,7 @@ RoleCatalog.propTypes = {
   onDragNew: PropTypes.func.isRequired,
 };
 
-const RoleChips = ({ role, changed }) => {
+const RoleChips = ({ role, changed, required }) => {
   const { t } = useTranslation();
   const varCount = Object.keys(role.vars || {}).length;
   const envCount = Object.keys(role.environment || {}).length;
@@ -281,6 +273,11 @@ const RoleChips = ({ role, changed }) => {
   };
   return (
     <>
+      {required ? (
+        <span className="hw-chip hw-chip-required" data-chip="required">
+          {t('provisioning.provisioningRolesTab.requiredChip')}
+        </span>
+      ) : null}
       {changed ? (
         <span className="hw-chip hw-chip-when" data-chip="changed">
           {t('provisioning.provisioningRolesTab.changedChip')}
@@ -314,6 +311,7 @@ const RoleChips = ({ role, changed }) => {
 RoleChips.propTypes = {
   role: PropTypes.object.isRequired,
   changed: PropTypes.bool.isRequired,
+  required: PropTypes.bool.isRequired,
 };
 
 const RoleKeywordFields = ({ role, uiId, disabled, onPatch }) => {
@@ -379,112 +377,31 @@ RoleKeywordFields.propTypes = {
   onPatch: PropTypes.func.isRequired,
 };
 
-const sourceKey = row => `provisioning.provisioningRolesTab.via.${artifactSourceOf(row) || 'none'}`;
-
-const optionLabel = (row, t) => {
-  const { version } = pickTextOf(row);
-  const parts = [row.filename, version];
-  if (!artifactPresent(row)) {
-    parts.push(t(sourceKey(row)));
-  }
-  return parts.filter(Boolean).join(' · ');
-};
-
-const RoleFilePicker = ({ role, kind, rows, queued, disabled, onPick, onFetch }) => {
+const RoleFileRow = ({ role, kind, rows, queued, disabled, onOpen, onClear, onFetch }) => {
   const { t } = useTranslation();
-  const picked = pickedArtifactOf(rows, role, kind);
   const key = downloadKeyOf(role.name, kind);
-  const queuedTask = queued[key] || null;
-  const present = rows.filter(artifactPresent);
-  const missing = rows.filter(row => !artifactPresent(row));
-  const text = pickTextOf(picked);
-  const fieldId = `role-${role._ui_id}-${kind}`;
   return (
-    <div className="hw-file-picker" data-file-kind={kind}>
-      <label className="hw-file-kind" htmlFor={fieldId}>
-        {t(`provisioning.provisioningRolesTab.kind.${kind}`)}
-      </label>
-      <select
-        id={fieldId}
-        className="form-select form-select-sm"
-        value={role.files?.[kind] || ''}
-        disabled={disabled}
-        onChange={event =>
-          onPick(
-            kind,
-            rows.find(row => row.filename === event.target.value)
-          )
-        }
-      >
-        {kind === 'installer' && rows.length === 0 ? (
-          <option value="">{t('provisioning.provisioningRolesTab.noFileKnown')}</option>
-        ) : null}
-        {kind !== 'installer' ? (
-          <option value="">{t(`provisioning.provisioningRolesTab.none.${kind}`)}</option>
-        ) : null}
-        {present.length > 0 ? (
-          <optgroup label={t('provisioning.provisioningRolesTab.onThisHost')}>
-            {present.map(row => (
-              <option key={row.id} value={row.filename}>
-                {optionLabel(row, t)}
-              </option>
-            ))}
-          </optgroup>
-        ) : null}
-        {missing.length > 0 ? (
-          <optgroup label={t('provisioning.provisioningRolesTab.downloadable')}>
-            {missing.map(row => (
-              <option key={row.id} value={row.filename}>
-                {optionLabel(row, t)}
-              </option>
-            ))}
-          </optgroup>
-        ) : null}
-      </select>
-      <span className="hw-file-meta" title={artifactHashOf(picked)}>
-        {picked ? (
-          <>
-            <span>{text.version}</span>
-            <code>{text.hash}</code>
-          </>
-        ) : null}
-      </span>
-      {queuedTask ? (
-        <div className="hw-file-line text-info" data-file-state="queued">
-          <FaDownload aria-hidden="true" />
-          {t('provisioning.provisioningRolesTab.downloadQueued', { task: queuedTask.task_id })}
-        </div>
-      ) : null}
-      {!queuedTask && picked && !artifactPresent(picked) ? (
-        <div className="hw-file-line text-warning" data-file-state="missing">
-          <FaTriangleExclamation aria-hidden="true" />
-          {t('provisioning.provisioningRolesTab.notOnHost', { source: t(sourceKey(picked)) })}
-          {onFetch ? (
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-secondary py-0"
-              data-action="artifact-fetch"
-              title={t('provisioning.provisioningRolesTab.fetchTitle')}
-              aria-label={t('provisioning.provisioningRolesTab.fetchTitle')}
-              disabled={disabled}
-              onClick={() => onFetch(picked, key)}
-            >
-              <FaDownload aria-hidden="true" />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+    <ArtifactPickRow
+      label={t(`provisioning.provisioningRolesTab.kind.${kind}`)}
+      picked={pickedArtifactOf(rows, role, kind)}
+      queued={Boolean(queued[key])}
+      disabled={disabled}
+      onOpen={() => onOpen(kind)}
+      onClear={() => onClear(kind)}
+      onFetch={onFetch ? row => onFetch(row, key) : null}
+      attributes={{ 'data-file-kind': kind }}
+    />
   );
 };
 
-RoleFilePicker.propTypes = {
+RoleFileRow.propTypes = {
   role: PropTypes.object.isRequired,
   kind: PropTypes.string.isRequired,
   rows: PropTypes.array.isRequired,
   queued: PropTypes.object.isRequired,
   disabled: PropTypes.bool,
-  onPick: PropTypes.func.isRequired,
+  onOpen: PropTypes.func.isRequired,
+  onClear: PropTypes.func.isRequired,
   onFetch: PropTypes.func,
 };
 
@@ -546,15 +463,55 @@ SpecFields.propTypes = {
   onPatch: PropTypes.func.isRequired,
 };
 
+const PackageSettings = ({ role, fields, disabled }) => {
+  const { t } = useTranslation();
+  const bare = bareRoleName(role.name);
+  const groups = roleGroupsOf(fields.config).filter(group => group.role === bare);
+  if (groups.length === 0) {
+    return null;
+  }
+  return (
+    <>
+      <div className="hw-rc-sub">
+        {t('provisioning.provisioningRolesTab.packageSettingsHeading')}
+      </div>
+      <DslConfigForm
+        config={fields.config}
+        answers={fields.answers}
+        errors={fields.errors}
+        onChange={fields.onAnswerChange}
+        roles={fields.roles}
+        inventory={fields.inventory}
+        showAdvanced
+        idPrefix="prov-field"
+        disabled={disabled}
+        includeRoleGroups
+        onlyGroups={new Set(groups.map(group => group.name))}
+        onArtifactsReload={fields.onArtifactsReload}
+        host={fields.host}
+        artifacts={fields.artifacts}
+      />
+    </>
+  );
+};
+
+PackageSettings.propTypes = {
+  role: PropTypes.object.isRequired,
+  fields: fieldsShape.isRequired,
+  disabled: PropTypes.bool,
+};
+
 const RoleCardBody = ({
   role,
   spec,
   manifestRole,
   artifacts,
   queued,
+  fields,
   disabled,
   onPatch,
-  onAnswers,
+  onOpenPick,
+  onPickFile,
   onFetch,
 }) => {
   const { t } = useTranslation();
@@ -564,12 +521,6 @@ const RoleCardBody = ({
   const extraVars = Object.fromEntries(
     Object.entries(role.vars || {}).filter(([name]) => !specNames.has(name))
   );
-  const pick = (kind, row) => {
-    onPatch({ files: { ...(role.files || {}), ...roleFilesPatch(kind, row || null) } });
-    if (onAnswers) {
-      onAnswers(pickAnswersOf(manifestRole, kind, row || null));
-    }
-  };
   return (
     <div className="hw-rc-body">
       {description ? <p className="hw-rc-desc">{description}</p> : null}
@@ -609,20 +560,22 @@ const RoleCardBody = ({
           <div className="hw-rc-sub">{t('provisioning.provisioningRolesTab.filesHeading')}</div>
           <div className="hw-file-pickers">
             {kinds.map(kind => (
-              <RoleFilePicker
+              <RoleFileRow
                 key={kind}
                 role={role}
                 kind={kind}
                 rows={roleArtifactsOf(artifacts, manifestRole, kind)}
                 queued={queued}
                 disabled={disabled}
-                onPick={pick}
+                onOpen={onOpenPick}
+                onClear={cleared => onPickFile(cleared, null)}
                 onFetch={onFetch}
               />
             ))}
           </div>
         </>
       ) : null}
+      {fields ? <PackageSettings role={role} fields={fields} disabled={disabled} /> : null}
       <div className="hw-rc-sub">{t('provisioning.provisioningRolesTab.variablesHeading')}</div>
       <SpecFields role={role} spec={spec} disabled={disabled} onPatch={onPatch} />
       <VarRowList
@@ -658,9 +611,11 @@ RoleCardBody.propTypes = {
   manifestRole: PropTypes.object,
   artifacts: PropTypes.array,
   queued: PropTypes.object.isRequired,
+  fields: fieldsShape,
   disabled: PropTypes.bool,
   onPatch: PropTypes.func.isRequired,
-  onAnswers: PropTypes.func,
+  onOpenPick: PropTypes.func.isRequired,
+  onPickFile: PropTypes.func.isRequired,
   onFetch: PropTypes.func,
 };
 
@@ -680,7 +635,7 @@ const RoleCardName = ({ role, spec, manifestRole, changed, attention, disabled, 
           {manifestRole?.label || bareRoleName(role.name)}
         </span>
         <span className="hw-rc-coll">{spec?.collection || manifestRole?.collection || ''}</span>
-        <RoleChips role={role} changed={changed} />
+        <RoleChips role={role} changed={changed} required={manifestRole?.required === true} />
       </div>
     );
   }
@@ -699,7 +654,7 @@ const RoleCardName = ({ role, spec, manifestRole, changed, attention, disabled, 
         disabled={disabled}
         onChange={event => onPatch({ name: event.target.value })}
       />
-      <RoleChips role={role} changed={changed} />
+      <RoleChips role={role} changed={changed} required={false} />
       {badName ? (
         <div className="hw-invalid-msg w-100">
           {t('provisioning.provisioningRolesTab.roleNameRule')}
@@ -772,6 +727,7 @@ const RoleCard = ({
   attention,
   artifacts,
   queued,
+  fields,
   expanded,
   dragging,
   dropTarget,
@@ -785,7 +741,8 @@ const RoleCard = ({
   onToggle,
   onRemove,
   onPatch,
-  onAnswers,
+  onOpenPick,
+  onPickFile,
   onFetch,
 }) => {
   const { t } = useTranslation();
@@ -888,9 +845,11 @@ const RoleCard = ({
           manifestRole={manifestRole}
           artifacts={artifacts}
           queued={queued}
+          fields={fields}
           disabled={disabled}
           onPatch={onPatch}
-          onAnswers={onAnswers}
+          onOpenPick={onOpenPick}
+          onPickFile={onPickFile}
           onFetch={onFetch}
         />
       ) : null}
@@ -908,6 +867,7 @@ RoleCard.propTypes = {
   attention: PropTypes.bool.isRequired,
   artifacts: PropTypes.array,
   queued: PropTypes.object.isRequired,
+  fields: fieldsShape,
   expanded: PropTypes.bool.isRequired,
   dragging: PropTypes.bool.isRequired,
   dropTarget: PropTypes.bool.isRequired,
@@ -921,7 +881,8 @@ RoleCard.propTypes = {
   onToggle: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
   onPatch: PropTypes.func.isRequired,
-  onAnswers: PropTypes.func,
+  onOpenPick: PropTypes.func.isRequired,
+  onPickFile: PropTypes.func.isRequired,
   onFetch: PropTypes.func,
 };
 
@@ -933,6 +894,71 @@ const manifestOrder = (roles, manifest) => {
   return [...known, ...unknown];
 };
 
+const fieldsOf = ({ fieldConfig, roles, answers, ...rest }) =>
+  fieldConfig && rest.onAnswerChange
+    ? { config: fieldConfig, roles, answers: answers || NO_QUEUE, ...rest }
+    : null;
+
+const FilePickDialog = ({
+  picking,
+  roles,
+  manifest,
+  artifacts,
+  host,
+  disabled,
+  onPick,
+  onFetch,
+  onReload,
+  onClose,
+}) => {
+  const { t } = useTranslation();
+  const role = picking ? roles.find(row => row._ui_id === picking.uiId) : null;
+  const manifestRole = role ? manifestRoleOf(manifest, role.name) : null;
+  if (!role || !host) {
+    return null;
+  }
+  return (
+    <ArtifactPickModal
+      kind={picking.kind}
+      role={manifestRole?.installer_dir || ''}
+      artifacts={artifacts}
+      host={host}
+      title={t('provisioning.provisioningRolesTab.pickFileTitle', {
+        role: manifestRole?.label || bareRoleName(role.name),
+        kind: t(`provisioning.provisioningRolesTab.kind.${picking.kind}`),
+      })}
+      disabled={disabled}
+      onPick={row => onPick(picking.uiId, picking.kind, row)}
+      onFetch={
+        onFetch
+          ? row => {
+              onPick(picking.uiId, picking.kind, row);
+              onFetch(row, downloadKeyOf(role.name, picking.kind));
+            }
+          : null
+      }
+      onReload={onReload}
+      onClose={onClose}
+    />
+  );
+};
+
+FilePickDialog.propTypes = {
+  picking: PropTypes.shape({
+    uiId: PropTypes.number.isRequired,
+    kind: PropTypes.string.isRequired,
+  }),
+  roles: PropTypes.array.isRequired,
+  manifest: PropTypes.array.isRequired,
+  artifacts: PropTypes.array,
+  host: PropTypes.object,
+  disabled: PropTypes.bool,
+  onPick: PropTypes.func.isRequired,
+  onFetch: PropTypes.func,
+  onReload: PropTypes.func,
+  onClose: PropTypes.func.isRequired,
+};
+
 /**
  * The one roles editor of the estate, drawn by the machine's Provisioning
  * page and the create wizard's Provisioning step alike: the attached
@@ -941,18 +967,22 @@ const manifestOrder = (roles, manifest) => {
  * the machine's ordered run on the right, one card a role in run order,
  * dragged to reorder, duplicated, removed, its switch on where the
  * manifest's `default_enabled` is, its label with the Ansible name as
- * its tooltip, the changed chip and the one warning banner over the run
+ * its tooltip, the required chip where the manifest marks the role
+ * required, the changed chip and the one warning banner over the run
  * while any switch differs from the provisioner's default, with Template
  * defaults restoring the manifest's order and switches, a warning
  * triangle on a role that needs an answer, the registry's depends_on
- * hints as advisories, and under its chevron the role's keywords, one
- * file picker per kind the manifest declares over the host's artifact
- * rows of its `installer_dir`, a pick writing the role's `files` and,
- * through `onAnswers`, the manifest fields the pick fills, a missing
- * pick drawn with the download glyph that hands the row to `onFetch`,
+ * hints as advisories on a role that is on, and under its chevron the role's keywords, one
+ * file row per kind the manifest declares, the picked name, its state,
+ * its version and short hash, Change opening the pick dialog over the
+ * host's artifact rows of its `installer_dir` and the clear button, a
+ * pick writing the role's `files` and, through `onAnswers`, the manifest
+ * fields the pick fills, a missing pick drawn with the download glyph
+ * that hands the row to `onFetch`, the package's field groups that name
+ * this role drawn through the field DSL while `fieldConfig` is given,
  * the role's own settings from its argument spec through the field DSL
- * with their defaults, written to `vars`, then the free variables and
- * the environment.
+ * with their defaults, written to `vars` as the card opens, then the
+ * free variables and the environment.
  */
 const ProvisioningRolesTab = ({
   roles,
@@ -970,13 +1000,34 @@ const ProvisioningRolesTab = ({
   queued = NO_QUEUE,
   onAnswers = null,
   onFetch = null,
+  fieldConfig,
+  answers,
+  fieldErrors,
+  onAnswerChange,
+  inventory,
+  onArtifactsReload,
+  host,
 }) => {
   const { t } = useTranslation();
   const [drag, setDrag] = useState(null);
   const [dropTarget, setDropTarget] = useState(null);
   const [expanded, setExpanded] = useState(() => new Set());
+  const [picking, setPicking] = useState(null);
 
-  const toggleExpanded = uiId =>
+  const withDefaults = (rows, uiId) => {
+    const seeded = rows.map(row =>
+      row._ui_id === uiId ? withSpecDefaults(row, specFor(specs, row.name)) : row
+    );
+    return seeded.some((row, index) => row !== rows[index]) ? seeded : rows;
+  };
+
+  const toggleExpanded = uiId => {
+    if (!expanded.has(uiId)) {
+      const seeded = withDefaults(roles, uiId);
+      if (seeded !== roles) {
+        onChange(seeded);
+      }
+    }
     setExpanded(previous => {
       const next = new Set(previous);
       if (next.has(uiId)) {
@@ -986,6 +1037,7 @@ const ProvisioningRolesTab = ({
       }
       return next;
     });
+  };
 
   const moveOver = overId => {
     if (!drag || drag.kind !== 'move' || drag.id === overId) {
@@ -1015,10 +1067,24 @@ const ProvisioningRolesTab = ({
   };
 
   const patchRole = (uiId, patch) => {
+    const base = patch.enabled === true ? withDefaults(roles, uiId) : roles;
     if (patch.enabled === true) {
       setExpanded(previous => new Set(previous).add(uiId));
     }
-    onChange(roles.map(row => (row._ui_id === uiId ? applyPatch(row, patch) : row)));
+    onChange(base.map(row => (row._ui_id === uiId ? applyPatch(row, patch) : row)));
+  };
+
+  const pickFile = (uiId, kind, row) => {
+    const role = roles.find(entry => entry._ui_id === uiId);
+    if (!role) {
+      return;
+    }
+    patchRole(uiId, { files: { ...(role.files || {}), ...roleFilesPatch(kind, row || null) } });
+    if (onAnswers) {
+      onAnswers(
+        pickAnswersOf(manifestRoleOf(manifest, role.name), kind, row || null, fieldConfig || null)
+      );
+    }
   };
 
   const restoreDefaults = () =>
@@ -1033,6 +1099,17 @@ const ProvisioningRolesTab = ({
   const changed = changedRolesOf(roles, manifest);
   const changedIds = new Set(changed.map(row => row._ui_id));
   const onCount = roles.filter(isOn).length;
+  const fields = fieldsOf({
+    fieldConfig,
+    roles,
+    answers,
+    errors: fieldErrors,
+    onAnswerChange,
+    inventory,
+    onArtifactsReload,
+    host,
+    artifacts,
+  });
 
   return (
     <div className="hw-prov-grid">
@@ -1131,6 +1208,7 @@ const ProvisioningRolesTab = ({
                 })}
                 artifacts={artifacts}
                 queued={queued}
+                fields={fields}
                 expanded={expanded.has(role._ui_id)}
                 dragging={drag?.kind === 'move' && drag.id === role._ui_id}
                 dropTarget={dropTarget === role._ui_id}
@@ -1165,7 +1243,8 @@ const ProvisioningRolesTab = ({
                 onToggle={() => toggleExpanded(role._ui_id)}
                 onRemove={() => onChange(roles.filter(row => row._ui_id !== role._ui_id))}
                 onPatch={patch => patchRole(role._ui_id, patch)}
-                onAnswers={onAnswers}
+                onOpenPick={kind => setPicking({ uiId: role._ui_id, kind })}
+                onPickFile={(kind, row) => pickFile(role._ui_id, kind, row)}
                 onFetch={onFetch}
               />
             );
@@ -1185,6 +1264,21 @@ const ProvisioningRolesTab = ({
           ) : null}
         </div>
       </div>
+      <FilePickDialog
+        picking={picking}
+        roles={roles}
+        manifest={manifest}
+        artifacts={artifacts}
+        host={host}
+        disabled={disabled}
+        onPick={(uiId, kind, row) => {
+          pickFile(uiId, kind, row);
+          setPicking(null);
+        }}
+        onFetch={onFetch}
+        onReload={onArtifactsReload}
+        onClose={() => setPicking(null)}
+      />
     </div>
   );
 };
@@ -1205,6 +1299,13 @@ ProvisioningRolesTab.propTypes = {
   queued: PropTypes.object,
   onAnswers: PropTypes.func,
   onFetch: PropTypes.func,
+  fieldConfig: PropTypes.object,
+  answers: PropTypes.object,
+  fieldErrors: PropTypes.object,
+  onAnswerChange: PropTypes.func,
+  inventory: PropTypes.object,
+  onArtifactsReload: PropTypes.func,
+  host: PropTypes.object,
 };
 
 export default ProvisioningRolesTab;

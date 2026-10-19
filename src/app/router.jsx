@@ -85,6 +85,7 @@ import {
   HostPage,
   HostSectionPage,
   HostsPage,
+  HostsPreferencesCard,
   MachinePage,
   MachinesPage,
   StandaloneConsole,
@@ -1418,14 +1419,25 @@ const interstitialRoutes = ({ status, cookie, account }) => {
 
 /**
  * The node the Preferences section draws under its cards: the certs
- * feature's Certificates card while the host lists `certs`, nothing
- * otherwise.
+ * feature's Certificates card while the host lists `certs`, the hosts
+ * feature's Hosts card while it lists `hosts`, nothing otherwise.
  *
  * @param {Object} status - The payload from `probeStatus`
- * @returns {import('react').ReactElement|null} The card
+ * @returns {import('react').ReactElement|null} The cards
  */
-const certsPreferencesFor = status =>
-  hasFeatureStrict(status, 'certs') ? <CertsPreferencesCard /> : null;
+const preferencesExtraFor = status => {
+  const certs = hasFeatureStrict(status, 'certs');
+  const hosts = hasFeatureStrict(status, 'hosts');
+  if (!certs && !hosts) {
+    return null;
+  }
+  return (
+    <>
+      {certs ? <CertsPreferencesCard /> : null}
+      {hosts ? <HostsPreferencesCard /> : null}
+    </>
+  );
+};
 
 const issuerProfile = ({ account, globalAdmin, status }) => (
   <ProfilePage
@@ -1439,7 +1451,7 @@ const issuerProfile = ({ account, globalAdmin, status }) => (
     admin={globalAdmin}
     user={account.user}
     loaded={account.loaded}
-    preferencesExtra={certsPreferencesFor(status)}
+    preferencesExtra={preferencesExtraFor(status)}
   />
 );
 
@@ -1462,7 +1474,7 @@ const BackendProfileRoute = ({ account, status, globalAdmin }) => {
       admin={globalAdmin}
       user={account.user}
       loaded={account.loaded}
-      preferencesExtra={certsPreferencesFor(status)}
+      preferencesExtra={preferencesExtraFor(status)}
     />
   );
 };
@@ -1488,7 +1500,7 @@ const ApiKeyProfileRoute = ({ account, status, globalAdmin }) => {
       admin={globalAdmin}
       user={account.user}
       loaded={account.loaded}
-      preferencesExtra={certsPreferencesFor(status)}
+      preferencesExtra={preferencesExtraFor(status)}
     />
   );
 };

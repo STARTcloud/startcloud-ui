@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sec-hcl-portal",
+    "organization": "",
+    "kind": "api_key",
+    "name": "hcl-portal",
+    "profile": "hcl_portal",
+    "subject": "",
+    "not_after": "",
+    "published": true,
+    "is_public": false,
+    "guest_access": false,
+    "created_by": "mark",
+    "updated_at": "2026-10-10T09:00:00.000Z",
+    "record": {
+      "kind": "api_key",
+      "name": "hcl-portal",
+      "profile": "hcl_portal",
+      "secret": { "key": "hcl-token", "url": "https://my.hcltechsw.com" },
+      "extra": {}
+    }
+  },
+  {
+    "id": "sec-github-startcloud",
+    "organization": "",
+    "kind": "api_key",
+    "name": "github-startcloud",
+    "profile": "github",
+    "subject": "",
+    "not_after": "",
+    "published": true,
+    "is_public": false,
+    "guest_access": false,
+    "created_by": "mark",
+    "updated_at": "2026-10-10T09:00:00.000Z",
+    "record": {
+      "kind": "api_key",
+      "name": "github-startcloud",
+      "profile": "github",
+      "secret": { "key": "ghp_token", "url": "https://github.com" },
+      "extra": {}
+    }
+  }
+]

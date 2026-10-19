@@ -5,17 +5,8 @@ import { queue, settles } from './tasks.js';
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
 const PAGE = 25;
-const EXTENSIONS = ['.iso', '.img', '.vmdk', '.vhd', '.vhdx', '.qcow2', '.ids', '.id'];
+const EXTENSIONS = ['.iso', '.img', '.vmdk', '.vhd', '.vhdx', '.qcow2'];
 const SEEDED_PATHS = [
-  {
-    name: 'ID Files',
-    path: '/var/lib/hyperweaver/artifacts/id-files',
-    type: 'id_file',
-    enabled: true,
-    used: '12K',
-    total: '1.8T',
-    percent: '0%',
-  },
   {
     name: 'ISO library',
     path: '/rpool/iso',
@@ -110,7 +101,7 @@ const seededPaths = host =>
     enabled: seed.enabled,
     file_count: 0,
     total_size: 0,
-    last_scan_at: index === 2 ? null : ago(90),
+    last_scan_at: index === 1 ? null : ago(90),
     disk_usage: { used: seed.used, total: seed.total, use_percent: seed.percent },
     created_at: ago(20000),
     updated_at: ago(90),

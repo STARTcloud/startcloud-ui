@@ -99,17 +99,93 @@ const RELEASE_NOTES = `### Features
 * RDP, API Shaping, General Improvments ([fbb4213](https://github.com/Makr91/hyperweaver-agent/commit/fbb4213e4c50e85d24e7de7f465211159eb025cd))
 * round-4 swaggo migration — machines, artifacts, provisioners, monitoring, terminals migrate to inline annotations; fragment keys deleted ([6137b15](https://github.com/Makr91/hyperweaver-agent/commit/6137b15c1eec49df40121db3dc19914920b3a13e))
 * sidebar token and links.community in the status payload so the shared UI draws its shell in agent mode ([5150f80](https://github.com/Makr91/hyperweaver-agent/commit/5150f80cd70907518d1690f7ee97f6609d8800b2))`;
-const SECRET_CATEGORIES = [
-  'hcl_download_portal_api_keys',
-  'git_api_keys',
-  'vagrant_atlas_token',
-  'custom_resource_url',
-  'docker_hub',
-  'ssh_keys',
+const STORE_SEEDS = [
+  ['password', 'domino-admin', '', { password: 'passw0rd' }, {}],
+  ['password', 'vault-unlock', 'notes_id', { password: 'notes' }, {}],
+  ['api_key', 'github', 'github', { key: 'ghp_seeded', url: 'https://api.github.com' }, {}],
+  [
+    'api_key',
+    'installer-bearer',
+    'installer_server',
+    { key: 'bearer-token', url: 'https://installers.example.com' },
+    {},
+  ],
+  [
+    'api_key',
+    'assistant',
+    'openai',
+    { key: 'sk-seeded', url: 'https://api.openai.com/v1' },
+    { model: 'llama3.1:latest' },
+  ],
+  [
+    'basic_auth',
+    'mirror',
+    'installer_server',
+    { user: 'mirror', password: 'secret', url: 'https://mirror.example.com' },
+    {},
+  ],
+  [
+    'api_key',
+    'hcl-portal',
+    'hcl_portal',
+    { key: 'hcl-token', url: 'https://my.hcltechsw.com' },
+    {},
+  ],
+  [
+    'basic_auth',
+    'registry',
+    'docker_hub',
+    { user: 'mark', password: 'secret', url: 'https://index.docker.io/v1/' },
+    {},
+  ],
+  [
+    'key_pair',
+    's3-backups',
+    'aws',
+    { access_key: 'AKIA_SEEDED', secret_key: 'seeded', url: '', region: 'us-east-1' },
+    {},
+  ],
+  [
+    'oauth_client',
+    'identity',
+    '',
+    {
+      client_id: 'hyperweaver-agent',
+      client_secret: 'seeded',
+      issuer: 'https://auth.example.com',
+      scopes: 'openid profile',
+    },
+    {},
+  ],
+  [
+    'ssh_key',
+    'deploy',
+    '',
+    { private_key: '-----BEGIN KEY-----', public_key: 'ssh-ed25519 AAAA', passphrase: '' },
+    {},
+  ],
+  ['file', 'SAFE.ids', 'notes_id', { bytes: 'AAAA', filename: 'SAFE.ids' }, { id_type: 'safe' }],
+  [
+    'file',
+    'server.id',
+    'notes_id',
+    { bytes: 'BBBB', filename: 'server.id' },
+    { id_type: 'server' },
+  ],
+  [
+    'custom',
+    'acme',
+    'acme_dns',
+    { 'example.com': { username: 'u', password: 'p', subdomain: 's', fulldomain: 's.acme.test' } },
+    {},
+  ],
 ];
 const states = new Map();
 
 const offers = (host, token) => featuresOf(host).includes(token);
+
+const stored = handler => ctx =>
+  offers(ctx.host, 'certs-store') ? handler(ctx) : missing('Not Found');
 
 const releaseAssets = () =>
   RELEASE_ASSETS.map(([name, size, checksum]) => ({
@@ -133,12 +209,42 @@ const keyRow = ([name, description, usedMinutes, ageMinutes, key, role], index) 
 
 const freshKey = () => `hwk_${randomBytes(12).toString('hex')}`;
 
+const storeRow = ({ id, kind, name, profile, record, createdBy, at }) => ({
+  id,
+  organization: '',
+  kind,
+  name,
+  profile,
+  subject: '',
+  not_after: '',
+  published: true,
+  is_public: false,
+  guest_access: false,
+  created_by: createdBy,
+  updated_at: at,
+  record: { ...record, kind, name, profile, organization: '', created_by: createdBy },
+});
+
+const seededStore = () =>
+  STORE_SEEDS.map(([kind, name, profile, secret, extra], index) =>
+    storeRow({
+      id: `sec-${String(index + 1).padStart(4, '0')}`,
+      kind,
+      name,
+      profile,
+      record: { secret, extra },
+      createdBy: 'system',
+      at: ago(DAY_MINUTES * (index + 2)),
+    })
+  );
+
 const stateOf = host => {
   if (!states.has(host.id)) {
     const keys = SEED_KEYS.map(keyRow);
     keys.filter(row => row.key).forEach(row => registerApiKey(row.key, row.name, row.role));
     states.set(host.id, {
-      secrets: Object.fromEntries(SECRET_CATEGORIES.map(category => [category, []])),
+      store: seededStore(),
+      nextRowId: STORE_SEEDS.length + 1,
       keys,
       nextKeyId: keys.length + 1,
       update: {
@@ -151,8 +257,6 @@ const stateOf = host => {
       flows: new Map(),
       trayTokens: new Set([TRAY_DEMO_TOKEN]),
     });
-    states.get(host.id).secrets.git_api_keys.push({ name: 'github', key: 'ghp_seeded' });
-    states.get(host.id).secrets.ssh_keys.push({ name: 'deploy', key: '-----BEGIN KEY-----' });
   }
   return states.get(host.id);
 };
@@ -230,16 +334,75 @@ const applyUpdate = ctx => {
   );
 };
 
-const secrets = ctx => ok(stateOf(ctx.host).secrets);
+const kindsOf = ctx =>
+  String(ctx.url.searchParams.get('kind') || '')
+    .split(',')
+    .map(kind => kind.trim())
+    .filter(Boolean);
 
-const saveSecrets = ctx => {
+const listedStore = ctx => {
+  const kinds = kindsOf(ctx);
+  const rows = stateOf(ctx.host).store.filter(
+    row => kinds.length === 0 || kinds.includes(row.kind)
+  );
+  return ok(rows);
+};
+
+const storeRowOf = ctx => {
   const state = stateOf(ctx.host);
-  const unknown = Object.keys(ctx.body).find(category => !SECRET_CATEGORIES.includes(category));
-  if (unknown) {
-    return refusal(400, `Unknown secret category: ${unknown}`);
+  return state.store.find(row => row.id === ctx.params.id) || null;
+};
+
+const recordOf = body => (body.record && typeof body.record === 'object' ? body.record : {});
+
+const createdStoreRow = ctx => {
+  const { body, person } = ctx;
+  if (!body.kind || !body.name) {
+    return refusal(400, 'kind and name are required');
   }
-  state.secrets = { ...state.secrets, ...ctx.body };
-  return ok({ success: true, message: 'Secrets updated' });
+  const state = stateOf(ctx.host);
+  const row = storeRow({
+    id: `sec-${String(state.nextRowId).padStart(4, '0')}`,
+    kind: String(body.kind),
+    name: String(body.name),
+    profile: String(body.profile || recordOf(body).profile || ''),
+    record: recordOf(body),
+    createdBy: person.username,
+    at: now(),
+  });
+  state.nextRowId += 1;
+  state.store = [...state.store, row];
+  return ok(row, 201);
+};
+
+const updatedStoreRow = ctx => {
+  const held = storeRowOf(ctx);
+  if (!held) {
+    return missing('No such row.');
+  }
+  const { body } = ctx;
+  const next = storeRow({
+    id: held.id,
+    kind: String(body.kind || held.kind),
+    name: String(body.name || held.name),
+    profile: String(body.profile ?? recordOf(body).profile ?? held.profile),
+    record: body.record ? recordOf(body) : held.record,
+    createdBy: held.created_by,
+    at: now(),
+  });
+  const state = stateOf(ctx.host);
+  state.store = state.store.map(row => (row.id === held.id ? next : row));
+  return ok(next);
+};
+
+const removedStoreRow = ctx => {
+  const held = storeRowOf(ctx);
+  if (!held) {
+    return missing('No such row.');
+  }
+  const state = stateOf(ctx.host);
+  state.store = state.store.filter(row => row.id !== held.id);
+  return ok({ message: 'The row is removed.' });
 };
 
 const selfHost = ctx => ctx.host || { id: 'self' };
@@ -459,7 +622,10 @@ const codeExchange = ctx => {
 /**
  * The Agent settings page's routes on every host: the update check
  * carrying the 0.2.0 release's notes as markdown and its five assets, and
- * its apply, a queued task, the secrets behind `secrets`, and the API
+ * its apply, a queued task, the host's own store behind `certs-store`,
+ * `GET certs` narrowed by `kind`, seeded with rows of every secret kind
+ * under their profiles, `POST certs`, `PUT certs/{id}` and
+ * `DELETE certs/{id}` kept at once, and the API
  * keys with their generate, bootstrap and delete;
  * and on the `hyperweaver-agent` role the six sign-in paths of its
  * brief, public and under `/api`, every one that signs in answering the
@@ -508,12 +674,10 @@ export const mountAgentSettings = ({ publicRoute, sessionRoute, agentRoute }) =>
   }
   agentRoute('GET', 'app/updates/check', ctx => ok(stateOf(ctx.host).update));
   agentRoute('POST', 'app/updates/apply', applyUpdate);
-  agentRoute('GET', 'secrets', ctx =>
-    offers(ctx.host, 'secrets') ? secrets(ctx) : missing('Not Found')
-  );
-  agentRoute('PUT', 'secrets', ctx =>
-    offers(ctx.host, 'secrets') ? saveSecrets(ctx) : missing('Not Found')
-  );
+  agentRoute('GET', 'certs', stored(listedStore));
+  agentRoute('POST', 'certs', stored(createdStoreRow));
+  agentRoute('PUT', 'certs/:id', stored(updatedStoreRow));
+  agentRoute('DELETE', 'certs/:id', stored(removedStoreRow));
   agentRoute('GET', 'api-keys', listKeys);
   agentRoute('POST', 'api-keys/generate', generateKey);
   agentRoute('POST', 'api-keys/bootstrap', bootstrapKey);

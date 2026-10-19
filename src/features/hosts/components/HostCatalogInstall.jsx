@@ -504,10 +504,10 @@ HandoffInstallDialog.propTypes = {
 /**
  * The two square outlined buttons of one version line: on a version the
  * host lacks the download glyph that installs it, on one the host holds
- * the red trash glyph that deletes it, each handing the item and the
- * version to `ctx.held.onFetch` or `ctx.held.onDelete`, then the
- * Hyperweaver mark that opens the create wizard with that version while
- * the host creates machines.
+ * the red trash glyph that deletes it while `ctx.held.onDelete` is given,
+ * each handing the item and the version to `ctx.held.onFetch` or
+ * `ctx.held.onDelete`, then the Hyperweaver mark that opens the create
+ * wizard with that version while the host creates machines.
  */
 export const VersionHeld = ({ item, version, ctx }) => {
   const { t } = useTranslation();
@@ -521,19 +521,23 @@ export const VersionHeld = ({ item, version, ctx }) => {
   const title = t(held ? WORDS.deleteVersion : WORDS.fetchVersion, { version });
   return (
     <>
-      <button
-        type="button"
-        className={`btn ${held ? 'btn-outline-danger' : 'btn-outline-secondary'} version-action`}
-        data-action={held ? 'version-delete' : 'version-install'}
-        data-family={item.name}
-        data-version={version}
-        title={title}
-        aria-label={title}
-        onClick={() => (held ? ctx.held.onDelete(item, version) : ctx.held.onFetch(item, version))}
-        disabled={ctx.held.busy}
-      >
-        {held ? <FaTrash aria-hidden="true" /> : <FaDownload aria-hidden="true" />}
-      </button>
+      {held && !ctx.held.onDelete ? null : (
+        <button
+          type="button"
+          className={`btn ${held ? 'btn-outline-danger' : 'btn-outline-secondary'} version-action`}
+          data-action={held ? 'version-delete' : 'version-install'}
+          data-family={item.name}
+          data-version={version}
+          title={title}
+          aria-label={title}
+          onClick={() =>
+            held ? ctx.held.onDelete(item, version) : ctx.held.onFetch(item, version)
+          }
+          disabled={ctx.held.busy}
+        >
+          {held ? <FaTrash aria-hidden="true" /> : <FaDownload aria-hidden="true" />}
+        </button>
+      )}
       {create ? (
         <Link
           to={create}

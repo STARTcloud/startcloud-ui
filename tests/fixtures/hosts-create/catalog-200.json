@@ -4,6 +4,35 @@
   "updated": "2026-09-27T00:00:00.000Z",
   "provisioners": [
     {
+      "name": "startcloud",
+      "repo": "STARTcloud/startcloud",
+      "description": "The STARTcloud provisioner, generic edition",
+      "versions": [
+        {
+          "version": "0.1.28",
+          "released_at": "2026-09-27",
+          "artifacts": [
+            {
+              "url": "https://github.com/STARTcloud/startcloud/releases/download/v0.1.28/startcloud-0.1.28.tar.gz",
+              "checksum_type": "sha256",
+              "checksum": "ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12"
+            }
+          ]
+        },
+        {
+          "version": "0.1.27",
+          "released_at": "2026-09-20",
+          "artifacts": [
+            {
+              "url": "https://github.com/STARTcloud/startcloud/releases/download/v0.1.27/startcloud-0.1.27.tar.gz",
+              "checksum_type": "sha256",
+              "checksum": "cd34cd34cd34cd34cd34cd34cd34cd34cd34cd34cd34cd34cd34cd34cd34cd34"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "hcl_domino_additional_provisioner",
       "repo": "STARTcloud/hcl_domino_additional_provisioner",
       "description": "An additional HCL Domino server beside an existing one",

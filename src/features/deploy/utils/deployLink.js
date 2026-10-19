@@ -114,6 +114,14 @@ export const deployHref = (target, seed, word = MACHINE) => {
 };
 
 /**
+ * The link that starts the installed agent with nothing to create,
+ * `hwa://open` with no query, the agent opening its signed-in UI.
+ *
+ * @returns {string} The link
+ */
+export const agentLaunchHref = () => SCHEME;
+
+/**
  * Whether a deploy link opens in this window: the agent's protocol link
  * does, a hyperweaver-server's page opens in a new tab.
  *

@@ -44,7 +44,64 @@ import {
 } from '../utils/manageCatalog';
 
 import { PathInput } from './PathPicker';
+import SecretPickModal, { SecretPickRow } from './SecretPickModal';
 import ToolFormDialog from './ToolFormDialog';
+
+const HCL_PROFILE = 'hcl_portal';
+
+const RESOURCE_PROFILE = 'installer_server';
+
+/**
+ * The pick of one secret row of a dialog, a `basic_auth` row of the
+ * installer server profile for the mirror credentials or an `api_key`
+ * row of the HCL portal profile for the portal key: the secret pick row
+ * drawn under `labelKey`, Change opening the secret pick dialog over the
+ * host store's rows of the kind, the picked row's name handed to
+ * `onChange` and the empty string on clear.
+ */
+export const SecretPick = ({ id, server, kind, profile, labelKey, name, onChange, disabled }) => {
+  const { t } = useTranslation();
+  const status = useStatus();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-3" data-field="secret-pick" data-secret-kind={kind}>
+      <span className="form-label d-block">{t(labelKey)}</span>
+      <SecretPickRow
+        label={t(`certs.kind.${kind}`)}
+        picked={name ? { id: name, name } : null}
+        disabled={disabled}
+        onOpen={() => setOpen(true)}
+        onClear={() => onChange('')}
+        attributes={{ 'data-field': 'secret', 'data-field-name': labelKey.split('.').pop() }}
+      />
+      {open ? (
+        <SecretPickModal
+          kind={kind}
+          profile={profile}
+          host={{ status, hostId: id, server }}
+          title={t(labelKey)}
+          disabled={disabled}
+          onPick={row => {
+            onChange(String(row.name || ''));
+            setOpen(false);
+          }}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
+    </div>
+  );
+};
+
+SecretPick.propTypes = {
+  id: PropTypes.string.isRequired,
+  server: PropTypes.object,
+  kind: PropTypes.string.isRequired,
+  profile: PropTypes.string.isRequired,
+  labelKey: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  disabled: PropTypes.bool.isRequired,
+};
 
 const senderShape = PropTypes.shape({
   send: PropTypes.func.isRequired,
@@ -473,17 +530,18 @@ RegisterModal.propTypes = {
 /**
  * The download dialog, hyperweaver-ui's: the location and the role, the
  * URL, the file name, the expected checksum, the overwrite switch and
- * the mirror credentials, a select of the secrets' names while they
- * could be read and a typed name otherwise; `POST artifacts/download`,
+ * the mirror credentials, a `basic_auth` row of the host's store picked
+ * through the secret pick dialog, its name sent as `resource_name`;
+ * `POST artifacts/download`,
  * a queued task followed to its end. A `seed`, a missing row's, fills
  * the location, the role, the file name and the checksum and draws the
  * other sources over the fields.
  */
 export const DownloadModal = ({
   id,
+  server = null,
   locations,
   roleOptions,
-  resourceNames,
   sender,
   onClose,
   onDone,
@@ -585,58 +643,38 @@ export const DownloadModal = ({
         onChange={overwrite => patch({ overwrite })}
         disabled={sender.busy}
       />
-      <div className="mb-3">
-        <label className="form-label" htmlFor="artifact-download-resource">
-          {t('host.installerFilesModals.mirrorCredentials')}
-        </label>
-        {resourceNames ? (
-          <select
-            id="artifact-download-resource"
-            className="form-select"
-            value={form.resourceName}
-            onChange={event => patch({ resourceName: event.target.value })}
-            disabled={sender.busy}
-          >
-            <option value="">{t('host.installerFilesModals.nonePublicUrl')}</option>
-            {resourceNames.map(name => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            id="artifact-download-resource"
-            className="form-control"
-            type="text"
-            placeholder={t('host.installerFilesModals.resourceNamePlaceholder')}
-            value={form.resourceName}
-            onChange={event => patch({ resourceName: event.target.value })}
-            disabled={sender.busy}
-          />
-        )}
-      </div>
+      <SecretPick
+        id={id}
+        server={server}
+        kind="basic_auth"
+        profile={RESOURCE_PROFILE}
+        labelKey="host.installerFilesModals.mirrorCredentials"
+        name={form.resourceName}
+        onChange={resourceName => patch({ resourceName })}
+        disabled={sender.busy}
+      />
     </ToolFormDialog>
   );
 };
 
 DownloadModal.propTypes = {
   ...UploadModal.propTypes,
-  resourceNames: PropTypes.arrayOf(PropTypes.string),
+  server: PropTypes.object,
 };
 
 /**
  * The HCL portal download dialog, hyperweaver-ui's: the role, the kind,
- * the file name as the portal names it and the portal key, a select of
- * the secrets' names while they could be read and a typed name
- * otherwise; `POST artifacts/hcl-download`, a queued task followed to
+ * the file name as the portal names it and the portal key, an `api_key`
+ * row of the host's store picked through the secret pick dialog, its
+ * name sent as `key_name`; `POST artifacts/hcl-download`, a queued task
+ * followed to
  * its end. A `seed`, a missing row's, fills the role, the kind and the
  * file name and draws the other sources over the fields.
  */
 export const HclDownloadModal = ({
   id,
+  server = null,
   roleOptions,
-  hclKeyNames,
   sender,
   onClose,
   onDone,
@@ -737,46 +775,24 @@ export const HclDownloadModal = ({
         onChange={filename => patch({ filename })}
         disabled={sender.busy}
       />
-      <div className="mb-3">
-        <label className="form-label" htmlFor="artifact-hcl-key">
-          {t('host.installerFilesModals.hclPortalKey')}
-        </label>
-        {hclKeyNames ? (
-          <select
-            id="artifact-hcl-key"
-            className="form-select"
-            value={form.keyName}
-            onChange={event => patch({ keyName: event.target.value })}
-            disabled={sender.busy}
-          >
-            <option value="">{t('host.installerFilesModals.select')}</option>
-            {hclKeyNames.map(name => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            id="artifact-hcl-key"
-            className="form-control"
-            type="text"
-            placeholder={t('host.installerFilesModals.hclKeyPlaceholder')}
-            value={form.keyName}
-            onChange={event => patch({ keyName: event.target.value })}
-            disabled={sender.busy}
-          />
-        )}
-        <p className="form-text text-muted mb-0">{t('host.installerFilesModals.hclKeyHelp')}</p>
-      </div>
+      <SecretPick
+        id={id}
+        server={server}
+        kind="api_key"
+        profile={HCL_PROFILE}
+        labelKey="host.installerFilesModals.hclPortalKey"
+        name={form.keyName}
+        onChange={keyName => patch({ keyName })}
+        disabled={sender.busy}
+      />
     </ToolFormDialog>
   );
 };
 
 HclDownloadModal.propTypes = {
   id: PropTypes.string.isRequired,
+  server: PropTypes.object,
   roleOptions: PropTypes.arrayOf(PropTypes.string).isRequired,
-  hclKeyNames: PropTypes.arrayOf(PropTypes.string),
   sender: senderShape.isRequired,
   onClose: PropTypes.func.isRequired,
   onDone: PropTypes.func.isRequired,

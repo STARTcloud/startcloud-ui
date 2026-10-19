@@ -6,8 +6,11 @@ import ConfirmModal from '../../../components/common/ConfirmModal';
 import { useStatus } from '../../../contexts/StatusContext';
 import { IMPORT_FORM, IMPORT_SOURCES, importBody, importProblem } from '../utils/manageCatalog';
 
+import { SecretPick } from './InstallerFilesModals';
 import { PathInput } from './PathPicker';
 import ToolFormDialog from './ToolFormDialog';
+
+const GIT_PROFILE = 'github';
 
 /**
  * The typed confirmation of a provisioner delete: of one version while
@@ -51,10 +54,11 @@ DeleteProvisionerConfirm.propTypes = {
 /**
  * The Import dialog of the Provisioners page, hyperweaver-ui's: a family
  * from a folder or an archive on the agent host, or from a git repository
- * with a key among the secrets; the submit hands the body of `importBody`
- * up, a queued task.
+ * with an `api_key` row of the host's store picked through the secret
+ * pick dialog, its name sent as `token_name`; the submit hands the body
+ * of `importBody` up, a queued task.
  */
-export const ImportModal = ({ id, server, gitKeyNames, busy, onClose, onSubmit }) => {
+export const ImportModal = ({ id, server, busy, onClose, onSubmit }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [form, setForm] = useState(IMPORT_FORM);
@@ -124,40 +128,16 @@ export const ImportModal = ({ id, server, gitKeyNames, busy, onClose, onSubmit }
               disabled={busy}
             />
           </div>
-          <div className="mb-3">
-            <label className="form-label" htmlFor="import-token">
-              {t('host.provisionerManagement.gitApiKey')}
-            </label>
-            {gitKeyNames ? (
-              <select
-                id="import-token"
-                className="form-select"
-                value={form.tokenName}
-                onChange={event => patch({ tokenName: event.target.value })}
-                disabled={busy}
-              >
-                <option value="">{t('host.provisionerManagement.nonePublicRepo')}</option>
-                {gitKeyNames.map(name => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                id="import-token"
-                className="form-control"
-                type="text"
-                placeholder={t('host.provisionerManagement.gitApiKeyPlaceholder')}
-                value={form.tokenName}
-                onChange={event => patch({ tokenName: event.target.value })}
-                disabled={busy}
-              />
-            )}
-            <p className="form-text text-muted mb-0">
-              {t('host.provisionerManagement.gitApiKeyHelp')}
-            </p>
-          </div>
+          <SecretPick
+            id={id}
+            server={server}
+            kind="api_key"
+            profile={GIT_PROFILE}
+            labelKey="host.provisionerManagement.gitApiKey"
+            name={form.tokenName}
+            onChange={tokenName => patch({ tokenName })}
+            disabled={busy}
+          />
         </>
       ) : (
         <div className="mb-3">
@@ -183,7 +163,6 @@ export const ImportModal = ({ id, server, gitKeyNames, busy, onClose, onSubmit }
 ImportModal.propTypes = {
   id: PropTypes.string.isRequired,
   server: PropTypes.object.isRequired,
-  gitKeyNames: PropTypes.arrayOf(PropTypes.string),
   busy: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,

@@ -86,7 +86,9 @@ Then('the browser kept {string} as {string}', async ({ page }, key, value) => {
 
 Then('the profile page draws the editable preferences', async ({ page }) => {
   await expect(recordOf(page).locator('#profile-preferences-mode')).toBeEnabled();
-  await expect(recordOf(page).locator('button[type="submit"]')).toBeVisible();
+  await expect(
+    recordOf(page).locator('button[type="submit"][data-action="save-preferences"]')
+  ).toBeVisible();
 });
 
 Then('the profile page draws its record read-only', async ({ page }) => {

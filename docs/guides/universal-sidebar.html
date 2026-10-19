@@ -1393,10 +1393,11 @@
         draw and their routes are stubs, and with the token alone the heading waits for whatever the
         mounted features add. The certs feature's Certificates row folds Convert, Decode, Match,
         Compare, Chain and Generate, and its own `certs` token draws the Certificates section: the
-        Vault row folding Certificates, Authorities, Requests and Keys, each the vault's table
-        narrowed to that kind at `/certs?kind=…`, the one lit the kind the route carries, then
-        Shared and Sync while the host lists `certs-store`; no record is a row of the column, the
-        table being the view that scales. BoxVault · admin and Hyperweaver above draw both.
+        Vault row folding Certificates, Authorities, Requests, Keys and Secrets, each the vault's
+        table narrowed to that kind at `/certs?kind=…`, Secrets to the eight secret kinds, the one
+        lit the kind the route carries, then Shared and Sync while the host lists `certs-store`; no
+        record is a row of the column, the table being the view that scales. BoxVault · admin and
+        Hyperweaver above draw both.
       </div>
       <div class="callout changed">
         <strong>Changed: the corner.</strong> Where the column's right edge meets the top edge of
@@ -1505,6 +1506,12 @@
               },
               { key: 'kind-request', icon: '✎', label: 'Requests', to: '/certs?kind=request' },
               { key: 'kind-key', icon: '🔑', label: 'Keys', to: '/certs?kind=key' },
+              {
+                key: 'secrets',
+                icon: '🕵',
+                label: 'Secrets',
+                to: '/certs?kind=password,api_key,basic_auth,key_pair,oauth_client,ssh_key,file,custom',
+              },
             ],
           },
         ].concat(

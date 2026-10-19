@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCheck } from 'react-icons/fa6';
 
@@ -15,8 +15,14 @@ import {
 } from '../api/provisioning';
 import { useTaskFollow } from '../hooks/useHostManage';
 import { useHostRow } from '../hooks/useHostRow';
+import { readSecretRowsOf } from '../hooks/useHostSecrets';
 import { hostHasFeature } from '../utils/capabilities';
 import { queuedTaskOf } from '../utils/machineTools';
+import {
+  dslConfiguration,
+  hypervisorRowsOf,
+  seedSecretAnswers,
+} from '../utils/provisionerFieldDsl';
 import {
   clean,
   invalidNameProblems,
@@ -50,9 +56,11 @@ const TABS = [
 
 const JSON_ROWS = 16;
 
-const NO_VERSION = { specs: null, hints: null, manifest: [], candidates: null };
+const NO_VERSION = { specs: null, hints: null, manifest: [], candidates: null, config: null };
 
 const NO_DOWNLOADS = {};
+
+const NO_VARS = {};
 
 const jsonOf = doc => JSON.stringify(clean(doc), null, 2);
 
@@ -129,6 +137,7 @@ const useRegistry = ({ status, id, offered, cached, provName, provVersion }) => 
             candidates: Array.isArray(answer?.playbook_candidates)
               ? answer.playbook_candidates
               : null,
+            config: dslConfiguration(answer?.metadata),
           });
         }
       })
@@ -149,6 +158,7 @@ const useRegistry = ({ status, id, offered, cached, provName, provVersion }) => 
     hints: held.hints,
     manifest: held.manifest,
     candidates: held.candidates,
+    config: held.config,
     artifacts: artifactsKey && artifacts.key === artifactsKey ? artifacts.rows : null,
     loadArtifacts,
   };
@@ -209,7 +219,7 @@ const useDownloads = ({ status, id, onLanded }) => {
   return { queued, fetch };
 };
 
-const EditorTab = ({ tab, doc, busy, registry, edit, downloads }) => {
+const EditorTab = ({ tab, doc, busy, registry, edit, downloads, fields }) => {
   const { t } = useTranslation();
   const provName = typeof doc.provisioner_name === 'string' ? doc.provisioner_name : undefined;
   const provVersion =
@@ -277,6 +287,14 @@ const EditorTab = ({ tab, doc, busy, registry, edit, downloads }) => {
         artifacts={registry.artifacts}
         queued={downloads.queued}
         onFetch={downloads.fetch}
+        fieldConfig={registry.config}
+        answers={doc.vars || NO_VARS}
+        onAnswerChange={(name, value) =>
+          edit.update({ ...doc, vars: { ...(doc.vars || NO_VARS), [name]: value } })
+        }
+        inventory={fields.inventory}
+        onArtifactsReload={registry.loadArtifacts}
+        host={fields.host}
       />
     );
   }
@@ -312,7 +330,9 @@ EditorTab.propTypes = {
     hints: PropTypes.object,
     manifest: PropTypes.array.isRequired,
     candidates: PropTypes.array,
+    config: PropTypes.object,
     artifacts: PropTypes.array,
+    loadArtifacts: PropTypes.func.isRequired,
   }).isRequired,
   edit: PropTypes.shape({
     update: PropTypes.func.isRequired,
@@ -323,6 +343,10 @@ EditorTab.propTypes = {
   downloads: PropTypes.shape({
     queued: PropTypes.object.isRequired,
     fetch: PropTypes.func.isRequired,
+  }).isRequired,
+  fields: PropTypes.shape({
+    inventory: PropTypes.object.isRequired,
+    host: PropTypes.object.isRequired,
   }).isRequired,
 };
 
@@ -368,7 +392,12 @@ JsonTab.propTypes = {
  * their argument specs read from the package registry while the host
  * lists `provisioner-registry`, the host's artifact rows read while it
  * lists `artifacts` and read again when a queued download of a missing
- * file ends; Store sends the one request, `PUT machines/{name}` with
+ * file ends, the package's role-attached field groups drawn in each
+ * card over the document's `vars`, a `file` field picked through the
+ * artifact pick dialog, a `secret` field through the secret pick dialog
+ * and preselected into `vars` as the package's detail answers, through
+ * `seedSecretAnswers` over one read of the host's store a kind, a var
+ * the document holds never overwritten; Store sends the one request, `PUT machines/{name}` with
  * `provisioner`, refusing only unapplied JSON and names that would break
  * the run, and hands the agent's message to `onSaved`; Discard reseeds
  * from the stored document, which the editor takes again whenever the
@@ -406,10 +435,45 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved }) => {
     provVersion: typeof doc.provisioner_version === 'string' ? doc.provisioner_version : '',
   });
   const downloads = useDownloads({ status, id, onLanded: registry.loadArtifacts });
+  const docRef = useRef(doc);
+
+  useEffect(() => {
+    docRef.current = doc;
+  }, [doc]);
 
   const update = next => {
     setDoc(next);
     setJsonText(jsonOf(next));
+  };
+
+  const { config } = registry;
+
+  useEffect(() => {
+    if (!config) {
+      return undefined;
+    }
+    let live = true;
+    readSecretRowsOf(status, id, config).then(rows => {
+      if (!live) {
+        return;
+      }
+      const seeded = seedSecretAnswers(config, rows);
+      if (Object.keys(seeded).length === 0) {
+        return;
+      }
+      const held = docRef.current;
+      const next = { ...held, vars: { ...seeded, ...(held.vars || NO_VARS) } };
+      setDoc(next);
+      setJsonText(jsonOf(next));
+    });
+    return () => {
+      live = false;
+    };
+  }, [config, status, id]);
+
+  const fields = {
+    inventory: { hypervisor: hypervisorRowsOf(server?.capabilities?.hypervisors) },
+    host: { status, hostId: id, server },
   };
 
   const edit = {
@@ -493,6 +557,7 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved }) => {
           registry={registry}
           edit={edit}
           downloads={downloads}
+          fields={fields}
         />
       )}
 

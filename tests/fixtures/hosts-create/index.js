@@ -47,6 +47,22 @@ export default {
     status: 200,
     file: 'artifacts-iso-200.json',
   },
+  'GET /api/agents/1/artifacts/storage/paths': {
+    status: 200,
+    file: 'storage-paths-200.json',
+  },
+  'GET /api/agents/1/certs?kind=api_key': {
+    status: 200,
+    file: 'certs-api-key-200.json',
+  },
+  'GET /api/agents/1/certs?kind=file': {
+    status: 200,
+    file: 'certs-file-200.json',
+  },
+  'POST /api/agents/1/artifacts/register': {
+    status: 201,
+    file: 'register-201.json',
+  },
   'POST /api/agents/1/artifacts/art-0102/fetch': {
     status: 202,
     file: 'artifact-fetch-202.json',
@@ -70,6 +86,10 @@ export default {
   'POST /api/agents/1/machines': {
     status: 200,
     file: 'create-200.json',
+  },
+  'POST /api/agents/1/machines/preview': {
+    status: 200,
+    file: 'preview-200.json',
   },
   'GET /api/organizations': {
     status: 200,

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sec-bearer",
+    "organization": "",
+    "kind": "api_key",
+    "name": "installer-bearer",
+    "profile": "installer_server",
+    "subject": "",
+    "not_after": "",
+    "published": true,
+    "is_public": false,
+    "guest_access": false,
+    "created_by": "mark",
+    "updated_at": "2026-10-10T09:00:00.000Z",
+    "record": {
+      "kind": "api_key",
+      "name": "installer-bearer",
+      "profile": "installer_server",
+      "secret": { "key": "bearer-token", "url": "https://installers.example.com" },
+      "extra": {}
+    }
+  },
+  {
+    "id": "sec-openai",
+    "organization": "",
+    "kind": "api_key",
+    "name": "assistant",
+    "profile": "openai",
+    "subject": "",
+    "not_after": "",
+    "published": true,
+    "is_public": false,
+    "guest_access": false,
+    "created_by": "mark",
+    "updated_at": "2026-10-10T09:00:00.000Z",
+    "record": {
+      "kind": "api_key",
+      "name": "assistant",
+      "profile": "openai",
+      "secret": { "key": "sk-seeded", "url": "https://api.openai.com/v1" },
+      "extra": { "model": "llama3.1:latest" }
+    }
+  }
+]

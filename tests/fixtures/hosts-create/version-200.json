@@ -5,140 +5,206 @@
   "metadata": {
     "name": "startcloud",
     "version": "0.1.27",
+    "label": "STARTcloud",
     "description": "The STARTcloud provisioner, generic edition",
-    "id_files": {
-      "safe_id_dir": "user-safe-ids",
-      "keep_original_name": false
-    },
     "metadata": {
       "label": "STARTcloud",
       "description": "The STARTcloud provisioner, generic edition",
-      "roles": [
-        {
-          "name": "networking",
-          "label": "Networking",
-          "description": "Network post boot configurations",
-          "collection": "startcloud.startcloud_roles",
-          "tags": "always",
-          "default_enabled": true,
-          "required": true
+      "defaults": {
+        "settings": {
+          "box": "STARTcloud/debian12-server",
+          "box_url": "https://boxvault.example.com",
+          "box_version": "2025.4.30",
+          "box_arch": "amd64",
+          "os_type": "Debian_64",
+          "firmware_type": "UEFI",
+          "vcpus": 2,
+          "memory": "8G",
+          "setup_wait": 420,
+          "vagrant_user": "startcloud"
         },
-        {
-          "name": "docker",
-          "label": "Docker",
-          "description": "Installs the Docker engine",
-          "collection": "startcloud.startcloud_roles",
-          "default_enabled": false
-        },
-        {
-          "name": "domino_install",
-          "label": "Domino Server",
-          "description": "Installs the HCL Domino server from the configured installer archive",
-          "collection": "startcloud.hcl_roles",
-          "default_enabled": true,
-          "installer_dir": "domino",
-          "files": {
-            "installer": {
-              "answers": {
-                "name": "DOMINO_INSTALLER",
-                "hash": "DOMINO_HASH",
-                "major": "DOMINO_INSTALLER_MAJOR_VERSION",
-                "minor": "DOMINO_INSTALLER_MINOR_VERSION",
-                "patch": "DOMINO_INSTALLER_PATCH_VERSION"
-              }
-            },
-            "fixpack": {
-              "answers": {
-                "name": "DOMINO_INSTALLER_FIXPACK",
-                "hash": "DOMINO_FP_HASH",
-                "version": "DOMINO_INSTALLER_FIXPACK_VERSION",
-                "install": "DOMINO_INSTALLER_FIXPACK_INSTALL"
-              }
-            },
-            "hotfix": {
-              "answers": {
-                "name": "DOMINO_INSTALLER_HOTFIX",
-                "hash": "DOMINO_HF_HASH",
-                "version": "DOMINO_INSTALLER_HOTFIX_VERSION",
-                "install": "DOMINO_INSTALLER_HOTFIX_INSTALL"
-              }
+        "disks": {
+          "boot": { "type": "template", "volume_name": "boot", "mount": "/" },
+          "additional_disks": [
+            {
+              "type": "blank",
+              "size": "50G",
+              "sparse": true,
+              "volume_name": "disk1",
+              "mount": "/local",
+              "filesystem": "xfs"
             }
-          }
+          ]
         },
-        {
-          "name": "domino_leap",
-          "label": "HCL Leap",
-          "description": "Installs HCL Leap from the configured archive",
-          "collection": "startcloud.hcl_roles",
-          "default_enabled": false,
-          "depends_on": ["domino_install"],
-          "installer_dir": "leap",
-          "files": {
-            "installer": {
-              "answers": {
-                "name": "LEAP_INSTALLER",
-                "hash": "LEAP_HASH",
-                "version": "LEAP_INSTALLER_VERSION"
-              }
-            },
-            "hotfix": {
-              "answers": {
-                "name": "LEAP_HOTFIX",
-                "hash": "LEAP_HF_HASH",
-                "version": "LEAP_HOTFIX_VERSION",
-                "install": "LEAP_HOTFIX_INSTALL"
-              }
-            }
-          }
-        }
-      ],
+        "networks": [{ "type": "external", "dhcp4": true }],
+        "tags": ["domino"],
+        "vbox": { "guest_agent": true }
+      },
       "configuration": {
         "groups": [
-          {
-            "name": "guest",
-            "label": "Guest",
-            "advanced": false
-          },
-          {
-            "name": "installers",
-            "label": "Installer Archives",
-            "advanced": true
-          },
-          {
-            "name": "proxy",
-            "label": "Download Proxy",
-            "advanced": true
-          }
+          { "name": "provider", "label": "Provider" },
+          { "name": "domino", "label": "Domino" },
+          { "name": "ssl", "label": "SSL", "role": "ssl" },
+          { "name": "domino_iq", "label": "Domino IQ", "role": "domino_iq" },
+          { "name": "installers", "label": "Installer Archives", "advanced": true },
+          { "name": "proxy", "label": "Download Proxy", "advanced": true }
         ],
         "fields": [
+          {
+            "name": "VAGRANT_PROVIDER",
+            "label": "Vagrant Provider",
+            "help": "Hypervisor the machine is created on, seeded from the host",
+            "type": "select",
+            "group": "provider",
+            "options_source": "hypervisor",
+            "default": "virtualbox"
+          },
           {
             "name": "guest_user",
             "label": "Guest user",
             "type": "text",
-            "group": "guest",
+            "group": "provider",
             "required": true,
             "default": "startcloud"
           },
           {
-            "name": "guest_password",
-            "label": "Guest password",
-            "type": "password",
-            "group": "guest",
-            "required": false,
-            "generate": {
-              "length": 16
-            }
+            "name": "SERVER_ORGANIZATION",
+            "label": "Domino Organization",
+            "help": "The Domino organization (O=) this standalone server creates",
+            "type": "text",
+            "group": "domino",
+            "required": true,
+            "default": "STARTcloud"
+          },
+          {
+            "name": "DOMINO_ADMIN_PASSWORD",
+            "label": "Domino Admin Password",
+            "help": "Password for the Domino administrator's Notes ID",
+            "type": "text",
+            "group": "domino",
+            "default": "password"
+          },
+          {
+            "name": "USER_SAFE_ID",
+            "label": "User Safe ID",
+            "help": "Safe ID placed in id-files/user-safe-ids and used for cross-certification",
+            "type": "secret",
+            "kind": "file",
+            "profile": "notes_id",
+            "secret_key": "user_safe_id",
+            "group": "domino"
+          },
+          {
+            "name": "DOMINO_ADDITIONAL_SERVER_NAMES",
+            "label": "Additional Server Names",
+            "help": "Fully qualified name of each additional server ID to generate",
+            "type": "list",
+            "items": "fqdn",
+            "group": "domino"
+          },
+          {
+            "name": "DOMINO_SERVER_ID_CREATION_TOOL",
+            "label": "Server ID Creation Tool",
+            "help": "Tool that generates the additional server IDs",
+            "type": "select",
+            "group": "domino",
+            "default": "asja",
+            "options": [
+              { "label": "One Touch Setup", "value": "ots" },
+              { "label": "ASJA", "value": "asja" }
+            ],
+            "show_if": { "DOMINO_ADDITIONAL_SERVER_NAMES": { "min_items": 1 } }
+          },
+          {
+            "name": "CERT_SELFSIGNED",
+            "label": "Use Self-Signed Certificate",
+            "help": "Generate a self-signed certificate for this server's web services",
+            "type": "checkbox",
+            "group": "ssl",
+            "default": true
+          },
+          {
+            "name": "HAPROXY_SSL_REDIRECT",
+            "label": "Redirect HTTP to HTTPS",
+            "help": "Have HAProxy redirect all plain HTTP requests to HTTPS",
+            "type": "checkbox",
+            "group": "ssl",
+            "default": true
+          },
+          {
+            "name": "LETSENCRYPT_ENABLED",
+            "label": "Use Let's Encrypt",
+            "help": "Request a certificate from Let's Encrypt instead of using a self-signed one",
+            "type": "checkbox",
+            "group": "ssl",
+            "default": false
+          },
+          {
+            "name": "LETSENCRYPT_STAGING_ENABLED",
+            "label": "Use Let's Encrypt Staging Environment",
+            "help": "Use the Let's Encrypt staging CA to avoid production rate limits while testing",
+            "type": "checkbox",
+            "group": "ssl",
+            "default": false,
+            "show_if": { "LETSENCRYPT_ENABLED": true }
+          },
+          {
+            "name": "DOMINO_IQ_ENDPOINT_URL",
+            "label": "Domino IQ Endpoint URL",
+            "help": "HTTPS chat completions URL of the OpenAI compatible AI endpoint",
+            "type": "text",
+            "group": "domino_iq",
+            "default": "https://webui.assistant.prominic.net/api/chat/completions"
+          },
+          {
+            "name": "DOMINO_IQ_MODEL",
+            "label": "Domino IQ Model",
+            "help": "Name of the model the AI endpoint serves",
+            "type": "text",
+            "group": "domino_iq",
+            "default": "llama3.1:latest"
+          },
+          {
+            "name": "DOMINO_IQ_API_KEY",
+            "label": "Domino IQ API Key",
+            "help": "API key the remote AI endpoint requires on every chat completions request",
+            "type": "secret",
+            "kind": "api_key",
+            "profile": "openai",
+            "secret_key": "domino_iq_api_key",
+            "group": "domino_iq",
+            "show_if": { "domino_iq_enabled": true }
+          },
+          {
+            "name": "DOMINO_IQ_USE_MAX_COMPLETION_TOKENS",
+            "label": "Use max_completion_tokens",
+            "help": "Sets DOMIQ_USE_MAX_COMPLETION_TOKENS=1 in notes.ini",
+            "type": "checkbox",
+            "group": "domino_iq",
+            "default": false
+          },
+          {
+            "name": "INSTALLER_BEARER",
+            "label": "Installer Server Bearer",
+            "help": "API key the installer server takes as its bearer token",
+            "type": "secret",
+            "kind": "api_key",
+            "profile": "installer_server",
+            "secret_key": "installer_url_bearer",
+            "group": "installers"
           },
           {
             "name": "DOMINO_INSTALLER",
             "label": "Domino Server Installer Archive",
+            "help": "Filename of the Domino server installer tar placed in installers/domino/archives",
             "type": "text",
             "group": "installers",
-            "default": "Domino_14.0_Linux_English.tar"
+            "default": "Domino_14.5.1_Linux_English.tar"
           },
           {
             "name": "DOMINO_HASH",
             "label": "Domino Installer SHA256 Hash",
+            "help": "Optional SHA256 checksum used to verify the Domino installer archive",
             "type": "text",
             "group": "installers"
           },
@@ -154,14 +220,14 @@
             "label": "Domino Minor Version",
             "type": "number",
             "group": "installers",
-            "default": 0
+            "default": 5
           },
           {
             "name": "DOMINO_INSTALLER_PATCH_VERSION",
             "label": "Domino Patch Version",
             "type": "number",
             "group": "installers",
-            "default": 0
+            "default": 1
           },
           {
             "name": "DOMINO_INSTALLER_FIXPACK_INSTALL",
@@ -175,6 +241,7 @@
             "label": "Domino Fixpack Archive",
             "type": "text",
             "group": "installers",
+            "default": "Domino_1451FP1_Linux.tar",
             "show_if": { "DOMINO_INSTALLER_FIXPACK_INSTALL": true }
           },
           {
@@ -182,6 +249,7 @@
             "label": "Domino Fixpack Version",
             "type": "text",
             "group": "installers",
+            "default": "FP1",
             "show_if": { "DOMINO_INSTALLER_FIXPACK_INSTALL": true }
           },
           {
@@ -224,14 +292,14 @@
             "label": "Leap Installer Archive",
             "type": "text",
             "group": "installers",
-            "default": "hcl.dleap-1.1.9.36.zip"
+            "default": "hcl.dleap-1.1.10.14.zip"
           },
           {
             "name": "LEAP_INSTALLER_VERSION",
             "label": "Leap Version",
             "type": "text",
             "group": "installers",
-            "default": "1.1.9"
+            "default": "1.1.10"
           },
           {
             "name": "LEAP_HASH",
@@ -240,36 +308,9 @@
             "group": "installers"
           },
           {
-            "name": "LEAP_HOTFIX_INSTALL",
-            "label": "Install a Leap Hotfix",
-            "type": "checkbox",
-            "group": "installers",
-            "default": false
-          },
-          {
-            "name": "LEAP_HOTFIX",
-            "label": "Leap Hotfix Archive",
-            "type": "text",
-            "group": "installers",
-            "show_if": { "LEAP_HOTFIX_INSTALL": true }
-          },
-          {
-            "name": "LEAP_HOTFIX_VERSION",
-            "label": "Leap Hotfix Version",
-            "type": "text",
-            "group": "installers",
-            "show_if": { "LEAP_HOTFIX_INSTALL": true }
-          },
-          {
-            "name": "LEAP_HF_HASH",
-            "label": "Leap Hotfix SHA256 Hash",
-            "type": "text",
-            "group": "installers",
-            "show_if": { "LEAP_HOTFIX_INSTALL": true }
-          },
-          {
             "name": "USE_PROXY",
             "label": "Use HTTP Proxy for Downloads",
+            "help": "Route installer downloads and package updates through an HTTP proxy",
             "type": "checkbox",
             "group": "proxy",
             "default": false
@@ -277,6 +318,7 @@
           {
             "name": "PROXY_SERVER",
             "label": "Proxy Server",
+            "help": "Hostname or IP address of the HTTP proxy",
             "type": "text",
             "group": "proxy",
             "required": true,
@@ -285,6 +327,7 @@
           {
             "name": "PROXY_PORT",
             "label": "Proxy Port",
+            "help": "TCP port of the HTTP proxy",
             "type": "number",
             "group": "proxy",
             "default": 3128,
@@ -292,20 +335,147 @@
             "validate": { "min": 1, "max": 65535 }
           }
         ]
-      }
+      },
+      "roles": [
+        {
+          "name": "setup",
+          "label": "Setup",
+          "description": "Sets the timezone and creates the completion and support bundle directories",
+          "collection": "startcloud.startcloud_roles",
+          "default_enabled": true,
+          "required": true
+        },
+        {
+          "name": "networking",
+          "label": "Networking",
+          "description": "Post-boot network configuration and the host's DNS alias records",
+          "collection": "startcloud.startcloud_roles",
+          "tags": "always",
+          "default_enabled": true,
+          "required": true
+        },
+        {
+          "name": "ssl",
+          "label": "SSL",
+          "description": "Generates or imports the server certificates and exports the PFX, PEM and JKS bundles",
+          "collection": "startcloud.startcloud_roles",
+          "default_enabled": true,
+          "required": true
+        },
+        {
+          "name": "domino_install",
+          "label": "Domino Server",
+          "description": "Installs the HCL Domino server from the configured installer archive",
+          "collection": "startcloud.hcl_roles",
+          "default_enabled": true,
+          "installer_dir": "domino",
+          "files": {
+            "installer": {
+              "answers": {
+                "name": "DOMINO_INSTALLER",
+                "hash": "DOMINO_HASH",
+                "major": "DOMINO_INSTALLER_MAJOR_VERSION",
+                "minor": "DOMINO_INSTALLER_MINOR_VERSION",
+                "patch": "DOMINO_INSTALLER_PATCH_VERSION"
+              }
+            },
+            "fixpack": {
+              "answers": {
+                "name": "DOMINO_INSTALLER_FIXPACK",
+                "hash": "DOMINO_FP_HASH",
+                "version": "DOMINO_INSTALLER_FIXPACK_VERSION",
+                "install": "DOMINO_INSTALLER_FIXPACK_INSTALL"
+              }
+            },
+            "hotfix": {
+              "answers": {
+                "name": "DOMINO_INSTALLER_HOTFIX",
+                "hash": "DOMINO_HF_HASH",
+                "version": "DOMINO_INSTALLER_HOTFIX_VERSION",
+                "install": "DOMINO_INSTALLER_HOTFIX_INSTALL"
+              }
+            }
+          }
+        },
+        {
+          "name": "domino_leap",
+          "label": "HCL Leap",
+          "description": "Installs HCL Leap low-code application platform from the configured archive",
+          "collection": "startcloud.hcl_roles",
+          "default_enabled": false,
+          "depends_on": ["domino_install"],
+          "installer_dir": "leap",
+          "files": {
+            "installer": {
+              "answers": {
+                "name": "LEAP_INSTALLER",
+                "hash": "LEAP_HASH",
+                "version": "LEAP_INSTALLER_VERSION"
+              }
+            }
+          }
+        },
+        {
+          "name": "domino_iq",
+          "label": "HCL Domino IQ",
+          "description": "Enables HCL Domino IQ and points it at the configured AI endpoint",
+          "collection": "startcloud.hcl_roles",
+          "default_enabled": false,
+          "depends_on": ["domino_genesis"]
+        },
+        {
+          "name": "quick_start",
+          "label": "Quick Start Page",
+          "description": "Serves the provisioning status and welcome page during and after setup",
+          "collection": "startcloud.startcloud_roles",
+          "tags": "always",
+          "default_enabled": true
+        },
+        {
+          "name": "haproxy",
+          "label": "HAProxy",
+          "description": "Installs HAProxy as the TLS-terminating reverse proxy in front of Domino web services",
+          "collection": "startcloud.startcloud_roles",
+          "default_enabled": true,
+          "depends_on": ["ssl"]
+        },
+        {
+          "name": "lockdown",
+          "label": "Lockdown",
+          "description": "Hardens the guest at the end of provisioning",
+          "collection": "startcloud.startcloud_roles",
+          "default_enabled": false
+        }
+      ]
     }
   },
   "role_specs": {
     "roles": {
+      "setup": {
+        "collection": "startcloud.startcloud_roles",
+        "short_description": "Sets the timezone and the completion directories",
+        "options": {}
+      },
       "networking": {
         "collection": "startcloud.startcloud_roles",
         "short_description": "Network post boot configurations",
         "options": {}
       },
-      "docker": {
+      "ssl": {
         "collection": "startcloud.startcloud_roles",
-        "short_description": "Installs the Docker engine",
-        "options": {}
+        "short_description": "Generates or imports the server certificates",
+        "options": {
+          "cert_pass": {
+            "type": "str",
+            "default": "password",
+            "description": "The password of the exported PFX and JKS bundles."
+          },
+          "countrycode": {
+            "type": "str",
+            "default": "US",
+            "description": "The country code of the generated certificate."
+          }
+        }
       },
       "domino_install": {
         "collection": "startcloud.hcl_roles",
@@ -343,6 +513,26 @@
       "domino_leap": {
         "collection": "startcloud.hcl_roles",
         "short_description": "Installs HCL Leap",
+        "options": {}
+      },
+      "domino_iq": {
+        "collection": "startcloud.hcl_roles",
+        "short_description": "Enables HCL Domino IQ",
+        "options": {}
+      },
+      "quick_start": {
+        "collection": "startcloud.startcloud_roles",
+        "short_description": "Serves the provisioning status page",
+        "options": {}
+      },
+      "haproxy": {
+        "collection": "startcloud.startcloud_roles",
+        "short_description": "Installs HAProxy",
+        "options": {}
+      },
+      "lockdown": {
+        "collection": "startcloud.startcloud_roles",
+        "short_description": "Hardens the guest",
         "options": {}
       }
     }

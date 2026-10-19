@@ -30,6 +30,27 @@ export const fileKindsOf = manifestRole =>
   FILE_KINDS.filter(kind => isObject(manifestRole?.files) && isObject(manifestRole.files[kind]));
 
 /**
+ * The artifact rows of one kind and one role, the rows whose `file_type`
+ * is the kind and whose `role` is the given one, the ones on the host
+ * first and the known-but-missing ones after them.
+ *
+ * @param {Array<Object>|null} artifacts - The host's artifact rows
+ * @param {string} kind - `installer`, `fixpack`, `hotfix`, `iso` or `image`
+ * @param {string} role - The rows' `role`, an installer dir
+ * @returns {Array<Object>} The rows
+ */
+export const artifactRowsOf = (artifacts, kind, role) => {
+  if (!role || !Array.isArray(artifacts)) {
+    return [];
+  }
+  const rows = artifacts.filter(row => row && row.role === role && row.file_type === kind);
+  return [
+    ...rows.filter(row => row.file_exists !== false),
+    ...rows.filter(row => row.file_exists === false),
+  ];
+};
+
+/**
  * The artifact rows of one role and one kind, the rows whose `role` is
  * the role's `installer_dir` and whose `file_type` is the kind, the ones
  * on the host first and the known-but-missing ones after them.
@@ -39,17 +60,8 @@ export const fileKindsOf = manifestRole =>
  * @param {string} kind - `installer`, `fixpack` or `hotfix`
  * @returns {Array<Object>} The rows
  */
-export const roleArtifactsOf = (artifacts, manifestRole, kind) => {
-  const dir = manifestRole?.installer_dir;
-  if (!dir || !Array.isArray(artifacts)) {
-    return [];
-  }
-  const rows = artifacts.filter(row => row && row.role === dir && row.file_type === kind);
-  return [
-    ...rows.filter(row => row.file_exists !== false),
-    ...rows.filter(row => row.file_exists === false),
-  ];
-};
+export const roleArtifactsOf = (artifacts, manifestRole, kind) =>
+  artifactRowsOf(artifacts, kind, manifestRole?.installer_dir || '');
 
 /**
  * Whether an artifact row is on the host.
@@ -67,42 +79,6 @@ export const artifactPresent = row => Boolean(row) && row.file_exists !== false;
  * @returns {string} The source word
  */
 export const artifactSourceOf = row => (FILE_SOURCES_WORDS.includes(row?.source) ? row.source : '');
-
-/**
- * The file an installer picker opens on: the first row on the host, the
- * first known row otherwise, none for a fixpack or a hotfix.
- *
- * @param {Array<Object>} rows - The rows of `roleArtifactsOf`
- * @param {string} kind - `installer`, `fixpack` or `hotfix`
- * @returns {Object|null} The row
- */
-export const defaultPickOf = (rows, kind) => {
-  if (kind !== 'installer') {
-    return null;
-  }
-  return rows.find(artifactPresent) || rows[0] || null;
-};
-
-/**
- * The sha256 an artifact row is known by, the recorded expectation first
- * and the file's own checksum otherwise.
- *
- * @param {Object|null} row - The artifact row
- * @returns {string} The hash
- */
-export const artifactHashOf = row => row?.expected_sha256 || row?.checksum || '';
-
-/**
- * A hash shortened for a line beside a picker, its first eight and last
- * six characters.
- *
- * @param {string} hash - The hash
- * @returns {string} The short form, empty for none
- */
-export const shortHashOf = hash => {
-  const text = String(hash || '');
-  return text.length > SHORT_HASH * 2 ? `${text.slice(0, SHORT_HASH)}…${text.slice(-6)}` : text;
-};
 
 /**
  * A row's version as structured members, `major`, `minor`, `patch`,
@@ -126,6 +102,82 @@ export const artifactVersionOf = row => {
   const text = String(version ?? '');
   const [major = '', minor = '', patch = ''] = text.split('_')[0].split('.');
   return { major, minor, patch, fix_pack: '', full_version: text };
+};
+
+const fieldOf = (config, name) =>
+  name ? (config?.fields || []).find(field => field?.name === name) || null : null;
+
+const numberFieldsOf = config =>
+  new Set(
+    (config?.fields || []).filter(field => field?.type === 'number').map(field => field.name)
+  );
+
+/**
+ * The file the manifest's configuration names as a role's default of one
+ * kind: `filename`, the default of the field the role's
+ * `files.<kind>.answers.name` names, and `major`, the default of the field
+ * its `major` answer names, each empty while the configuration carries
+ * no such default.
+ *
+ * @param {Object|null} manifestRole - The manifest's role
+ * @param {string} kind - `installer`, `fixpack` or `hotfix`
+ * @param {{ fields: Array<Object> }|null} config - The version's configuration
+ * @returns {{ filename: string, major: string }} The wanted file
+ */
+export const wantedFileOf = (manifestRole, kind, config) => {
+  const answers = manifestRole?.files?.[kind]?.answers;
+  const nameField = fieldOf(config, isObject(answers) ? answers.name : '');
+  const majorField = fieldOf(config, isObject(answers) ? answers.major : '');
+  return {
+    filename: nameField?.default === undefined ? '' : String(nameField.default),
+    major: majorField?.default === undefined ? '' : String(majorField.default),
+  };
+};
+
+/**
+ * The file an installer picker opens on, among the rows on the host: the
+ * row whose file name is the manifest's default, else a row whose major
+ * version is the default major's, else the first; the first known row
+ * while none is on the host; none for a fixpack or a hotfix.
+ *
+ * @param {Array<Object>} rows - The rows of `roleArtifactsOf`
+ * @param {string} kind - `installer`, `fixpack` or `hotfix`
+ * @param {{ filename: string, major: string }} [wanted] - The wanted file of `wantedFileOf`
+ * @returns {Object|null} The row
+ */
+export const defaultPickOf = (rows, kind, wanted = { filename: '', major: '' }) => {
+  if (kind !== 'installer') {
+    return null;
+  }
+  const present = rows.filter(artifactPresent);
+  return (
+    (wanted.filename && present.find(row => row.filename === wanted.filename)) ||
+    (wanted.major && present.find(row => artifactVersionOf(row).major === wanted.major)) ||
+    present[0] ||
+    rows[0] ||
+    null
+  );
+};
+
+/**
+ * The sha256 an artifact row is known by, the recorded expectation first
+ * and the file's own checksum otherwise.
+ *
+ * @param {Object|null} row - The artifact row
+ * @returns {string} The hash
+ */
+export const artifactHashOf = row => row?.expected_sha256 || row?.checksum || '';
+
+/**
+ * A hash shortened for a line beside a picker, its first eight and last
+ * six characters.
+ *
+ * @param {string} hash - The hash
+ * @returns {string} The short form, empty for none
+ */
+export const shortHashOf = hash => {
+  const text = String(hash || '');
+  return text.length > SHORT_HASH * 2 ? `${text.slice(0, SHORT_HASH)}…${text.slice(-6)}` : text;
 };
 
 /**
@@ -177,22 +229,28 @@ const answerValues = row => {
   };
 };
 
+const numbered = value => (value === '' || value === undefined ? undefined : Number(value));
+
 /**
  * The manifest fields a pick fills, the `files.<kind>.answers` of the
  * manifest's role: each answer's field set to the row's name, hash,
- * major, minor, patch or version, and `install` to true; every named
- * field cleared, `install` to false, for no pick.
+ * major, minor, patch or version, a value bound for a field the
+ * configuration types `number` as a number and an empty one as
+ * undefined, and `install` to true; every named field cleared, `install`
+ * to false, for no pick.
  *
  * @param {Object|null} manifestRole - The manifest's role
  * @param {string} kind - `installer`, `fixpack` or `hotfix`
  * @param {Object|null} row - The artifact row picked
+ * @param {{ fields: Array<Object> }|null} [config] - The version's configuration
  * @returns {Object} The answers by field name
  */
-export const pickAnswersOf = (manifestRole, kind, row) => {
+export const pickAnswersOf = (manifestRole, kind, row, config = null) => {
   const answers = manifestRole?.files?.[kind]?.answers;
   if (!isObject(answers)) {
     return {};
   }
+  const numbers = numberFieldsOf(config);
   const values = row ? answerValues(row) : null;
   const filled = {};
   Object.entries(answers).forEach(([member, field]) => {
@@ -203,7 +261,8 @@ export const pickAnswersOf = (manifestRole, kind, row) => {
       filled[field] = Boolean(values);
       return;
     }
-    filled[field] = values ? values[member] : undefined;
+    const value = values ? values[member] : undefined;
+    filled[field] = numbers.has(field) ? numbered(value) : value;
   });
   return filled;
 };
@@ -283,15 +342,18 @@ export const roleNeedsAttention = ({ roleRow, manifestRole, artifacts, queued, s
 
 /**
  * The role rows with each file-taking role's installer picked to its
- * default among the host's rows, and the manifest answers those picks
- * fill; a role whose installer is already picked keeps its pick.
+ * default among the host's rows through `defaultPickOf`, the manifest's
+ * default file name and major version read from the configuration, and
+ * the manifest answers those picks fill; a role whose installer is
+ * already picked keeps its pick.
  *
  * @param {Array<Object>} rows - The role rows
  * @param {Array<Object>} manifestRoles - The manifest's roles
  * @param {Array<Object>|null} artifacts - The host's artifact rows
+ * @param {{ fields: Array<Object> }|null} [config] - The version's configuration
  * @returns {{ roles: Array<Object>, answers: Object }} The rows and the answers
  */
-export const seedRolePicks = (rows, manifestRoles, artifacts) => {
+export const seedRolePicks = (rows, manifestRoles, artifacts, config = null) => {
   const answers = {};
   const roles = rows.map(row => {
     const manifestRole = (Array.isArray(manifestRoles) ? manifestRoles : []).find(
@@ -302,15 +364,43 @@ export const seedRolePicks = (rows, manifestRoles, artifacts) => {
     }
     const picked = defaultPickOf(
       roleArtifactsOf(artifacts, manifestRole, 'installer'),
-      'installer'
+      'installer',
+      wantedFileOf(manifestRole, 'installer', config)
     );
     if (!picked) {
       return row;
     }
-    Object.assign(answers, pickAnswersOf(manifestRole, 'installer', picked));
+    Object.assign(answers, pickAnswersOf(manifestRole, 'installer', picked, config));
     return { ...row, files: { ...(row.files || {}), ...roleFilesPatch('installer', picked) } };
   });
   return { roles, answers };
+};
+
+/**
+ * A role row with its argument spec's defaults written into `vars`, every
+ * option that carries a default and is not yet set, `run_tasks` never
+ * among them; a row whose spec adds nothing is answered as it is.
+ *
+ * @param {Object} row - The role row
+ * @param {Object|null} spec - The role's argument spec
+ * @returns {Object} The row
+ */
+export const withSpecDefaults = (row, spec) => {
+  const options = isObject(spec?.options) ? spec.options : {};
+  const vars = { ...(row.vars || {}) };
+  let added = false;
+  Object.entries(options).forEach(([name, option]) => {
+    if (
+      name !== 'run_tasks' &&
+      isObject(option) &&
+      option.default !== undefined &&
+      vars[name] === undefined
+    ) {
+      vars[name] = option.default;
+      added = true;
+    }
+  });
+  return added ? { ...row, vars } : row;
 };
 
 /**

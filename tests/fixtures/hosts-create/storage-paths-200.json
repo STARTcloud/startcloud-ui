@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "paths": [
+    {
+      "id": "loc-installers",
+      "name": "HCL installers",
+      "path": "/var/lib/hyperweaver/artifacts/installers",
+      "type": "installer",
+      "enabled": true,
+      "source": "builtin",
+      "file_count": 3,
+      "total_size": 2147483648,
+      "scan_errors": 0,
+      "last_scan_at": "2026-09-27T10:00:00.000Z"
+    }
+  ],
+  "total_paths": 1
+}

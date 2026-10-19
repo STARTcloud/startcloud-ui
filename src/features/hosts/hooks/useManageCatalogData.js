@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { selectGroup, switchGroup } from '../../../hooks/useClientFilters';
-import { fetchSecrets } from '../api/agentSettings';
 import { fetchPackages, searchPackages } from '../api/packages';
 import {
   fetchArtifactStoragePaths,
@@ -150,7 +149,6 @@ export const useManageCatalogData = ({ id, server, only = null }) => {
   const gates = Object.fromEntries(
     Object.entries(offers).map(([key, offered]) => [key, offered && wanted(key)])
   );
-  const secretsWanted = gates.installers || gates.provisioners;
 
   const setParam = useCallback((table, key, value) => {
     setParams(current => ({ ...current, [table]: { ...current[table], [key]: value } }));
@@ -181,10 +179,6 @@ export const useManageCatalogData = ({ id, server, only = null }) => {
         [status, id, params.installers]
       ),
       gates.installers
-    ),
-    secrets: useManageRead(
-      useCallback(() => fetchSecrets(status, id).catch(() => null), [status, id]),
-      secretsWanted
     ),
     recipes: useManageRead(
       useCallback(

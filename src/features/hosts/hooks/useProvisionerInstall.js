@@ -36,6 +36,23 @@ const readCatalogs = (status, id, sources) =>
   );
 
 /**
+ * One read of a host's catalog sources and of each one's catalog,
+ * `GET provisioning/catalog/sources` then `GET provisioning/catalog?source=`
+ * for every source: the source rows and one read a source, `{ source,
+ * catalog, refused }`, `refused` true while the catalog answered the
+ * agent's sign-in 401 with the `authentication` problem.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @returns {Promise<{ sources: Array<Object>, reads: Array<Object> }>} The sources and their reads
+ */
+export const readCatalogSources = (status, id) =>
+  fetchCatalogSources(status, id).then(answer => {
+    const sources = sourceRowsOf(answer);
+    return readCatalogs(status, id, sources).then(reads => ({ sources, reads }));
+  });
+
+/**
  * The install of a handed provisioner family the host does not hold, the
  * Provisioning step's card: `looking` while the host's catalog sources and
  * each one's catalog are read, once, as the family is found missing;
@@ -51,7 +68,10 @@ const readCatalogs = (status, id, sources) =>
  * 409 answer naming the source already held; a completed task reads the
  * host's provisioners again through `onInstalled`, and a family still
  * missing after it fails. Nothing is offered on a host whose task ends
- * never reach the stream, and nothing runs on a clock.
+ * never reach the stream, and nothing runs on a clock. `readCatalogs`,
+ * where given, is the caller's own read of `readCatalogSources`, asked
+ * with `true` for a fresh read on Retry, so a dialog that already read
+ * the catalogs as it opened is not read twice.
  *
  * @param {Object} options - The host, the seed and the provisioners held
  * @param {Object} options.status - The payload from `probeStatus`
@@ -61,6 +81,7 @@ const readCatalogs = (status, id, sources) =>
  * @param {Array<Object>} options.provisioners - The host's families
  * @param {boolean} options.loaded - Whether the families answered
  * @param {Function} options.onInstalled - Reads the host's families again, answering them
+ * @param {Function} [options.readCatalogs] - Answers the promise of `readCatalogSources`, fresh while passed true
  * @returns {Object} `{ state, offered, noStream, name, version, message, row, install, retry }`
  */
 export const useProvisionerInstall = ({
@@ -71,6 +92,7 @@ export const useProvisionerInstall = ({
   provisioners,
   loaded,
   onInstalled,
+  readCatalogs: readShared = null,
 }) => {
   const [held, setHeld] = useState(IDLE);
   const looked = useRef(false);
@@ -105,13 +127,13 @@ export const useProvisionerInstall = ({
     },
   });
 
-  const look = useCallback(() => {
-    setHeld({ state: 'looking', offer: null, message: '' });
-    clear();
-    return fetchCatalogSources(status, id)
-      .then(answer => {
-        const sources = sourceRowsOf(answer);
-        return readCatalogs(status, id, sources).then(reads => {
+  const look = useCallback(
+    (fresh = true) => {
+      setHeld({ state: 'looking', offer: null, message: '' });
+      clear();
+      const reading = readShared ? readShared(fresh) : readCatalogSources(status, id);
+      return reading
+        .then(({ sources, reads }) => {
           const refused = reads.find(read => read.refused && read.source.url === catalogUrl);
           if (refused) {
             setHeld({ state: 'signin', offer: null, message: '' });
@@ -120,17 +142,18 @@ export const useProvisionerInstall = ({
           const catalogs = Object.fromEntries(reads.map(read => [read.source.id, read.catalog]));
           const offer = installOfferOf({ sources, catalogs, name, version: wanted, catalogUrl });
           setHeld({ state: offer.kind, offer, message: '' });
-        });
-      })
-      .catch(error => fail(error.message));
-  }, [status, id, name, wanted, catalogUrl, clear, fail]);
+        })
+        .catch(error => fail(error.message));
+    },
+    [status, id, name, wanted, catalogUrl, clear, fail, readShared]
+  );
 
   useEffect(() => {
     if (!missing || !streams || looked.current) {
       return;
     }
     looked.current = true;
-    look();
+    look(false);
   }, [missing, streams, look]);
 
   const queueInstall = useCallback(
@@ -196,7 +219,7 @@ export const useProvisionerInstall = ({
       message: held.message,
       row,
       install,
-      retry: look,
+      retry: () => look(true),
     }),
     [offered, missing, streams, held, name, wanted, row, install, look]
   );

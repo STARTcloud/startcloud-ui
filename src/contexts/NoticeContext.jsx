@@ -81,7 +81,8 @@ NoticeProvider.propTypes = {
  * `options.tier` is `banner`; `options.key` replaces an earlier notice with
  * the same key and, with an empty `text`, dismisses it; `options.sticky`
  * keeps a success or info card until it is dismissed; `options.action` is
- * `{ label, onClick | to | href }`. Returns the notice id.
+ * `{ label, onClick | to | href, action }`, `action` the control's
+ * `data-action` while given. Returns the notice id.
  *
  * @returns {Function} The app's `notify`
  */

@@ -1,0 +1,30 @@
+{
+  "provisioners": [
+    {
+      "name": "startcloud",
+      "description": "The STARTcloud provisioner",
+      "metadata": { "label": "STARTcloud", "description": "The STARTcloud provisioner" },
+      "valid": true,
+      "source": null,
+      "versions": [
+        {
+          "version": "0.1.27",
+          "dir": "startcloud/0.1.27",
+          "name": "STARTcloud",
+          "description": "Release 0.1.27"
+        }
+      ]
+    },
+    {
+      "name": "hcl-domino",
+      "description": "HCL Domino on any box",
+      "metadata": { "label": "HCL Domino" },
+      "valid": true,
+      "source": null,
+      "versions": [
+        { "version": "2.0.0", "dir": "hcl-domino/2.0.0", "name": "HCL Domino", "description": "" }
+      ]
+    }
+  ],
+  "total": 2
+}

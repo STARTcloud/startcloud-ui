@@ -264,6 +264,20 @@ export const createMachine = (status, id, body) =>
   client.post(agentPath(status, id, 'machines'), body);
 
 /**
+ * Render the Hosts.yml a create spec stores without creating anything,
+ * `POST machines/preview` with the exact create body; answered
+ * `{ yaml, hosts, warnings }`, or refused 422 with the field map the
+ * create answers.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The spec of `buildSpec`
+ * @returns {Promise<Object>} `{ yaml, hosts, warnings }`
+ */
+export const previewMachine = (status, id, body) =>
+  client.post(agentPath(status, id, 'machines/preview'), body);
+
+/**
  * Store a machine's provisioner document verbatim, `PUT machines/{name}`
  * with `provisioner`, the Hosts.yml host entry, kept at once with no
  * task on both agents.

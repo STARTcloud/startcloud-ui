@@ -12,6 +12,7 @@ export {
 export { actionMenu } from './actionMenu';
 export { apiReference } from './apiReference';
 export { default as ServersProvider } from './components/ServersProvider';
+export { default as HostsPreferencesCard } from './components/HostsPreferencesCard';
 export { controlCommands } from './controlCommands';
 export { footerPane } from './footerPane';
 export { useHostSearchSources } from './hooks/useHostSearch';

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaPlay, FaRotate, FaStop } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
@@ -34,12 +34,14 @@ import MachineGuestAgentCard from './MachineGuestAgentCard';
 import MachineGuestInfoCard from './MachineGuestInfoCard';
 import MachineHardwareCard from './MachineHardwareCard';
 import MachineInfoCard, { stateOf } from './MachineInfoCard';
-import MachineProvisioningView from './MachineProvisioningView';
-import MachineSettingsView from './MachineSettingsView';
 import MachineSnapshotsView from './MachineSnapshotsView';
 import MachineTagsNotesCard from './MachineTagsNotesCard';
 import MachineTopologySlice from './NetworkTopology/MachineTopologySlice';
 import RefreshButton from './RefreshButton';
+
+const MachineSettingsView = lazy(() => import('./MachineSettingsView'));
+
+const MachineProvisioningView = lazy(() => import('./MachineProvisioningView'));
 
 const TOPOLOGY_FOLD = 'machine-topology';
 
@@ -286,13 +288,17 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
           </div>
         ) : null}
         {page === 'settings' ? (
-          <MachineSettingsView key={name} id={id} name={name} context={context} />
+          <Suspense fallback={null}>
+            <MachineSettingsView key={name} id={id} name={name} context={context} />
+          </Suspense>
         ) : null}
         {page === 'snapshots' ? (
           <MachineSnapshotsView id={id} name={name} context={context} />
         ) : null}
         {page === 'provisioning' ? (
-          <MachineProvisioningView id={id} name={name} context={context} />
+          <Suspense fallback={null}>
+            <MachineProvisioningView id={id} name={name} context={context} />
+          </Suspense>
         ) : null}
         {page === 'overview' ? (
           <div className="row g-3 mb-3">

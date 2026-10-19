@@ -1,7 +1,14 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaDownload, FaEye, FaEyeSlash, FaRightLeft, FaTrash } from 'react-icons/fa6';
+import {
+  FaDownload,
+  FaEye,
+  FaEyeSlash,
+  FaPenToSquare,
+  FaRightLeft,
+  FaTrash,
+} from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { localeDate } from '../../../components/common/columns';
@@ -27,8 +34,11 @@ import { useStoreWrites } from '../hooks/useStoreWrites';
 import { useVault } from '../hooks/useVault';
 import { foldOf } from '../utils/folds';
 import {
+  PRIVATE_MEMBERS,
+  SECRET_MEMBERS,
   algorithmOf,
   derOf,
+  isSecretKind,
   kindOf,
   nameOf,
   notAfterOf,
@@ -44,8 +54,11 @@ import ChainView from './ChainView';
 import { TextAreaField, TextField } from './fields';
 import FormatPicker, { EMPTY_OUTPUT } from './FormatPicker';
 import RecordHistory from './RecordHistory';
+import SecretRecordModal from './SecretRecordModal';
 import StatusBadge from './StatusBadge';
 import VaultTreeDialogs from './VaultTreeDialogs';
+
+const MASK = '••••••••';
 
 const CHAINED = ['certificate', 'authority'];
 
@@ -153,6 +166,76 @@ const TemplateSection = ({ record }) => {
 
 TemplateSection.propTypes = {
   record: PropTypes.object.isRequired,
+};
+
+const secretRows = (record, t) => {
+  const members =
+    record.kind === 'custom' ? Object.keys(record.secret || {}) : SECRET_MEMBERS[record.kind] || [];
+  return [
+    ...(record.profile
+      ? [
+          {
+            key: 'profile',
+            label: t('certs.secret.profile'),
+            value: t(`certs.profile.${record.profile}.label`),
+          },
+        ]
+      : []),
+    ...members
+      .filter(member => record.secret?.[member] !== undefined && record.secret?.[member] !== '')
+      .map(member => ({
+        key: member,
+        label: record.kind === 'custom' ? member : t(`certs.secret.member.${member}`),
+        value:
+          record.kind === 'custom' || PRIVATE_MEMBERS.includes(member) ? (
+            <code>{MASK}</code>
+          ) : (
+            String(record.secret[member])
+          ),
+      })),
+    ...Object.entries(record.extra || {}).map(([name, value]) => ({
+      key: `extra-${name}`,
+      label: name,
+      value: String(value),
+    })),
+  ];
+};
+
+const SecretSection = ({ record, onSave }) => {
+  const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const edit = (
+    <button
+      type="button"
+      className="btn btn-sm btn-outline-secondary"
+      data-action="edit-secret"
+      onClick={() => setEditing(true)}
+    >
+      <FaPenToSquare className="me-1" aria-hidden="true" />
+      {t('certs.actions.edit')}
+    </button>
+  );
+  return (
+    <div className="mb-4" data-panel="record-secret">
+      <SectionHeading title={t('certs.record.secret')} actions={edit} />
+      <RecordRows rows={secretRows(record, t)} />
+      {editing ? (
+        <SecretRecordModal
+          record={record}
+          onSave={next => {
+            onSave(next);
+            setEditing(false);
+          }}
+          onClose={() => setEditing(false)}
+        />
+      ) : null}
+    </div>
+  );
+};
+
+SecretSection.propTypes = {
+  record: PropTypes.object.isRequired,
+  onSave: PropTypes.func.isRequired,
 };
 
 const relatedRows = (related, t) =>
@@ -384,24 +467,28 @@ const HeaderActions = ({ record, actions, manage, onDelete, onRemove, onAccess }
           onPick={body => onAccess(accessOf(body))}
         />
       ) : null}
-      <button
-        type="button"
-        className="btn btn-outline-secondary"
-        data-action="convert"
-        onClick={() => actions.convert(record)}
-      >
-        <FaRightLeft className="me-1" aria-hidden="true" />
-        {t('certs.actions.convert')}
-      </button>
-      <button
-        type="button"
-        className="btn btn-outline-secondary"
-        data-action="download"
-        onClick={() => actions.download(record)}
-      >
-        <FaDownload className="me-1" aria-hidden="true" />
-        {t('certs.actions.download')}
-      </button>
+      {isSecretKind(record.kind) ? null : (
+        <>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            data-action="convert"
+            onClick={() => actions.convert(record)}
+          >
+            <FaRightLeft className="me-1" aria-hidden="true" />
+            {t('certs.actions.convert')}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            data-action="download"
+            onClick={() => actions.download(record)}
+          >
+            <FaDownload className="me-1" aria-hidden="true" />
+            {t('certs.actions.download')}
+          </button>
+        </>
+      )}
       <button type="button" className="btn btn-danger" data-action="delete" onClick={onDelete}>
         <FaTrash className="me-1" aria-hidden="true" />
         {t('certs.actions.delete')}
@@ -436,6 +523,7 @@ const RecordSections = ({ record, context, related, authorities, built, actions,
   const folds = useFolds(prefsKey);
   const thresholdDays = vault.preferences.threshold_days;
   const chained = CHAINED.includes(record.kind) && Boolean(derOf(record));
+  const secret = isSecretKind(record.kind);
   return (
     <>
       <DetailsCard
@@ -444,6 +532,7 @@ const RecordSections = ({ record, context, related, authorities, built, actions,
         fold={foldOf(folds, FOLDS.details)}
         onSave={save}
       />
+      {secret ? <SecretSection record={record} onSave={save} /> : null}
       {record.kind === 'template' ? <TemplateSection record={record} /> : null}
       {record.facts ? (
         <div className="mb-4" data-panel="record-facts">
@@ -455,7 +544,7 @@ const RecordSections = ({ record, context, related, authorities, built, actions,
       {chained ? (
         <ChainSection record={record} authorities={authorities} chain={built.chain} />
       ) : null}
-      {record.kind !== 'template' ? (
+      {record.kind !== 'template' && !secret ? (
         <KeySection record={record} keyRecord={related.key} actions={actions} />
       ) : null}
       {chained ? (
@@ -598,7 +687,9 @@ NotFound.propTypes = {
  * Remove from the organization behind its own typed confirmation under
  * the same predicate, that verb alone sending the DELETE and a refusal
  * keeping the record; then the details
- * card (name, tags, notes), a template's members, the facts, the related
+ * card (name, tags, notes), a secret record's profile, members and extra
+ * values with every private member masked and Edit opening the secret
+ * record form, no Convert, Download or key section for it, a template's members, the facts, the related
  * records as links, the chain the engine builds over the vault's
  * authorities, the key held or missing with View, Copy and Download, the
  * versions held with Activate, Download and Delete, and the export card

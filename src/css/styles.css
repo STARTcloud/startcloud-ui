@@ -344,7 +344,8 @@ button::-moz-focus-inner {
   }
 }
 
-.form-modal .modal-content > form {
+.modal-dialog-scrollable .modal-content > form,
+.modal-dialog-scrollable .modal-content > [data-dialog] {
   display: contents;
 }
 

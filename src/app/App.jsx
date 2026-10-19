@@ -21,6 +21,7 @@ import {
   setMemberships,
 } from '../features/collections/provisioners';
 import { collectionsFor } from '../features/collections/registry';
+import { agentLaunchHref } from '../features/deploy/utils/deployLink';
 import {
   ServersProvider,
   apiReference,
@@ -74,6 +75,17 @@ import AppRoutes, {
 const persistMode = mode => session.savePreferences({ mode });
 
 const SHI_THEME = 'shi';
+
+const AGENT_ROLE = 'hyperweaver-agent';
+
+/**
+ * The link the offline banner starts the agent with: `hwa://open` on a
+ * hyperweaver-agent host, empty elsewhere.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @returns {string} The link, or empty
+ */
+const launchHrefOf = status => (status.role === AGENT_ROLE ? agentLaunchHref() : '');
 
 const persistTheme = theme => session.savePreferences({ theme: theme || null });
 
@@ -257,7 +269,11 @@ const App = ({ getSupportedLanguages }) => {
   const ticket = useTicketUrl({ status, user, claims, activeOrgCode: orgCode });
 
   useFavicon(brandMarkUrl(status.brand, theme, themes), brandLogoUrl(status.brand));
-  usePwa({ app: status.brand.name, offline: Boolean(status.offline) });
+  usePwa({
+    app: status.brand.name,
+    offline: Boolean(status.offline),
+    launchHref: launchHrefOf(status),
+  });
   useAccountPreferences({
     user,
     setModePreference: setMode,

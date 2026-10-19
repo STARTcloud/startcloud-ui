@@ -30,7 +30,7 @@ import {
   seedFamilyOf,
   withoutCreateSeed,
 } from '../../utils/machineCreate';
-import { CATALOG_SOURCES, referencingMachinesOf, secretNamesOf } from '../../utils/manageCatalog';
+import { CATALOG_SOURCES, referencingMachinesOf } from '../../utils/manageCatalog';
 import { HeldListing, useSameRows, useSourceWrites, useSourcesPanel } from '../HeldListing';
 import {
   HandoffInstallDialog,
@@ -445,7 +445,6 @@ const ProvisionersPage = ({ id, server, context, section, onRefresh }) => {
         <ImportModal
           id={id}
           server={server}
-          gitKeyNames={secretNamesOf(catalog.reads.secrets.data, 'git_api_keys')}
           busy={busy}
           onClose={() => setDialog(null)}
           onSubmit={body =>

@@ -26,11 +26,6 @@ const SEARCH_HITS = [
   ['pkg.fmri', 'pkg:/ooce/editor/emacs@29.4-151054.0'],
   ['pkg.description', 'pkg:/ooce/text/vim@9.1-151054.0'],
 ];
-const SECRETS = {
-  hcl_download_portal_api_keys: [{ name: 'hcl-portal', value: 'hcl-token-value' }],
-  custom_resource_url: [{ name: 'mirror-credentials', value: 'user:pass' }],
-  git_api_keys: [{ name: 'github-startcloud', value: 'ghp_token' }],
-};
 const RECIPES = [
   {
     name: 'debian-console-setup',
@@ -449,11 +444,6 @@ const settlePackages = (host, task) => {
     }
   });
 };
-
-const secrets = ctx =>
-  isZone(ctx.host) || offers(ctx.host, 'provisioner-registry')
-    ? ok(SECRETS)
-    : problem(404, 'Not Found');
 
 const recipes = ctx => {
   const family = paramOf(ctx, 'os_family');
@@ -950,8 +940,7 @@ const hclDownload = ctx => {
  * answered as the agents answer it and 404 on a host that lists no
  * token of its section: the packages, their remote search, one
  * package's info and the install and uninstall queued as tasks behind
- * `packages`; the secrets document on a zoneweaver host and a host that
- * lists `provisioner-registry`; the zlogin recipes and their test on a
+ * `packages`; the zlogin recipes and their test on a
  * bhyve host that lists `provisioning`; the templates with the pull,
  * the delete and the move queued as tasks behind `templates`; the
  * provisioner families with the import, the deletes refused 409 with
@@ -992,7 +981,6 @@ export const mountCatalog = agentRoute => {
     'system/packages/uninstall',
     behind(['packages'], packageTask('system_packages_uninstall', false))
   );
-  agentRoute('GET', 'secrets', secrets);
   agentRoute('GET', 'provisioning/recipes', bhyve(recipes));
   agentRoute('POST', 'provisioning/recipes', bhyve(createdRecipe));
   agentRoute('PUT', 'provisioning/recipes/:recipe', bhyve(updatedRecipe));

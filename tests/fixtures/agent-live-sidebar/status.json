@@ -36,7 +36,6 @@
     "processes",
     "provisioning",
     "provisioner-registry",
-    "secrets",
     "ssh",
     "templates",
     "host-launchers",

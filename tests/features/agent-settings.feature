@@ -31,7 +31,7 @@ Feature: agent-settings
     Then the section page says a super-admin is required
     And the host was not sent GET to "/api/agents/1/app/updates/check"
 
-  Scenario: Agent pages: the Agent group's rows, Secrets behind secrets, the API keys page reading the keys alone, no configuration read of the agent, every read once
+  Scenario: Agent pages: the Agent group's rows, Secrets behind certs-store, the API keys page reading the keys alone, no configuration read of the agent, every read once
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
@@ -48,7 +48,7 @@ Feature: agent-settings
     And the host was sent GET to "/api/agents/1/api-keys" 1 times
     And the host was not sent GET to "/api/agents/1/app/updates/check"
     And the host was not sent GET to "/api/agents/1/settings"
-    And the host was not sent GET to "/api/agents/1/secrets"
+    And the host was not sent GET to "/api/agents/1/certs"
     And the page draws no key under "agentSettings"
     When I follow the host row "update"
     Then the section page "update" draws
@@ -183,7 +183,7 @@ Feature: agent-settings
     And the release "v1.4.0-beta.1" shows the checksum "3f0c9a1b7e4d2c8f5a6b1d0e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a"
     And I see "37.3 MB"
 
-  Scenario: Agent pages: the Secrets page reads the document as it opens, saves one category as one PUT and reads again, and Reload reads again
+  Scenario: Agent pages: the Secrets page reads the host store's rows as it opens and lists them with their kind, Add saves one row as one POST carrying the kind, the name and the secret and reads again, Remove sends one DELETE behind the typed confirmation, and Reload reads again
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
@@ -191,15 +191,35 @@ Feature: agent-settings
     When I open "/hosts/1/agent/secrets"
     Then the section page "secrets" draws
     And the agent page draws the "secrets" panel
-    And the host was sent GET to "/api/agents/1/secrets" 1 times
+    And the host was sent GET to "/api/agents/1/certs" 1 times
     And the host was not sent GET to "/api/agents/1/api-keys"
-    And the first secret entry is named "github"
-    When I press the agent page's "secret-save" action
-    Then the host was sent PUT to "/api/agents/1/secrets" 1 times
+    And the "secrets" table of the section page lists 2 rows
+    And the secret row "github" is of kind "api_key"
+    And the secret row "deploy" is of kind "ssh_key"
+    And the row "github" of the "secrets" table of the section page offers "secret-edit"
+    When I press the agent page's "secret-add" action
+    Then the "secret-record" dialog is open
+    When I choose "api_key" in the control "secret-record/kind"
+    And I choose "hcl_portal" in the control "secret-record/profile"
+    Then the control "secret-record/url" holds "https://my.hcltechsw.com"
+    When I fill the control "secret-record/name" with "hcl"
+    And I fill the control "secret-record/key" with "abc"
+    And I send the open dialog
+    Then the host was sent POST to "/api/agents/1/certs" carrying "api_key" at "/kind"
+    And the host was sent POST to "/api/agents/1/certs" carrying "hcl" at "/name"
+    And the host was sent POST to "/api/agents/1/certs" carrying "hcl_portal" at "/profile"
+    And the host was sent POST to "/api/agents/1/certs" carrying "abc" at "/record/secret/key"
+    And the host was sent POST to "/api/agents/1/certs" carrying "" at "/organization"
+    And the host was sent POST to "/api/agents/1/certs" 1 times
     And the page raised 1 success notice
-    And the host was sent GET to "/api/agents/1/secrets" 2 times
+    And the host was sent GET to "/api/agents/1/certs" 2 times
+    And the "secret-record" dialog is closed
+    When I press "secret-remove" on the row "github" of the "secrets" table of the section page
+    And I confirm the open dialog
+    Then the host was sent DELETE to "/api/agents/1/certs/sec-github" 1 times
+    And the host was sent GET to "/api/agents/1/certs" 3 times
     When I press the agent page's "secrets-reload" action
-    Then the host was sent GET to "/api/agents/1/secrets" 3 times
+    Then the host was sent GET to "/api/agents/1/certs" 4 times
 
   Scenario: Agent pages: Refresh reads the list of servers, the host's stats and every read of the page again
     Given the host answers the hosts fixture

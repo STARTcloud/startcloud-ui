@@ -1,0 +1,19 @@
+{
+  "yaml": "hosts:\n  -\n    settings:\n      hostname: web-3\n      domain: example.com\n      server_id: '1042'\n      vcpus: 2\n      memory: 2G\n      box: 'STARTcloud/debian13'\n      box_version: 13.1.0\n    networks:\n      - type: external\n        bridge: \"eth0\"\n        dhcp4: true\n    disks:\n      boot:\n        type: template\n",
+  "hosts": [
+    {
+      "settings": {
+        "hostname": "web-3",
+        "domain": "example.com",
+        "server_id": "1042",
+        "vcpus": 2,
+        "memory": "2G",
+        "box": "STARTcloud/debian13",
+        "box_version": "13.1.0"
+      },
+      "networks": [{ "type": "external", "bridge": "eth0", "dhcp4": true }],
+      "disks": { "boot": { "type": "template" } }
+    }
+  ],
+  "warnings": []
+}

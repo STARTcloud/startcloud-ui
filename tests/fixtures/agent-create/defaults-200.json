@@ -3,7 +3,8 @@
     "vcpus": 2,
     "memory": "2G",
     "firmware_type": "BIOS",
-    "sync_method": "rsync"
+    "sync_method": "rsync",
+    "domain": "startcloud.com"
   },
   "zones": {},
   "disks": {

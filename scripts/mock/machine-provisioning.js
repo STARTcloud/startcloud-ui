@@ -93,7 +93,29 @@ const MANIFEST_ROLES = [
     },
   },
 ];
-const ID_FILES = { safe_id_dir: 'user-safe-ids', keep_original_name: false };
+const DEFAULTS = {
+  settings: {
+    box: 'STARTcloud/debian13-server',
+    box_url: 'https://boxvault.example.com',
+    box_version: '13.1.0',
+    box_arch: 'amd64',
+    os_type: 'Debian_64',
+    firmware_type: 'UEFI',
+    vcpus: 2,
+    memory: '8G',
+    setup_wait: 420,
+    vagrant_user: 'startcloud',
+  },
+  disks: {
+    boot: { type: 'template', volume_name: 'boot', mount: '/' },
+    additional_disks: [
+      { type: 'blank', size: '50G', sparse: true, volume_name: 'disk1', mount: '/local' },
+    ],
+  },
+  networks: [{ type: 'external', dhcp4: true }],
+  tags: ['domino'],
+  vbox: { guest_agent: true },
+};
 const ROLE_SPECS = {
   domino: {
     collection: 'startcloud.hcl_roles',
@@ -152,6 +174,25 @@ const CONFIGURATION = {
       type: 'password',
       group: 'domino',
       generate: { length: 24 },
+    },
+    {
+      name: 'DOMINO_ADDITIONAL_SERVER_NAMES',
+      label: 'Additional Server Names',
+      type: 'list',
+      items: 'fqdn',
+      group: 'domino',
+    },
+    {
+      name: 'DOMINO_SERVER_ID_CREATION_TOOL',
+      label: 'Server ID Creation Tool',
+      type: 'select',
+      group: 'domino',
+      default: 'asja',
+      options: [
+        { label: 'One Touch Setup', value: 'ots' },
+        { label: 'ASJA', value: 'asja' },
+      ],
+      show_if: { DOMINO_ADDITIONAL_SERVER_NAMES: { min_items: 1 } },
     },
     {
       name: 'DOMINO_INSTALLER',
@@ -613,10 +654,10 @@ const version = ctx => {
       name,
       version: wanted,
       description: 'The STARTcloud provisioner, generic edition',
-      id_files: ID_FILES,
       metadata: {
         label: 'STARTcloud',
         description: 'The STARTcloud provisioner, generic edition',
+        defaults: DEFAULTS,
         roles: MANIFEST_ROLES,
         configuration: CONFIGURATION,
       },
@@ -642,10 +683,11 @@ const version = ctx => {
  * YAML naming its `line` and `column`. Behind `provisioner-registry`:
  * `GET provisioning/provisioners` and one version's detail, the whole
  * provisioner.yml nested under `metadata` as both agents nest it, its
- * `id_files`, its own `metadata.roles` in template order with `label`,
- * `description`, `collection`, `tags`, `default_enabled`, `required`,
- * `installer_dir` and `files` with the answers each pick fills, and
- * `metadata.configuration` inside, beside `role_specs` and
+ * own `metadata.defaults` with the settings, disks and networks the
+ * package defaults a machine to, its `metadata.roles` in template order
+ * with `label`, `description`, `collection`, `tags`, `default_enabled`,
+ * `required`, `installer_dir` and `files` with the answers each pick
+ * fills, and `metadata.configuration` inside, beside `role_specs` and
  * `playbook_candidates`.
  *
  * @param {Function} agentRoute - The router's `agentRoute`

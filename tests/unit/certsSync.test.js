@@ -22,16 +22,35 @@ const record = {
 };
 
 describe('rowOf', () => {
-  it('carries the organization, the kind, the name, the three words and the record', () => {
+  it('carries the organization, the kind, the name, the profile, the three words and the record', () => {
     expect(rowOf(record, 'acme')).toEqual({
       organization: 'acme',
       kind: 'certificate',
       name: 'Leaf',
+      profile: '',
       published: true,
       is_public: false,
       guest_access: true,
-      record,
+      record: { ...record, secret: null },
     });
+  });
+
+  it('carries a secret record whole while private and drops its secret while public', () => {
+    const secret = {
+      ...record,
+      kind: 'api_key',
+      profile: 'github',
+      public_der_b64: null,
+      private_der_b64: null,
+      secret: { key: 'ghp', url: 'https://github.com' },
+      extra: { scope: 'repo' },
+    };
+    expect(rowOf(secret, 'acme')).toMatchObject({
+      kind: 'api_key',
+      profile: 'github',
+      record: { secret: { key: 'ghp', url: 'https://github.com' }, extra: { scope: 'repo' } },
+    });
+    expect(rowOf({ ...secret, is_public: true }, 'acme').record.secret).toBeNull();
   });
 
   it("keeps the record's own organization over the one given", () => {
@@ -65,6 +84,7 @@ describe('recordOf', () => {
       id: 'rec-9',
       kind: 'authority',
       name: 'Root',
+      profile: '',
       notes: 'kept',
       tags: ['a'],
       updated_at: row.updated_at,
@@ -93,6 +113,23 @@ describe('recordOf', () => {
     expect(typeof made.id).toBe('string');
     expect(made.id).not.toBe('');
     expect(recordOf({ id: 'row-3', record: 'text' }).kind).toBe('certificate');
+  });
+
+  it("keeps a secret row's profile and secret on the record", () => {
+    const made = recordOf({
+      id: 'row-4',
+      kind: 'api_key',
+      name: 'Portal',
+      profile: 'hcl_portal',
+      record: { kind: 'api_key', secret: { key: 'k' }, extra: { a: '1' } },
+    });
+    expect(made).toMatchObject({
+      kind: 'api_key',
+      profile: 'hcl_portal',
+      secret: { key: 'k' },
+      extra: { a: '1' },
+      remote_id: 'row-4',
+    });
   });
 });
 

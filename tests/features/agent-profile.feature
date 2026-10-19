@@ -99,6 +99,18 @@ Feature: agent-profile
     And the host was sent PUT to "/api/config/app" 2 times
     And the host was not sent PATCH to "/api/user/preferences"
 
+  Scenario: Agent profile: the Hosts card of the Preferences section on a host that lists hosts saves the default domain for new machines into the browser's hosts_prefs and nothing is sent
+    Given the host answers the agent-signins fixture
+    And the host answers the agent-profile-plain fixture
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/profile/preferences"
+    Then the profile page draws the editable preferences
+    And the page draws the panel "hosts-preferences"
+    When I type "pref.example.com" into the page field "hosts-preferences-default_domain"
+    And I press the page's "save-hosts-preferences" action
+    Then the browser kept "hosts_prefs" as "{\"defaultDomain\":\"pref.example.com\"}"
+    And the host was not sent PATCH to "/api/user/preferences"
+
   Scenario: Agent profile: a key whose GET /api/user answers 404 keeps the key's profile as the whole identity
     Given the host answers the agent-signins fixture
     And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"

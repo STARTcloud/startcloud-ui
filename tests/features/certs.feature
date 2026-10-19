@@ -281,6 +281,41 @@ Feature: certs
     And the vault heading holds the focus
     And the vault lists 1 rows
 
+  Scenario: Vault: a secret of the api_key kind added through the record form lists under the Secrets narrowing with its profile, and its page draws the secret section
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs?kind=api_key"
+    Then the vault lists 0 rows
+    When I press the certs page's "add-secret" action
+    Then the "secret-record" dialog is open
+    And the control "secret-record/kind" holds "api_key"
+    When I choose "hcl_portal" in the control "secret-record/profile"
+    Then the control "secret-record/url" holds "https://my.hcltechsw.com"
+    When I fill the control "secret-record/name" with "HCL portal"
+    And I fill the control "secret-record/key" with "abc"
+    And I send the open dialog
+    Then I see "Saved to the vault."
+    And the "secret-record" dialog is closed
+    And the vault lists 1 rows
+    And I see "HCL portal"
+    When I open "/certs?kind=key"
+    Then the vault lists 0 rows
+    When I open "/certs?kind=api_key,basic_auth,password"
+    Then the vault lists 1 rows
+    When I press "edit" on the vault row "HCL portal"
+    Then the "secret-record" dialog is open
+    And the control "secret-record/name" holds "HCL portal"
+    When I fill the control "secret-record/name" with "Portal key"
+    And I send the open dialog
+    Then the "secret-record" dialog is closed
+    And I see "Portal key"
+    When I open "/certs"
+    And I click "Add New"
+    And I drop "vault.certs.json" into the vault
+    Then the vault lists 3 rows
+    When I open "/certs?kind=api_key"
+    Then the vault lists 1 rows
+
   Scenario: Vault: the bulk Delete of the picked rows behind the typed confirmation, the focus on the heading after
     Given the host answers the certs fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"

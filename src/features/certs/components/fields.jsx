@@ -129,6 +129,7 @@ export const SelectField = ({
   hint = '',
   className = 'mb-3',
   blank = '',
+  disabled = false,
 }) => (
   <Field
     id={rules.idFor(name)}
@@ -143,6 +144,7 @@ export const SelectField = ({
         className="form-select"
         name={name}
         value={textOf(draft, name)}
+        disabled={disabled}
         onChange={event => onChange(name, event.target.value)}
         onBlur={() => rules.onBlur(name)}
       >
@@ -166,6 +168,7 @@ SelectField.propTypes = {
   hint: PropTypes.node,
   className: PropTypes.string,
   blank: PropTypes.string,
+  disabled: PropTypes.bool,
 };
 
 /**

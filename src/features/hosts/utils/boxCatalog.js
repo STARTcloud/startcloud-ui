@@ -58,6 +58,7 @@ const rowOf = box => {
     boxName,
     versions: versionRows.map(versionNumberOf).filter(Boolean),
     architectures: architecturesOf(versionRows),
+    disk_size: typeof box.disk_size === 'string' ? box.disk_size : '',
   };
 };
 
@@ -74,11 +75,11 @@ const listOf = payload => {
  * discover answer as the agent relays it, filtered to what the host can
  * install: the bare array of boxes, or the same list under `boxes` or
  * `data`, each box read for its organization, its name, its versions by
- * their `version_number` and the architectures its providers list; an
- * entry without a name is skipped.
+ * their `version_number`, the architectures its providers list and the
+ * `disk_size` it names; an entry without a name is skipped.
  *
  * @param {Array|Object} payload - The catalog answer
- * @returns {Array<{ value: string, organization: string, boxName: string, versions: Array<string>, architectures: Array<string> }>} The rows
+ * @returns {Array<{ value: string, organization: string, boxName: string, versions: Array<string>, architectures: Array<string>, disk_size: string }>} The rows
  */
 export const flattenBoxCatalog = payload => listOf(payload).map(rowOf).filter(Boolean);
 

@@ -1,6 +1,8 @@
 import { NON_BLANK } from '../../../utils/validation';
 
 import { PASSWORD_FORMATS } from './formats';
+import { SECRET_KINDS, SECRET_MEMBERS } from './records';
+import { PROFILES } from './secretProfiles';
 
 const ALGORITHMS = [
   'rsa2048',
@@ -260,5 +262,67 @@ export const INPUT_SCHEMA = {
 };
 
 export const INPUT_LABELS = { text: 'certs.input.pasteLabel', password: 'certs.input.password' };
+
+const jsonMap = value => {
+  if (!value) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? null
+      : { rule: 'type', params: { type: 'object' } };
+  } catch {
+    return { rule: 'type', params: { type: 'object' } };
+  }
+};
+
+const EXTRA_PROPERTY = {
+  type: 'array',
+  items: { required: ['name'], properties: { name: NON_BLANK, value: { type: 'string' } } },
+};
+
+/**
+ * The page schema of a secret record's form: the name required, the kind
+ * one of the secret kinds, the profile one of the known ones or empty,
+ * the kind's members with the first required, a `custom` row's map as
+ * JSON text of one object, the notes, and the extra rows each named.
+ *
+ * @param {string} kind - The secret kind
+ * @returns {Object} The schema
+ */
+export const secretSchemaOf = kind => {
+  const members = SECRET_MEMBERS[kind] || [];
+  const [first] = members;
+  return {
+    required: ['name', 'kind', ...(first ? [first] : []), ...(kind === 'custom' ? ['custom'] : [])],
+    properties: {
+      name: NON_BLANK,
+      kind: { type: 'string', enum: SECRET_KINDS },
+      profile: { type: 'string', enum: ['', ...PROFILES.map(entry => entry.id)] },
+      ...Object.fromEntries(
+        members.map(member => [member, member === first ? NON_BLANK : { type: 'string' }])
+      ),
+      ...(kind === 'custom' ? { custom: { ...NON_BLANK, custom: jsonMap } } : {}),
+      notes: { type: 'string' },
+      extra: EXTRA_PROPERTY,
+    },
+  };
+};
+
+export const SECRET_LABELS = {
+  name: 'certs.record.name',
+  kind: 'certs.secret.kind',
+  profile: 'certs.secret.profile',
+  notes: 'certs.record.notes',
+  extra: 'certs.secret.extra',
+  custom: 'certs.secret.custom',
+  ...Object.fromEntries(
+    [...new Set(Object.values(SECRET_MEMBERS).flat())].map(member => [
+      member,
+      `certs.secret.member.${member}`,
+    ])
+  ),
+};
 
 export { ALGORITHMS, EKUS, SAN_KINDS, SIGNATURES };

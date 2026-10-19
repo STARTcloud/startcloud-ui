@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FaCloudArrowDown, FaRotateRight } from 'react-icons/fa6';
 
 /**
- * The card the Box step draws over its fields while the Deploy hand-off
+ * The card the OS & Disks step draws over its fields while the Deploy hand-off
  * names a box whose registry the host does not hold, one state of
  * `useTemplateSource`: the registry missing with Add registry and
  * continue, the write in flight, or the write refused with the agent's

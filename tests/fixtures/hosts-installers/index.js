@@ -29,7 +29,11 @@ export default {
   'DELETE /api/agents/3/artifacts/files': { status: 202, file: 'queued-202.json' },
   'POST /api/agents/3/artifacts/11/move': { status: 202, file: 'queued-202.json' },
   'POST /api/agents/3/artifacts/11/copy': { status: 202, file: 'queued-202.json' },
-  'GET /api/agents/3/secrets': { status: 200, file: 'agents-3-secrets.json' },
+  'GET /api/agents/3/certs?kind=api_key': { status: 200, file: 'agents-3-certs-api-key.json' },
+  'GET /api/agents/3/certs?kind=basic_auth': {
+    status: 200,
+    file: 'agents-3-certs-basic-auth.json',
+  },
   'GET /api/agents/3/provisioning/provisioners': {
     status: 200,
     file: 'agents-3-provisioners.json',

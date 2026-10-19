@@ -33,7 +33,6 @@ import {
   TABLE_STATE_KEYS,
   missingSeedOf,
   roleOptionsOf,
-  secretNamesOf,
   tableStateOf,
 } from '../utils/manageCatalog';
 
@@ -55,7 +54,12 @@ const rowKey = row => String(row.id);
 
 const NO_SOURCES = [];
 
-const OPENERS = [
+/**
+ * The openers of the installer files, each its kind, glyph, label key
+ * and tone: Upload, Register path, From BoxVault, Download URL and HCL
+ * portal.
+ */
+export const OPENERS = [
   ['upload', FaUpload, 'host.installerFiles.upload', 'primary'],
   ['register', FaFileImport, 'host.installerFiles.registerPath', 'primary'],
   ['registry', FaBoxOpen, 'host.installerFiles.fromBoxVault', 'info'],
@@ -72,7 +76,7 @@ const saveBlob = (blob, filename) => {
   URL.revokeObjectURL(url);
 };
 
-const InstallerDialogs = ({ dialog, id, server, rows, reads, sender, count, offered, on }) => {
+const InstallerDialogs = ({ dialog, id, server, rows, sender, count, offered, on }) => {
   const roleOptions = roleOptionsOf(rows.installers);
   const entry = {
     id,
@@ -108,19 +112,13 @@ const InstallerDialogs = ({ dialog, id, server, rows, reads, sender, count, offe
       return (
         <DownloadModal
           {...entry}
+          server={server}
           locations={rows.locations}
           roleOptions={roleOptions}
-          resourceNames={secretNamesOf(reads.secrets.data, 'custom_resource_url')}
         />
       );
     case 'hcl':
-      return (
-        <HclDownloadModal
-          {...entry}
-          roleOptions={roleOptions}
-          hclKeyNames={secretNamesOf(reads.secrets.data, 'hcl_download_portal_api_keys')}
-        />
-      );
+      return <HclDownloadModal {...entry} server={server} roleOptions={roleOptions} />;
     case 'location-add':
     case 'location-edit':
       return (
@@ -173,7 +171,6 @@ InstallerDialogs.propTypes = {
   id: PropTypes.string.isRequired,
   server: PropTypes.object.isRequired,
   rows: PropTypes.object.isRequired,
-  reads: PropTypes.object.isRequired,
   sender: PropTypes.object.isRequired,
   count: PropTypes.number.isRequired,
   offered: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -192,7 +189,9 @@ InstallerDialogs.propTypes = {
  * The installer files of a host: the storage locations card, the Upload,
  * Register path, From BoxVault, Download URL and HCL portal dialogs,
  * From BoxVault while the host lists `templates`, its registries read
- * through `GET templates/sources`, Scan all, and the artifacts table with
+ * through `GET templates/sources`, the Download URL and HCL portal
+ * dialogs picking their credential among the host store's secret rows
+ * as they open, Scan all, and the artifacts table with
  * its selection, row actions and Load more, a missing file's glyph
  * opening the Download URL dialog seeded with the file, its role, its
  * kind and the sha256 it is known by and offering every other source,
@@ -449,7 +448,6 @@ const InstallerFilesSection = ({
         id={id}
         server={server}
         rows={{ ...rows, sources: Array.isArray(sources.data) ? sources.data : NO_SOURCES }}
-        reads={reads}
         sender={sender}
         count={selection.selected.size}
         offered={offered}
@@ -485,7 +483,6 @@ InstallerFilesSection.propTypes = {
   reads: PropTypes.shape({
     locations: PropTypes.object.isRequired,
     installers: PropTypes.object.isRequired,
-    secrets: PropTypes.object.isRequired,
   }).isRequired,
   rows: PropTypes.shape({
     locations: PropTypes.array.isRequired,

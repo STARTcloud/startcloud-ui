@@ -2,7 +2,49 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const DEFAULT_THRESHOLD_DAYS = 30;
 
-export const KINDS = ['certificate', 'authority', 'request', 'key', 'ssh_certificate', 'template'];
+/**
+ * The secret kinds of the store, each the shape of a credential: the
+ * members it takes in order, the first required and the rest optional, a
+ * `custom` row any map.
+ */
+export const SECRET_MEMBERS = {
+  password: ['password'],
+  api_key: ['key', 'url', 'account_id'],
+  basic_auth: ['user', 'password', 'url'],
+  key_pair: ['access_key', 'secret_key', 'url', 'region'],
+  oauth_client: ['client_id', 'client_secret', 'issuer', 'scopes'],
+  ssh_key: ['private_key', 'public_key', 'passphrase'],
+  file: ['bytes', 'filename', 'password'],
+  custom: [],
+};
+
+export const SECRET_KINDS = Object.keys(SECRET_MEMBERS);
+
+export const DER_KINDS = ['certificate', 'authority', 'request', 'key', 'ssh_certificate'];
+
+export const KINDS = [...DER_KINDS, 'template', ...SECRET_KINDS];
+
+/**
+ * The members of a secret kind that are hidden until revealed: every
+ * password, key, token and private half.
+ */
+export const PRIVATE_MEMBERS = [
+  'password',
+  'key',
+  'secret_key',
+  'client_secret',
+  'private_key',
+  'passphrase',
+  'bytes',
+];
+
+/**
+ * Whether a kind is one of the secret kinds.
+ *
+ * @param {string} kind - The kind
+ * @returns {boolean} True for a secret kind
+ */
+export const isSecretKind = kind => SECRET_KINDS.includes(kind);
 
 export const STATUSES = ['valid', 'expiring', 'expired'];
 
@@ -234,6 +276,9 @@ export const newRecord = members => {
     public_der_b64: null,
     private_der_b64: null,
     template: null,
+    secret: null,
+    extra: {},
+    profile: '',
     origin: 'local',
     remote_id: null,
     organization: '',
@@ -277,7 +322,9 @@ export const holdsDer = (records, der_b64) =>
 
 /**
  * Whether a record matches the navbar's query: its name, its subject,
- * its issuer, its serial, its fingerprint, its tags and its notes.
+ * its issuer, its serial, its fingerprint, its tags, its notes, its
+ * profile and the public members of its secret, the url, the user, the
+ * file name and the account.
  *
  * @param {Object} record - The record
  * @param {string} needle - The query, lower-cased
@@ -293,6 +340,11 @@ export const matchesRecord = (record, needle) =>
     record.facts?.public_key_sha256,
     ...(record.tags || []),
     record.notes,
+    record.profile,
+    record.secret?.url,
+    record.secret?.user,
+    record.secret?.filename,
+    record.secret?.account_id,
   ]
     .filter(Boolean)
     .some(text => String(text).toLowerCase().includes(needle));

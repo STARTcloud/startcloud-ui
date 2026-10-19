@@ -1,0 +1,23 @@
+[
+  {
+    "id": "sec-safe",
+    "organization": "",
+    "kind": "file",
+    "name": "SAFE.ids",
+    "profile": "notes_id",
+    "subject": "",
+    "not_after": "",
+    "published": true,
+    "is_public": false,
+    "guest_access": false,
+    "created_by": "mark",
+    "updated_at": "2026-10-10T09:00:00.000Z",
+    "record": {
+      "kind": "file",
+      "name": "SAFE.ids",
+      "profile": "notes_id",
+      "secret": { "bytes": "AAAA", "filename": "SAFE.ids" },
+      "extra": { "id_type": "safe" }
+    }
+  }
+]

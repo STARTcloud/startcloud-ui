@@ -63,6 +63,10 @@ export default {
     status: 200,
     file: 'create-200.json',
   },
+  'POST /api/machines/preview': {
+    status: 200,
+    file: 'preview-200.json',
+  },
   'GET /api/tasks/a1000000-0000-4000-8000-000000000007': {
     status: 200,
     file: 'task-create-200.json',

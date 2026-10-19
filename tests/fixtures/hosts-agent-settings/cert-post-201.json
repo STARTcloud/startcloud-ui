@@ -1,0 +1,21 @@
+{
+  "id": "sec-hcl",
+  "organization": "",
+  "kind": "api_key",
+  "name": "hcl",
+  "profile": "hcl_portal",
+  "subject": "",
+  "not_after": "",
+  "published": true,
+  "is_public": false,
+  "guest_access": false,
+  "created_by": "mark",
+  "updated_at": "2026-10-12T09:00:00.000Z",
+  "record": {
+    "kind": "api_key",
+    "name": "hcl",
+    "profile": "hcl_portal",
+    "secret": { "key": "abc", "url": "https://my.hcltechsw.com" },
+    "extra": {}
+  }
+}

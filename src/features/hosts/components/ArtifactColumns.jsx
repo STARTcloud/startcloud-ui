@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fa6';
 
 import { artifactStatusOf, formatSize } from '../utils/manageCatalog';
+import { artifactVersionOf } from '../utils/roleFiles';
 
 const STATUS_KEYS = {
   missing: ['host.installerFiles.statusMissing', 'host.installerFiles.statusMissingTitle'],
@@ -107,8 +108,8 @@ export const ARTIFACT_COLUMNS = [
     kind: 'text',
     labelKey: 'host.installerFiles.colVersion',
     priority: 5,
-    value: row => row.version || '',
-    render: row => <span className="small">{row.version || '-'}</span>,
+    value: row => artifactVersionOf(row).full_version,
+    render: row => <span className="small">{artifactVersionOf(row).full_version || '-'}</span>,
   },
   {
     key: 'size',

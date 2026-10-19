@@ -3,7 +3,8 @@
     "vcpus": 2,
     "memory": "2G",
     "os_type": "generic",
-    "firmware_type": "UEFI"
+    "firmware_type": "UEFI",
+    "domain": "startcloud.com"
   },
   "zones": {
     "brand": "bhyve",

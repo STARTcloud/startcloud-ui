@@ -72,6 +72,7 @@ export const useVaultSync = ({ organization, user }) => {
           id: held.id,
           origin: held.origin,
           private_der_b64: record.private_der_b64 ?? held.private_der_b64,
+          secret: record.secret ?? held.secret,
         }
       : record;
     await vaultDb.put(kept, { ...SYNC, type: held ? 'updated' : 'added' });

@@ -4,6 +4,7 @@ import {
   CREATE_STEPS,
   PROVISIONER_INSTALL_OPERATIONS,
   boxOptionsOf,
+  boxDiskSizeOf,
   bridgeChoicesOf,
   buildCloudInit,
   buildDisks,
@@ -15,7 +16,11 @@ import {
   createRouteOf,
   createSeedOf,
   createdOf,
+  defaultDomainOf,
   defaultExternalNetwork,
+  domainChoicesOf,
+  domainConfigRouteOf,
+  domainSourceOf,
   emptyCloudInit,
   emptyDiskConfig,
   emptySettings,
@@ -26,14 +31,19 @@ import {
   hostCreates,
   hostTakes,
   installOfferOf,
+  nameParts,
   nextServerIdOf,
+  packageDefaultsOf,
   parseVboxPassthrough,
+  prefilledFrom,
   roleRowsOf,
-  safeIdMembersOf,
   seedBoxFor,
   seedBoxOf,
   seedFamilyOf,
+  sourceFilterDefaultOf,
+  stepOpen,
   stepProblemOf,
+  stepsFor,
   templateSourceFor,
   templateSourceFormOf,
   withoutCreateSeed,
@@ -73,14 +83,49 @@ const formOf = (more = {}) => ({
   downloads: {},
   syncMethod: 'rsync',
   removeTransport: '',
-  needsSafeId: false,
-  safeId: { source: 'cache', artifact_id: '', name: '', path: '' },
+  fieldConfig: null,
   orgUuid: '',
   startAfterCreate: false,
+  provisionAfterCreate: false,
+  useProvisioner: false,
+  vboxDefaults: {},
+  typed: new Set(),
+  fromPackage: new Set(),
   bhyve: false,
   vbox: true,
   ...more,
 });
+
+const PACKAGE_DEFAULTS = {
+  settings: {
+    box: 'STARTcloud/debian12-server',
+    box_url: 'https://boxvault.startcloud.com',
+    box_version: '2025.4.30',
+    box_arch: 'amd64',
+    os_type: 'Debian_64',
+    firmware_type: 'UEFI',
+    vcpus: 2,
+    memory: '8G',
+    setup_wait: 420,
+    vagrant_user: 'startcloud',
+  },
+  disks: {
+    boot: { type: 'template', volume_name: 'boot', mount: '/' },
+    additional_disks: [
+      {
+        type: 'blank',
+        size: '50G',
+        sparse: true,
+        volume_name: 'disk1',
+        mount: '/local',
+        filesystem: 'xfs',
+      },
+    ],
+  },
+  networks: [{ type: 'external', dhcp4: true }],
+  tags: ['domino', 'lab'],
+  vbox: { guest_agent: true },
+};
 
 describe('hostCreates', () => {
   it('draws New machine for a person who may create on a host that lists machines and machine-create', () => {
@@ -427,6 +472,17 @@ describe('the registry of a handed box', () => {
     expect(templateSourceFor(null, '')).toBeNull();
   });
 
+  it('opens the Registry filter on the one enabled registry, else on the registry the box URL names, else on every registry', () => {
+    expect(sourceFilterDefaultOf(sources, '')).toBe('');
+    expect(sourceFilterDefaultOf(sources, 'https://boxvault.example.com')).toBe('boxvault');
+    expect(sourceFilterDefaultOf(sources, 'https://mirror.example.com/x')).toBe('mirror');
+    expect(sourceFilterDefaultOf(sources, 'https://elsewhere.example.com')).toBe('');
+    expect(sourceFilterDefaultOf(sources.slice(1), '')).toBe('boxvault');
+    expect(sourceFilterDefaultOf([{ name: 'legacy', enabled: true }], '')).toBe('legacy');
+    expect(sourceFilterDefaultOf([], 'https://boxvault.example.com')).toBe('');
+    expect(sourceFilterDefaultOf(null, '')).toBe('');
+  });
+
   it('shapes the registry form from the box URL, its host the id and the display name and its origin the URL', () => {
     expect(
       templateSourceFormOf('https://boxvault.example.com/STARTcloud/debian13/13.1.0/virtualbox')
@@ -733,9 +789,50 @@ describe('buildSpec', () => {
       properties: {},
       sync_method: 'rsync',
       start_after_create: true,
+      provision_after_create: false,
     });
     expect(spec).not.toHaveProperty('zones');
     expect(spec).not.toHaveProperty('provisioner');
+  });
+
+  it('sends provision_after_create as chosen, the boot mount and the additional disk mount and filesystem where present', () => {
+    const spec = buildSpec(
+      formOf({
+        provisionAfterCreate: true,
+        diskConfig: {
+          ...emptyDiskConfig(),
+          bootMount: ' / ',
+          additional: [
+            {
+              key: 'p0',
+              mode: 'new',
+              size: '50G',
+              sparse: true,
+              volume_name: 'disk1',
+              mount: '/local',
+              filesystem: 'xfs',
+            },
+            { key: 'd2', mode: 'existing', path: 'D:\\old.vdi', mount: '/data', filesystem: '' },
+            { key: 'd3', mode: 'new', size: '1G', mount: '', filesystem: '' },
+          ],
+        },
+      })
+    );
+    expect(spec.provision_after_create).toBe(true);
+    expect(spec.disks.boot).toMatchObject({ type: 'template', mount: '/' });
+    expect(spec.disks.additional_disks).toEqual([
+      {
+        type: 'blank',
+        size: '50G',
+        sparse: true,
+        volume_name: 'disk1',
+        mount: '/local',
+        filesystem: 'xfs',
+      },
+      { type: 'image', path: 'D:\\old.vdi', mount: '/data' },
+      { type: 'blank', size: '1G', sparse: true },
+    ]);
+    expect(buildSpec(formOf()).disks.boot).not.toHaveProperty('mount');
   });
 
   it('leaves the box fields off a blank boot and sends the zone fields of a bhyve host', () => {
@@ -763,7 +860,29 @@ describe('buildSpec', () => {
     expect(spec).not.toHaveProperty('vbox');
   });
 
-  it('names the provisioner, the transport signal, the safe id and the organization only where chosen', () => {
+  it('merges the package vbox defaults under the hardware payload and the passthrough on a VirtualBox host alone', () => {
+    const spec = buildSpec(
+      formOf({
+        vboxDefaults: { guest_agent: true, audio: { controller: 'ac97' }, extra: 1 },
+        hardwarePayload: { audio: { controller: 'hda' } },
+        vboxJson: '{"extra":2}',
+      })
+    );
+    expect(spec.vbox).toEqual({ guest_agent: true, audio: { controller: 'hda' }, extra: 2 });
+    expect(
+      buildSpec(
+        formOf({
+          bhyve: true,
+          vbox: false,
+          vboxDefaults: { guest_agent: true },
+          settings: { ...emptySettings(), hostname: 'z', domain: 'd' },
+        })
+      )
+    ).not.toHaveProperty('vbox');
+    expect(buildSpec(formOf({ vboxDefaults: undefined }))).not.toHaveProperty('vbox');
+  });
+
+  it('names the provisioner, the transport signal and the organization only where chosen, the secret answers riding properties', () => {
     const spec = buildSpec(
       formOf({
         name: ' web-3 ',
@@ -772,8 +891,7 @@ describe('buildSpec', () => {
         version: { version: '0.1.27' },
         versionKey: '0.1.27',
         removeTransport: 'true',
-        needsSafeId: true,
-        safeId: { source: 'path', artifact_id: '', name: '', path: ' /ids/safe.id ' },
+        properties: { USER_SAFE_ID: 'sec-safe' },
         orgUuid: 'org-1',
         vboxJson: '{"directives":{}}',
       })
@@ -783,48 +901,15 @@ describe('buildSpec', () => {
       hypervisor: 'utm',
       provisioner: { name: 'startcloud', version: '0.1.27' },
       remove_transport_on_completion: true,
-      safe_id_path: '/ids/safe.id',
+      properties: { USER_SAFE_ID: 'sec-safe' },
       org_uuid: 'org-1',
       vbox: { directives: {} },
     });
-    expect(spec).not.toHaveProperty('id_files');
-    const plain = buildSpec(
-      formOf({
-        removeTransport: 'true',
-        safeId: { source: 'path', artifact_id: '', name: '', path: '/x' },
-        needsSafeId: false,
-      })
-    );
+    expect(Object.keys(spec)).not.toContain('id_files');
+    expect(Object.keys(spec)).not.toContain('safe_id_path');
+    const plain = buildSpec(formOf({ removeTransport: 'true' }));
     expect(plain).not.toHaveProperty('remove_transport_on_completion');
-    expect(plain).not.toHaveProperty('safe_id_path');
     expect(plain).not.toHaveProperty('wait_for');
-  });
-
-  it('sends the safe id of the cache or an upload as the one id_files row, the path door by its path, nothing unpicked', () => {
-    expect(
-      safeIdMembersOf({
-        needsSafeId: true,
-        safeId: { source: 'cache', artifact_id: 'art-0105', name: 'SAFE.ids', path: '' },
-      })
-    ).toEqual({ id_files: [{ artifact_id: 'art-0105', name: 'SAFE.ids' }] });
-    expect(
-      safeIdMembersOf({
-        needsSafeId: true,
-        safeId: { source: 'upload', artifact_id: 'art-0200', name: 'mine.ids', path: '' },
-      })
-    ).toEqual({ id_files: [{ artifact_id: 'art-0200', name: 'mine.ids' }] });
-    expect(
-      safeIdMembersOf({
-        needsSafeId: true,
-        safeId: { source: 'cache', artifact_id: '', name: '', path: '' },
-      })
-    ).toEqual({});
-    expect(
-      safeIdMembersOf({
-        needsSafeId: true,
-        safeId: { source: 'path', artifact_id: '', name: '', path: '  ' },
-      })
-    ).toEqual({});
   });
 
   it('sends the roles in their drawn order, every role with enabled, the manifest collection and tags, the files and the vars, and wait_for while downloads are queued', () => {
@@ -887,28 +972,326 @@ describe('stepProblemOf', () => {
       'machineEdit.machineCreateModal.hostnameDomainRequired'
     );
     expect(stepProblemOf('general', formOf())).toBe('');
-    expect(stepProblemOf('box', formOf({ machineHypervisor: 'utm' }))).toBe(
+    expect(stepProblemOf('os-disks', formOf({ machineHypervisor: 'utm' }))).toBe(
       'machineEdit.machineCreateModal.utmRequiresTemplateBox'
     );
     expect(
       stepProblemOf(
-        'box',
+        'os-disks',
         formOf({ machineHypervisor: 'utm', settings: { ...emptySettings(), box: 'a/b' } })
       )
     ).toBe('');
     expect(stepProblemOf('system', formOf({ vboxJson: '{' }))).toBe(
       'machineEdit.machineCreateModal.vboxJsonInvalid'
     );
-    expect(stepProblemOf('disks', formOf({ bootSource: 'scratch' }))).toBe(
+    expect(stepProblemOf('os-disks', formOf({ bootSource: 'scratch' }))).toBe(
       'machineEdit.machineCreateModal.blankBootNeedsSize'
     );
-    expect(stepProblemOf('disks', formOf({ bootSource: 'existing' }))).toBe(
+    expect(stepProblemOf('os-disks', formOf({ bootSource: 'existing' }))).toBe(
       'machineEdit.machineCreateModal.existingBootNeedsPath'
     );
     expect(stepProblemOf('provisioning', formOf({ familyName: 'startcloud' }))).toBe(
       'machineEdit.machineCreateModal.selectVersionOrNone'
     );
     CREATE_STEPS.forEach(step => expect(stepProblemOf(step, formOf())).toBe(''));
+  });
+});
+
+describe('the steps drawn and the pills', () => {
+  it('names the eight steps and leaves Provisioning out while Use a provisioner is off', () => {
+    expect(CREATE_STEPS).toEqual([
+      'general',
+      'os-disks',
+      'system',
+      'cpu',
+      'memory',
+      'network',
+      'provisioning',
+      'confirm',
+    ]);
+    expect(stepsFor(formOf())).toEqual([
+      'general',
+      'os-disks',
+      'system',
+      'cpu',
+      'memory',
+      'network',
+      'confirm',
+    ]);
+    expect(stepsFor(formOf({ useProvisioner: true }))).toEqual(CREATE_STEPS);
+  });
+
+  it('opens a pill while every drawn step before it is clean', () => {
+    const clean = formOf({ useProvisioner: true });
+    const problemOf = form => step => stepProblemOf(step, form);
+    expect(stepOpen(clean, 'general', problemOf(clean))).toBe(true);
+    expect(stepOpen(clean, 'confirm', problemOf(clean))).toBe(true);
+    const blankName = formOf({ settings: { ...emptySettings(), hostname: '', domain: '' } });
+    expect(stepOpen(blankName, 'general', problemOf(blankName))).toBe(true);
+    expect(stepOpen(blankName, 'os-disks', problemOf(blankName))).toBe(false);
+    expect(stepOpen(blankName, 'confirm', problemOf(blankName))).toBe(false);
+    const blankBoot = formOf({ bootSource: 'scratch' });
+    expect(stepOpen(blankBoot, 'os-disks', problemOf(blankBoot))).toBe(true);
+    expect(stepOpen(blankBoot, 'system', problemOf(blankBoot))).toBe(false);
+    expect(stepOpen(blankBoot, 'provisioning', problemOf(blankBoot))).toBe(false);
+    const dslRefused = formOf({ useProvisioner: true });
+    expect(
+      stepOpen(dslRefused, 'confirm', step => (step === 'provisioning' ? 'fix the fields' : ''))
+    ).toBe(false);
+    expect(
+      stepOpen(dslRefused, 'provisioning', step => (step === 'provisioning' ? 'fix' : ''))
+    ).toBe(true);
+  });
+});
+
+describe('the one Name', () => {
+  it('splits a dotted name at its first dot, gives a bare name the default domain and empties on nothing', () => {
+    expect(nameParts('web-3.example.com', 'startcloud.com')).toEqual({
+      hostname: 'web-3',
+      domain: 'example.com',
+    });
+    expect(nameParts('a.b.c', '')).toEqual({ hostname: 'a', domain: 'b.c' });
+    expect(nameParts('zeus-01', 'startcloud.com')).toEqual({
+      hostname: 'zeus-01',
+      domain: 'startcloud.com',
+    });
+    expect(nameParts(' zeus-01 ', '')).toEqual({ hostname: 'zeus-01', domain: '' });
+    expect(nameParts('', 'startcloud.com')).toEqual({ hostname: '', domain: '' });
+  });
+});
+
+describe('the default domain', () => {
+  const defaults = {
+    settings: {
+      domain: 'startcloud.com',
+      domain_choices: [
+        { source: 'agent', domain: 'startcloud.com' },
+        { source: 'user', domain: 'lab.example.com' },
+        { source: 'organization', domain: ' org.example.com ' },
+        { source: 'user', domain: 'second.example.com' },
+        { source: 'other', domain: 'x.example.com' },
+        { source: 'agent', domain: '' },
+        'nope',
+      ],
+    },
+  };
+
+  it('lists one row a source in the order of the chain, the preference first and the agent row from settings.domain while the list names none', () => {
+    expect(domainChoicesOf(defaults, ' pref.example.com ')).toEqual([
+      { source: 'preference', domain: 'pref.example.com' },
+      { source: 'user', domain: 'lab.example.com' },
+      { source: 'organization', domain: 'org.example.com' },
+      { source: 'agent', domain: 'startcloud.com' },
+    ]);
+    expect(domainChoicesOf(defaults)).toEqual([
+      { source: 'user', domain: 'lab.example.com' },
+      { source: 'organization', domain: 'org.example.com' },
+      { source: 'agent', domain: 'startcloud.com' },
+    ]);
+    expect(domainChoicesOf({ settings: { domain: 'startcloud.com' } })).toEqual([
+      { source: 'agent', domain: 'startcloud.com' },
+    ]);
+    expect(
+      domainChoicesOf({
+        settings: {
+          domain: 'startcloud.com',
+          domain_choices: [{ source: 'agent', domain: 'a.b' }],
+        },
+      })
+    ).toEqual([{ source: 'agent', domain: 'a.b' }]);
+    expect(domainChoicesOf({ settings: { domain: '' } })).toEqual([]);
+    expect(domainChoicesOf(null)).toEqual([]);
+  });
+
+  it('resolves the first non-empty of the preference, the user row, the organization row, the agent row and the agent domain', () => {
+    const choices = domainChoicesOf(defaults);
+    expect(defaultDomainOf({ preference: 'pref.example.com', choices })).toBe('pref.example.com');
+    expect(defaultDomainOf({ choices })).toBe('lab.example.com');
+    expect(defaultDomainOf({ choices: choices.filter(row => row.source !== 'user') })).toBe(
+      'org.example.com'
+    );
+    expect(defaultDomainOf({ choices: [{ source: 'agent', domain: 'a.b' }] })).toBe('a.b');
+    expect(defaultDomainOf({ choices: [], agentDomain: 'startcloud.com' })).toBe('startcloud.com');
+    expect(defaultDomainOf({})).toBe('');
+    expect(defaultDomainOf({ preference: '  ', choices: [], agentDomain: '' })).toBe('');
+  });
+
+  it('names the source the select reads for a domain, custom while none matches', () => {
+    const choices = domainChoicesOf(defaults, 'pref.example.com');
+    expect(domainSourceOf(choices, 'lab.example.com')).toBe('user');
+    expect(domainSourceOf(choices, 'pref.example.com')).toBe('preference');
+    expect(domainSourceOf(choices, ' startcloud.com ')).toBe('agent');
+    expect(domainSourceOf(choices, 'mine.example.com')).toBe('custom');
+    expect(domainSourceOf(choices, '')).toBe('custom');
+    expect(domainSourceOf([], 'lab.example.com')).toBe('custom');
+  });
+
+  it('routes to the machines configuration where the host has one and nowhere otherwise', () => {
+    const configured = { capabilities: { config: ['app', 'machines'] } };
+    expect(domainConfigRouteOf({ aggregated: true, status: {}, server: configured, id: '1' })).toBe(
+      '/hosts/1/agent/config/machines'
+    );
+    expect(domainConfigRouteOf({ aggregated: true, status: {}, server: vbox, id: '1' })).toBeNull();
+    expect(domainConfigRouteOf({ aggregated: true, status: {}, server: null, id: '1' })).toBeNull();
+    expect(
+      domainConfigRouteOf({
+        aggregated: false,
+        status: { config: ['machines'] },
+        server: null,
+        id: 'self',
+      })
+    ).toBe('/admin/config/machines');
+    expect(
+      domainConfigRouteOf({
+        aggregated: false,
+        status: { config: [] },
+        server: configured,
+        id: 'self',
+      })
+    ).toBeNull();
+    expect(
+      domainConfigRouteOf({ aggregated: false, status: null, server: null, id: 'self' })
+    ).toBeNull();
+  });
+});
+
+describe('the package defaults', () => {
+  it('reads metadata.defaults shape-checked and answers null without one', () => {
+    expect(packageDefaultsOf({ metadata: { defaults: PACKAGE_DEFAULTS } })).toEqual(
+      PACKAGE_DEFAULTS
+    );
+    expect(packageDefaultsOf({ metadata: { defaults: { settings: { box: 'a/b' } } } })).toEqual({
+      settings: { box: 'a/b' },
+      disks: {},
+      networks: [],
+      tags: [],
+      vbox: {},
+    });
+    expect(
+      packageDefaultsOf({
+        metadata: { defaults: { networks: 'x', disks: [], tags: ['a', 7, ''], vbox: [] } },
+      })
+    ).toEqual({
+      settings: {},
+      disks: {},
+      networks: [],
+      tags: ['a'],
+      vbox: {},
+    });
+    expect(packageDefaultsOf({ metadata: { configuration: {} } })).toBeNull();
+    expect(packageDefaultsOf({ metadata: { defaults: 'nope' } })).toBeNull();
+    expect(packageDefaultsOf(null)).toBeNull();
+  });
+
+  it('fills the settings, the boot disk, the additional disks and the networks and names every path filled', () => {
+    const filled = prefilledFrom(PACKAGE_DEFAULTS, formOf());
+    expect(filled.settings).toMatchObject({
+      hostname: 'web-3',
+      box: 'STARTcloud/debian12-server',
+      box_url: 'https://boxvault.startcloud.com',
+      box_version: '2025.4.30',
+      box_arch: 'amd64',
+      os_type: 'Debian_64',
+      firmware_type: 'UEFI',
+      vcpus: 2,
+      memory: '8G',
+      setup_wait: '420',
+      vagrant_user: 'startcloud',
+    });
+    expect(filled.bootSource).toBe('template');
+    expect(filled.diskConfig).toMatchObject({
+      bootVolumeName: 'boot',
+      bootMount: '/',
+      bootSize: '',
+      bootSparse: true,
+    });
+    expect(filled.diskConfig.additional).toEqual([
+      {
+        key: 'package-0',
+        mode: 'new',
+        size: '50G',
+        path: '',
+        volume_name: 'disk1',
+        pool: '',
+        dataset: '',
+        directory: '',
+        sparse: true,
+        mount: '/local',
+        filesystem: 'xfs',
+      },
+    ]);
+    expect(filled.networks).toEqual([
+      { ...defaultExternalNetwork(), type: 'external', dhcp4: true },
+    ]);
+    expect(filled.tagsInput).toBe('domino, lab');
+    expect(filled.vboxDefaults).toEqual({ guest_agent: true });
+    expect([...filled.fromPackage].sort()).toEqual(
+      [
+        'settings.box',
+        'settings.box_url',
+        'settings.box_version',
+        'settings.box_arch',
+        'settings.os_type',
+        'settings.firmware_type',
+        'settings.vcpus',
+        'settings.memory',
+        'settings.setup_wait',
+        'settings.vagrant_user',
+        'disks.boot.volume_name',
+        'disks.boot.mount',
+        'disks.additional.0',
+        'networks.0',
+        'tags',
+      ].sort()
+    );
+  });
+
+  it('keeps typed tags and fills no tags or vbox the package leaves out', () => {
+    const kept = prefilledFrom(
+      PACKAGE_DEFAULTS,
+      formOf({ typed: new Set(['tags']), tagsInput: 'mine' })
+    );
+    expect(kept).not.toHaveProperty('tagsInput');
+    expect(kept.fromPackage.has('tags')).toBe(false);
+    const plain = prefilledFrom({ ...PACKAGE_DEFAULTS, tags: [], vbox: {} }, formOf());
+    expect(plain).not.toHaveProperty('tagsInput');
+    expect(plain).not.toHaveProperty('vboxDefaults');
+  });
+
+  it('never overwrites a typed value and leaves the untyped members alone when the package says nothing', () => {
+    const typed = new Set(['settings.memory', 'settings.box', 'disks.boot.mount', 'networks']);
+    const own = [
+      { type: 'host', bridge: 'eth1', dhcp4: false, dhcp6: false, mac: 'auto', dns: [] },
+    ];
+    const filled = prefilledFrom(
+      PACKAGE_DEFAULTS,
+      formOf({
+        typed,
+        settings: { ...emptySettings(), memory: '4G', box: 'acme/win' },
+        networks: own,
+        diskConfig: { ...emptyDiskConfig(), bootMount: '/srv' },
+      })
+    );
+    expect(filled.settings.memory).toBe('4G');
+    expect(filled.settings.box).toBe('acme/win');
+    expect(filled.settings.vcpus).toBe(2);
+    expect(filled.diskConfig.bootMount).toBe('/srv');
+    expect(filled.diskConfig.bootVolumeName).toBe('boot');
+    expect(filled).not.toHaveProperty('networks');
+    expect(filled).not.toHaveProperty('bootSource');
+    expect(filled.fromPackage.has('settings.memory')).toBe(false);
+    expect(filled.fromPackage.has('settings.box')).toBe(false);
+    expect(filled.fromPackage.has('disks.boot.mount')).toBe(false);
+    expect(filled.fromPackage.has('networks.0')).toBe(false);
+    expect(filled.fromPackage.has('settings.vcpus')).toBe(true);
+    const sparse = prefilledFrom(
+      { settings: {}, disks: {}, networks: [], tags: [], vbox: {} },
+      formOf()
+    );
+    expect(sparse.settings).toEqual(formOf().settings);
+    expect(sparse.diskConfig).toEqual(emptyDiskConfig());
+    expect(sparse.fromPackage.size).toBe(0);
+    expect(sparse).not.toHaveProperty('networks');
   });
 });
 
@@ -990,6 +1373,7 @@ describe('the picker rows', () => {
           source: 'mirror',
           sourceUrl: 'https://m',
           isDefaultSource: false,
+          disk_size: '128G',
         },
       ],
       [
@@ -998,6 +1382,7 @@ describe('the picker rows', () => {
           box_name: 'debian13',
           version: '13.0.0',
           architecture: 'arm64',
+          disk_size: '64G',
         },
         { organization: 'local', box_name: 'only', version: '1', architecture: 'amd64' },
       ]
@@ -1012,8 +1397,49 @@ describe('the picker rows', () => {
       architectures: ['amd64', 'arm64'],
       local: true,
       isDefaultSource: true,
+      disk_size: '64G',
     });
-    expect(rows[1]).toMatchObject({ local: true, isDefaultSource: true, source: '' });
-    expect(rows[0].local).toBe(false);
+    expect(rows[1]).toMatchObject({
+      local: true,
+      isDefaultSource: true,
+      source: '',
+      disk_size: '',
+    });
+    expect(rows[0]).toMatchObject({ local: false, disk_size: '128G' });
+  });
+
+  it('names the disk size of the picked box, the template of its version first, any template of the box next, the catalog row last', () => {
+    const remote = [
+      {
+        value: 'startcloud/debian13',
+        versions: ['13.1.0'],
+        architectures: [],
+        source: 'boxvault',
+        disk_size: '32G',
+      },
+      {
+        value: 'acme/win',
+        versions: ['1'],
+        architectures: [],
+        source: 'mirror',
+        disk_size: '128G',
+      },
+    ];
+    const templates = [
+      { organization: 'startcloud', box_name: 'debian13', version: '13.1.0', disk_size: '64G' },
+      { organization: 'startcloud', box_name: 'debian13', version: '13.0.0', disk_size: '48G' },
+    ];
+    expect(
+      boxDiskSizeOf(remote, templates, { box: 'startcloud/debian13', box_version: '13.0.0' })
+    ).toBe('48G');
+    expect(boxDiskSizeOf(remote, templates, { box: 'startcloud/debian13', box_version: '' })).toBe(
+      '64G'
+    );
+    expect(boxDiskSizeOf(remote, templates, { box: 'startcloud/debian13', box_version: '9' })).toBe(
+      '64G'
+    );
+    expect(boxDiskSizeOf(remote, templates, { box: 'acme/win', box_version: '' })).toBe('128G');
+    expect(boxDiskSizeOf(remote, templates, { box: 'nobody/none', box_version: '' })).toBe('');
+    expect(boxDiskSizeOf(remote, templates, { box: '', box_version: '' })).toBe('');
   });
 });

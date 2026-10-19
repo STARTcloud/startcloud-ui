@@ -434,6 +434,23 @@ New local signups seed `language` from the request locale.
 
 ---
 
+## The Preferences section
+
+The Preferences section at `/user/profile/preferences` on the identity
+provider and `/profile/preferences` on a UI backend is one General card,
+the language, the mode, the motion, the theme, the time zone, the region,
+the sign-in approval channel and the PIN of the write path above, and
+under it one card a feature of the host, named for that feature, each a
+browser preference kept in the browser alone and never sent to a host,
+drawn editable under a read-only record too:
+
+| Card         | Host lists | Field                           | Browser key   | Read by                                                             |
+| ------------ | ---------- | ------------------------------- | ------------- | ------------------------------------------------------------------- |
+| Certificates | `certs`    | Expiry threshold in days        | `certs-vault` | the vault's Expiring                                                |
+| Hosts        | `hosts`    | Default domain for new machines | `hosts_prefs` | the create wizard, a bare name taking it before the host's own rows |
+
+---
+
 ## Packs
 
 **No file of the estate is ever versioned by a hash, in its name or in its

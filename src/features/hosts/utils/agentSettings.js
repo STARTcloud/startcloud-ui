@@ -1,4 +1,8 @@
+import { SECRET_KINDS } from '../../certs/utils/records';
+
 const listOf = value => (Array.isArray(value) ? value : []);
+
+export { SECRET_KINDS };
 
 /**
  * Whether a host's own row offers the agent's own pages, API keys,
@@ -19,100 +23,44 @@ export const hostHasSettings = server => listOf(server?.capabilities?.hypervisor
  */
 export const apiKeysOf = answer => listOf(answer?.entities);
 
-/**
- * The six secret categories as the agent's document names them: the key of
- * each, the key of its label and its fields, a `checkbox` field a
- * switch and a `multiline` field a textarea.
- */
-export const SECRET_CATEGORIES = [
-  {
-    key: 'hcl_download_portal_api_keys',
-    labelKey: 'agentSettings.agentSecretsTab.hclCategoryLabel',
-    fields: [
-      { key: 'name', labelKey: 'agentSettings.agentSecretsTab.nameFieldLabel' },
-      { key: 'key', labelKey: 'agentSettings.agentSecretsTab.keyFieldLabel' },
-    ],
-  },
-  {
-    key: 'git_api_keys',
-    labelKey: 'agentSettings.agentSecretsTab.gitCategoryLabel',
-    fields: [
-      { key: 'name', labelKey: 'agentSettings.agentSecretsTab.nameFieldLabel' },
-      { key: 'key', labelKey: 'agentSettings.agentSecretsTab.keyFieldLabel' },
-    ],
-  },
-  {
-    key: 'vagrant_atlas_token',
-    labelKey: 'agentSettings.agentSecretsTab.vagrantCategoryLabel',
-    fields: [
-      { key: 'name', labelKey: 'agentSettings.agentSecretsTab.nameFieldLabel' },
-      { key: 'key', labelKey: 'agentSettings.agentSecretsTab.tokenFieldLabel' },
-    ],
-  },
-  {
-    key: 'custom_resource_url',
-    labelKey: 'agentSettings.agentSecretsTab.customResourceCategoryLabel',
-    fields: [
-      { key: 'name', labelKey: 'agentSettings.agentSecretsTab.nameFieldLabel' },
-      { key: 'url', labelKey: 'agentSettings.agentSecretsTab.urlFieldLabel' },
-      {
-        key: 'useAuth',
-        labelKey: 'agentSettings.agentSecretsTab.httpBasicAuthFieldLabel',
-        type: 'checkbox',
-      },
-      { key: 'user', labelKey: 'agentSettings.agentSecretsTab.userFieldLabel' },
-      { key: 'pass', labelKey: 'agentSettings.agentSecretsTab.passwordFieldLabel' },
-    ],
-  },
-  {
-    key: 'docker_hub',
-    labelKey: 'agentSettings.agentSecretsTab.dockerHubCategoryLabel',
-    fields: [
-      { key: 'name', labelKey: 'agentSettings.agentSecretsTab.nameFieldLabel' },
-      { key: 'docker_hub_user', labelKey: 'agentSettings.agentSecretsTab.userFieldLabel' },
-      { key: 'docker_hub_token', labelKey: 'agentSettings.agentSecretsTab.tokenFieldLabel' },
-    ],
-  },
-  {
-    key: 'ssh_keys',
-    labelKey: 'agentSettings.agentSecretsTab.sshKeysCategoryLabel',
-    fields: [
-      { key: 'name', labelKey: 'agentSettings.agentSecretsTab.nameFieldLabel' },
-      {
-        key: 'key',
-        labelKey: 'agentSettings.agentSecretsTab.privateKeyFieldLabel',
-        multiline: true,
-      },
-    ],
-  },
-];
+const PICK_KINDS = {
+  certificate: ['certificate', 'authority'],
+  key: ['key', 'ssh_certificate'],
+};
 
 /**
- * An empty entry of one category, every field blank and every switch
- * off.
+ * The store kinds a `secret` field's pick admits: a `certificate` field
+ * the certificate and authority rows, a `key` field the key and SSH
+ * certificate rows, a secret kind its own rows, and no kind every secret
+ * kind.
  *
- * @param {Object} category - An entry of `SECRET_CATEGORIES`
- * @returns {Object} The entry
+ * @param {string} kind - The field's kind, empty for every secret kind
+ * @returns {Array<string>} The kinds
  */
-export const emptySecretEntry = category =>
-  Object.fromEntries(
-    category.fields.map(field => [field.key, field.type === 'checkbox' ? false : ''])
-  );
+export const pickKindsOf = kind => {
+  if (!kind) {
+    return SECRET_KINDS;
+  }
+  return PICK_KINDS[kind] || [kind];
+};
 
 /**
- * The entries of one category as the document answers them, none for a
- * category the document does not list.
+ * The rows of a host store's answer a `secret` pick admits: the rows of
+ * the kinds `pickKindsOf` names for `kind` and, where `profile` is given,
+ * the ones that name that profile or none.
  *
- * @param {Object|null} document - The answer of `GET secrets`
- * @param {string} categoryKey - The category's key
- * @returns {Array<Object>} The entries
+ * @param {Array<Object>|null} answer - The answer of `GET certs`
+ * @param {string} [kind] - The kind wanted, empty for every secret kind
+ * @param {string} [profile] - The profile wanted, empty for every row
+ * @returns {Array<Object>} The rows
  */
-export const secretEntriesOf = (document, categoryKey) => listOf(document?.[categoryKey]);
-
-/**
- * The entries a category is saved with: the ones that carry a name.
- *
- * @param {Array<Object>} entries - The edited entries
- * @returns {Array<Object>} The entries to send
- */
-export const savedSecretEntries = entries => listOf(entries).filter(entry => entry.name);
+export const secretRowsOf = (answer, kind = '', profile = '') => {
+  const kinds = pickKindsOf(kind);
+  return listOf(answer).filter(row => {
+    if (!row || !kinds.includes(row.kind)) {
+      return false;
+    }
+    const own = row.profile || row.record?.profile || '';
+    return !profile || !own || own === profile;
+  });
+};

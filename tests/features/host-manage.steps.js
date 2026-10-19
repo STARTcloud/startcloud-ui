@@ -124,6 +124,14 @@ Then(
 );
 
 Then(
+  'the row {string} of the {string} table of the section page reads {string} in its {string} column',
+  async ({ page }, text, name, value, column) => {
+    await expect(rowOf(page, name, text)).toBeVisible();
+    await expect(rowOf(page, name, text).locator(`td.col-${column}`)).toHaveText(value);
+  }
+);
+
+Then(
   'the row {string} of the {string} table of the section page offers no {string}',
   async ({ page }, text, name, action) => {
     await expect(rowOf(page, name, text)).toBeVisible();

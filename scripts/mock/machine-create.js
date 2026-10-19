@@ -1,3 +1,5 @@
+import { stringify } from 'yaml';
+
 import { featuresOf, hypervisorsOf, machineOf } from './fleet.js';
 import { AGENT_MODE, ok, problem, refusal } from './kit.js';
 import { organizations } from './people.js';
@@ -125,18 +127,6 @@ const ROLE_ARTIFACTS = [
     version: { major: '1', minor: '1', patch: '9', fix_pack: '', full_version: '1.1.9' },
     file_exists: true,
   },
-  {
-    id: 'art-0105',
-    filename: 'SAFE.ids',
-    path: '/var/lib/hyperweaver/artifacts/id-files/SAFE.ids',
-    size: 4096,
-    file_type: 'id_file',
-    role: 'safe_id',
-    extension: 'ids',
-    checksum: '3f9c1b2e7a4d5c6b8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d',
-    checksum_algorithm: 'sha256',
-    file_exists: true,
-  },
 ];
 const OS_TYPES = [
   { id: 'Debian_64', description: 'Debian (64-bit)', family: 'Linux', architecture: 'x86' },
@@ -255,6 +245,10 @@ const INTERFACES = {
     excluded_aggr_members: ['igb1', 'igb2'],
   },
 };
+const DOMAIN_CHOICES = [
+  { source: 'agent', domain: 'example.com' },
+  { source: 'user', domain: 'lab.example.com' },
+];
 const UNATTENDED_ISOS = {
   'debian-13.1.0-amd64-netinst.iso': {
     os_typeid: 'Debian_64',
@@ -291,7 +285,14 @@ const defaults = ctx => {
   const { host } = ctx;
   if (isZone(host)) {
     return ok({
-      settings: { vcpus: 2, memory: '2G', os_type: 'generic', firmware_type: 'UEFI' },
+      settings: {
+        domain: 'example.com',
+        domain_choices: DOMAIN_CHOICES,
+        vcpus: 2,
+        memory: '2G',
+        os_type: 'generic',
+        firmware_type: 'UEFI',
+      },
       zones: {
         brand: 'bhyve',
         vmtype: 'generic',
@@ -318,7 +319,14 @@ const defaults = ctx => {
     });
   }
   return ok({
-    settings: { vcpus: 2, memory: '2G', firmware_type: 'BIOS', sync_method: 'rsync' },
+    settings: {
+      domain: 'example.com',
+      domain_choices: DOMAIN_CHOICES,
+      vcpus: 2,
+      memory: '2G',
+      firmware_type: 'BIOS',
+      sync_method: 'rsync',
+    },
     zones: {},
     disks: { boot: { sparse: true, clone_strategy: 'copy' } },
     config: {},
@@ -627,6 +635,27 @@ const queuedCreate = ({ host, person, body }) => {
 
 const created = ctx => createRefusal(ctx) || queuedCreate(ctx);
 
+const previewed = ctx => {
+  const refused = specRefusal(ctx);
+  if (refused) {
+    return refused;
+  }
+  const { body } = ctx;
+  const name = createNameOf(body);
+  const entry = Object.fromEntries(
+    Object.entries(body).filter(
+      ([key]) => key !== 'provision_after_create' && key !== 'start_after_create'
+    )
+  );
+  const warnings = [
+    ...(requiresDownload(body) ? [`The box ${body.settings?.box} is downloaded first`] : []),
+    ...(body.provision_after_create || !body.provisioner
+      ? []
+      : ['The machine is created without provisioning']),
+  ];
+  return ok({ yaml: stringify({ hosts: [{ [name]: entry }] }), hosts: [name], warnings });
+};
+
 const afterCreate = (host, task) => {
   const { hypervisor, start } = task.metadata || {};
   if (!machineOf(host, task.machine_name)) {
@@ -741,8 +770,12 @@ const downloadLink = ctx => {
  * spec refused for a missing hostname or domain, a half-named
  * provisioner, an unknown boot type, sync method or hypervisor, or for
  * want of memory with `details`, and otherwise a queued orchestration
- * whose machine joins the host's rows when its task completes; the
- * feeds the pickers read, `machines/defaults`, `machines/ostypes` (503
+ * whose machine joins the host's rows when its task completes;
+ * `POST machines/preview` behind the same token, the spec rendered as
+ * the Hosts.yml entry it would make, `{ yaml, hosts, warnings }`; the
+ * feeds the pickers read, `machines/defaults` with the host's default
+ * `settings.domain` and its `settings.domain_choices`, the agent's row
+ * and the person's `user` row, `machines/ostypes` (503
  * without VirtualBox on the hyperweaver kind), `machines/ids/next`,
  * `templates` and `templates/remote/{source}` behind `templates` (the
  * mirror registry unreachable, BoxVault answering its discover shape),
@@ -766,6 +799,7 @@ export const mountMachineCreate = ({ sessionRoute, agentRoute }) => {
   settles('machine_unattended_install', afterInstall);
   settles('artifact_download', afterFetch);
   agentRoute('POST', 'machines', behind('machine-create', created));
+  agentRoute('POST', 'machines/preview', behind('machine-create', previewed));
   agentRoute('POST', 'artifacts/:artifact/fetch', behind('artifacts', fetched));
   agentRoute('GET', 'machines/defaults', defaults);
   agentRoute('GET', 'machines/ostypes', ostypes);

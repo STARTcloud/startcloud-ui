@@ -1,0 +1,132 @@
+{
+  "success": true,
+  "artifacts": [
+    {
+      "id": 11,
+      "filename": "debian-13.1.0-amd64-netinst.iso",
+      "path": "/var/lib/hyperweaver/artifacts/iso/debian-13.1.0-amd64-netinst.iso",
+      "file_type": "iso",
+      "extension": "iso",
+      "size": 702545920,
+      "checksum": "8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e8f0a9c1e",
+      "checksum_verified": true,
+      "file_exists": true,
+      "role": null,
+      "version": null,
+      "storage_location_id": "loc-iso",
+      "storage_location": {
+        "id": "loc-iso",
+        "name": "ISO library",
+        "path": "/var/lib/hyperweaver/artifacts/iso",
+        "type": "iso"
+      }
+    },
+    {
+      "id": 12,
+      "filename": "Win11_24H2_English_x64.iso",
+      "path": "/var/lib/hyperweaver/artifacts/iso/Win11_24H2_English_x64.iso",
+      "file_type": "iso",
+      "extension": "iso",
+      "size": 6842523648,
+      "checksum": null,
+      "checksum_verified": null,
+      "file_exists": true,
+      "role": null,
+      "version": null,
+      "storage_location_id": "loc-iso",
+      "storage_location": {
+        "id": "loc-iso",
+        "name": "ISO library",
+        "path": "/var/lib/hyperweaver/artifacts/iso",
+        "type": "iso"
+      }
+    },
+    {
+      "id": 13,
+      "filename": "Domino_14.5_Linux_English.tar",
+      "path": "/var/lib/hyperweaver/artifacts/installers/domino/archives/Domino_14.5_Linux_English.tar",
+      "file_type": "installer",
+      "extension": "tar",
+      "size": 1610612736,
+      "checksum": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+      "checksum_verified": true,
+      "expected_sha256": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+      "file_exists": true,
+      "role": "domino",
+      "version": {
+        "major": "14",
+        "minor": "5",
+        "patch": "0",
+        "fix_pack": "",
+        "ea_access_release": "",
+        "full_version": "14.5.0"
+      },
+      "storage_location_id": "loc-installers",
+      "storage_location": {
+        "id": "loc-installers",
+        "name": "HCL installers",
+        "path": "/var/lib/hyperweaver/artifacts/installers",
+        "type": "installer"
+      }
+    },
+    {
+      "id": 14,
+      "filename": "Domino_1450FP1_Linux.tar",
+      "path": "/var/lib/hyperweaver/artifacts/installers/domino/archives/Domino_1450FP1_Linux.tar",
+      "file_type": "fixpack",
+      "extension": "tar",
+      "size": 0,
+      "checksum": null,
+      "checksum_verified": null,
+      "expected_sha256": "b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4b1b2c3d4",
+      "file_exists": false,
+      "source": "boxvault",
+      "role": "domino",
+      "version": {
+        "major": "14",
+        "minor": "5",
+        "patch": "0",
+        "fix_pack": "FP1",
+        "ea_access_release": "",
+        "full_version": "14.5.0FP1"
+      },
+      "storage_location_id": "loc-installers",
+      "storage_location": {
+        "id": "loc-installers",
+        "name": "HCL installers",
+        "path": "/var/lib/hyperweaver/artifacts/installers",
+        "type": "installer"
+      }
+    },
+    {
+      "id": 15,
+      "filename": "Domino_1450IF1_Linux.tar",
+      "path": "/var/lib/hyperweaver/artifacts/installers/domino/archives/Domino_1450IF1_Linux.tar",
+      "file_type": "hotfix",
+      "extension": "tar",
+      "size": 0,
+      "checksum": null,
+      "checksum_verified": null,
+      "expected_sha256": "c1b2c3d4c1b2c3d4c1b2c3d4c1b2c3d4c1b2c3d4c1b2c3d4c1b2c3d4c1b2c3d4",
+      "file_exists": false,
+      "source": "hcl",
+      "role": "domino",
+      "version": {
+        "major": "14",
+        "minor": "5",
+        "patch": "0",
+        "fix_pack": "",
+        "ea_access_release": "IF1",
+        "full_version": "14.5.0IF1"
+      },
+      "storage_location_id": "loc-installers",
+      "storage_location": {
+        "id": "loc-installers",
+        "name": "HCL installers",
+        "path": "/var/lib/hyperweaver/artifacts/installers",
+        "type": "installer"
+      }
+    }
+  ],
+  "pagination": { "total": 5, "limit": 200, "offset": 0, "has_more": false }
+}

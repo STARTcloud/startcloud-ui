@@ -10,20 +10,33 @@ import {
   FaRightLeft,
   FaRotate,
   FaShieldHalved,
+  FaUserSecret,
   FaVault,
   FaWandMagicSparkles,
 } from 'react-icons/fa6';
 
 import { authMethod, hasFeatureStrict } from '../../utils/capabilities';
 
+import { SECRET_KINDS } from './utils/records';
+
 const VAULT_ROUTE = '/certs';
+
+/**
+ * The route of the vault narrowed to the secret kinds, every one of them
+ * under the one `kind` filter.
+ */
+export const SECRETS_ROUTE = `${VAULT_ROUTE}?kind=${SECRET_KINDS.join(',')}`;
 
 const KINDS = [
   { key: 'certificate', icon: FaCertificate, labelKey: 'certs.sidebar.certificates' },
   { key: 'authority', icon: FaShieldHalved, labelKey: 'certs.sidebar.authorities' },
   { key: 'request', icon: FaFileSignature, labelKey: 'certs.sidebar.requests' },
   { key: 'key', icon: FaKey, labelKey: 'certs.sidebar.keys' },
-].map(kind => ({ ...kind, to: `${VAULT_ROUTE}?kind=${kind.key}` }));
+]
+  .map(kind => ({ ...kind, to: `${VAULT_ROUTE}?kind=${kind.key}` }))
+  .concat([
+    { key: 'secrets', icon: FaUserSecret, labelKey: 'certs.sidebar.secrets', to: SECRETS_ROUTE },
+  ]);
 
 const TOOLS = [
   { key: 'convert', icon: FaRightLeft, labelKey: 'certs.sidebar.convert', to: '/certs/convert' },
@@ -79,7 +92,8 @@ const toolsGroup = {
  * Certificates group of one section under the CERTIFICATES heading, the
  * Vault row at `/certs` folding the Certificates, Authorities, Requests
  * and Keys rows, each the vault narrowed to that kind at
- * `/certs?kind=<kind>`, the one lit the kind the route carries, then the
+ * `/certs?kind=<kind>`, and the Secrets row, the vault narrowed to the
+ * eight secret kinds, the one lit the kind the route carries, then the
  * Shared and Sync rows while the host advertises `certs-store` and a
  * person is signed in; and, while the host advertises `tools` as well,
  * the shared Tools group with one Certificates row opening Convert and

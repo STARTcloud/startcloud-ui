@@ -1,4 +1,5 @@
 import { sourceKeyOf } from './boxCatalog';
+import { artifactVersionOf } from './roleFiles';
 
 const lower = value => String(value ?? '').toLowerCase();
 
@@ -71,6 +72,19 @@ export const LOCATION_DELETE_OPTIONS = { recursive: false, remove_db_records: tr
  */
 export const locationType = (locations, id) =>
   locations.find(entry => String(entry.id) === String(id))?.type || '';
+
+/**
+ * The enabled storage location of one kind, the first the host lists,
+ * null while it lists none.
+ *
+ * @param {Array<Object>|null} locations - The storage locations
+ * @param {string} kind - The location type, `installer`, `iso` among them
+ * @returns {Object|null} The location
+ */
+export const kindLocationOf = (locations, kind) =>
+  (Array.isArray(locations) ? locations : []).find(
+    location => location && location.type === kind && location.enabled !== false
+  ) || null;
 
 /**
  * Whether a storage location stores per role, hyperweaver-ui's rule: the
@@ -449,25 +463,13 @@ export const matchesRegistryFile = matcher(row => [
   row.architecture,
 ]);
 
-/**
- * The names of the secrets of one category, hyperweaver-ui's read of
- * `GET secrets`, null while the document could not be read, the dialogs
- * then taking a typed name.
- *
- * @param {Object|null} secrets - The secrets document
- * @param {string} category - `hcl_download_portal_api_keys`, `custom_resource_url` or `git_api_keys`
- * @returns {Array<string>|null} The names
- */
-export const secretNamesOf = (secrets, category) =>
-  secrets ? (secrets[category] || []).map(entry => entry.name) : null;
-
 export const matchesLocation = matcher(row => [row.name, row.path, row.type]);
 
 export const matchesArtifact = matcher(row => [
   row.filename,
   row.file_type,
   row.role,
-  row.version,
+  artifactVersionOf(row).full_version,
   row.storage_location?.name,
 ]);
 

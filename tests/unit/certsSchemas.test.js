@@ -12,11 +12,19 @@ import {
   PREFERENCES_SCHEMA,
   REQUEST_SCHEMA,
   SAN_KINDS,
+  SECRET_LABELS,
   SIGNATURES,
   SIGN_SCHEMA,
   TEMPLATE_LABELS,
+  secretSchemaOf,
   templateSchemaOf,
 } from '../../src/features/certs/utils/schemas.js';
+import {
+  CUSTOM_SEEDS,
+  PROFILES,
+  profileOf,
+  profilesOf,
+} from '../../src/features/certs/utils/secretProfiles.js';
 import { validateObject } from '../../src/utils/validation.js';
 
 const pointersOf = (schema, values) => validateObject(schema, values).map(error => error.pointer);
@@ -149,6 +157,108 @@ describe('the output and convert schemas', () => {
     const output = { to: 'pem', password: '', legacy: false };
     expect(pointersOf(CONVERT_SCHEMA, { ...output, picked: [] })).toEqual(['/picked']);
     expect(pointersOf(CONVERT_SCHEMA, { ...output, picked: ['a'] })).toEqual([]);
+  });
+});
+
+describe('the secret schemas', () => {
+  const base = { name: 'n', kind: 'api_key', profile: '', notes: '', extra: [] };
+
+  it('requires the name, the kind and the first member of the kind alone', () => {
+    const schema = secretSchemaOf('api_key');
+    expect(schema.required).toEqual(['name', 'kind', 'key']);
+    expect(pointersOf(schema, { ...base, key: '' })).toEqual(['/key']);
+    expect(pointersOf(schema, { ...base, key: 'k', url: '', account_id: '' })).toEqual([]);
+    expect(pointersOf(schema, { ...base, name: ' ', key: 'k' })).toEqual(['/name']);
+    expect(secretSchemaOf('basic_auth').required).toEqual(['name', 'kind', 'user']);
+    expect(secretSchemaOf('ssh_key').required).toEqual(['name', 'kind', 'private_key']);
+    expect(secretSchemaOf('file').required).toEqual(['name', 'kind', 'bytes']);
+  });
+
+  it('refuses a kind or a profile outside the known words', () => {
+    const schema = secretSchemaOf('api_key');
+    expect(pointersOf(schema, { ...base, kind: 'token', key: 'k' })).toEqual(['/kind']);
+    expect(pointersOf(schema, { ...base, profile: 'nope', key: 'k' })).toEqual(['/profile']);
+    expect(pointersOf(schema, { ...base, profile: 'github', key: 'k' })).toEqual([]);
+  });
+
+  it('takes a custom row as JSON text of one object', () => {
+    const schema = secretSchemaOf('custom');
+    const custom = { ...base, kind: 'custom' };
+    expect(schema.required).toEqual(['name', 'kind', 'custom']);
+    expect(pointersOf(schema, { ...custom, custom: '' })).toEqual(['/custom']);
+    expect(pointersOf(schema, { ...custom, custom: 'not json' })).toEqual(['/custom']);
+    expect(pointersOf(schema, { ...custom, custom: '[1]' })).toEqual(['/custom']);
+    expect(pointersOf(schema, { ...custom, custom: '{"a":{"b":1}}' })).toEqual([]);
+  });
+
+  it('requires a name on every extra row', () => {
+    const schema = secretSchemaOf('password');
+    expect(
+      pointersOf(schema, {
+        ...base,
+        kind: 'password',
+        password: 'p',
+        extra: [{ name: '', value: 'v' }],
+      })
+    ).toEqual(['/extra/0/name']);
+    expect(SECRET_LABELS.key).toBe('certs.secret.member.key');
+    expect(SECRET_LABELS.name).toBe('certs.record.name');
+  });
+});
+
+describe('the secret profiles', () => {
+  it('ships the fourteen profiles, each with its kinds, label key, help keys, url, extras and glyph', () => {
+    expect(PROFILES.map(profile => profile.id)).toEqual([
+      'hcl_portal',
+      'github',
+      'digitalocean',
+      'cloudflare',
+      'wix',
+      'openai',
+      'stripe',
+      'atlas',
+      'installer_server',
+      'docker_hub',
+      'aws',
+      'acme_dns',
+      'notes_id',
+      'license',
+    ]);
+    expect(profileOf('openai')).toMatchObject({
+      kinds: ['api_key'],
+      labelKey: 'certs.profile.openai.label',
+      url: 'https://api.openai.com/v1',
+      help: { key: 'certs.profile.openai.help.key', url: 'certs.profile.openai.help.url' },
+      icon: 'FaRobot',
+    });
+    expect(profileOf('openai').extras.map(extra => extra.key)).toEqual([
+      'model',
+      'assistant_id',
+      'enabled',
+    ]);
+    expect(profileOf('notes_id').extras[0]).toEqual({
+      key: 'id_type',
+      labelKey: 'certs.profile.notes_id.extra.id_type',
+      options: ['safe', 'server', 'user', 'certifier'],
+    });
+    expect(profileOf('license').kinds).toEqual(['file', 'api_key']);
+    expect(profileOf('generic')).toBeNull();
+    expect(profileOf('')).toBeNull();
+  });
+
+  it('narrows the profiles to a kind and seeds the acme-dns custom map', () => {
+    expect(profilesOf('basic_auth').map(profile => profile.id)).toEqual([
+      'installer_server',
+      'docker_hub',
+    ]);
+    expect(profilesOf('key_pair').map(profile => profile.id)).toEqual(['aws']);
+    expect(profilesOf('')).toBe(PROFILES);
+    expect(Object.keys(CUSTOM_SEEDS.acme_dns['example.com'])).toEqual([
+      'username',
+      'password',
+      'subdomain',
+      'fulldomain',
+    ]);
   });
 });
 

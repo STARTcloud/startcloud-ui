@@ -3,14 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCloudArrowDown, FaRotate } from 'react-icons/fa6';
 
-import {
-  localeDate,
-  statusColumn,
-  timeOf,
-  visibilityColumn,
-} from '../../../components/common/columns';
 import SectionHeading from '../../../components/common/SectionHeading';
-import { VisibilityBadge } from '../../../components/common/StatusChips';
 import SubTable from '../../../components/common/SubTable';
 import { pickedOf } from '../../../components/common/VisibilityPicker';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -19,82 +12,14 @@ import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useEventStream } from '../../../hooks/useEventStream';
 import { log } from '../../../lib/logger';
 import { pageContextShape } from '../../../utils/itemShape';
-import { formatRelativeTime } from '../../../utils/relativeTime';
 import { fetchCerts } from '../api/certsStore';
 import { useVault } from '../hooks/useVault';
 import { nowOf, statusOf } from '../utils/records';
 import { recordOf, rowNotAfter } from '../utils/sync';
 
-import StatusBadge from './StatusBadge';
-
-const matchesRow = (row, needle) =>
-  [row.name, row.subject, row.created_by, row.organization]
-    .filter(Boolean)
-    .some(text => String(text).toLowerCase().includes(needle));
+import { STORE_COLUMNS, matchesStoreRow } from './storeColumns';
 
 const rowStatus = (row, ctx) => statusOf(rowNotAfter(row), ctx.now, ctx.thresholdDays);
-
-const columns = [
-  {
-    key: 'name',
-    kind: 'name',
-    labelKey: 'pages.table.name',
-    value: row => row.name,
-    render: row => <span className="fw-semibold">{row.name}</span>,
-  },
-  {
-    key: 'kind',
-    kind: 'word',
-    labelKey: 'certs.table.kind',
-    priority: 2,
-    value: (row, ctx) => ctx.t(`certs.kind.${row.kind}`),
-  },
-  {
-    key: 'subject',
-    kind: 'text',
-    labelKey: 'certs.table.subject',
-    value: row => row.subject || '',
-  },
-  {
-    key: 'status',
-    kind: 'badge',
-    labelKey: 'pages.table.status',
-    priority: 2,
-    value: (row, ctx) => (rowStatus(row, ctx) ? ctx.t(`certs.status.${rowStatus(row, ctx)}`) : ''),
-    render: (row, ctx) => <StatusBadge status={rowStatus(row, ctx)} />,
-  },
-  {
-    key: 'expires',
-    kind: 'date',
-    labelKey: 'certs.table.expires',
-    priority: 3,
-    value: row => timeOf(rowNotAfter(row)),
-    render: (row, ctx) => localeDate(rowNotAfter(row), ctx.language),
-  },
-  {
-    ...visibilityColumn,
-    value: (row, ctx) => ctx.t(`pages.status.${pickedOf(row)}`),
-    render: row => <VisibilityBadge visibility={pickedOf(row)} />,
-  },
-  {
-    ...statusColumn,
-    key: 'published',
-    labelKey: 'certs.table.published',
-  },
-  {
-    key: 'created_by',
-    kind: 'text',
-    labelKey: 'certs.table.sharedBy',
-    value: row => row.created_by || '',
-  },
-  {
-    key: 'updated',
-    kind: 'relative',
-    labelKey: 'pages.table.updated',
-    value: row => timeOf(row.updated_at),
-    render: (row, ctx) => formatRelativeTime(row.updated_at, ctx.language),
-  },
-];
 
 const groupsOf = ctx => [
   {
@@ -206,9 +131,9 @@ const SharedPage = ({ context }) => {
   const ctx = { ...context, t, language: i18n.language, now: nowOf(), thresholdDays };
   const search = useDetailSearch({
     rows: shared.rows,
-    matches: matchesRow,
+    matches: matchesStoreRow,
     placeholderKey: 'certs.search.sharedPlaceholder',
-    columns,
+    columns: STORE_COLUMNS,
     ctx,
     prefsKey: `${context.prefsPrefix}_certs_shared`,
     filterGroups: groupsOf(ctx),
@@ -255,7 +180,7 @@ const SharedPage = ({ context }) => {
         </div>
       ) : null}
       <SubTable
-        columns={columns}
+        columns={STORE_COLUMNS}
         rows={search.rows}
         groups={groupRows(vault.organizations, search.rows)}
         collapsed={collapsed}

@@ -4,6 +4,7 @@ import {
   AGENT_ORIGIN,
   DEPLOY_WORDS,
   WORD_KEYS,
+  agentLaunchHref,
   deployHref,
   deployQuery,
   deployTargetOf,
@@ -217,6 +218,12 @@ describe('probeOriginOf', () => {
     expect(probeOriginOf('local')).toBe(AGENT_ORIGIN);
     expect(AGENT_ORIGIN).toBe('https://127.0.0.1:9421');
     expect(probeOriginOf('https://hw.example.com/')).toBe('https://hw.example.com');
+  });
+});
+
+describe('agentLaunchHref', () => {
+  it('answers hwa://open with no query', () => {
+    expect(agentLaunchHref()).toBe('hwa://open');
   });
 });
 

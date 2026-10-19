@@ -216,9 +216,9 @@ describe('hostPagesFor', () => {
     expect(pagesOf(rowOf(['artifacts']), 1).provisioning).toEqual(['installers']);
   });
 
-  it('offers the agent rows to a row that names a hypervisor, the secrets behind secrets and one row a configuration file', () => {
+  it('offers the agent rows to a row that names a hypervisor, the secrets behind certs-store and one row a configuration file', () => {
     expect(pagesOf(rowOf([], ['virtualbox']), 1).agent).toEqual(['api-keys', 'database', 'update']);
-    expect(pagesOf(rowOf(['secrets'], ['virtualbox']), 1).agent).toEqual([
+    expect(pagesOf(rowOf(['certs-store'], ['virtualbox']), 1).agent).toEqual([
       'secrets',
       'api-keys',
       'database',

@@ -85,24 +85,50 @@ export const checkAgentUpdate = (status, id) =>
 export const applyAgentUpdate = (status, id) =>
   client.post(agentPath(status, id, 'app/updates/apply'));
 
-/**
- * The agent's global secrets document, `GET secrets`, the six categories
- * each a list of entries.
- *
- * @param {Object} status - The payload from `probeStatus`
- * @param {string} id - The registry id, or `self` on an agent role
- * @returns {Promise<Object>} The document
- */
-export const fetchSecrets = (status, id) => client.get(agentPath(status, id, 'secrets'));
+const certPath = (status, id, rowId) => agentPath(status, id, `certs/${encodeURIComponent(rowId)}`);
 
 /**
- * Replace the submitted secret categories, `PUT secrets` with
- * `{ [category]: entries }`, a shallow merge over the document.
+ * The rows of the host's own certificate store, `GET certs`, narrowed to
+ * one kind through `kind` where given.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
- * @param {Object} categories - The categories to replace
+ * @param {{ kind?: string }} [query] - The narrowing
+ * @returns {Promise<Array<Object>>} The rows
+ */
+export const fetchHostCerts = (status, id, { kind = '' } = {}) =>
+  client.get(agentPath(status, id, 'certs'), { params: kind ? { kind } : undefined });
+
+/**
+ * Create one row of the host's store, `POST certs`, the body the wire row
+ * of `rowOf`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {Object} body - The wire row
+ * @returns {Promise<Object>} The row created
+ */
+export const createHostCert = (status, id, body) =>
+  client.post(agentPath(status, id, 'certs'), body);
+
+/**
+ * Replace one row of the host's store, `PUT certs/{id}`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} rowId - The row's id
+ * @param {Object} body - The wire row
+ * @returns {Promise<Object>} The row as stored
+ */
+export const updateHostCert = (status, id, rowId, body) =>
+  client.put(certPath(status, id, rowId), body);
+
+/**
+ * Remove one row of the host's store, `DELETE certs/{id}`.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} rowId - The row's id
  * @returns {Promise<Object>} The agent's answer
  */
-export const saveSecrets = (status, id, categories) =>
-  client.put(agentPath(status, id, 'secrets'), categories);
+export const removeHostCert = (status, id, rowId) => client.delete(certPath(status, id, rowId));

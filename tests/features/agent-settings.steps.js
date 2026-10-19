@@ -44,10 +44,14 @@ Then('the agent route draws the host that did not answer', async ({ page }) => {
   await expect(frameOf(page)).toHaveCount(0);
 });
 
-Then('the first secret entry is named {string}', async ({ page }, name) => {
+Then('the secret row {string} is of kind {string}', async ({ page }, name, kind) => {
   await expect(
-    frameOf(page).locator('[data-panel="secrets"] input[type="text"]').first()
-  ).toHaveValue(name);
+    frameOf(page)
+      .locator('[data-panel="secrets"] tbody tr')
+      .filter({ hasText: name })
+      .first()
+      .locator('[data-secret-kind]')
+  ).toHaveAttribute('data-secret-kind', kind);
 });
 
 Then('the agent page draws the {string} panel', async ({ page }, name) => {

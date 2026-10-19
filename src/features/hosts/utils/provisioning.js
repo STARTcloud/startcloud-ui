@@ -409,6 +409,42 @@ export const roleHintsOf = version => {
   );
 };
 
+const bareOf = name =>
+  String(name || '')
+    .split('.')
+    .pop();
+
+/**
+ * The dependency warnings one role row of a run draws from the hints of
+ * `roleHintsOf`: one a dependency, `absent` while no row of the run
+ * names it, `below` while its first row sits after this one and `off`
+ * while that row is off; none for a row that is itself off.
+ *
+ * @param {Array<Object>} roles - The run's role rows in their drawn order
+ * @param {Object<string, Array<string>>|null} hints - The hints of `roleHintsOf`
+ * @param {number} index - The row's position in the run
+ * @returns {Array<{ dep: string, kind: string }>} The warnings
+ */
+export const dependencyWarnings = (roles, hints, index) => {
+  const row = roles[index];
+  const deps = hints?.[bareOf(row?.name)];
+  if (!row || row.enabled === false || !Array.isArray(deps) || deps.length === 0) {
+    return [];
+  }
+  const warnings = [];
+  deps.forEach(dep => {
+    const first = roles.findIndex(entry => bareOf(entry.name) === dep);
+    if (first === -1) {
+      warnings.push({ dep, kind: 'absent' });
+    } else if (first > index) {
+      warnings.push({ dep, kind: 'below' });
+    } else if (roles[first].enabled === false) {
+      warnings.push({ dep, kind: 'off' });
+    }
+  });
+  return warnings;
+};
+
 /**
  * What the Provisioning page says of a pipeline answer, hyperweaver-ui's
  * report: `nothing`, the skipped entries of a 200 no-op that queued no

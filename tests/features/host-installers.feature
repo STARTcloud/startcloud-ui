@@ -14,7 +14,27 @@ Feature: host installer files and provisioners
     And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers "move"
     And the host was sent GET to "/api/agents/3/artifacts/storage/paths"
     And the host was sent GET to "/api/agents/3/artifacts"
-    And the host was sent GET to "/api/agents/3/secrets"
+    And the host was not sent GET to "/api/agents/3/certs"
+
+  Scenario: Installer files: the page draws on the agent role, the agent's own routes read once each and every row's version drawn as the text of the version object the agent answers
+    Given the host answers the agent-overview fixture
+    And the host answers the agent-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/provisioning/installers"
+    Then the section page "installers" draws
+    And the artifact section draws
+    And the catalog card "installer-locations" lists 3 locations
+    And the "installers" table of the section page lists 5 rows
+    And the "installers" table of the section page draws the "version" column
+    And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page reads "14.5.0" in its "version" column
+    And the row "Domino_1450FP1_Linux.tar" of the "installers" table of the section page reads "14.5.0FP1" in its "version" column
+    And the row "Domino_1450IF1_Linux.tar" of the "installers" table of the section page reads "14.5.0IF1" in its "version" column
+    And the row "debian-13.1.0-amd64-netinst.iso" of the "installers" table of the section page reads "-" in its "version" column
+    And the row "Domino_1450FP1_Linux.tar" of the "installers" table of the section page offers "artifact-fetch"
+    And the host was sent GET to "/api/artifacts/storage/paths"
+    And the host was sent GET to "/api/artifacts"
+    And the host was not sent GET to "/api/certs"
+    And the host was sent GET to "/api/templates/sources"
 
   Scenario: Installer files: the page's one search narrows the artifacts and a filter pill narrows them again
     Given the host answers the hosts fixture
@@ -46,7 +66,7 @@ Feature: host installer files and provisioners
     And the catalog dialog "artifact-register" is gone
     And the host was sent GET to "/api/agents/3/artifacts" 3 times
 
-  Scenario: Installer files: a target of the installer family needs a role, the dialog says so and sends nothing
+  Scenario: Installer files: a target of the installer family needs a role, the dialog says so and sends nothing, and the mirror credentials are a basic_auth row of the host's store picked through the secret pick dialog
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -57,13 +77,19 @@ Feature: host installer files and provisioners
     And I submit the catalog dialog "artifact-download"
     Then the catalog dialog "artifact-download" says why it cannot be sent
     And the host was not sent POST to "/api/agents/3/artifacts/download"
+    And the host was not sent GET to "/api/agents/3/certs"
     When I type "domino_install" into the field "artifact-download-role"
-    And I pick "mirror-credentials" in the catalog dialog select "artifact-download-resource"
-    And I submit the catalog dialog "artifact-download"
+    And I press the open dialog's "secret-pick" action
+    Then the catalog dialog "secret-pick" draws
+    And the host was sent GET to "/api/agents/3/certs" 1 times
+    And the dialog table "secret-pick" lists 1 rows
+    When I press "secret-pick-row" on the row "mirror-credentials" of the dialog table "secret-pick"
+    Then the catalog dialog "secret-pick" is gone
+    When I submit the catalog dialog "artifact-download"
     Then the host was sent POST to "/api/agents/3/artifacts/download" carrying "role" as "domino_install"
     And the host was sent POST to "/api/agents/3/artifacts/download" carrying "resource_name" as "mirror-credentials"
 
-  Scenario: Installer files: the HCL portal download keeps the portal's own body
+  Scenario: Installer files: the HCL portal download keeps the portal's own body, its key an api_key row of the host's store picked through the secret pick dialog
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -72,8 +98,12 @@ Feature: host installer files and provisioners
     And I type "domino_install" into the field "artifact-hcl-role"
     And I pick "fixpack" in the catalog dialog select "artifact-hcl-kind"
     And I type "Domino_14.5_FP1_Linux.tar" into the field "artifact-hcl-filename"
-    And I pick "hcl-portal" in the catalog dialog select "artifact-hcl-key"
-    And I submit the catalog dialog "artifact-hcl"
+    And I press the open dialog's "secret-pick" action
+    Then the catalog dialog "secret-pick" draws
+    And the dialog table "secret-pick" lists 1 rows
+    When I press "secret-pick-row" on the row "hcl-portal" of the dialog table "secret-pick"
+    Then the catalog dialog "secret-pick" is gone
+    When I submit the catalog dialog "artifact-hcl"
     Then the host was sent POST to "/api/agents/3/artifacts/hcl-download" carrying "key_name" as "hcl-portal"
     And the host was sent POST to "/api/agents/3/artifacts/hcl-download" carrying "kind" as "fixpack"
 

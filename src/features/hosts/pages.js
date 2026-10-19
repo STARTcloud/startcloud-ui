@@ -431,7 +431,7 @@ export const HOST_PAGES = [
         segment: 'agent/secrets',
         icon: FaKey,
         labelKey: key('hosts.nav.secrets'),
-        ...feature('secrets'),
+        ...feature('certs-store'),
       },
       {
         key: 'api-keys',

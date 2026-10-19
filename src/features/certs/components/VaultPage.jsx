@@ -8,11 +8,13 @@ import {
   FaFileSignature,
   FaKey,
   FaLayerGroup,
+  FaPlus,
   FaShieldHalved,
   FaTerminal,
+  FaUserSecret,
   FaWandMagicSparkles,
 } from 'react-icons/fa6';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import RowMenu from '../../../components/common/RowMenu';
@@ -31,10 +33,12 @@ import { useRecordActions } from '../hooks/useRecordActions';
 import { useStoreWrites } from '../hooks/useStoreWrites';
 import { useVault } from '../hooks/useVault';
 import { useVaultSearch } from '../hooks/useVaultSearch';
+import { SECRETS_ROUTE } from '../sidebar';
 import { focusOn } from '../utils/focus';
-import { KINDS, nameOf, nowOf } from '../utils/records';
+import { DER_KINDS, SECRET_KINDS, isSecretKind, nameOf, nowOf } from '../utils/records';
 import { patchOfVerbs } from '../utils/sync';
 
+import SecretRecordModal from './SecretRecordModal';
 import { vaultColumns } from './vaultColumns';
 import VaultTreeDialogs from './VaultTreeDialogs';
 
@@ -47,6 +51,13 @@ const KIND_ICONS = {
   template: FaLayerGroup,
 };
 
+const TILE_KINDS = [...DER_KINDS, 'template'];
+
+const secretKindOf = params => {
+  const [first = ''] = String(params.get('kind') || '').split(',');
+  return isSecretKind(first) ? first : '';
+};
+
 const HEADING_ID = 'certs-vault-heading';
 
 const recordKey = record => record.id;
@@ -54,26 +65,34 @@ const recordKey = record => record.id;
 const managesSynced = (record, user) =>
   Boolean(record.remote_id) && canManageRecord(user, record.organization, record);
 
-const VaultRowActions = ({ record, user, onConvert, onDownload, onDelete, onRemove }) => {
+const VaultRowActions = ({ record, user, onConvert, onDownload, onEdit, onDelete, onRemove }) => {
   const { t } = useTranslation();
   return (
     <RowMenu label={t('pages.table.actions')}>
-      <Dropdown.Item
-        as="button"
-        type="button"
-        data-action="convert"
-        onClick={() => onConvert(record)}
-      >
-        {t('certs.actions.convert')}
-      </Dropdown.Item>
-      <Dropdown.Item
-        as="button"
-        type="button"
-        data-action="download"
-        onClick={() => onDownload(record)}
-      >
-        {t('certs.actions.download')}
-      </Dropdown.Item>
+      {isSecretKind(record.kind) ? (
+        <Dropdown.Item as="button" type="button" data-action="edit" onClick={() => onEdit(record)}>
+          {t('certs.actions.edit')}
+        </Dropdown.Item>
+      ) : (
+        <>
+          <Dropdown.Item
+            as="button"
+            type="button"
+            data-action="convert"
+            onClick={() => onConvert(record)}
+          >
+            {t('certs.actions.convert')}
+          </Dropdown.Item>
+          <Dropdown.Item
+            as="button"
+            type="button"
+            data-action="download"
+            onClick={() => onDownload(record)}
+          >
+            {t('certs.actions.download')}
+          </Dropdown.Item>
+        </>
+      )}
       <Dropdown.Divider />
       <Dropdown.Item
         as="button"
@@ -104,6 +123,7 @@ VaultRowActions.propTypes = {
   user: PropTypes.object,
   onConvert: PropTypes.func.isRequired,
   onDownload: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
 };
@@ -112,7 +132,7 @@ const KindTiles = ({ records }) => {
   const { t } = useTranslation();
   return (
     <div className="stat-grid stat-grid-3 mb-3" data-panel="vault-tiles">
-      {KINDS.map(kind => {
+      {TILE_KINDS.map(kind => {
         const Icon = KIND_ICONS[kind];
         return (
           <StatCard
@@ -124,6 +144,12 @@ const KindTiles = ({ records }) => {
           />
         );
       })}
+      <StatCard
+        icon={<FaUserSecret aria-hidden="true" />}
+        count={records.filter(record => SECRET_KINDS.includes(record.kind)).length}
+        label={t('certs.sidebar.secrets')}
+        to={SECRETS_ROUTE}
+      />
     </div>
   );
 };
@@ -241,10 +267,13 @@ const useBundleImport = () => {
  * Visibility and Status pickers over the picked synced rows the person
  * manages, one PUT a row, Delete of the browser's records behind the
  * typed confirmation, and Export bundle of the picked rows) while rows
- * are picked, then Generate and the one Restore backup, the upload
+ * are picked, then Add secret, the secret record form opening on the
+ * secret kind the route narrows to, Generate and the one Restore backup,
+ * the upload
  * zone taking a `*.certs.json` vault backup, the file Export bundle
  * writes, a file that is no backup refused on the zone's own line; one
- * tile a kind linking to the table narrowed to that kind; the table of
+ * tile a kind linking to the table narrowed to that kind and one Secrets
+ * tile for the eight secret kinds; the table of
  * every record narrowed by the navbar binding of `useVaultSearch` under
  * `table_prefs_certs`, its panel carrying Export bundle, the select
  * column a real checkbox header, a `#<id>` in the URL landing on that
@@ -255,11 +284,14 @@ const useBundleImport = () => {
  * Expiring reads is the Preferences page's Certificates card. Focus
  * lands on the heading once a delete's dialog has
  * gone, and on arrival with `focusHeading` in the location's state, the
- * record page's way after its own delete.
+ * record page's way after its own delete. A secret record's row menu
+ * offers Edit, the secret record form over the record, in place of
+ * Convert and Download.
  */
 const VaultPage = ({ context }) => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const notify = useNotify();
   const vault = useVault();
   const actions = useRecordActions();
@@ -268,6 +300,8 @@ const VaultPage = ({ context }) => {
   const [target, setTarget] = useState(null);
   const [removing, setRemoving] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(null);
   const thresholdDays = vault.preferences.threshold_days;
   const ctx = { ...context, t, language: i18n.language, now: nowOf(), thresholdDays };
   const search = useVaultSearch({
@@ -314,6 +348,18 @@ const VaultPage = ({ context }) => {
   const setPickedAccess = patch =>
     Promise.all(managed.map(record => store.setAccess(record, patch))).then(selection.clear);
 
+  const addSecret = record =>
+    vault.add(record).then(() => {
+      setAdding(false);
+      notify('success', t('certs.notice.saved'));
+    });
+
+  const saveSecret = record =>
+    vault.update(editing, record).then(() => {
+      setEditing(null);
+      notify('success', t('certs.notice.saved'));
+    });
+
   if (!vault.loaded) {
     return (
       <div className="list row">
@@ -331,6 +377,15 @@ const VaultPage = ({ context }) => {
         onDelete={() => setDeleting(true)}
         onExport={() => vault.exportBundle(picked())}
       />
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-primary"
+        data-action="add-secret"
+        onClick={() => setAdding(true)}
+      >
+        <FaPlus className="me-1" aria-hidden="true" />
+        {t('certs.vault.addSecret')}
+      </button>
       <Link to="/certs/generate" className="btn btn-sm btn-outline-primary" data-action="generate">
         <FaWandMagicSparkles className="me-1" aria-hidden="true" />
         {t('certs.vault.generate')}
@@ -367,6 +422,7 @@ const VaultPage = ({ context }) => {
           user: context.user,
           onConvert: actions.convert,
           onDownload: actions.download,
+          onEdit: setEditing,
           onDelete: setTarget,
           onRemove: setRemoving,
         }}
@@ -398,6 +454,16 @@ const VaultPage = ({ context }) => {
         title={t('certs.confirm.deleteTitle')}
         message={t('certs.confirm.deleteManyMessage', { count: selection.selected.size })}
       />
+      {adding ? (
+        <SecretRecordModal
+          kind={secretKindOf(searchParams)}
+          onSave={addSecret}
+          onClose={() => setAdding(false)}
+        />
+      ) : null}
+      {editing ? (
+        <SecretRecordModal record={editing} onSave={saveSecret} onClose={() => setEditing(null)} />
+      ) : null}
       <ConfirmModal
         show={Boolean(removing)}
         handleClose={() => setRemoving(null)}

@@ -9,7 +9,7 @@ import { SETUP_TOKEN, mountConfig } from './mock/config.js';
 import { hostFor } from './mock/fleet.js';
 import { mountInbox } from './mock/inbox.js';
 import { mountIntegrations } from './mock/integrations.js';
-import { APIKEY_MODE, PORT, SETUP_MODE, missing, problem } from './mock/kit.js';
+import { AGENT_MODE, APIKEY_MODE, PORT, SETUP_MODE, missing, problem } from './mock/kit.js';
 import { mountOrgs } from './mock/orgs.js';
 import { mountRegistry } from './mock/registry.js';
 import {
@@ -51,6 +51,8 @@ mountSite(router);
 if (!APIKEY_MODE) {
   mountAccount(router);
   mountIntegrations(router);
+}
+if (!AGENT_MODE) {
   mountCerts(router);
 }
 mountInbox(router);
@@ -410,7 +412,10 @@ const announce = () => {
  *
  * The Agent settings page has data on every host: the settings with their
  * schema, backups, the restart, an update offered on Desk and the agent
- * roles, the secrets on the hosts that list `secrets`, and the API keys.
+ * roles, the host's own store of secret rows under `certs` on the hosts
+ * that list `certs-store`, the one `/api/certs` of an agent role, and
+ * the API keys; the organization's shared store answers on the server
+ * role alone.
  * On the `hyperweaver-agent` role the status lists `apikey` and `oidc`
  * in `auth` and says `bootstrapAvailable` until the first-key bootstrap
  * is used, the account routes are not mounted, the agent having no

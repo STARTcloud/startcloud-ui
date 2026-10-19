@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_THRESHOLD_DAYS,
+  DER_KINDS,
   KINDS,
+  SECRET_KINDS,
+  SECRET_MEMBERS,
   algorithmOf,
+  isSecretKind,
   currentOf,
   derOf,
   historyEntry,
@@ -186,6 +190,9 @@ describe('newId and newRecord', () => {
       public_der_b64: null,
       private_der_b64: 'AQ==',
       template: null,
+      secret: null,
+      extra: {},
+      profile: '',
       origin: 'local',
       remote_id: null,
       organization: '',
@@ -201,15 +208,34 @@ describe('newId and newRecord', () => {
     expect(newRecord({}).kind).toBe('certificate');
   });
 
-  it('lists the six kinds', () => {
-    expect(KINDS).toEqual([
-      'certificate',
-      'authority',
-      'request',
-      'key',
-      'ssh_certificate',
-      'template',
+  it('lists the five DER kinds, the template and the eight secret kinds', () => {
+    expect(DER_KINDS).toEqual(['certificate', 'authority', 'request', 'key', 'ssh_certificate']);
+    expect(SECRET_KINDS).toEqual([
+      'password',
+      'api_key',
+      'basic_auth',
+      'key_pair',
+      'oauth_client',
+      'ssh_key',
+      'file',
+      'custom',
     ]);
+    expect(KINDS).toEqual([...DER_KINDS, 'template', ...SECRET_KINDS]);
+    expect(isSecretKind('api_key')).toBe(true);
+    expect(isSecretKind('key')).toBe(false);
+  });
+
+  it('names each secret kind its members, the first the required one', () => {
+    expect(SECRET_MEMBERS).toEqual({
+      password: ['password'],
+      api_key: ['key', 'url', 'account_id'],
+      basic_auth: ['user', 'password', 'url'],
+      key_pair: ['access_key', 'secret_key', 'url', 'region'],
+      oauth_client: ['client_id', 'client_secret', 'issuer', 'scopes'],
+      ssh_key: ['private_key', 'public_key', 'passphrase'],
+      file: ['bytes', 'filename', 'password'],
+      custom: [],
+    });
   });
 });
 
@@ -266,5 +292,18 @@ describe('matchesRecord', () => {
   it('matches a bare record by nothing but its name', () => {
     expect(matchesRecord({ name: 'Bare' }, 'bare')).toBe(true);
     expect(matchesRecord({ name: 'Bare' }, 'x')).toBe(false);
+  });
+
+  it('matches a secret record by its profile and the public members of its secret, never the private ones', () => {
+    const secret = {
+      name: 'Portal',
+      kind: 'api_key',
+      profile: 'hcl_portal',
+      secret: { key: 'topsecret', url: 'https://my.hcltechsw.com', account_id: 'acct-1' },
+    };
+    expect(matchesRecord(secret, 'hcl_portal')).toBe(true);
+    expect(matchesRecord(secret, 'hcltechsw')).toBe(true);
+    expect(matchesRecord(secret, 'acct-1')).toBe(true);
+    expect(matchesRecord(secret, 'topsecret')).toBe(false);
   });
 });

@@ -2,9 +2,9 @@ import { newId, newRecord, notAfterOf } from './records';
 
 /**
  * The wire row of one record, the body a POST or a PUT to `/api/certs`
- * carries: the organization, the kind, the name, the three access words
- * and the record itself, its private half dropped while the row is
- * public.
+ * carries: the organization, the kind, the name, the profile, the three
+ * access words and the record itself, its private half, the DER and the
+ * `secret` members, dropped while the row is public.
  *
  * @param {Object} record - The record
  * @param {string} organization - The organization the row belongs to
@@ -14,12 +14,14 @@ export const rowOf = (record, organization) => ({
   organization: record.organization || organization,
   kind: record.kind,
   name: record.name,
+  profile: record.profile || '',
   published: Boolean(record.published),
   is_public: Boolean(record.is_public),
   guest_access: Boolean(record.guest_access),
   record: {
     ...record,
     private_der_b64: record.is_public ? null : record.private_der_b64,
+    secret: record.is_public ? null : record.secret || null,
   },
 });
 
@@ -38,6 +40,7 @@ export const recordOf = row => {
     id: held.id || newId(),
     kind: row.kind || held.kind || 'certificate',
     name: row.name || held.name || '',
+    profile: row.profile || held.profile || '',
     updated_at: row.updated_at || held.updated_at || new Date().toISOString(),
     origin: 'shared',
     remote_id: row.id,

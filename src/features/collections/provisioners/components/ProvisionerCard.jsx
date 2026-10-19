@@ -239,7 +239,13 @@ VersionRow.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
-const VersionList = ({ item, selected, onSelect, VersionAction, ctx }) => {
+/**
+ * The versions of one provisioner, newest first, one row a version with
+ * its tier dot, its release date and `VersionAction` drawn on it, a row's
+ * click selecting it through `onSelect`; the link to every version while
+ * the collection has item pages and the list is long.
+ */
+export const VersionList = ({ item, selected, onSelect, VersionAction, ctx }) => {
   const { t } = useTranslation();
   const { collection } = ctx;
   return (

@@ -1,10 +1,11 @@
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaGripVertical, FaPlus, FaTrash } from 'react-icons/fa6';
+import { FaGripVertical, FaPlus, FaTrash, FaTriangleExclamation } from 'react-icons/fa6';
+import { Link } from 'react-router-dom';
 
 import RecordRows from '../../../components/common/RecordRows';
-import { boxOptionsOf } from '../utils/machineCreate';
+import { boxDiskSizeOf, boxOptionsOf } from '../utils/machineCreate';
 import { agentDefaultLabel, zfsDatasetOptions, zfsPoolOptions } from '../utils/machineHelpers';
 import { humanSize } from '../utils/zfsUtils';
 
@@ -29,11 +30,16 @@ import PickOrType from './PickOrType';
 import DslConfigForm from './ProvisionerFieldDsl';
 import ProvisionerInstallCard from './ProvisionerInstallCard';
 import ProvisioningRolesTab from './ProvisioningRolesTab';
-import SafeIdControl from './SafeIdControl';
+
+const HostsYmlEditor = lazy(() => import('./HostsYmlEditor'));
 
 const BOOT_SOURCES = ['template', 'scratch', 'existing', 'none'];
 const BOOT_ORDER_DEVICES = ['disk', 'dvd', 'net', 'floppy', 'none'];
 const DISKIF_OPTIONS = ['ide', 'sata', 'scsi', 'sas', 'nvme', 'virtio'];
+const RESOURCE_SECTIONS = ['cpu', 'memory'];
+const ZONE_MEMORY_KNOB = /^zones\.(?:mem|wired)/u;
+const NO_MARKS = new Set();
+const noop = () => undefined;
 const SYSTEM_FIELDS = [
   { key: 'hostbridge', options: ['i440fx'], freeText: true },
   { key: 'vnc', options: ['on', 'off'] },
@@ -60,6 +66,28 @@ const nextRowKey = () => {
   return `row-${rowKeys}`;
 };
 
+/**
+ * The small badge beside a label whose value the package filled: drawn
+ * while `path` is among `marks`, the member paths of `fromPackage` the
+ * person has not typed over, nothing otherwise.
+ */
+export const PackageMark = ({ marks, path }) => {
+  const { t } = useTranslation();
+  if (!marks.has(path)) {
+    return null;
+  }
+  return (
+    <span className="badge text-bg-secondary ms-2" data-from="package">
+      {t('machineEdit.createWizardSteps.fromPackage')}
+    </span>
+  );
+};
+
+PackageMark.propTypes = {
+  marks: PropTypes.instanceOf(Set).isRequired,
+  path: PropTypes.string.isRequired,
+};
+
 const SettingInput = ({
   id,
   label,
@@ -72,14 +100,17 @@ const SettingInput = ({
   list,
   min,
   max,
+  mark = null,
+  feedback = null,
 }) => (
   <div className="col-12 col-md-4">
     <label className="form-label" htmlFor={id}>
       {label}
+      {mark}
     </label>
     <input
       id={id}
-      className="form-control"
+      className={feedback ? 'form-control is-invalid' : 'form-control'}
       type={type}
       placeholder={placeholder}
       list={list}
@@ -90,6 +121,7 @@ const SettingInput = ({
       disabled={disabled}
       required={required}
     />
+    {feedback}
   </div>
 );
 
@@ -105,6 +137,8 @@ SettingInput.propTypes = {
   list: PropTypes.string,
   min: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   max: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  mark: PropTypes.node,
+  feedback: PropTypes.node,
 };
 
 const Switch = ({ id, labelKey, checked, disabled, onChange, small = false }) => {
@@ -171,19 +205,262 @@ OrgChoice.propTypes = {
   loading: PropTypes.bool,
 };
 
+const NoDomainFeedback = ({ configRoute }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="invalid-feedback" data-note="no-domain">
+      {t('machineEdit.createWizardSteps.noDefaultDomain')}
+      {configRoute ? (
+        <>
+          {' '}
+          <Link to={configRoute} data-action="domain-config">
+            {t('machineEdit.createWizardSteps.setDefaultDomain')}
+          </Link>
+        </>
+      ) : null}
+    </div>
+  );
+};
+
+NoDomainFeedback.propTypes = {
+  configRoute: PropTypes.string,
+};
+
+const domainShape = PropTypes.shape({
+  choices: PropTypes.arrayOf(
+    PropTypes.shape({
+      source: PropTypes.string.isRequired,
+      domain: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  source: PropTypes.string.isRequired,
+  onSourceChange: PropTypes.func.isRequired,
+  missing: PropTypes.bool.isRequired,
+  configRoute: PropTypes.string,
+});
+
+const DomainSourceSelect = ({ domain, loading }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="col-12 col-md-4">
+      <label className="form-label" htmlFor="machine-create-domain-source">
+        {t('machineEdit.createWizardSteps.domainSource')}
+      </label>
+      <select
+        id="machine-create-domain-source"
+        className="form-select"
+        value={domain.source}
+        onChange={event => domain.onSourceChange(event.target.value)}
+        disabled={loading}
+      >
+        {domain.choices.map(row => (
+          <option key={row.source} value={row.source}>
+            {`${t(`machineEdit.createWizardSteps.domainSourceWord.${row.source}`)} · ${row.domain}`}
+          </option>
+        ))}
+        <option value="custom">{t('machineEdit.createWizardSteps.domainSourceCustom')}</option>
+      </select>
+    </div>
+  );
+};
+
+DomainSourceSelect.propTypes = {
+  domain: domainShape.isRequired,
+  loading: PropTypes.bool,
+};
+
 /**
- * The General step: the server id, the hostname and the domain, the tags,
- * the owning organization on the server role, and under Advanced the
- * notes and the boot priority; the derived name with its override, and
- * whether the machine starts when it is made.
+ * The Edit parts fold of the General step: the server id, the hostname,
+ * the domain and the Domain source select over every source that yields
+ * a domain plus Custom; the fold opens itself while a bare name has no
+ * domain to take, the domain input then invalid with the sentence that
+ * says so and, where the host's `machines` configuration has a route,
+ * the link to it.
+ */
+const NameParts = ({ settings, setSetting, onPartChange, domain, loading }) => {
+  const { t } = useTranslation();
+  const [opened, setOpened] = useState(false);
+  return (
+    <details
+      data-fold="name-parts"
+      open={opened || domain.missing}
+      onToggle={event => setOpened(event.currentTarget.open)}
+    >
+      <summary className="small text-muted">{t('machineEdit.createWizardSteps.editParts')}</summary>
+      <div className="row g-3 mt-1">
+        <SettingInput
+          id="machine-setting-server_id"
+          label={t('machineEdit.createWizardSteps.serverId')}
+          value={settings.server_id}
+          onChange={event => setSetting('server_id', event.target.value)}
+          disabled={loading}
+        />
+        <SettingInput
+          id="machine-setting-hostname"
+          label={t('machineEdit.createWizardSteps.hostname')}
+          value={settings.hostname}
+          onChange={event => onPartChange('hostname', event.target.value)}
+          required
+          disabled={loading}
+        />
+        <SettingInput
+          id="machine-setting-domain"
+          label={t('machineEdit.createWizardSteps.domain')}
+          value={settings.domain}
+          onChange={event => onPartChange('domain', event.target.value)}
+          required
+          disabled={loading}
+          feedback={domain.missing ? <NoDomainFeedback configRoute={domain.configRoute} /> : null}
+        />
+        <DomainSourceSelect domain={domain} loading={loading} />
+      </div>
+    </details>
+  );
+};
+
+NameParts.propTypes = {
+  settings: PropTypes.object.isRequired,
+  setSetting: PropTypes.func.isRequired,
+  onPartChange: PropTypes.func.isRequired,
+  domain: domainShape.isRequired,
+  loading: PropTypes.bool,
+};
+
+const UpdateMark = ({ update, onCatalog, disabled }) => {
+  const { t } = useTranslation();
+  if (!update) {
+    return null;
+  }
+  const title = t('machineEdit.createWizardSteps.newerVersionInCatalog');
+  return (
+    <>
+      <FaTriangleExclamation
+        className="text-warning ms-2"
+        data-note="update-available"
+        data-version={update.version}
+        title={title}
+        aria-label={title}
+      />
+      <button
+        type="button"
+        className="btn btn-link btn-sm p-0 ms-2"
+        data-action="version-catalog"
+        onClick={onCatalog}
+        disabled={disabled}
+      >
+        {t('machineEdit.createWizardSteps.seeCatalogVersions')}
+      </button>
+    </>
+  );
+};
+
+UpdateMark.propTypes = {
+  update: PropTypes.shape({
+    version: PropTypes.string.isRequired,
+    source: PropTypes.string.isRequired,
+  }),
+  onCatalog: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+};
+
+/**
+ * The family and the version of the provisioner picked on the General
+ * step, the Version label carrying the warning glyph and the catalog link
+ * while the host's catalogs list a version newer than every one it
+ * holds, the link's press handing to `onCatalog`, which opens the
+ * catalog's versions of the family.
+ */
+export const ProvisionerChoice = ({
+  provisioners,
+  familyName,
+  onFamilyChange,
+  family,
+  versionKey,
+  onVersionChange,
+  update = null,
+  onCatalog,
+  loading,
+}) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <div className="col-12 col-md-8">
+        <label className="form-label" htmlFor="machine-create-provisioner">
+          {t('machineEdit.createWizardSteps.provisioner')}
+        </label>
+        <select
+          id="machine-create-provisioner"
+          className="form-select"
+          value={familyName}
+          onChange={event => onFamilyChange(event.target.value)}
+          disabled={loading}
+        >
+          <option value="">{t('machineEdit.createWizardSteps.noProvisioning')}</option>
+          {provisioners.map(collection => (
+            <option key={collection.name} value={collection.name}>
+              {collection.metadata?.label || collection.name}
+              {collection.valid ? '' : t('machineEdit.createWizardSteps.invalidSuffix')}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="col-12 col-md-4">
+        <label className="form-label" htmlFor="machine-create-version">
+          {t('machineEdit.createWizardSteps.version')}
+          <UpdateMark update={update} onCatalog={onCatalog} disabled={loading} />
+        </label>
+        <select
+          id="machine-create-version"
+          className="form-select"
+          value={versionKey}
+          onChange={event => onVersionChange(event.target.value)}
+          disabled={loading || !family}
+        >
+          <option value="">{t('machineEdit.cdromSourceFields.select')}</option>
+          {(family?.versions || []).map(entry => (
+            <option key={entry.dir || entry.version} value={entry.version}>
+              {entry.version}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
+  );
+};
+
+ProvisionerChoice.propTypes = {
+  provisioners: PropTypes.array.isRequired,
+  familyName: PropTypes.string.isRequired,
+  onFamilyChange: PropTypes.func.isRequired,
+  family: PropTypes.object,
+  versionKey: PropTypes.string.isRequired,
+  onVersionChange: PropTypes.func.isRequired,
+  update: PropTypes.shape({
+    version: PropTypes.string.isRequired,
+    source: PropTypes.string.isRequired,
+  }),
+  onCatalog: PropTypes.func.isRequired,
+  loading: PropTypes.bool,
+};
+
+/**
+ * The General step: one Name, a dotted name split at its first dot and a
+ * bare name taking the default domain the sources resolve, the computed
+ * `server id--hostname.domain` line, the Edit parts fold over the server
+ * id, the hostname, the domain and its source, the Override switch, the
+ * tags, the owning organization on the server role, the Use a
+ * provisioner switch with the family and the version under it while on,
+ * and under Advanced the notes and the boot priority.
  */
 export const GeneralStep = ({
+  nameText,
+  setNameText,
+  onPartChange,
+  domain,
   name,
   setName,
   settings,
   setSetting,
-  startAfterCreate,
-  setStartAfterCreate,
   tagsInput,
   setTagsInput,
   notes,
@@ -191,6 +468,9 @@ export const GeneralStep = ({
   orgChoices = [],
   orgUuid = '',
   setOrgUuid = null,
+  useProvisioner,
+  setUseProvisioner,
+  provisioner,
   advanced,
   loading,
 }) => {
@@ -201,29 +481,21 @@ export const GeneralStep = ({
 
   return (
     <div className="row g-3">
-      <SettingInput
-        id="machine-setting-server_id"
-        label={t('machineEdit.createWizardSteps.serverId')}
-        value={settings.server_id}
-        onChange={event => setSetting('server_id', event.target.value)}
-        disabled={loading}
-      />
-      <SettingInput
-        id="machine-setting-hostname"
-        label={t('machineEdit.createWizardSteps.hostname')}
-        value={settings.hostname}
-        onChange={event => setSetting('hostname', event.target.value)}
-        required
-        disabled={loading}
-      />
-      <SettingInput
-        id="machine-setting-domain"
-        label={t('machineEdit.createWizardSteps.domain')}
-        value={settings.domain}
-        onChange={event => setSetting('domain', event.target.value)}
-        required
-        disabled={loading}
-      />
+      <div className="col-12 col-md-8">
+        <label className="form-label" htmlFor="machine-create-name-input">
+          {t('machineEdit.createWizardSteps.name')}
+        </label>
+        <input
+          id="machine-create-name-input"
+          className="form-control"
+          type="text"
+          value={nameText}
+          onChange={event => setNameText(event.target.value)}
+          required
+          disabled={loading}
+        />
+        <span className="form-text text-muted">{t('machineEdit.createWizardSteps.nameHint')}</span>
+      </div>
       <SettingInput
         id="machine-create-tags"
         label={t('machineEdit.createWizardSteps.tags')}
@@ -232,6 +504,65 @@ export const GeneralStep = ({
         onChange={event => setTagsInput(event.target.value)}
         disabled={loading}
       />
+      <div className="col-12">
+        <div className="d-flex align-items-center gap-3 flex-wrap">
+          <span className="form-text text-muted mt-0">
+            {t('machineEdit.createWizardSteps.computedName')}{' '}
+            <code data-field="computed-name">{computedName}</code>
+          </span>
+          <Switch
+            id="machine-create-name-override"
+            labelKey="machineEdit.createWizardSteps.overrideName"
+            checked={overrideName}
+            disabled={loading}
+            small
+            onChange={checked => {
+              setOverrideName(checked);
+              setName(checked ? derivedName : '');
+            }}
+          />
+        </div>
+        {overrideName ? (
+          <div className="col-12 col-md-6 mt-2">
+            <input
+              id="machine-create-name"
+              className="form-control"
+              type="text"
+              aria-label={t('machineEdit.createWizardSteps.machineNameAria')}
+              value={name}
+              onChange={event => setName(event.target.value)}
+              disabled={loading}
+            />
+            <span className="form-text text-muted">
+              {t('machineEdit.createWizardSteps.overrideNameHint')}
+            </span>
+          </div>
+        ) : null}
+      </div>
+      <div className="col-12">
+        <NameParts
+          settings={settings}
+          setSetting={setSetting}
+          onPartChange={onPartChange}
+          domain={domain}
+          loading={loading}
+        />
+      </div>
+      <div className="col-12">
+        <Switch
+          id="machine-create-use-provisioner"
+          labelKey="machineEdit.createWizardSteps.useProvisioner"
+          checked={useProvisioner}
+          disabled={loading}
+          onChange={setUseProvisioner}
+        />
+        {useProvisioner ? null : (
+          <span className="form-text text-muted">
+            {t('machineEdit.createWizardSteps.useProvisionerHint')}
+          </span>
+        )}
+      </div>
+      {useProvisioner ? <ProvisionerChoice {...provisioner} loading={loading} /> : null}
       {setOrgUuid && orgChoices.length > 0 ? (
         <OrgChoice
           orgChoices={orgChoices}
@@ -276,61 +607,31 @@ export const GeneralStep = ({
           </span>
         </div>
       ) : null}
-      <div className="col-12">
-        <div className="d-flex align-items-center gap-3 flex-wrap">
-          <span className="form-text text-muted mt-0">
-            {t('machineEdit.createWizardSteps.computedName')}{' '}
-            <code data-field="computed-name">{computedName}</code>
-          </span>
-          <Switch
-            id="machine-create-name-override"
-            labelKey="machineEdit.createWizardSteps.overrideName"
-            checked={overrideName}
-            disabled={loading}
-            small
-            onChange={checked => {
-              setOverrideName(checked);
-              setName(checked ? derivedName : '');
-            }}
-          />
-        </div>
-        {overrideName ? (
-          <div className="col-12 col-md-6 mt-2">
-            <input
-              id="machine-create-name"
-              className="form-control"
-              type="text"
-              aria-label={t('machineEdit.createWizardSteps.machineNameAria')}
-              value={name}
-              onChange={event => setName(event.target.value)}
-              disabled={loading}
-            />
-            <span className="form-text text-muted">
-              {t('machineEdit.createWizardSteps.overrideNameHint')}
-            </span>
-          </div>
-        ) : null}
-      </div>
-      <div className="col-12">
-        <Switch
-          id="machine-create-start-after"
-          labelKey="machineEdit.createWizardSteps.startAfterCreate"
-          checked={startAfterCreate}
-          disabled={loading}
-          onChange={setStartAfterCreate}
-        />
-      </div>
     </div>
   );
 };
 
 GeneralStep.propTypes = {
+  nameText: PropTypes.string.isRequired,
+  setNameText: PropTypes.func.isRequired,
+  onPartChange: PropTypes.func.isRequired,
+  domain: domainShape.isRequired,
   name: PropTypes.string.isRequired,
   setName: PropTypes.func.isRequired,
   settings: PropTypes.object.isRequired,
   setSetting: PropTypes.func.isRequired,
-  startAfterCreate: PropTypes.bool.isRequired,
-  setStartAfterCreate: PropTypes.func.isRequired,
+  useProvisioner: PropTypes.bool.isRequired,
+  setUseProvisioner: PropTypes.func.isRequired,
+  provisioner: PropTypes.shape({
+    provisioners: PropTypes.array.isRequired,
+    familyName: PropTypes.string.isRequired,
+    onFamilyChange: PropTypes.func.isRequired,
+    family: PropTypes.object,
+    versionKey: PropTypes.string.isRequired,
+    onVersionChange: PropTypes.func.isRequired,
+    update: PropTypes.object,
+    onCatalog: PropTypes.func.isRequired,
+  }).isRequired,
   tagsInput: PropTypes.string.isRequired,
   setTagsInput: PropTypes.func.isRequired,
   notes: PropTypes.string.isRequired,
@@ -339,6 +640,47 @@ GeneralStep.propTypes = {
   orgUuid: PropTypes.string,
   setOrgUuid: PropTypes.func,
   advanced: PropTypes.bool,
+  loading: PropTypes.bool,
+};
+
+const BoxUrlField = ({ settings, setSetting, boxPickCustom, marks, loading }) => {
+  const { t } = useTranslation();
+  if (boxPickCustom) {
+    return (
+      <div className="col-12 col-md-8">
+        <label className="form-label" htmlFor="machine-setting-box_url">
+          {t('machineEdit.createWizardSteps.boxRegistryUrl')}
+          <PackageMark marks={marks} path="settings.box_url" />
+        </label>
+        <input
+          id="machine-setting-box_url"
+          className="form-control"
+          type="text"
+          value={settings.box_url ?? ''}
+          onChange={event => setSetting('box_url', event.target.value)}
+          disabled={loading}
+        />
+      </div>
+    );
+  }
+  if (!settings.box_url) {
+    return null;
+  }
+  return (
+    <div className="col-12">
+      <p className="form-text text-muted mb-0" id="machine-setting-box_url" data-field="box-url">
+        {t('machineEdit.createWizardSteps.boxRegistryUrl')}: <code>{settings.box_url}</code>
+        <PackageMark marks={marks} path="settings.box_url" />
+      </p>
+    </div>
+  );
+};
+
+BoxUrlField.propTypes = {
+  settings: PropTypes.object.isRequired,
+  setSetting: PropTypes.func.isRequired,
+  boxPickCustom: PropTypes.bool.isRequired,
+  marks: PropTypes.instanceOf(Set).isRequired,
   loading: PropTypes.bool,
 };
 
@@ -352,14 +694,18 @@ const BoxImageFields = ({
   setBoxPickCustom,
   onBoxSelect,
   onBoxPicked,
+  marks,
   loading,
 }) => {
   const { t } = useTranslation();
+  const versions = catalogEntry?.versions || [];
+  const unlistedVersion = settings.box_version && !versions.includes(settings.box_version);
   return (
     <>
       <div className="col-12 col-md-8">
         <label className="form-label" htmlFor="machine-setting-box">
           {t('machineEdit.createWizardSteps.image')}
+          <PackageMark marks={marks} path="settings.box" />
         </label>
         {boxPickCustom ? (
           <input
@@ -374,7 +720,7 @@ const BoxImageFields = ({
         ) : (
           <VocabularySelect
             id="machine-setting-box"
-            value={catalogEntry ? catalogEntry.key : ''}
+            value={catalogEntry ? catalogEntry.key : settings.box || ''}
             entries={visibleOptions.map(entry => ({ value: entry.key, label: entry.value }))}
             blankLabel={t(
               visibleOptions.length > 0
@@ -413,9 +759,10 @@ const BoxImageFields = ({
           </datalist>
         ) : null}
       </div>
-      <div className="col-12 col-md-6">
+      <div className="col-12 col-md-4">
         <label className="form-label" htmlFor="machine-setting-box_version">
           {t('machineEdit.createWizardSteps.boxVersion')}
+          <PackageMark marks={marks} path="settings.box_version" />
         </label>
         {boxPickCustom ? (
           <input
@@ -433,16 +780,19 @@ const BoxImageFields = ({
             className="form-select"
             value={settings.box_version ?? ''}
             onChange={event => setSetting('box_version', event.target.value)}
-            disabled={loading || !catalogEntry}
+            disabled={loading || (!catalogEntry && !settings.box)}
           >
             <option value="">
               {t(
-                catalogEntry
+                catalogEntry || settings.box
                   ? 'machineEdit.createWizardSteps.unpinnedResolvesLocally'
                   : 'machineEdit.createWizardSteps.pickAnImageFirst'
               )}
             </option>
-            {(catalogEntry?.versions || []).map(versionNumber => (
+            {unlistedVersion ? (
+              <option value={settings.box_version}>{settings.box_version}</option>
+            ) : null}
+            {versions.map(versionNumber => (
               <option key={versionNumber} value={versionNumber}>
                 {versionNumber}
               </option>
@@ -464,81 +814,113 @@ BoxImageFields.propTypes = {
   setBoxPickCustom: PropTypes.func.isRequired,
   onBoxSelect: PropTypes.func.isRequired,
   onBoxPicked: PropTypes.func.isRequired,
+  marks: PropTypes.instanceOf(Set).isRequired,
   loading: PropTypes.bool,
 };
 
-const BoxAdvancedFields = ({ settings, setSetting, catalogEntry, loading }) => {
+const BoxArchitectureField = ({ settings, setSetting, catalogEntry, marks, loading }) => {
   const { t } = useTranslation();
   const architectures = catalogEntry?.architectures || [];
   return (
-    <>
-      <div className="col-12 col-md-6">
-        <label className="form-label" htmlFor="machine-setting-box_arch">
-          {t('machineEdit.createWizardSteps.boxArchitecture')}
-        </label>
-        {architectures.length > 0 ? (
-          <select
-            id="machine-setting-box_arch"
-            className="form-select"
-            value={settings.box_arch ?? ''}
-            onChange={event => setSetting('box_arch', event.target.value)}
-            disabled={loading}
-          >
-            <option value="">{t('machineEdit.common.na')}</option>
-            {architectures.map(arch => (
-              <option key={arch} value={arch}>
-                {arch}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            id="machine-setting-box_arch"
-            className="form-control"
-            type="text"
-            placeholder="amd64"
-            value={settings.box_arch ?? ''}
-            onChange={event => setSetting('box_arch', event.target.value)}
-            disabled={loading}
-          />
-        )}
-      </div>
-      <div className="col-12 col-md-6">
-        <label className="form-label" htmlFor="machine-setting-box_url">
-          {t('machineEdit.createWizardSteps.boxRegistryUrl')}
-        </label>
+    <div className="col-12 col-md-4">
+      <label className="form-label" htmlFor="machine-setting-box_arch">
+        {t('machineEdit.createWizardSteps.boxArchitecture')}
+        <PackageMark marks={marks} path="settings.box_arch" />
+      </label>
+      {architectures.length > 0 ? (
+        <select
+          id="machine-setting-box_arch"
+          className="form-select"
+          value={settings.box_arch ?? ''}
+          onChange={event => setSetting('box_arch', event.target.value)}
+          disabled={loading}
+        >
+          <option value="">{t('machineEdit.common.na')}</option>
+          {settings.box_arch && !architectures.includes(settings.box_arch) ? (
+            <option value={settings.box_arch}>{settings.box_arch}</option>
+          ) : null}
+          {architectures.map(arch => (
+            <option key={arch} value={arch}>
+              {arch}
+            </option>
+          ))}
+        </select>
+      ) : (
         <input
-          id="machine-setting-box_url"
+          id="machine-setting-box_arch"
           className="form-control"
           type="text"
-          value={settings.box_url ?? ''}
-          onChange={event => setSetting('box_url', event.target.value)}
+          placeholder="amd64"
+          value={settings.box_arch ?? ''}
+          onChange={event => setSetting('box_arch', event.target.value)}
           disabled={loading}
         />
-      </div>
-    </>
+      )}
+    </div>
   );
 };
 
-BoxAdvancedFields.propTypes = {
+BoxArchitectureField.propTypes = {
   settings: PropTypes.object.isRequired,
   setSetting: PropTypes.func.isRequired,
   catalogEntry: PropTypes.object,
+  marks: PropTypes.instanceOf(Set).isRequired,
   loading: PropTypes.bool,
 };
 
+const BootSourceRadios = ({ bootSource, setBootSource, loading }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="col-12">
+      <span className="form-label d-block">{t('machineEdit.createWizardSteps.bootMedia')}</span>
+      {BOOT_SOURCES.map(source => (
+        <div className="form-check" key={source}>
+          <input
+            id={`machine-boot-source-${source}`}
+            className="form-check-input"
+            type="radio"
+            name="machine-boot-source"
+            checked={bootSource === source}
+            onChange={() => setBootSource(source)}
+            disabled={loading}
+          />
+          <label className="form-check-label" htmlFor={`machine-boot-source-${source}`}>
+            {t(`machineEdit.createWizardSteps.bootSource.${source}.label`)}{' '}
+            <span className="text-muted small">
+              — {t(`machineEdit.createWizardSteps.bootSource.${source}.hint`)}
+            </span>
+          </label>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+BootSourceRadios.propTypes = {
+  bootSource: PropTypes.string.isRequired,
+  setBootSource: PropTypes.func.isRequired,
+  loading: PropTypes.bool,
+};
+
+const boxShape = PropTypes.shape({
+  box: PropTypes.string.isRequired,
+  box_version: PropTypes.string.isRequired,
+  box_arch: PropTypes.string.isRequired,
+  box_url: PropTypes.string.isRequired,
+});
+
 /**
- * The OS / Box step: the boot media, a box template, a blank disk, an
- * existing image or no disk; on a template boot the registry card of a
- * handed box whose registry the host does not hold, `registry` the state
- * of `useTemplateSource`, the line naming the handed box, `seededBox`, the
+ * The box of a template boot: the registry card of a handed box whose
+ * registry the host does not hold, `registry` the state of
+ * `useTemplateSource`, the line naming the handed box, `seededBox`, the
  * registry filter, each registry by its key and drawn by its display
  * name, the one merged image list of every registry's catalog and the
- * local templates with Custom for a hand-typed image, the version, under
- * Advanced the architecture and the registry URL, and Browse BoxVault
- * where the server role offers it.
+ * local templates with Custom for a hand-typed image, the version, the
+ * registry URL as muted text under the image and as an input on a custom
+ * pick, under Advanced the architecture, and Browse BoxVault where the
+ * server role offers it.
  */
-export const BoxStep = ({
+const BoxFields = ({
   settings,
   setSetting,
   templates,
@@ -550,11 +932,10 @@ export const BoxStep = ({
   onSourceFilterChange,
   boxPickCustom,
   setBoxPickCustom,
-  bootSource,
-  setBootSource,
   registry = null,
   seededBox = null,
   onBrowseBoxVault = null,
+  marks,
   advanced,
   loading,
 }) => {
@@ -579,124 +960,104 @@ export const BoxStep = ({
   };
 
   return (
-    <div className="row g-3">
-      <div className="col-12">
-        <span className="form-label d-block">{t('machineEdit.createWizardSteps.bootMedia')}</span>
-        {BOOT_SOURCES.map(source => (
-          <div className="form-check" key={source}>
-            <input
-              id={`machine-boot-source-${source}`}
-              className="form-check-input"
-              type="radio"
-              name="machine-boot-source"
-              checked={bootSource === source}
-              onChange={() => setBootSource(source)}
-              disabled={loading}
-            />
-            <label className="form-check-label" htmlFor={`machine-boot-source-${source}`}>
-              {t(`machineEdit.createWizardSteps.bootSource.${source}.label`)}{' '}
-              <span className="text-muted small">
-                — {t(`machineEdit.createWizardSteps.bootSource.${source}.hint`)}
-              </span>
-            </label>
-          </div>
-        ))}
-      </div>
-      {bootSource === 'template' ? null : (
-        <p className="form-text text-muted mb-0">
-          {t('machineEdit.createWizardSteps.noBoxTemplateHint')}
-        </p>
-      )}
-      {bootSource === 'template' ? (
-        <>
-          {registry ? (
-            <div className="col-12">
-              <BoxSourceCard source={registry} />
-            </div>
-          ) : null}
-          {seededBox && boxPickCustom ? (
-            <div className="col-12">
-              <p className="form-text text-muted mb-0" data-note="box-seeded">
-                {t('machineEdit.createWizardSteps.seededBox', {
-                  box: seededBox.box,
-                  version: seededBox.box_version,
-                  arch: seededBox.box_arch,
-                })}
-              </p>
-            </div>
-          ) : null}
-          {catalogNote ? (
-            <div className="col-12">
-              <p className="form-text text-warning mb-0" data-note="catalog">
-                {catalogNote}
-              </p>
-            </div>
-          ) : null}
-          <div className="col-12 col-md-4">
-            <label className="form-label" htmlFor="machine-box-registry">
-              {t('machineEdit.createWizardSteps.registry')}
-            </label>
-            <select
-              id="machine-box-registry"
-              className="form-select"
-              value={sourceFilter}
-              onChange={event => onSourceFilterChange(event.target.value)}
-              disabled={loading}
-            >
-              <option value="">{t('machineEdit.createWizardSteps.allRegistries')}</option>
-              {sourceChoices.map(choice => (
-                <option key={choice.value} value={choice.value}>
-                  {choice.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <BoxImageFields
-            settings={settings}
-            setSetting={setSetting}
-            templates={templates}
-            catalogEntry={catalogEntry}
-            visibleOptions={visibleOptions}
-            boxPickCustom={boxPickCustom}
-            setBoxPickCustom={setBoxPickCustom}
-            onBoxSelect={handleBoxSelect}
-            onBoxPicked={onBoxPicked}
-            loading={loading}
-          />
-          {advanced ? (
-            <BoxAdvancedFields
-              settings={settings}
-              setSetting={setSetting}
-              catalogEntry={catalogEntry}
-              loading={loading}
-            />
-          ) : null}
-          {onBrowseBoxVault ? (
-            <div className="col-12">
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-info"
-                data-action="browse-boxvault"
-                onClick={onBrowseBoxVault}
-                disabled={loading}
-              >
-                {t('machineEdit.createWizardSteps.browseBoxVault')}
-              </button>
-              <span className="form-text text-muted ms-2">
-                {t('machineEdit.createWizardSteps.browseBoxVaultHint')}
-              </span>
-            </div>
-          ) : null}
-          <p className="form-text text-muted mb-0">
-            {t('machineEdit.createWizardSteps.boxDownloadHint')}
-          </p>
-        </>
+    <>
+      {registry ? (
+        <div className="col-12">
+          <BoxSourceCard source={registry} />
+        </div>
       ) : null}
-    </div>
+      {seededBox && boxPickCustom ? (
+        <div className="col-12">
+          <p className="form-text text-muted mb-0" data-note="box-seeded">
+            {t('machineEdit.createWizardSteps.seededBox', {
+              box: seededBox.box,
+              version: seededBox.box_version,
+              arch: seededBox.box_arch,
+            })}
+          </p>
+        </div>
+      ) : null}
+      {catalogNote ? (
+        <div className="col-12">
+          <p className="form-text text-warning mb-0" data-note="catalog">
+            {catalogNote}
+          </p>
+        </div>
+      ) : null}
+      <div className="col-12 col-md-4">
+        <label className="form-label" htmlFor="machine-box-registry">
+          {t('machineEdit.createWizardSteps.registry')}
+        </label>
+        <select
+          id="machine-box-registry"
+          className="form-select"
+          value={sourceFilter}
+          onChange={event => onSourceFilterChange(event.target.value)}
+          disabled={loading}
+        >
+          <option value="">{t('machineEdit.createWizardSteps.allRegistries')}</option>
+          {sourceChoices.map(choice => (
+            <option key={choice.value} value={choice.value}>
+              {choice.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <BoxImageFields
+        settings={settings}
+        setSetting={setSetting}
+        templates={templates}
+        catalogEntry={catalogEntry}
+        visibleOptions={visibleOptions}
+        boxPickCustom={boxPickCustom}
+        setBoxPickCustom={setBoxPickCustom}
+        onBoxSelect={handleBoxSelect}
+        onBoxPicked={onBoxPicked}
+        marks={marks}
+        loading={loading}
+      />
+      <BoxUrlField
+        settings={settings}
+        setSetting={setSetting}
+        boxPickCustom={boxPickCustom}
+        marks={marks}
+        loading={loading}
+      />
+      {advanced ? (
+        <BoxArchitectureField
+          settings={settings}
+          setSetting={setSetting}
+          catalogEntry={catalogEntry}
+          marks={marks}
+          loading={loading}
+        />
+      ) : null}
+      {onBrowseBoxVault ? (
+        <div className="col-12">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-info"
+            data-action="browse-boxvault"
+            onClick={onBrowseBoxVault}
+            disabled={loading}
+          >
+            {t('machineEdit.createWizardSteps.browseBoxVault')}
+          </button>
+          <span className="form-text text-muted ms-2">
+            {t('machineEdit.createWizardSteps.browseBoxVaultHint')}
+          </span>
+        </div>
+      ) : null}
+      <div className="col-12">
+        <p className="form-text text-muted mb-0">
+          {t('machineEdit.createWizardSteps.boxDownloadHint')}
+        </p>
+      </div>
+    </>
   );
 };
 
-BoxStep.propTypes = {
+BoxFields.propTypes = {
   settings: PropTypes.object.isRequired,
   setSetting: PropTypes.func.isRequired,
   templates: PropTypes.array.isRequired,
@@ -710,16 +1071,10 @@ BoxStep.propTypes = {
   onSourceFilterChange: PropTypes.func.isRequired,
   boxPickCustom: PropTypes.bool.isRequired,
   setBoxPickCustom: PropTypes.func.isRequired,
-  bootSource: PropTypes.string.isRequired,
-  setBootSource: PropTypes.func.isRequired,
   registry: PropTypes.object,
-  seededBox: PropTypes.shape({
-    box: PropTypes.string.isRequired,
-    box_version: PropTypes.string.isRequired,
-    box_arch: PropTypes.string.isRequired,
-    box_url: PropTypes.string.isRequired,
-  }),
+  seededBox: boxShape,
   onBrowseBoxVault: PropTypes.func,
+  marks: PropTypes.instanceOf(Set).isRequired,
   advanced: PropTypes.bool,
   loading: PropTypes.bool,
 };
@@ -754,12 +1109,14 @@ const Stepper = ({
   onMore,
   lessHeld,
   moreHeld,
+  mark = null,
 }) => {
   const { t } = useTranslation();
   return (
     <div className="col-12 col-md-4">
       <label className="form-label" htmlFor={id}>
         {t(labelKey)}
+        {mark}
       </label>
       <div className="input-group">
         <button
@@ -796,72 +1153,34 @@ Stepper.propTypes = {
   onMore: PropTypes.func.isRequired,
   lessHeld: PropTypes.bool.isRequired,
   moreHeld: PropTypes.bool.isRequired,
+  mark: PropTypes.node,
 };
 
-/**
- * The CPU & Memory step: the processors and the memory, each with its
- * stepper.
- */
-export const ResourcesStep = ({ settings, setSetting, loading }) => {
-  const vcpus = Number(settings.vcpus) || 0;
-  const bumpMemory = delta => {
-    const next = stepMemory(settings.memory, delta);
-    if (next) {
-      setSetting('memory', next);
-    }
-  };
-
+const HardwareSectionFold = ({ sectionId, hardware, onHardwareChange, knobValues, loading }) => {
+  const { t } = useTranslation();
+  const section = HARDWARE_SECTIONS.find(entry => entry.id === sectionId);
   return (
-    <div className="row g-3">
-      <Stepper
-        id="machine-setting-vcpus"
-        labelKey="machineEdit.createWizardSteps.vcpus"
-        lessKey="machineEdit.createWizardSteps.fewerVcpus"
-        moreKey="machineEdit.createWizardSteps.moreVcpus"
-        onLess={() => setSetting('vcpus', Math.max(1, vcpus - 1))}
-        onMore={() => setSetting('vcpus', Math.max(1, vcpus + 1))}
-        lessHeld={Boolean(loading) || vcpus <= 1}
-        moreHeld={Boolean(loading)}
-      >
-        <input
-          id="machine-setting-vcpus"
-          className="form-control text-center"
-          type="number"
-          min="1"
-          value={settings.vcpus ?? ''}
-          onChange={event =>
-            setSetting('vcpus', event.target.value === '' ? '' : Number(event.target.value))
-          }
+    <details className="mb-2" open>
+      <summary className="fw-semibold">{t(`machineEdit.hardwareSections.${sectionId}`)}</summary>
+      <div className="mt-2 mb-2">
+        <HardwareSectionForm
+          section={section}
+          values={hardware[sectionId] || {}}
+          onChange={onHardwareChange}
+          knobValues={knobValues}
+          blankLabel={t('machineEdit.common.na')}
           disabled={loading}
         />
-      </Stepper>
-      <Stepper
-        id="machine-setting-memory"
-        labelKey="machineEdit.createWizardSteps.memory"
-        lessKey="machineEdit.createWizardSteps.lessMemory"
-        moreKey="machineEdit.createWizardSteps.moreMemory"
-        onLess={() => bumpMemory(-1)}
-        onMore={() => bumpMemory(1)}
-        lessHeld={Boolean(loading) || !stepMemory(settings.memory, -1)}
-        moreHeld={Boolean(loading) || !stepMemory(settings.memory, 1)}
-      >
-        <input
-          id="machine-setting-memory"
-          className="form-control text-center"
-          type="text"
-          placeholder="e.g. 2G"
-          value={settings.memory ?? ''}
-          onChange={event => setSetting('memory', event.target.value)}
-          disabled={loading}
-        />
-      </Stepper>
-    </div>
+      </div>
+    </details>
   );
 };
 
-ResourcesStep.propTypes = {
-  settings: PropTypes.object.isRequired,
-  setSetting: PropTypes.func.isRequired,
+HardwareSectionFold.propTypes = {
+  sectionId: PropTypes.string.isRequired,
+  hardware: PropTypes.object.isRequired,
+  onHardwareChange: PropTypes.func.isRequired,
+  knobValues: PropTypes.object,
   loading: PropTypes.bool,
 };
 
@@ -1193,6 +1512,8 @@ const CreatedBootFields = ({
   zfsDatasets,
   availablePools,
   defaultPool,
+  templateSize = '',
+  marks,
   advanced,
   loading,
 }) => {
@@ -1206,14 +1527,30 @@ const CreatedBootFields = ({
               ? 'machineEdit.createWizardSteps.diskSizeBlankTemplate'
               : 'machineEdit.createWizardSteps.diskSize'
           )}
+          <PackageMark marks={marks} path="disks.boot.size" />
         </label>
         <input
           id="machine-disk-boot-size"
           className="form-control"
           type="text"
-          placeholder="e.g. 32G"
+          placeholder={(bootSource === 'template' && templateSize) || 'e.g. 32G'}
           value={disks.bootSize}
           onChange={event => setDisks({ bootSize: event.target.value })}
+          disabled={loading}
+        />
+      </div>
+      <div className="col-12 col-md-4">
+        <label className="form-label" htmlFor="machine-disk-boot-mount">
+          {t('machineEdit.createWizardSteps.mount')}
+          <PackageMark marks={marks} path="disks.boot.mount" />
+        </label>
+        <input
+          id="machine-disk-boot-mount"
+          className="form-control"
+          type="text"
+          placeholder="/"
+          value={disks.bootMount}
+          onChange={event => setDisks({ bootMount: event.target.value })}
           disabled={loading}
         />
       </div>
@@ -1233,6 +1570,7 @@ const CreatedBootFields = ({
           <div className="col-6 col-md-4">
             <label className="form-label" htmlFor="machine-disk-boot-volume">
               {t('machineEdit.createWizardSteps.volumeName')}
+              <PackageMark marks={marks} path="disks.boot.volume_name" />
             </label>
             <input
               id="machine-disk-boot-volume"
@@ -1279,6 +1617,8 @@ CreatedBootFields.propTypes = {
   zfsDatasets: PropTypes.array.isRequired,
   availablePools: PropTypes.arrayOf(PropTypes.string),
   defaultPool: PropTypes.string,
+  templateSize: PropTypes.string,
+  marks: PropTypes.instanceOf(Set).isRequired,
   advanced: PropTypes.bool,
   loading: PropTypes.bool,
 };
@@ -1354,9 +1694,8 @@ VboxBootPlacement.propTypes = {
   loading: PropTypes.bool,
 };
 
-const BootDiskSection = ({
+const BootDiskFields = ({
   bootSource,
-  setBootSource,
   disks,
   setDisks,
   host,
@@ -1368,38 +1707,21 @@ const BootDiskSection = ({
   zfsDatasets,
   availablePools,
   defaultPool,
+  templateSize = '',
+  marks,
   advanced,
   loading,
 }) => {
   const { t } = useTranslation();
   const created = bootSource === 'template' || bootSource === 'scratch';
   return (
-    <div className="row g-3 mb-3">
-      <div className="col-12">
-        <div
-          className="btn-group"
-          role="group"
-          aria-label={t('machineEdit.createWizardSteps.bootDiskType')}
-        >
-          {BOOT_SOURCES.map(source => (
-            <button
-              type="button"
-              key={source}
-              className={`btn btn-sm ${bootSource === source ? 'btn-primary' : 'btn-outline-secondary'}`}
-              title={t(`machineEdit.createWizardSteps.bootSource.${source}.hint`)}
-              data-boot-source={source}
-              onClick={() => setBootSource(source)}
-              disabled={loading}
-            >
-              {t(`machineEdit.createWizardSteps.bootSource.${source}.label`)}
-            </button>
-          ))}
-        </div>
-      </div>
+    <>
       {bootSource === 'none' ? (
-        <p className="form-text text-muted mb-0">
-          {t('machineEdit.createWizardSteps.disklessHint')}
-        </p>
+        <div className="col-12">
+          <p className="form-text text-muted mb-0">
+            {t('machineEdit.createWizardSteps.disklessHint')}
+          </p>
+        </div>
       ) : null}
       {bootSource === 'existing' ? (
         <ExistingBootPath
@@ -1423,6 +1745,8 @@ const BootDiskSection = ({
           zfsDatasets={zfsDatasets}
           availablePools={availablePools}
           defaultPool={defaultPool}
+          templateSize={templateSize}
+          marks={marks}
           advanced={advanced}
           loading={loading}
         />
@@ -1436,13 +1760,12 @@ const BootDiskSection = ({
           loading={loading}
         />
       ) : null}
-    </div>
+    </>
   );
 };
 
-BootDiskSection.propTypes = {
+BootDiskFields.propTypes = {
   bootSource: PropTypes.string.isRequired,
-  setBootSource: PropTypes.func.isRequired,
   disks: PropTypes.object.isRequired,
   setDisks: PropTypes.func.isRequired,
   host: PropTypes.shape(hostShape).isRequired,
@@ -1454,6 +1777,8 @@ BootDiskSection.propTypes = {
   zfsDatasets: PropTypes.array.isRequired,
   availablePools: PropTypes.arrayOf(PropTypes.string),
   defaultPool: PropTypes.string,
+  templateSize: PropTypes.string,
+  marks: PropTypes.instanceOf(Set).isRequired,
   advanced: PropTypes.bool,
   loading: PropTypes.bool,
 };
@@ -1607,6 +1932,49 @@ BhyveDiskPlacement.propTypes = {
   loading: PropTypes.bool,
 };
 
+const DiskMountFields = ({ rowKey, row, onPatch, loading }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <div className="col-6 col-md-2">
+        <label className="form-label small mb-1" htmlFor={`${rowKey}-filesystem`}>
+          {t('machineEdit.createWizardSteps.filesystem')}
+        </label>
+        <input
+          id={`${rowKey}-filesystem`}
+          className="form-control form-control-sm"
+          type="text"
+          placeholder="e.g. xfs"
+          value={row.filesystem ?? ''}
+          onChange={event => onPatch({ filesystem: event.target.value })}
+          disabled={loading}
+        />
+      </div>
+      <div className="col-6 col-md-2">
+        <label className="form-label small mb-1" htmlFor={`${rowKey}-mount`}>
+          {t('machineEdit.createWizardSteps.mount')}
+        </label>
+        <input
+          id={`${rowKey}-mount`}
+          className="form-control form-control-sm"
+          type="text"
+          placeholder="e.g. /local"
+          value={row.mount ?? ''}
+          onChange={event => onPatch({ mount: event.target.value })}
+          disabled={loading}
+        />
+      </div>
+    </>
+  );
+};
+
+DiskMountFields.propTypes = {
+  rowKey: PropTypes.string.isRequired,
+  row: PropTypes.object.isRequired,
+  onPatch: PropTypes.func.isRequired,
+  loading: PropTypes.bool,
+};
+
 const AdditionalDiskRow = ({
   row,
   index,
@@ -1618,6 +1986,7 @@ const AdditionalDiskRow = ({
   picker,
   poolOptions,
   zfsDatasets,
+  marks,
   advanced,
   loading,
 }) => {
@@ -1625,10 +1994,13 @@ const AdditionalDiskRow = ({
   const rowKey = `additional-disk-${row.key}`;
   return (
     <div className="row g-2 align-items-end" data-row="additional-disk">
+      <div className="col-12">
+        <PackageMark marks={marks} path={`disks.additional.${index}`} />
+      </div>
       <DiskSourceFields
         idPrefix={rowKey}
         sourceLabel={t('machineEdit.createWizardSteps.source')}
-        valueCol="col-6 col-md-5"
+        valueCol="col-6 col-md-3"
         sizeLabel={t('machineEdit.createWizardSteps.size')}
         sizePlaceholder="e.g. 20G"
         existingLabel={t(
@@ -1642,6 +2014,7 @@ const AdditionalDiskRow = ({
         {...host}
         disabled={loading}
       />
+      <DiskMountFields rowKey={rowKey} row={row} onPatch={onPatch} loading={loading} />
       {advanced && vbox ? (
         <ControllerPortFields
           idPrefix={rowKey}
@@ -1701,6 +2074,7 @@ AdditionalDiskRow.propTypes = {
   picker: PropTypes.object,
   poolOptions: PropTypes.array.isRequired,
   zfsDatasets: PropTypes.array.isRequired,
+  marks: PropTypes.instanceOf(Set).isRequired,
   advanced: PropTypes.bool,
   loading: PropTypes.bool,
 };
@@ -1715,6 +2089,8 @@ const newDiskRow = () => ({
   dataset: '',
   directory: '',
   sparse: true,
+  mount: '',
+  filesystem: '',
 });
 
 const AdditionalDisksSection = ({ disks, setDisks, ...rowProps }) => {
@@ -2093,14 +2469,20 @@ DisksAdvanced.propTypes = {
 };
 
 /**
- * The Disks step, the device model both agents read: the boot disk by
- * its type, the additional disks, the CD/DVD images, on a bhyve host the
- * lofs mounts, the boot order, and under Advanced the default controller
- * type of a bhyve host and the storage controllers of a VirtualBox host,
- * the pickers fed by the host's pools, datasets, volumes and registered
- * media.
+ * The OS & Disks step: the boot media asked once, a box template, a blank
+ * disk, an existing image or no disk; on a template boot the box fields
+ * of `BoxFields`, then the boot disk's size and mount, and the device
+ * model both agents read, the additional disks with their filesystem and
+ * mount, the CD/DVD images, on a bhyve host the lofs mounts, the boot
+ * order, and under Advanced the boot disk's placement, the default
+ * controller type of a bhyve host and the storage controllers of a
+ * VirtualBox host, the pickers fed by the host's pools, datasets,
+ * volumes and registered media; the boot size's placeholder the
+ * `disk_size` the picked box's template carries; `marks` the member
+ * paths the package filled, each drawing its badge.
  */
-export const DisksStep = ({
+export const OsDisksStep = ({
+  box,
   bootSource,
   setBootSource,
   disks,
@@ -2119,6 +2501,7 @@ export const DisksStep = ({
   zfsVolumes,
   vboxMedia,
   availablePools,
+  marks = NO_MARKS,
   advanced,
   loading,
 }) => {
@@ -2131,24 +2514,36 @@ export const DisksStep = ({
 
   return (
     <>
-      <h6 className="fw-bold">{t('machineEdit.createWizardSteps.bootDisk')}</h6>
-      <BootDiskSection
-        bootSource={bootSource}
-        setBootSource={setBootSource}
-        disks={disks}
-        setDisks={setDisks}
-        host={host}
-        bhyve={bhyve}
-        vbox={vbox}
-        volumeOptions={volumeOptions}
-        mediaOptions={mediaOptions}
-        zfsPools={zfsPools}
-        zfsDatasets={zfsDatasets}
-        availablePools={availablePools}
-        defaultPool={agentDefaults?.disks?.boot?.pool || null}
-        advanced={advanced}
-        loading={loading}
-      />
+      <div className="row g-3 mb-3">
+        <BootSourceRadios bootSource={bootSource} setBootSource={setBootSource} loading={loading} />
+        {bootSource === 'template' ? (
+          <BoxFields {...box} marks={marks} advanced={advanced} loading={loading} />
+        ) : (
+          <div className="col-12">
+            <p className="form-text text-muted mb-0">
+              {t('machineEdit.createWizardSteps.noBoxTemplateHint')}
+            </p>
+          </div>
+        )}
+        <BootDiskFields
+          bootSource={bootSource}
+          disks={disks}
+          setDisks={setDisks}
+          host={host}
+          bhyve={bhyve}
+          vbox={vbox}
+          volumeOptions={volumeOptions}
+          mediaOptions={mediaOptions}
+          zfsPools={zfsPools}
+          zfsDatasets={zfsDatasets}
+          availablePools={availablePools}
+          defaultPool={agentDefaults?.disks?.boot?.pool || null}
+          templateSize={boxDiskSizeOf(box.remoteBoxes, box.templates, box.settings)}
+          marks={marks}
+          advanced={advanced}
+          loading={loading}
+        />
+      </div>
       {bhyve && volumeOptions.length > 0 ? (
         <datalist id="machine-zvol-options">
           {volumeOptions.map(option => (
@@ -2172,6 +2567,7 @@ export const DisksStep = ({
         picker={existingDiskPickerFor(bhyve, volumeOptions, mediaOptions, t)}
         poolOptions={poolOptions}
         zfsDatasets={zfsDatasets}
+        marks={marks}
         advanced={advanced}
         loading={loading}
       />
@@ -2212,7 +2608,23 @@ export const DisksStep = ({
   );
 };
 
-DisksStep.propTypes = {
+OsDisksStep.propTypes = {
+  box: PropTypes.shape({
+    settings: PropTypes.object.isRequired,
+    setSetting: PropTypes.func.isRequired,
+    templates: PropTypes.array.isRequired,
+    catalogNote: PropTypes.string.isRequired,
+    remoteBoxes: PropTypes.array.isRequired,
+    onBoxPicked: PropTypes.func.isRequired,
+    sourceChoices: PropTypes.array.isRequired,
+    sourceFilter: PropTypes.string.isRequired,
+    onSourceFilterChange: PropTypes.func.isRequired,
+    boxPickCustom: PropTypes.bool.isRequired,
+    setBoxPickCustom: PropTypes.func.isRequired,
+    registry: PropTypes.object,
+    seededBox: boxShape,
+    onBrowseBoxVault: PropTypes.func,
+  }).isRequired,
   bootSource: PropTypes.string.isRequired,
   setBootSource: PropTypes.func.isRequired,
   disks: PropTypes.object.isRequired,
@@ -2231,6 +2643,7 @@ DisksStep.propTypes = {
   zfsVolumes: PropTypes.array.isRequired,
   vboxMedia: PropTypes.array.isRequired,
   availablePools: PropTypes.arrayOf(PropTypes.string),
+  marks: PropTypes.instanceOf(Set),
   advanced: PropTypes.bool,
   loading: PropTypes.bool,
 };
@@ -2354,10 +2767,58 @@ ZoneSystemField.propTypes = {
   loading: PropTypes.bool,
 };
 
-const ZoneBootFields = ({ zones, setZone, settings, agentDefaults, bhyveBootDevices, loading }) => {
+const ZoneCpuFields = ({ zones, setZone, settings, loading }) => {
   const { t } = useTranslation();
   const cpuTopo = Array.isArray(zones.complex_cpu_conf) ? zones.complex_cpu_conf[0] || {} : {};
   const setCpuTopo = patch => setZone('complex_cpu_conf', [{ ...cpuTopo, ...patch }]);
+  return (
+    <>
+      <div className="col-6 col-md-4">
+        <label className="form-label" htmlFor="machine-zones-cpu-config">
+          {t('machineEdit.machineSettings.cpuTopology')}
+        </label>
+        <select
+          id="machine-zones-cpu-config"
+          className="form-select"
+          value={zones.cpu_configuration ?? ''}
+          onChange={event => {
+            const mode = event.target.value;
+            setZone('cpu_configuration', mode);
+            if (mode !== 'complex') {
+              setZone('complex_cpu_conf', '');
+            } else if (!Array.isArray(zones.complex_cpu_conf)) {
+              setZone('complex_cpu_conf', [
+                { sockets: 1, cores: Number(settings.vcpus) || 1, threads: 1 },
+              ]);
+            }
+          }}
+          disabled={loading}
+        >
+          <option value="">{t('machineEdit.createWizardSteps.simpleDefault')}</option>
+          <option value="complex">{t('machineEdit.machineSettings.complexTopo')}</option>
+        </select>
+      </div>
+      {zones.cpu_configuration === 'complex' ? (
+        <CpuTopologyInputs
+          idPrefix="machine-cpu"
+          topo={cpuTopo}
+          onField={(key, next) => setCpuTopo({ [key]: next })}
+          disabled={loading}
+        />
+      ) : null}
+    </>
+  );
+};
+
+ZoneCpuFields.propTypes = {
+  zones: PropTypes.object.isRequired,
+  setZone: PropTypes.func.isRequired,
+  settings: PropTypes.object.isRequired,
+  loading: PropTypes.bool,
+};
+
+const ZoneBootFields = ({ zones, setZone, agentDefaults, bhyveBootDevices, loading }) => {
+  const { t } = useTranslation();
   return (
     <>
       <div className="col-12">
@@ -2405,39 +2866,6 @@ const ZoneBootFields = ({ zones, setZone, settings, agentDefaults, bhyveBootDevi
           </datalist>
         ) : null}
       </div>
-      <div className="col-6 col-md-4">
-        <label className="form-label" htmlFor="machine-zones-cpu-config">
-          {t('machineEdit.machineSettings.cpuTopology')}
-        </label>
-        <select
-          id="machine-zones-cpu-config"
-          className="form-select"
-          value={zones.cpu_configuration ?? ''}
-          onChange={event => {
-            const mode = event.target.value;
-            setZone('cpu_configuration', mode);
-            if (mode !== 'complex') {
-              setZone('complex_cpu_conf', '');
-            } else if (!Array.isArray(zones.complex_cpu_conf)) {
-              setZone('complex_cpu_conf', [
-                { sockets: 1, cores: Number(settings.vcpus) || 1, threads: 1 },
-              ]);
-            }
-          }}
-          disabled={loading}
-        >
-          <option value="">{t('machineEdit.createWizardSteps.simpleDefault')}</option>
-          <option value="complex">{t('machineEdit.machineSettings.complexTopo')}</option>
-        </select>
-      </div>
-      {zones.cpu_configuration === 'complex' ? (
-        <CpuTopologyInputs
-          idPrefix="machine-cpu"
-          topo={cpuTopo}
-          onField={(key, next) => setCpuTopo({ [key]: next })}
-          disabled={loading}
-        />
-      ) : null}
     </>
   );
 };
@@ -2445,7 +2873,6 @@ const ZoneBootFields = ({ zones, setZone, settings, agentDefaults, bhyveBootDevi
 ZoneBootFields.propTypes = {
   zones: PropTypes.object.isRequired,
   setZone: PropTypes.func.isRequired,
-  settings: PropTypes.object.isRequired,
   agentDefaults: PropTypes.object,
   bhyveBootDevices: PropTypes.arrayOf(PropTypes.string).isRequired,
   loading: PropTypes.bool,
@@ -2541,7 +2968,7 @@ const VboxHardwareSection = ({
         <code>vbox.&lt;section&gt;.&lt;key&gt;</code>{' '}
         {t('machineEdit.createWizardSteps.unvalidatedErrorHint')}
       </p>
-      {HARDWARE_SECTIONS.map(section => (
+      {HARDWARE_SECTIONS.filter(section => !RESOURCE_SECTIONS.includes(section.id)).map(section => (
         <details className="mb-2" key={section.id}>
           <summary className="fw-semibold">
             {t(`machineEdit.hardwareSections.${section.id}`)}
@@ -2607,9 +3034,10 @@ VboxHardwareSection.propTypes = {
  * The System step: the `zones` fields of a bhyve host, the guest agent
  * channel, the firmware and the boot ROM linked to it, the guest OS
  * type from the host's own list where it answers one, the bhyve boot
- * order, boot next and CPU topology, cloud-init, and under Advanced on a
- * VirtualBox host the whole `vbox` knob surface, the serial and parallel
- * ports and the raw JSON passthrough.
+ * order and boot next, cloud-init, and under Advanced on a VirtualBox
+ * host the `vbox` knob surface less the CPU and Memory sections, the
+ * serial and parallel ports and the raw JSON passthrough; `marks` the
+ * member paths the package filled.
  */
 export const SystemStep = ({
   zones,
@@ -2631,6 +3059,7 @@ export const SystemStep = ({
   bhyveBootDevices = [],
   vbox,
   bhyve,
+  marks = NO_MARKS,
   advanced,
   loading,
 }) => {
@@ -2678,6 +3107,7 @@ export const SystemStep = ({
         <div className="col-6 col-md-4">
           <label className="form-label" htmlFor="machine-system-firmware">
             {t('machineEdit.createWizardSteps.firmware')}
+            <PackageMark marks={marks} path="settings.firmware_type" />
           </label>
           <VocabularySelect
             id="machine-system-firmware"
@@ -2719,6 +3149,7 @@ export const SystemStep = ({
         <div className="col-6 col-md-4">
           <label className="form-label" htmlFor="machine-setting-os_type">
             {t('machineEdit.createWizardSteps.guestOsType')}
+            <PackageMark marks={marks} path="settings.os_type" />
           </label>
           {osTypes ? (
             <OsTypeSelect
@@ -2745,7 +3176,6 @@ export const SystemStep = ({
           <ZoneBootFields
             zones={zones}
             setZone={setZone}
-            settings={settings}
             agentDefaults={agentDefaults}
             bhyveBootDevices={bhyveBootDevices}
             loading={loading}
@@ -2791,12 +3221,202 @@ SystemStep.propTypes = {
   bhyveBootDevices: PropTypes.arrayOf(PropTypes.string),
   vbox: PropTypes.bool,
   bhyve: PropTypes.bool,
+  marks: PropTypes.instanceOf(Set),
+  advanced: PropTypes.bool,
+  loading: PropTypes.bool,
+};
+
+const resourceStepShape = {
+  settings: PropTypes.object.isRequired,
+  setSetting: PropTypes.func.isRequired,
+  zones: PropTypes.object.isRequired,
+  setZone: PropTypes.func.isRequired,
+  hardware: PropTypes.object.isRequired,
+  onHardwareChange: PropTypes.func.isRequired,
+  agentDefaults: PropTypes.object,
+  vbox: PropTypes.bool,
+  bhyve: PropTypes.bool,
+  marks: PropTypes.instanceOf(Set),
   advanced: PropTypes.bool,
   loading: PropTypes.bool,
 };
 
 /**
- * The Network step, the one networks editor over the wizard's rows.
+ * The CPU step: the processors with their stepper; on a bhyve host the
+ * zone's `cpu_configuration` and the sockets, cores and threads of a
+ * complex topology; under Advanced on a VirtualBox host the `cpu` knob
+ * section.
+ */
+export const CpuStep = ({
+  settings,
+  setSetting,
+  zones,
+  setZone,
+  hardware,
+  onHardwareChange,
+  agentDefaults,
+  vbox,
+  bhyve,
+  marks = NO_MARKS,
+  advanced,
+  loading,
+}) => {
+  const vcpus = Number(settings.vcpus) || 0;
+  return (
+    <>
+      <div className="row g-3 mb-3">
+        <Stepper
+          id="machine-setting-vcpus"
+          labelKey="machineEdit.createWizardSteps.vcpus"
+          lessKey="machineEdit.createWizardSteps.fewerVcpus"
+          moreKey="machineEdit.createWizardSteps.moreVcpus"
+          onLess={() => setSetting('vcpus', Math.max(1, vcpus - 1))}
+          onMore={() => setSetting('vcpus', Math.max(1, vcpus + 1))}
+          lessHeld={Boolean(loading) || vcpus <= 1}
+          moreHeld={Boolean(loading)}
+          mark={<PackageMark marks={marks} path="settings.vcpus" />}
+        >
+          <input
+            id="machine-setting-vcpus"
+            className="form-control text-center"
+            type="number"
+            min="1"
+            value={settings.vcpus ?? ''}
+            onChange={event =>
+              setSetting('vcpus', event.target.value === '' ? '' : Number(event.target.value))
+            }
+            disabled={loading}
+          />
+        </Stepper>
+        {bhyve ? (
+          <ZoneCpuFields zones={zones} setZone={setZone} settings={settings} loading={loading} />
+        ) : null}
+      </div>
+      {advanced && vbox ? (
+        <HardwareSectionFold
+          sectionId="cpu"
+          hardware={hardware}
+          onHardwareChange={onHardwareChange}
+          knobValues={agentDefaults?.knob_values || null}
+          loading={loading}
+        />
+      ) : null}
+    </>
+  );
+};
+
+CpuStep.propTypes = resourceStepShape;
+
+const ZoneMemoryKnobs = ({ zones, setZone, agentDefaults, loading }) => {
+  const knobValues = agentDefaults?.knob_values || {};
+  const keys = Object.keys(knobValues).filter(key => ZONE_MEMORY_KNOB.test(key));
+  return (
+    <>
+      {keys.map(key => {
+        const field = key.slice('zones.'.length);
+        return (
+          <div className="col-6 col-md-4" key={key}>
+            <label className="form-label text-capitalize" htmlFor={`machine-zones-${field}`}>
+              {field.replace(/_/gu, ' ')}
+            </label>
+            <VocabularySelect
+              id={`machine-zones-${field}`}
+              value={String(zones[field] ?? '')}
+              entries={knobValues[key]}
+              blankLabel={agentDefaultLabel(agentDefaults, field)}
+              onChange={next => setZone(field, next)}
+              disabled={loading}
+            />
+          </div>
+        );
+      })}
+    </>
+  );
+};
+
+ZoneMemoryKnobs.propTypes = {
+  zones: PropTypes.object.isRequired,
+  setZone: PropTypes.func.isRequired,
+  agentDefaults: PropTypes.object,
+  loading: PropTypes.bool,
+};
+
+/**
+ * The Memory step: the memory with its stepper; on a bhyve host every
+ * `zones.` memory knob the host's knob values list, each a select; under
+ * Advanced on a VirtualBox host the `memory` knob section.
+ */
+export const MemoryStep = ({
+  settings,
+  setSetting,
+  zones,
+  setZone,
+  hardware,
+  onHardwareChange,
+  agentDefaults,
+  vbox,
+  bhyve,
+  marks = NO_MARKS,
+  advanced,
+  loading,
+}) => {
+  const bumpMemory = delta => {
+    const next = stepMemory(settings.memory, delta);
+    if (next) {
+      setSetting('memory', next);
+    }
+  };
+  return (
+    <>
+      <div className="row g-3 mb-3">
+        <Stepper
+          id="machine-setting-memory"
+          labelKey="machineEdit.createWizardSteps.memory"
+          lessKey="machineEdit.createWizardSteps.lessMemory"
+          moreKey="machineEdit.createWizardSteps.moreMemory"
+          onLess={() => bumpMemory(-1)}
+          onMore={() => bumpMemory(1)}
+          lessHeld={Boolean(loading) || !stepMemory(settings.memory, -1)}
+          moreHeld={Boolean(loading) || !stepMemory(settings.memory, 1)}
+          mark={<PackageMark marks={marks} path="settings.memory" />}
+        >
+          <input
+            id="machine-setting-memory"
+            className="form-control text-center"
+            type="text"
+            placeholder="e.g. 2G"
+            value={settings.memory ?? ''}
+            onChange={event => setSetting('memory', event.target.value)}
+            disabled={loading}
+          />
+        </Stepper>
+        {bhyve ? (
+          <ZoneMemoryKnobs
+            zones={zones}
+            setZone={setZone}
+            agentDefaults={agentDefaults}
+            loading={loading}
+          />
+        ) : null}
+      </div>
+      {advanced && vbox ? (
+        <HardwareSectionFold
+          sectionId="memory"
+          hardware={hardware}
+          onHardwareChange={onHardwareChange}
+          knobValues={agentDefaults?.knob_values || null}
+          loading={loading}
+        />
+      ) : null}
+    </>
+  );
+};
+
+MemoryStep.propTypes = resourceStepShape;
+
+/**
+ * The Network step, the one networks editor over the wizard's rows, the
+ * package's mark over the adapters it filled.
  */
 export const NetworkStep = ({
   networks,
@@ -2804,16 +3424,24 @@ export const NetworkStep = ({
   bridgeChoices,
   ipSuggestions,
   nicEnums,
+  marks = NO_MARKS,
   loading,
 }) => (
-  <NetworksEditor
-    networks={networks}
-    onNetworksChange={onNetworksChange}
-    bridgeChoices={bridgeChoices}
-    ipSuggestions={ipSuggestions}
-    nicEnums={nicEnums}
-    loading={loading}
-  />
+  <>
+    {[...networks.keys()].some(index => marks.has(`networks.${index}`)) ? (
+      <p className="form-text text-muted mt-0">
+        <PackageMark marks={marks} path="networks.0" />
+      </p>
+    ) : null}
+    <NetworksEditor
+      networks={networks}
+      onNetworksChange={onNetworksChange}
+      bridgeChoices={bridgeChoices}
+      ipSuggestions={ipSuggestions}
+      nicEnums={nicEnums}
+      loading={loading}
+    />
+  </>
 );
 
 NetworkStep.propTypes = {
@@ -2822,6 +3450,7 @@ NetworkStep.propTypes = {
   bridgeChoices: PropTypes.array.isRequired,
   ipSuggestions: PropTypes.object,
   nicEnums: PropTypes.object,
+  marks: PropTypes.instanceOf(Set),
   loading: PropTypes.bool,
 };
 
@@ -2865,7 +3494,7 @@ BooleanOverride.propTypes = {
   disabled: PropTypes.bool,
 };
 
-const PackageOverrides = ({ settings, setSetting, defaultLabel, loading }) => {
+const PackageOverrides = ({ settings, setSetting, defaultLabel, marks, loading }) => {
   const { t } = useTranslation();
   return (
     <>
@@ -2890,6 +3519,7 @@ const PackageOverrides = ({ settings, setSetting, defaultLabel, loading }) => {
           value={settings.setup_wait}
           onChange={event => setSetting('setup_wait', event.target.value)}
           disabled={loading}
+          mark={<PackageMark marks={marks} path="settings.setup_wait" />}
         />
         {BOOLEAN_OVERRIDES.map(field => (
           <BooleanOverride
@@ -2920,6 +3550,7 @@ const PackageOverrides = ({ settings, setSetting, defaultLabel, loading }) => {
           value={settings.vagrant_user}
           onChange={event => setSetting('vagrant_user', event.target.value)}
           disabled={loading}
+          mark={<PackageMark marks={marks} path="settings.vagrant_user" />}
         />
         <div className="col-12 col-md-4">
           <label className="form-label" htmlFor="machine-setting-vagrant_user_pass">
@@ -2958,63 +3589,23 @@ PackageOverrides.propTypes = {
   settings: PropTypes.object.isRequired,
   setSetting: PropTypes.func.isRequired,
   defaultLabel: PropTypes.func.isRequired,
+  marks: PropTypes.instanceOf(Set).isRequired,
   loading: PropTypes.bool,
 };
 
-const ProvisionerPickers = ({
-  provisioners,
+const SyncFields = ({
   familyName,
-  onFamilyChange,
-  family,
-  versionKey,
-  onVersionChange,
   syncMethod,
   setSyncMethod,
   syncMethodOptions,
+  removeTransport,
+  setRemoveTransport,
+  removeTransportDefault,
   loading,
 }) => {
   const { t } = useTranslation();
   return (
     <div className="row g-3 mb-3">
-      <div className="col-12 col-md-4">
-        <label className="form-label" htmlFor="machine-create-provisioner">
-          {t('machineEdit.createWizardSteps.provisioner')}
-        </label>
-        <select
-          id="machine-create-provisioner"
-          className="form-select"
-          value={familyName}
-          onChange={event => onFamilyChange(event.target.value)}
-          disabled={loading}
-        >
-          <option value="">{t('machineEdit.createWizardSteps.noProvisioning')}</option>
-          {provisioners.map(collection => (
-            <option key={collection.name} value={collection.name}>
-              {collection.metadata?.label || collection.name}
-              {collection.valid ? '' : t('machineEdit.createWizardSteps.invalidSuffix')}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="col-12 col-md-4">
-        <label className="form-label" htmlFor="machine-create-version">
-          {t('machineEdit.createWizardSteps.version')}
-        </label>
-        <select
-          id="machine-create-version"
-          className="form-select"
-          value={versionKey}
-          onChange={event => onVersionChange(event.target.value)}
-          disabled={loading || !family}
-        >
-          <option value="">{t('machineEdit.cdromSourceFields.select')}</option>
-          {(family?.versions || []).map(entry => (
-            <option key={entry.dir || entry.version} value={entry.version}>
-              {entry.version}
-            </option>
-          ))}
-        </select>
-      </div>
       <div className="col-12 col-md-4">
         <label className="form-label" htmlFor="machine-setting-sync-method">
           {t('machineEdit.createWizardSteps.syncMethod')}
@@ -3033,20 +3624,39 @@ const ProvisionerPickers = ({
           ))}
         </select>
       </div>
+      {familyName ? (
+        <div className="col-12 col-md-6">
+          <label className="form-label" htmlFor="machine-create-remove-transport">
+            {t('machineEdit.createWizardSteps.removeProvisioningNetwork')}
+          </label>
+          <select
+            id="machine-create-remove-transport"
+            className="form-select"
+            value={removeTransport}
+            onChange={event => setRemoveTransport(event.target.value)}
+            disabled={loading}
+          >
+            <option value="">{t(removeTransportBlankKey(removeTransportDefault))}</option>
+            <option value="true">{t('machineEdit.createWizardSteps.removeTransportOption')}</option>
+            <option value="false">{t('machineEdit.createWizardSteps.keepTransportOption')}</option>
+          </select>
+          <span className="form-text text-muted">
+            {t('machineEdit.createWizardSteps.removalPipelineHint')}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 };
 
-ProvisionerPickers.propTypes = {
-  provisioners: PropTypes.array.isRequired,
+SyncFields.propTypes = {
   familyName: PropTypes.string.isRequired,
-  onFamilyChange: PropTypes.func.isRequired,
-  family: PropTypes.object,
-  versionKey: PropTypes.string.isRequired,
-  onVersionChange: PropTypes.func.isRequired,
   syncMethod: PropTypes.string.isRequired,
   setSyncMethod: PropTypes.func.isRequired,
   syncMethodOptions: PropTypes.arrayOf(PropTypes.string),
+  removeTransport: PropTypes.string.isRequired,
+  setRemoveTransport: PropTypes.func.isRequired,
+  removeTransportDefault: PropTypes.bool,
   loading: PropTypes.bool,
 };
 
@@ -3060,12 +3670,15 @@ const VersionFields = ({
   inventory,
   advanced,
   omit,
+  onArtifactsReload,
+  host,
+  artifacts,
   loading,
 }) => {
   const { t } = useTranslation();
   if (fieldConfig) {
     return (
-      <div className="mb-3">
+      <div className="mb-3" data-panel="wizard-fields">
         <DslConfigForm
           config={fieldConfig}
           answers={answers}
@@ -3076,6 +3689,9 @@ const VersionFields = ({
           showAdvanced={advanced}
           idPrefix="prov-field"
           omit={omit}
+          onArtifactsReload={onArtifactsReload}
+          host={host}
+          artifacts={artifacts}
           disabled={loading}
         />
       </div>
@@ -3109,31 +3725,31 @@ VersionFields.propTypes = {
   inventory: PropTypes.object,
   advanced: PropTypes.bool,
   omit: PropTypes.instanceOf(Set),
+  onArtifactsReload: PropTypes.func,
+  host: PropTypes.object,
+  artifacts: PropTypes.array,
   loading: PropTypes.bool,
 };
 
 /**
- * The Provisioning step: the install card of a handed family the host
- * does not hold, `install` the state of `useProvisionerInstall`; the
- * provisioner family, none by default, its version and the sync method;
- * while a family is picked, whether the provisioning transport is removed
- * when the pipeline ends; the version's field DSL less the fields the
- * role pickers answer; the one roles editor over the manifest's roles,
- * the host's artifact rows and the queued downloads; the Safe ID control
- * where the manifest declares id files; and under Advanced the package
- * setting overrides.
+ * The Provisioning step, drawn while Use a provisioner is on: the install
+ * card of a handed family the host does not hold, `install` the state of
+ * `useProvisionerInstall`; the line asking for a family while none is
+ * picked on General; the version's field DSL less the fields the role
+ * pickers answer and the groups a role's card draws, its `file` fields
+ * the artifact pick rows over the host's artifact rows and its `secret`
+ * fields the secret pick rows over the host's store; the one roles editor over the
+ * manifest's roles, the host's artifact rows, the queued downloads and
+ * the role-attached field groups; the sync method and, while a family is
+ * picked, whether the provisioning transport is removed when the
+ * pipeline ends; and under Advanced the package setting overrides with
+ * the package's marks.
  */
 export const ProvisioningStep = ({
   install = null,
-  provisioners,
   familyName,
-  onFamilyChange,
-  family,
-  versionKey,
-  onVersionChange,
   version,
   versionPending,
-  showSafeId,
   settings,
   setSetting,
   agentDefaults = null,
@@ -3158,60 +3774,25 @@ export const ProvisioningStep = ({
   removeTransport,
   setRemoveTransport,
   removeTransportDefault = null,
-  safeId,
-  setSafeId,
-  onSafeIdUpload,
-  safeIdUploading = false,
+  onArtifactsReload,
   host,
   omit = null,
+  marks = NO_MARKS,
   advanced,
   loading,
 }) => {
   const { t } = useTranslation();
   const defaultLabel = key => agentDefaultLabel(agentDefaults, key);
+  const files = { onArtifactsReload, host, artifacts };
   return (
     <>
       {install ? <ProvisionerInstallCard install={install} /> : null}
-      <ProvisionerPickers
-        provisioners={provisioners}
-        familyName={familyName}
-        onFamilyChange={onFamilyChange}
-        family={family}
-        versionKey={versionKey}
-        onVersionChange={onVersionChange}
-        syncMethod={syncMethod}
-        setSyncMethod={setSyncMethod}
-        syncMethodOptions={syncMethodOptions}
-        loading={loading}
-      />
+      {familyName ? null : (
+        <p className="form-text text-muted" data-note="no-family">
+          {t('machineEdit.createWizardSteps.pickFamilyOnGeneral')}
+        </p>
+      )}
       {version?.description ? <p className="form-text text-muted">{version.description}</p> : null}
-      {familyName ? (
-        <div className="row g-3 mb-3">
-          <div className="col-12 col-md-6">
-            <label className="form-label" htmlFor="machine-create-remove-transport">
-              {t('machineEdit.createWizardSteps.removeProvisioningNetwork')}
-            </label>
-            <select
-              id="machine-create-remove-transport"
-              className="form-select"
-              value={removeTransport}
-              onChange={event => setRemoveTransport(event.target.value)}
-              disabled={loading}
-            >
-              <option value="">{t(removeTransportBlankKey(removeTransportDefault))}</option>
-              <option value="true">
-                {t('machineEdit.createWizardSteps.removeTransportOption')}
-              </option>
-              <option value="false">
-                {t('machineEdit.createWizardSteps.keepTransportOption')}
-              </option>
-            </select>
-            <span className="form-text text-muted">
-              {t('machineEdit.createWizardSteps.removalPipelineHint')}
-            </span>
-          </div>
-        </div>
-      ) : null}
       {version ? (
         <VersionFields
           fieldConfig={fieldConfig}
@@ -3223,6 +3804,7 @@ export const ProvisioningStep = ({
           inventory={inventory}
           advanced={advanced}
           omit={omit}
+          {...files}
           loading={loading}
         />
       ) : null}
@@ -3242,29 +3824,33 @@ export const ProvisioningStep = ({
               queued={queued}
               onAnswers={onAnswers}
               onFetch={onFetch}
+              fieldConfig={fieldConfig}
+              answers={answers}
+              fieldErrors={fieldErrors}
+              onAnswerChange={onAnswerChange}
+              inventory={inventory}
+              onArtifactsReload={onArtifactsReload}
+              host={host}
             />
           </div>
         </>
       ) : null}
-      {showSafeId ? (
-        <div className="mb-3">
-          <span className="form-label d-block">{t('provisioning.safeId.label')}</span>
-          <SafeIdControl
-            value={safeId}
-            onChange={setSafeId}
-            artifacts={artifacts}
-            host={host}
-            onUpload={onSafeIdUpload}
-            uploading={safeIdUploading}
-            disabled={loading}
-          />
-        </div>
-      ) : null}
+      <SyncFields
+        familyName={familyName}
+        syncMethod={syncMethod}
+        setSyncMethod={setSyncMethod}
+        syncMethodOptions={syncMethodOptions}
+        removeTransport={removeTransport}
+        setRemoveTransport={setRemoveTransport}
+        removeTransportDefault={removeTransportDefault}
+        loading={loading}
+      />
       {version && advanced ? (
         <PackageOverrides
           settings={settings}
           setSetting={setSetting}
           defaultLabel={defaultLabel}
+          marks={marks}
           loading={loading}
         />
       ) : null}
@@ -3274,15 +3860,9 @@ export const ProvisioningStep = ({
 
 ProvisioningStep.propTypes = {
   install: PropTypes.object,
-  provisioners: PropTypes.array.isRequired,
   familyName: PropTypes.string.isRequired,
-  onFamilyChange: PropTypes.func.isRequired,
-  family: PropTypes.object,
-  versionKey: PropTypes.string.isRequired,
-  onVersionChange: PropTypes.func.isRequired,
   version: PropTypes.object,
   versionPending: PropTypes.bool,
-  showSafeId: PropTypes.bool,
   settings: PropTypes.object.isRequired,
   setSetting: PropTypes.func.isRequired,
   agentDefaults: PropTypes.object,
@@ -3307,12 +3887,10 @@ ProvisioningStep.propTypes = {
   removeTransport: PropTypes.string.isRequired,
   setRemoveTransport: PropTypes.func.isRequired,
   removeTransportDefault: PropTypes.bool,
-  safeId: PropTypes.object.isRequired,
-  setSafeId: PropTypes.func.isRequired,
-  onSafeIdUpload: PropTypes.func.isRequired,
-  safeIdUploading: PropTypes.bool,
+  onArtifactsReload: PropTypes.func,
   host: PropTypes.shape(hostShape).isRequired,
   omit: PropTypes.instanceOf(Set),
+  marks: PropTypes.instanceOf(Set),
   advanced: PropTypes.bool,
   loading: PropTypes.bool,
 };
@@ -3399,7 +3977,7 @@ const optionalRows = (spec, t) =>
  * name, the provisioner, the boot, then the disks, the media, the zone
  * fields, the tags, the notes, the `vbox` keys and cloud-init where the
  * spec carries them, every setting, every network, the roles enabled,
- * the sync method and whether the machine starts.
+ * the downloads waited on and the sync method.
  *
  * @param {Object} spec - The spec of `buildSpec`
  * @param {Function} t - The translator
@@ -3459,22 +4037,62 @@ export const confirmRowsOf = (spec, t) => [
     label: t('machineEdit.createWizardSteps.confirmSyncMethod'),
     value: spec.sync_method || 'rsync',
   },
-  {
-    key: 'start_after_create',
-    label: t('machineEdit.createWizardSteps.confirmStartAfterCreate'),
-    value: t(
-      spec.start_after_create
-        ? 'machineEdit.createWizardSteps.yesValue'
-        : 'machineEdit.createWizardSteps.noValue'
-    ),
-  },
 ];
 
+const EditorLoading = () => (
+  <div className="d-flex align-items-center py-3 text-muted">
+    <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />
+  </div>
+);
+
+const PreviewBody = ({ preview }) => {
+  const { t } = useTranslation();
+  if (preview.state === 'failed') {
+    return (
+      <p className="form-text text-danger mb-0" data-note="preview-failed">
+        {t('machineEdit.createWizardSteps.previewFailed', { message: preview.error })}
+      </p>
+    );
+  }
+  if (preview.state === 'loading' && !preview.yaml) {
+    return <EditorLoading />;
+  }
+  return (
+    <>
+      {preview.warnings.length > 0 ? (
+        <ul className="form-text text-warning mb-2" data-list="preview-warnings">
+          {preview.warnings.map(warning => (
+            <li key={warning}>{warning}</li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="border rounded overflow-hidden">
+        <Suspense fallback={<EditorLoading />}>
+          <HostsYmlEditor value={preview.yaml} onChange={noop} disabled />
+        </Suspense>
+      </div>
+    </>
+  );
+};
+
+const previewShape = PropTypes.shape({
+  state: PropTypes.oneOf(['loading', 'ready', 'failed']).isRequired,
+  yaml: PropTypes.string.isRequired,
+  warnings: PropTypes.arrayOf(PropTypes.string).isRequired,
+  error: PropTypes.string.isRequired,
+});
+
+PreviewBody.propTypes = {
+  preview: previewShape.isRequired,
+};
+
 /**
- * The Confirm step: exactly what Create sends, one record row a member
- * in the one record shape, and the whole body as JSON under a fold.
+ * The Confirm step: exactly what Create sends, one record row a member in
+ * the one record shape, the Hosts.yml the agent answered
+ * `POST machines/preview` with under an open fold with Copy, its warnings
+ * listed and its refusal said, and the whole body as JSON under a fold.
  */
-export const ConfirmStep = ({ spec }) => {
+export const ConfirmStep = ({ spec, preview }) => {
   const { t } = useTranslation();
   const rows = confirmRowsOf(spec, t).map(row => ({
     ...row,
@@ -3488,6 +4106,26 @@ export const ConfirmStep = ({ spec }) => {
       <div data-list="confirm-rows">
         <RecordRows rows={rows} className="mb-0" />
       </div>
+      <details className="mt-3" data-fold="hosts-yml-preview" data-state={preview.state} open>
+        <summary className="small">
+          {t('machineEdit.createWizardSteps.hostsYmlPreview')}
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary ms-2"
+            data-action="preview-copy"
+            onClick={event => {
+              event.preventDefault();
+              navigator.clipboard.writeText(preview.yaml);
+            }}
+            disabled={!preview.yaml}
+          >
+            {t('machineEdit.createWizardSteps.copy')}
+          </button>
+        </summary>
+        <div className="mt-2">
+          <PreviewBody preview={preview} />
+        </div>
+      </details>
       <details>
         <summary className="small">{t('machineEdit.createWizardSteps.fullRequestBody')}</summary>
         <pre className="small mt-2" data-field="request-body">
@@ -3500,4 +4138,5 @@ export const ConfirmStep = ({ spec }) => {
 
 ConfirmStep.propTypes = {
   spec: PropTypes.object.isRequired,
+  preview: previewShape.isRequired,
 };

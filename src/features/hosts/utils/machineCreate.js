@@ -1,4 +1,6 @@
+import { sourceKeyOf } from './boxCatalog';
 import { hostHasFeature } from './capabilities';
+import { configNamesOf, configPath } from './configNodes';
 import { withAddressing, cdromEntry, filesystemEntries } from './machineHelpers';
 import { CATALOG_SOURCE_FORM, SOURCE_FORM } from './manageCatalog';
 import { canCreateMachines } from './permissions';
@@ -7,16 +9,38 @@ import { waitForOf } from './roleFiles';
 
 export const CREATE_STEPS = [
   'general',
-  'box',
+  'os-disks',
   'system',
-  'disks',
-  'resources',
+  'cpu',
+  'memory',
   'network',
   'provisioning',
   'confirm',
 ];
 
+const PROVISIONING_STEP = 'provisioning';
+
 export const BOX_SETTING_KEYS = ['box', 'box_version', 'box_arch', 'box_url'];
+
+export const PACKAGE_SETTING_KEYS = [
+  'box',
+  'box_url',
+  'box_version',
+  'box_arch',
+  'os_type',
+  'firmware_type',
+  'vcpus',
+  'memory',
+  'setup_wait',
+  'vagrant_user',
+];
+
+const PACKAGE_BOOT_MEMBERS = [
+  ['size', 'bootSize'],
+  ['volume_name', 'bootVolumeName'],
+  ['clone_strategy', 'bootCloneStrategy'],
+  ['mount', 'bootMount'],
+];
 
 export const SETTING_KEYS = [
   'hostname',
@@ -101,6 +125,8 @@ const blank = value => value === '' || value === undefined || value === null;
 
 const trimmed = value => String(value ?? '').trim();
 
+const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+
 export const emptySettings = () => ({
   ...Object.fromEntries(SETTING_KEYS.map(key => [key, ''])),
   vcpus: 2,
@@ -109,6 +135,7 @@ export const emptySettings = () => ({
 
 export const emptyDiskConfig = () => ({
   bootSize: '',
+  bootMount: '',
   bootSparse: true,
   bootPath: '',
   bootVolumeName: '',
@@ -140,6 +167,259 @@ export const defaultExternalNetwork = () => ({
   mac: 'auto',
   dns: ['1.1.1.1', '8.8.8.8'],
 });
+
+/**
+ * The hostname and the domain one Name holds: a name with a dot splits at
+ * its first dot, a bare name is the hostname with the host's default
+ * domain, an empty name empty parts.
+ *
+ * @param {string} name - The Name as typed
+ * @param {string} defaultDomain - The host's default domain
+ * @returns {{ hostname: string, domain: string }} The parts
+ */
+export const nameParts = (name, defaultDomain) => {
+  const text = trimmed(name);
+  if (!text) {
+    return { hostname: '', domain: '' };
+  }
+  const dot = text.indexOf('.');
+  if (dot < 0) {
+    return { hostname: text, domain: trimmed(defaultDomain) };
+  }
+  return { hostname: text.slice(0, dot), domain: text.slice(dot + 1) };
+};
+
+/**
+ * The sources a default domain comes from, in the order the first
+ * non-empty one wins: the browser preference, the person's own row, the
+ * organization's row and the agent's own default.
+ */
+export const DOMAIN_SOURCES = ['preference', 'user', 'organization', 'agent'];
+
+const MACHINES_CONFIG = 'machines';
+
+const AGENT_CONFIG_ROUTE = '/admin/config/machines';
+
+const listedChoicesOf = defaults =>
+  (Array.isArray(defaults?.settings?.domain_choices) ? defaults.settings.domain_choices : [])
+    .filter(row => isObject(row) && DOMAIN_SOURCES.includes(row.source) && trimmed(row.domain))
+    .map(row => ({ source: row.source, domain: trimmed(row.domain) }));
+
+/**
+ * The rows of the Domain source select, one a source in the order of
+ * `DOMAIN_SOURCES`: the browser preference while one is set, then the
+ * `user`, `organization` and `agent` rows of `settings.domain_choices`,
+ * the agent's row standing in from `settings.domain` while the list
+ * names none, a row with an empty domain and a second row of one source
+ * dropped.
+ *
+ * @param {Object|null} defaults - The answer of `GET machines/defaults`
+ * @param {string} [preference] - The browser's default domain preference
+ * @returns {Array<{ source: string, domain: string }>} The rows
+ */
+export const domainChoicesOf = (defaults, preference = '') => {
+  const rows = listedChoicesOf(defaults);
+  const agentDomain = trimmed(defaults?.settings?.domain);
+  if (agentDomain && !rows.some(row => row.source === 'agent')) {
+    rows.push({ source: 'agent', domain: agentDomain });
+  }
+  const own = trimmed(preference);
+  const all = own ? [{ source: 'preference', domain: own }, ...rows] : rows;
+  return DOMAIN_SOURCES.map(source => all.find(row => row.source === source)).filter(Boolean);
+};
+
+/**
+ * The default domain a bare name takes, the first non-empty of the
+ * browser preference, the `user` row, the `organization` row, the
+ * `agent` row and the agent's own `settings.domain`; empty while none
+ * yields one.
+ *
+ * @param {Object} options - The sources
+ * @param {string} [options.preference] - The browser's default domain preference
+ * @param {Array<{ source: string, domain: string }>} [options.choices] - The rows of `domainChoicesOf`
+ * @param {string} [options.agentDomain] - The agent's `settings.domain`
+ * @returns {string} The domain
+ */
+export const defaultDomainOf = ({ preference = '', choices = [], agentDomain = '' }) => {
+  const own = trimmed(preference);
+  if (own) {
+    return own;
+  }
+  const row = DOMAIN_SOURCES.map(source => choices.find(entry => entry.source === source)).find(
+    entry => entry && trimmed(entry.domain)
+  );
+  return row ? trimmed(row.domain) : trimmed(agentDomain);
+};
+
+/**
+ * The source the Domain source select reads for a domain: the first row
+ * whose domain is the one held, `custom` while none is.
+ *
+ * @param {Array<{ source: string, domain: string }>} choices - The rows of `domainChoicesOf`
+ * @param {string} domain - The domain held
+ * @returns {string} The source word, or `custom`
+ */
+export const domainSourceOf = (choices, domain) =>
+  choices.find(row => row.domain === trimmed(domain))?.source || 'custom';
+
+/**
+ * The route of the agent's `machines` configuration, where the default
+ * domain lives: on the server role the host's own configuration page
+ * while its row lists the `machines` file, on an agent role the admin
+ * configuration page while the status lists it; null while neither does.
+ *
+ * @param {Object} options - The host
+ * @param {boolean} options.aggregated - True on the server role
+ * @param {Object|null} options.status - The payload from `probeStatus`
+ * @param {Object|null} options.server - The registry row, or the one serving agent's
+ * @param {string} options.id - The registry id, or `self` on an agent role
+ * @returns {string|null} The route
+ */
+export const domainConfigRouteOf = ({ aggregated, status, server, id }) => {
+  if (aggregated) {
+    return configNamesOf(server).includes(MACHINES_CONFIG) ? configPath(id, MACHINES_CONFIG) : null;
+  }
+  return Array.isArray(status?.config) && status.config.includes(MACHINES_CONFIG)
+    ? AGENT_CONFIG_ROUTE
+    : null;
+};
+
+/**
+ * The steps the wizard draws for a form, every step of `CREATE_STEPS`
+ * with the Provisioning step left out while Use a provisioner is off.
+ *
+ * @param {Object} form - The wizard's state
+ * @returns {Array<string>} The step ids
+ */
+export const stepsFor = form =>
+  form.useProvisioner ? CREATE_STEPS : CREATE_STEPS.filter(step => step !== PROVISIONING_STEP);
+
+/**
+ * Whether a step's pill opens: while every drawn step before it answers
+ * no problem through `problemOf`, so the first step is always open and
+ * Confirm opens once every step before it is clean.
+ *
+ * @param {Object} form - The wizard's state
+ * @param {string} stepId - The step
+ * @param {Function} problemOf - Answers a step's problem text, empty for none
+ * @returns {boolean} True while the pill opens
+ */
+export const stepOpen = (form, stepId, problemOf) => {
+  const steps = stepsFor(form);
+  const at = steps.indexOf(stepId);
+  return at >= 0 && steps.slice(0, at).every(step => !problemOf(step));
+};
+
+/**
+ * The `metadata.defaults` of a provisioner manifest, shape-checked: the
+ * `settings`, `disks`, `networks`, `tags` and `vbox` the package defaults
+ * a machine to, null while the manifest carries none.
+ *
+ * @param {Object|null} version - The version's manifest
+ * @returns {{ settings: Object, disks: Object, networks: Array<Object>, tags: Array<string>, vbox: Object }|null} The defaults
+ */
+export const packageDefaultsOf = version => {
+  const defaults = version?.metadata?.defaults;
+  if (!isObject(defaults)) {
+    return null;
+  }
+  return {
+    settings: isObject(defaults.settings) ? defaults.settings : {},
+    disks: isObject(defaults.disks) ? defaults.disks : {},
+    networks: Array.isArray(defaults.networks) ? defaults.networks.filter(isObject) : [],
+    tags: Array.isArray(defaults.tags)
+      ? defaults.tags.filter(tag => typeof tag === 'string' && tag).map(String)
+      : [],
+    vbox: isObject(defaults.vbox) ? defaults.vbox : {},
+  };
+};
+
+const packageSettingValue = (key, value) => {
+  if (key === 'vcpus') {
+    return Number(value);
+  }
+  return String(value);
+};
+
+const packageDiskRow = (disk, index) => ({
+  key: `package-${index}`,
+  mode: 'new',
+  size: String(disk.size ?? ''),
+  path: '',
+  volume_name: String(disk.volume_name ?? ''),
+  pool: '',
+  dataset: '',
+  directory: '',
+  sparse: disk.sparse !== false,
+  mount: String(disk.mount ?? ''),
+  filesystem: String(disk.filesystem ?? ''),
+});
+
+/**
+ * The members of the wizard's state a package's defaults fill, a member
+ * the person typed never among them, `form.typed` the set of member paths
+ * typed: the ten package settings under `settings`, `bootSource` as
+ * `template` while the package names a box, the boot disk's size, volume
+ * name, clone strategy and mount and the additional disks as new blank
+ * rows under `diskConfig`, the `networks` as rows over the external
+ * default, `tagsInput` as the `tags` joined by a comma, `vboxDefaults` as
+ * the `vbox` section, and `fromPackage`, the set of member paths the
+ * package filled, `settings.box`, `disks.boot.size`, `disks.additional.0`,
+ * `networks.0`, `tags` among them.
+ *
+ * @param {{ settings: Object, disks: Object, networks: Array<Object>, tags: Array<string>, vbox: Object }} defaults - The defaults of `packageDefaultsOf`
+ * @param {Object} form - The wizard's state
+ * @returns {Object} The members to set
+ */
+export const prefilledFrom = (defaults, form) => {
+  const typed = form.typed || new Set();
+  const fromPackage = new Set();
+  const settings = { ...form.settings };
+  PACKAGE_SETTING_KEYS.forEach(key => {
+    const value = defaults.settings[key];
+    if (blank(value) || typed.has(`settings.${key}`)) {
+      return;
+    }
+    settings[key] = packageSettingValue(key, value);
+    fromPackage.add(`settings.${key}`);
+  });
+  const diskConfig = { ...form.diskConfig };
+  const boot = isObject(defaults.disks.boot) ? defaults.disks.boot : {};
+  PACKAGE_BOOT_MEMBERS.forEach(([member, field]) => {
+    if (blank(boot[member]) || typed.has(`disks.boot.${member}`)) {
+      return;
+    }
+    diskConfig[field] = String(boot[member]);
+    fromPackage.add(`disks.boot.${member}`);
+  });
+  const additional = Array.isArray(defaults.disks.additional_disks)
+    ? defaults.disks.additional_disks.filter(isObject)
+    : [];
+  if (additional.length > 0 && !typed.has('disks.additional')) {
+    diskConfig.additional = additional.map(packageDiskRow);
+    [...additional.keys()].forEach(index => fromPackage.add(`disks.additional.${index}`));
+  }
+  const filled = { settings, diskConfig, fromPackage };
+  if (fromPackage.has('settings.box')) {
+    filled.bootSource = 'template';
+  }
+  if (defaults.networks.length > 0 && !typed.has('networks')) {
+    filled.networks = defaults.networks.map(network => ({
+      ...defaultExternalNetwork(),
+      ...network,
+    }));
+    [...defaults.networks.keys()].forEach(index => fromPackage.add(`networks.${index}`));
+  }
+  const tags = Array.isArray(defaults.tags) ? defaults.tags : [];
+  if (tags.length > 0 && !typed.has('tags')) {
+    filled.tagsInput = tags.join(', ');
+    fromPackage.add('tags');
+  }
+  if (isObject(defaults.vbox) && Object.keys(defaults.vbox).length > 0) {
+    filled.vboxDefaults = defaults.vbox;
+  }
+  return filled;
+};
 
 /**
  * Whether New machine draws for a host: for a person who may create
@@ -351,7 +631,7 @@ export const handoffTitleOf = (word, seed) => {
 };
 
 /**
- * The box a handed `box_<provider>` member lands on the Box step for a
+ * The box a handed `box_<provider>` member lands on the OS & Disks step for a
  * host, picked by the host's hypervisors in their order: a VirtualBox
  * host takes `box_virtualbox`, a bhyve host `box_zone` then `box_bhyve`,
  * a UTM host `box_utm` then `box_virtualbox`; the member's
@@ -383,7 +663,7 @@ export const seedBoxFor = (seed, hypervisors) => {
 };
 
 /**
- * The box a handed seed lands on the Box step: the plain `box` seed of
+ * The box a handed seed lands on the OS & Disks step: the plain `box` seed of
  * BoxVault with its three members while the seed carries one, else the
  * catalog's `box_<provider>` member the host's hypervisors pick through
  * `seedBoxFor`, null while neither names a box.
@@ -571,6 +851,9 @@ const bootEntryOf = ({ diskConfig, bootSource, bhyve, vbox }) => {
     if (vbox && trimmed(diskConfig.bootDirectory)) {
       boot.directory = trimmed(diskConfig.bootDirectory);
     }
+    if (trimmed(diskConfig.bootMount)) {
+      boot.mount = trimmed(diskConfig.bootMount);
+    }
   }
   if (vbox && boot.type !== 'none') {
     if (trimmed(diskConfig.bootController)) {
@@ -583,9 +866,15 @@ const bootEntryOf = ({ diskConfig, bootSource, bhyve, vbox }) => {
   return boot;
 };
 
+const withMount = (entry, row) => ({
+  ...entry,
+  ...(trimmed(row.mount) && { mount: trimmed(row.mount) }),
+  ...(trimmed(row.filesystem) && { filesystem: trimmed(row.filesystem) }),
+});
+
 const additionalDiskOf = (row, { bhyve, vbox }) => {
   if (row.mode === 'existing') {
-    return row.path ? withAddressing({ type: 'image', path: row.path }, row) : null;
+    return row.path ? withMount(withAddressing({ type: 'image', path: row.path }, row), row) : null;
   }
   if (!row.size) {
     return null;
@@ -603,7 +892,7 @@ const additionalDiskOf = (row, { bhyve, vbox }) => {
   if (vbox && trimmed(row.directory)) {
     base.directory = trimmed(row.directory);
   }
-  return withAddressing(base, row);
+  return withMount(withAddressing(base, row), row);
 };
 
 /**
@@ -757,12 +1046,13 @@ const mergedSettingsOf = ({ settings, bootSource, bootOrder }) => {
   return merged;
 };
 
-const vboxSectionOf = ({ vbox, hardwarePayload, zones, vboxJson }) => {
+const vboxSectionOf = ({ vbox, vboxDefaults, hardwarePayload, zones, vboxJson }) => {
   const passthrough = parseVboxPassthrough(vboxJson);
   if (!vbox) {
     return passthrough || {};
   }
   return {
+    ...(isObject(vboxDefaults) ? vboxDefaults : {}),
     ...hardwarePayload,
     ...(zones.guest_agent === true && { guest_agent: true }),
     ...(passthrough || {}),
@@ -807,38 +1097,19 @@ export const roleRowsOf = (rows, manifestRoles) =>
   });
 
 /**
- * The safe id members of the create spec: `safe_id_path` for a file on
- * the agent host, `id_files` with one row, the artifact's id and name,
- * for a file of the host's cache or one uploaded into it, nothing while
- * the package declares no id files or nothing is picked.
- *
- * @param {Object} form - The wizard's state
- * @returns {Object} The members
- */
-export const safeIdMembersOf = form => {
-  if (!form.needsSafeId || !form.safeId) {
-    return {};
-  }
-  const { source, artifact_id: artifactId, name, path } = form.safeId;
-  if (source === 'path') {
-    return trimmed(path) ? { safe_id_path: trimmed(path) } : {};
-  }
-  return artifactId ? { id_files: [{ artifact_id: artifactId, name: name || '' }] } : {};
-};
-
-/**
  * The body of `POST machines`, the create spec the Confirm step draws and
  * Create sends, exactly as hyperweaver-ui built it: the `name` where
  * given, the `hypervisor` where chosen, the `provisioner` while a family
  * is picked, the `settings` the wizard edited with the box fields on a
  * template boot alone, the `disks`, the `filesystems` and `zones` of a
- * bhyve host, the `vbox` section of a VirtualBox host, `cloud_init`,
+ * bhyve host, the `vbox` section of a VirtualBox host, the package's
+ * `vboxDefaults` under the hardware payload and the passthrough, `cloud_init`,
  * `tags`, `notes`, `networks`, `roles` in their drawn order through
  * `roleRowsOf`, `properties` with the hidden fields pruned, `sync_method`,
- * `remove_transport_on_completion` where chosen, `id_files` or
- * `safe_id_path` where the package declares id files through
- * `safeIdMembersOf`, `wait_for` with the task ids of the queued
- * downloads while any, `org_uuid` where chosen and `start_after_create`.
+ * `remove_transport_on_completion` where chosen, `wait_for` with
+ * the task ids of the queued
+ * downloads while any, `org_uuid` where chosen, `start_after_create` and
+ * `provision_after_create`.
  *
  * @param {Object} form - The wizard's state with `hardwarePayload` and `properties` already built
  * @returns {Object} The spec
@@ -878,21 +1149,21 @@ export const buildSpec = form => {
       form.removeTransport !== '' && {
         remove_transport_on_completion: form.removeTransport === 'true',
       }),
-    ...safeIdMembersOf(form),
     ...(waitFor.length > 0 && { wait_for: waitFor }),
     ...(form.orgUuid && { org_uuid: form.orgUuid }),
-    start_after_create: form.startAfterCreate,
+    start_after_create: Boolean(form.startAfterCreate),
+    provision_after_create: Boolean(form.provisionAfterCreate),
   };
 };
 
 /**
  * Why a step of the wizard cannot be left, the key of the sentence that
  * says so, empty for a step that can: the General step needs the
- * hostname and the domain; the Box step of a machine on UTM needs a
- * template boot with a box; the System step's raw `vbox` text must be
- * JSON; the Disks step's blank boot needs a size and its existing boot a
- * path; the Provisioning step refuses a family without a version. The
- * field DSL's own check is the step's second gate.
+ * hostname and the domain; the OS & Disks step of a machine on UTM needs
+ * a template boot with a box, its blank boot a size and its existing boot
+ * a path; the System step's raw `vbox` text must be JSON; the
+ * Provisioning step refuses a family without a version. The field DSL's
+ * own check is the step's second gate.
  *
  * @param {string} stepId - The step
  * @param {Object} form - The wizard's state
@@ -904,7 +1175,7 @@ export const stepProblemOf = (stepId, form) => {
     return 'machineEdit.machineCreateModal.hostnameDomainRequired';
   }
   if (
-    stepId === 'box' &&
+    stepId === 'os-disks' &&
     form.machineHypervisor === 'utm' &&
     (bootSource !== 'template' || !settings.box)
   ) {
@@ -913,10 +1184,10 @@ export const stepProblemOf = (stepId, form) => {
   if (stepId === 'system' && trimmed(form.vboxJson) && !parseVboxPassthrough(form.vboxJson)) {
     return 'machineEdit.machineCreateModal.vboxJsonInvalid';
   }
-  if (stepId === 'disks' && bootSource === 'scratch' && !diskConfig.bootSize) {
+  if (stepId === 'os-disks' && bootSource === 'scratch' && !diskConfig.bootSize) {
     return 'machineEdit.machineCreateModal.blankBootNeedsSize';
   }
-  if (stepId === 'disks' && bootSource === 'existing' && !diskConfig.bootPath) {
+  if (stepId === 'os-disks' && bootSource === 'existing' && !diskConfig.bootPath) {
     return 'machineEdit.machineCreateModal.existingBootNeedsPath';
   }
   if (stepId === 'provisioning' && form.familyName && !form.versionKey) {
@@ -983,10 +1254,32 @@ export const bridgeChoicesOf = rows =>
   });
 
 /**
- * The image rows of the Box step, one merged list: every registry's
+ * The registry the Registry filter opens on: the one enabled registry
+ * while exactly one is enabled, else the registry whose URL the box URL
+ * starts with while a box URL is given, else the empty key, every
+ * registry.
+ *
+ * @param {Array<Object>} sources - The sources of `GET templates/sources`
+ * @param {string} boxUrl - The box's `box_url`
+ * @returns {string} The registry's key, or the empty string
+ */
+export const sourceFilterDefaultOf = (sources, boxUrl) => {
+  const enabled = (Array.isArray(sources) ? sources : []).filter(
+    source => source && source.enabled !== false
+  );
+  if (enabled.length === 1) {
+    return sourceKeyOf(enabled[0]);
+  }
+  const matched = boxUrl ? templateSourceFor(sources, boxUrl) : null;
+  return matched ? sourceKeyOf(matched) : '';
+};
+
+/**
+ * The image rows of the OS & Disks step, one merged list: every registry's
  * catalog rows, each keyed by its image and its registry, and the local
  * templates joined to their registry's row or standing alone as
- * local-only images, sorted by name.
+ * local-only images, sorted by name, each row carrying the `disk_size`
+ * its catalog row or a local template names.
  *
  * @param {Array<Object>} remoteBoxes - The catalog rows with their `source`
  * @param {Array<Object>} templates - The local template rows
@@ -1004,6 +1297,7 @@ export const boxOptionsOf = (remoteBoxes, templates) => {
       source: entry.source || '',
       sourceUrl: entry.sourceUrl || '',
       isDefaultSource: Boolean(entry.isDefaultSource),
+      disk_size: entry.disk_size || '',
       local: false,
     });
   });
@@ -1019,6 +1313,7 @@ export const boxOptionsOf = (remoteBoxes, templates) => {
       source: '',
       sourceUrl: '',
       isDefaultSource: true,
+      disk_size: '',
       local: false,
     };
     if (template.version && !entry.versions.includes(template.version)) {
@@ -1027,10 +1322,39 @@ export const boxOptionsOf = (remoteBoxes, templates) => {
     if (template.architecture && !entry.architectures.includes(template.architecture)) {
       entry.architectures.push(template.architecture);
     }
+    if (template.disk_size && !entry.disk_size) {
+      entry.disk_size = String(template.disk_size);
+    }
     entry.local = true;
     map.set(key, entry);
   });
   return [...map.values()].sort((a, b) => a.value.localeCompare(b.value));
+};
+
+/**
+ * The disk size the picked box's template carries, the boot size input's
+ * placeholder: the local template row of the box and its version, else
+ * any local row of the box, else the box's merged row of `boxOptionsOf`;
+ * empty while none names one.
+ *
+ * @param {Array<Object>} remoteBoxes - The catalog rows with their `source`
+ * @param {Array<Object>} templates - The local template rows
+ * @param {{ box: string, box_version: string }} settings - The box settings
+ * @returns {string} The size, `64G` for one
+ */
+export const boxDiskSizeOf = (remoteBoxes, templates, settings) => {
+  if (!settings?.box) {
+    return '';
+  }
+  const own = templates.filter(row => `${row.organization}/${row.box_name}` === settings.box);
+  const exact = own.find(row => settings.box_version && row.version === settings.box_version);
+  const local = exact?.disk_size || own.find(row => row.disk_size)?.disk_size;
+  if (local) {
+    return String(local);
+  }
+  return (
+    boxOptionsOf(remoteBoxes, templates).find(row => row.value === settings.box)?.disk_size || ''
+  );
 };
 
 /**

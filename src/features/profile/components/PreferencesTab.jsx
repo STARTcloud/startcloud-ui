@@ -551,7 +551,7 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
               </div>
             ) : null}
           </div>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" data-action="save-preferences">
             {t('profile.preferences.save')}
           </button>
         </form>

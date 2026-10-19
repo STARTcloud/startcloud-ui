@@ -23,6 +23,7 @@ const actionShape = PropTypes.shape({
   onClick: PropTypes.func,
   to: PropTypes.string,
   href: PropTypes.string,
+  action: PropTypes.string,
 });
 
 const noticeShape = PropTypes.shape({
@@ -39,20 +40,25 @@ const NoticeAction = ({ action, LinkComponent }) => {
   const className = 'btn btn-sm btn-outline-secondary text-nowrap';
   if (action.to) {
     return (
-      <LinkComponent to={action.to} className={className}>
+      <LinkComponent to={action.to} className={className} data-action={action.action}>
         {action.label}
       </LinkComponent>
     );
   }
   if (action.href) {
     return (
-      <a href={action.href} className={className}>
+      <a href={action.href} className={className} data-action={action.action}>
         {action.label}
       </a>
     );
   }
   return (
-    <button type="button" className={className} onClick={action.onClick}>
+    <button
+      type="button"
+      className={className}
+      data-action={action.action}
+      onClick={action.onClick}
+    >
       {action.label}
     </button>
   );

@@ -29,7 +29,7 @@ const DESK_FEATURES = [
   'artifacts',
   'ssh',
   'processes',
-  'secrets',
+  'certs-store',
 ];
 const DESK_CONSOLES = ['vnc', 'rdp'];
 const LAB_FEATURES = [
@@ -68,6 +68,7 @@ const ZONE_FEATURES = [
   'log-streaming',
   'syslog',
   'runlevel',
+  'certs-store',
 ];
 const STUDIO_FEATURES = [
   'machines',
@@ -125,7 +126,7 @@ const AGENT_FEATURES = [
   'templates',
   'artifacts',
   'processes',
-  'secrets',
+  'certs-store',
 ];
 const LIVE_AGENT_FEATURES = [
   'tasks',
@@ -140,7 +141,9 @@ const LIVE_AGENT_FEATURES = [
   'processes',
   'provisioning',
   'provisioner-registry',
-  'secrets',
+  'certs',
+  'certs-store',
+  'tools',
   'ssh',
   'templates',
   'host-launchers',

@@ -20,13 +20,15 @@ export const serviceWorkerUrl = app => `/notification-sw.js?app=${encodeURICompo
  * sticky "A new version is available" banner with a Reload action; while
  * the status the app booted with is the worker's saved copy, `offline`,
  * raises the same shape of banner saying the host is offline and what is
- * drawn is the copy this device holds, closed by its dismiss.
+ * drawn is the copy this device holds, closed by its dismiss, with Launch
+ * Hyperweaver Agent, `launchHref`, as its action while that link is given.
  *
  * @param {Object} options - The host
  * @param {string} options.app - The host's brand name
  * @param {boolean} options.offline - Whether the status came from the worker's cache
+ * @param {string} options.launchHref - The link that starts the agent, empty for no action
  */
-export const usePwa = ({ app, offline }) => {
+export const usePwa = ({ app, offline, launchHref }) => {
   const { t } = useTranslation();
   const notify = useNotify();
 
@@ -36,9 +38,12 @@ export const usePwa = ({ app, offline }) => {
         tier: 'banner',
         key: 'pwa-offline',
         sticky: true,
+        action: launchHref
+          ? { label: t('pwa.launchAgent'), href: launchHref, action: 'launch-agent' }
+          : null,
       });
     }
-  }, [app, offline, notify, t]);
+  }, [app, offline, launchHref, notify, t]);
 
   useEffect(() => {
     if (!import.meta.env.PROD) {

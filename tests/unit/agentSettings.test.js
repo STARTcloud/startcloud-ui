@@ -8,12 +8,11 @@ import {
   updateOf,
 } from '../../src/components/common/UpdatePage.jsx';
 import {
-  SECRET_CATEGORIES,
+  SECRET_KINDS,
   apiKeysOf,
-  emptySecretEntry,
   hostHasSettings,
-  savedSecretEntries,
-  secretEntriesOf,
+  pickKindsOf,
+  secretRowsOf,
 } from '../../src/features/hosts/utils/agentSettings.js';
 
 describe('hostHasSettings', () => {
@@ -261,53 +260,35 @@ describe('apiKeysOf', () => {
   });
 });
 
-describe('SECRET_CATEGORIES', () => {
-  it('lists the six categories with their fields', () => {
-    expect(SECRET_CATEGORIES.map(category => category.key)).toEqual([
-      'hcl_download_portal_api_keys',
-      'git_api_keys',
-      'vagrant_atlas_token',
-      'custom_resource_url',
-      'docker_hub',
-      'ssh_keys',
-    ]);
-    const [, , , custom] = SECRET_CATEGORIES;
-    expect(custom.fields.map(field => field.key)).toEqual([
-      'name',
-      'url',
-      'useAuth',
-      'user',
-      'pass',
-    ]);
-    expect(custom.fields[2].type).toBe('checkbox');
-    expect(SECRET_CATEGORIES[5].fields[1].multiline).toBe(true);
-  });
-});
+describe('secretRowsOf', () => {
+  const rows = [
+    { id: 'a', kind: 'api_key', name: 'hcl', profile: 'hcl_portal' },
+    { id: 'b', kind: 'api_key', name: 'git', record: { profile: 'github' } },
+    { id: 'c', kind: 'api_key', name: 'plain' },
+    { id: 'd', kind: 'basic_auth', name: 'mirror', profile: 'installer_server' },
+    { id: 'e', kind: 'certificate', name: 'leaf' },
+    { id: 'f', kind: 'authority', name: 'root' },
+    { id: 'g', kind: 'key', name: 'leaf key' },
+    { id: 'h', kind: 'ssh_certificate', name: 'host cert' },
+    null,
+  ];
 
-describe('emptySecretEntry', () => {
-  it('blanks every field and unticks every switch', () => {
-    expect(emptySecretEntry(SECRET_CATEGORIES[3])).toEqual({
-      name: '',
-      url: '',
-      useAuth: false,
-      user: '',
-      pass: '',
-    });
+  it('keeps the rows of the secret kinds, narrowed to one kind and to a profile or none', () => {
+    expect(SECRET_KINDS).toContain('api_key');
+    expect(secretRowsOf(rows).map(row => row.id)).toEqual(['a', 'b', 'c', 'd']);
+    expect(secretRowsOf(rows, 'api_key').map(row => row.id)).toEqual(['a', 'b', 'c']);
+    expect(secretRowsOf(rows, 'api_key', 'github').map(row => row.id)).toEqual(['b', 'c']);
+    expect(secretRowsOf(rows, 'basic_auth', 'docker_hub')).toEqual([]);
+    expect(secretRowsOf(null)).toEqual([]);
+    expect(secretRowsOf({ rows })).toEqual([]);
   });
-});
 
-describe('secretEntriesOf and savedSecretEntries', () => {
-  it('read a category of the document and keep the entries that carry a name', () => {
-    const document = { git_api_keys: [{ name: 'github', key: 'x' }] };
-    expect(secretEntriesOf(document, 'git_api_keys')).toEqual([{ name: 'github', key: 'x' }]);
-    expect(secretEntriesOf(document, 'ssh_keys')).toEqual([]);
-    expect(secretEntriesOf(null, 'ssh_keys')).toEqual([]);
-    expect(
-      savedSecretEntries([
-        { name: 'a', key: '1' },
-        { name: '', key: '2' },
-      ])
-    ).toEqual([{ name: 'a', key: '1' }]);
-    expect(savedSecretEntries(undefined)).toEqual([]);
+  it('admits the certificate and authority rows to a certificate field and the key and SSH certificate rows to a key field', () => {
+    expect(pickKindsOf('certificate')).toEqual(['certificate', 'authority']);
+    expect(pickKindsOf('key')).toEqual(['key', 'ssh_certificate']);
+    expect(pickKindsOf('api_key')).toEqual(['api_key']);
+    expect(pickKindsOf('')).toBe(SECRET_KINDS);
+    expect(secretRowsOf(rows, 'certificate').map(row => row.id)).toEqual(['e', 'f']);
+    expect(secretRowsOf(rows, 'key').map(row => row.id)).toEqual(['g', 'h']);
   });
 });

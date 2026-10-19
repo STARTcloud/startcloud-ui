@@ -7,7 +7,7 @@ import { TEMPLATE_SOURCES, sourceEntryPatch } from '../utils/manageCatalog';
 const IDLE = { state: '', message: '' };
 
 /**
- * The registry of a handed box the host does not hold, the Box step's
+ * The registry of a handed box the host does not hold, the OS & Disks step's
  * card: `add` while the host's registries have answered and none of them
  * is the one the box's `box_url` names, the one the agent's create would
  * download from; `adding` from the press, which writes the registry as

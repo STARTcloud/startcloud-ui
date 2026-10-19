@@ -53,7 +53,6 @@ import {
   registryProblem,
   roleOptionsOf,
   searchRowsOf,
-  secretNamesOf,
   seedStepRows,
   seedVariableRows,
   sourceDefaultPatch,
@@ -205,12 +204,6 @@ describe('the installer files', () => {
     expect(hclProblem({ keyName: 'k', filename: 'f', role: 'r' })).toBe('');
   });
 
-  it('reads the secrets names, null while the document could not be read', () => {
-    expect(secretNamesOf({ git_api_keys: [{ name: 'a' }] }, 'git_api_keys')).toEqual(['a']);
-    expect(secretNamesOf({}, 'git_api_keys')).toEqual([]);
-    expect(secretNamesOf(null, 'git_api_keys')).toBeNull();
-  });
-
   it('matches an artifact by its name, type, role, version and location', () => {
     const row = {
       filename: 'Domino.tar',
@@ -222,6 +215,27 @@ describe('the installer files', () => {
     expect(matchesArtifact(row, 'domino')).toBe(true);
     expect(matchesArtifact(row, 'hcl')).toBe(true);
     expect(matchesArtifact(row, 'iso')).toBe(false);
+    expect(matchesArtifact(row, '14.5')).toBe(true);
+  });
+
+  it('matches an artifact by the full_version of the version object the agent answers', () => {
+    const row = {
+      filename: 'Domino.tar',
+      file_type: 'installer',
+      role: 'domino_install',
+      version: {
+        major: '14',
+        minor: '5',
+        patch: '0',
+        fix_pack: 'FP1',
+        ea_access_release: '',
+        full_version: '14.5.0FP1',
+      },
+      storage_location: { name: 'HCL' },
+    };
+    expect(matchesArtifact(row, 'fp1')).toBe(true);
+    expect(matchesArtifact(row, '14.5.0')).toBe(true);
+    expect(matchesArtifact(row, 'object')).toBe(false);
   });
 
   it('seeds a source dialog from a missing row by the sha256 it is known by', () => {

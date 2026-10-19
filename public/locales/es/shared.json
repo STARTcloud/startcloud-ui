@@ -284,7 +284,8 @@
   "pwa": {
     "newVersion": "Hay una nueva versión de {{app}} disponible.",
     "reload": "Recargar",
-    "offline": "{{app}} no responde. Esta es la copia guardada en este dispositivo: no se puede cambiar nada y lo que ves puede estar desactualizado."
+    "offline": "{{app}} no responde. Esta es la copia guardada en este dispositivo: no se puede cambiar nada y lo que ves puede estar desactualizado.",
+    "launchAgent": "Iniciar el Agente de Hyperweaver"
   },
   "status": {
     "unreachable": "No se pudo contactar con el servidor detrás de esta página. Comprueba que está en marcha y reintenta.",
@@ -3145,6 +3146,12 @@
         "noTemplates": "sin plantillas"
       },
       "none": "Ningún host de este servidor puede recibirlo."
+    },
+    "preferences": {
+      "title": "Hosts",
+      "defaultDomain": "Dominio predeterminado para máquinas nuevas",
+      "defaultDomainHint": "Un nombre de máquina sin punto toma este dominio antes que las filas propias del host; se guarda solo en este navegador.",
+      "save": "Guardar preferencias de hosts"
     }
   },
   "pages": {
@@ -4614,33 +4621,21 @@
       "refreshButton": "Actualizar"
     },
     "agentSecretsTab": {
-      "hclCategoryLabel": "Claves API del portal de descarga HCL",
-      "gitCategoryLabel": "Claves API de Git",
-      "vagrantCategoryLabel": "Tokens de Vagrant Atlas",
-      "customResourceCategoryLabel": "URLs de recursos personalizados",
-      "dockerHubCategoryLabel": "Docker Hub",
-      "sshKeysCategoryLabel": "Claves SSH",
-      "nameFieldLabel": "Nombre",
-      "keyFieldLabel": "Clave",
-      "tokenFieldLabel": "Token",
-      "urlFieldLabel": "URL",
-      "httpBasicAuthFieldLabel": "Autenticación básica HTTP",
-      "userFieldLabel": "Usuario",
-      "passwordFieldLabel": "Contraseña",
-      "privateKeyFieldLabel": "Clave privada",
       "selectHostWarning": "Selecciona un host en la barra de navegación para administrar sus secretos.",
-      "infoPart1": "Los secretos se inyectan en los archivos Hosts.yml generados como ",
-      "infoPart2": " variables de plantilla y se almacenan en texto plano en el host del agente. Los nombres de las entradas deben coincidir con ",
-      "infoPart3": "; las filas sin nombre se descartan al guardar. Las claves del portal HCL ROTAN del lado del servidor en cada descarga — recarga antes de editar esa categoría, y nunca pegues una copia desactualizada sobre un valor rotado.",
       "reloadButton": "Recargar",
-      "loadingText": "Cargando…",
       "addButton": "Agregar",
-      "saveButton": "Guardar",
-      "noEntries": "Sin entradas.",
-      "removeEntryAriaLabel": "Eliminar entrada de {{category}}",
       "failedLoadSecrets": "Fallo al cargar los secretos: {{message}}",
-      "categorySaved": "{{category}} guardado.",
-      "failedSaveCategory": "Fallo al guardar {{category}}: {{message}}"
+      "shareFromVault": "Compartir desde la bóveda",
+      "edit": "Editar",
+      "remove": "Quitar",
+      "removeTitle": "Quitar secreto",
+      "removeMessage": "¿Quitar {{name}} de este host?",
+      "created": "{{name}} añadido.",
+      "saved": "{{name}} guardado.",
+      "removed": "{{name}} quitado.",
+      "failedSave": "No se pudo guardar el secreto: {{message}}",
+      "failedRemove": "No se pudo quitar el secreto: {{message}}",
+      "noRows": "Aún no hay secretos."
     }
   },
   "app": {
@@ -7968,9 +7963,6 @@
       "repositoryUrl": "URL del repositorio",
       "branch": "Rama (en blanco = predeterminada)",
       "gitApiKey": "Clave de API de Git (repositorios privados)",
-      "nonePublicRepo": "Ninguna (repositorio público)",
-      "gitApiKeyPlaceholder": "nombre del secreto git_api_keys (en blanco = público)",
-      "gitApiKeyHelp": "Nombra una entrada en Secretos globales → Git API Keys; la clave nunca sale del agente.",
       "deleteVersionTitle": "Eliminar versión del aprovisionador",
       "deleteFamilyTitle": "Eliminar familia de aprovisionadores",
       "deleteVersionMessage": "¿Eliminar {{name}}/{{version}}? El agente lo rechaza mientras alguna máquina lo referencie.",
@@ -8297,16 +8289,12 @@
       "expectedSha256Download": "SHA-256 esperado (opcional — las discrepancias se descartan)",
       "overwrite": "Sobrescribir",
       "mirrorCredentials": "Credenciales de réplica (secreto custom_resource_url)",
-      "nonePublicUrl": "Ninguna (URL pública)",
-      "resourceNamePlaceholder": "nombre del secreto custom_resource_url (en blanco = público)",
       "hclFieldsRequired": "Se requieren un rol, el nombre de archivo exacto del catálogo y una clave del portal HCL.",
       "hclDownloadQueuedDefault": "Descarga de HCL en cola",
       "downloadFromHclPortal": "Descargar desde HCL Portal",
       "kind": "Clase",
       "hclFilename": "Nombre de archivo (debe coincidir EXACTAMENTE con el catálogo HCL)",
       "hclPortalKey": "Clave del portal HCL",
-      "hclKeyPlaceholder": "nombre del secreto hcl_download_portal_api_keys",
-      "hclKeyHelp": "El sha256 del catálogo es la autoridad — se convierte en la expectativa de la entrada y la descarga debe reproducirlo. El token de actualización del portal rota al usarse; el agente persiste la rotación automáticamente.",
       "missingFile": "{{filename}} falta en la caché. Obtenlo de:",
       "downloadFromRegistry": "Descargar desde BoxVault",
       "registry": "Registro",
@@ -11268,13 +11256,16 @@
       "advanced": "Avanzado",
       "createTitle": "Crear: {{resource}}",
       "create": "Crear",
+      "createOptions": "Opciones de creación",
+      "createAndStart": "Crear e iniciar",
+      "createAndProvision": "Crear y aprovisionar",
       "next": "Siguiente",
       "step": {
         "general": "General",
-        "box": "SO / Box",
+        "os-disks": "SO y discos",
         "system": "Sistema",
-        "disks": "Discos",
-        "resources": "CPU y memoria",
+        "cpu": "CPU",
+        "memory": "Memoria",
         "network": "Red",
         "provisioning": "Aprovisionamiento",
         "confirm": "Confirmar"
@@ -11294,8 +11285,6 @@
       "createWaiting": "Crear · espera {{count}} descargas",
       "downloadQueued": "Descarga de {{filename}} en cola; Crear esperará a que termine",
       "downloadFailed": "Una descarga falló: {{message}}",
-      "safeIdUploadFailed": "La subida de la ID segura falló: {{message}}",
-      "noIdFileLocation": "Este host no tiene una ubicación de id-files para subir a ella",
       "waitedOn": "La creación espera {{count}} descargas y empieza cuando llegue la última"
     },
     "hardwareSections": {
@@ -11384,7 +11373,6 @@
       "poolNamePlaceholder": "nombre del pool",
       "parentDataset": "Dataset padre",
       "bootZvolLandsHint": "El zvol de arranque queda en pool/dataset/<zona>/<volumen>.",
-      "bootDiskType": "Tipo de disco de arranque",
       "disklessHint": "Sin disco — esta creación no lleva medio de arranque. Adjunta discos después vía Editar.",
       "existingZvolDatasetPath": "Zvol existente (ruta del dataset)",
       "existingDiskImagePath": "Ruta de la imagen de disco existente (en el host del agente)",
@@ -11404,7 +11392,6 @@
       "nextFreePlaceholder": "próximo libre",
       "inUseByLabel": "{{name}} — en uso por {{user}}",
       "inUseByListSuffix": " · en uso por {{list}}",
-      "bootDisk": "Disco de arranque",
       "additionalDisks": "Discos adicionales",
       "source": "Origen",
       "size": "Tamaño",
@@ -11546,7 +11533,37 @@
       "addRegistryAndContinue": "Agregar registro y continuar",
       "boxSourceAdding": "Agregando el registro {{host}}…",
       "boxSourceFailed": "No se pudo agregar el registro {{host}}.",
-      "seededBox": "Entregada por el catálogo: {{box}} {{version}} ({{arch}})"
+      "seededBox": "Entregada por el catálogo: {{box}} {{version}} ({{arch}})",
+      "fromPackage": "del paquete",
+      "name": "Nombre",
+      "nameHint": "Un nombre sin punto toma el dominio predeterminado del host; un nombre con puntos se divide en su primer punto.",
+      "editParts": "Editar partes",
+      "noDefaultDomain": "Este host no tiene un dominio predeterminado. Escribe uno, o define el dominio predeterminado del host en su configuración.",
+      "setDefaultDomain": "Definir el dominio predeterminado del host",
+      "domainSource": "Origen del dominio",
+      "domainSourceWord": {
+        "preference": "Preferencia del navegador",
+        "user": "Usuario",
+        "organization": "Organización",
+        "agent": "Agente"
+      },
+      "domainSourceCustom": "Personalizado",
+      "useProvisioner": "Usar un aprovisionador",
+      "useProvisionerHint": "Sin un aprovisionador no se dibuja el paso Aprovisionamiento.",
+      "mount": "Montaje",
+      "filesystem": "Sistema de archivos",
+      "provisionAfterCreate": "Aprovisionar después de crear",
+      "provisionAfterCreateNoFamily": "Ningún aprovisionador elegido",
+      "confirmProvisionAfterCreate": "Aprovisionar después de crear",
+      "hostsYmlPreview": "Vista previa de Hosts.yml",
+      "copy": "Copiar",
+      "previewFailed": "No se pudo leer la vista previa: {{message}}",
+      "updateAvailable": "{{version}} disponible en el catálogo, pulsa para instalarla y usarla",
+      "newerVersionInCatalog": "Hay una versión más reciente en el catálogo",
+      "seeCatalogVersions": "Ver las versiones del catálogo",
+      "catalogVersionsTitle": "Versiones de {{family}} en el catálogo",
+      "catalogVersionsNone": "Ningún catálogo de este host lista {{family}}",
+      "pickFamilyOnGeneral": "Elige un aprovisionador en el paso General."
     },
     "resources": {
       "hint": "Controles de recursos de zonecfg — «Establecer» reemplaza el recurso completo, «Eliminar» lo borra, «Sin cambios» no toca nada. Se aplica en el próximo arranque / ciclo de energía como el resto de cambios de infraestructura.",
@@ -11745,26 +11762,32 @@
       "kind": {
         "installer": "Instalador",
         "fixpack": "Fixpack",
-        "hotfix": "Hotfix"
+        "hotfix": "Hotfix",
+        "id_file": "Archivo ID"
       },
       "noFileKnown": "No se conoce ningún archivo para este rol",
-      "none": {
-        "fixpack": "Sin fixpack",
-        "hotfix": "Sin hotfix"
-      },
-      "onThisHost": "En este host",
-      "downloadable": "Descargable",
       "via": {
         "boxvault": "vía BoxVault",
         "hcl": "vía HCL",
         "custom": "vía recurso personalizado",
         "none": "sin origen"
       },
-      "downloadQueued": "Descarga en cola como tarea {{task}} — Crear espera a que termine y monta el archivo en cuanto llegue",
-      "notOnHost": "Aún no está en este host — descargable {{source}}",
       "fetchTitle": "Descargar a la caché del host",
       "downloadFailed": "La descarga falló: {{message}}",
-      "downloadQueuedNotice": "Descarga de {{filename}} en cola"
+      "downloadQueuedNotice": "Descarga de {{filename}} en cola",
+      "requiredChip": "obligatorio",
+      "packageSettingsHeading": "Ajustes del paquete para este rol",
+      "fileState": {
+        "present": "en el host",
+        "missing": "ausente",
+        "queued": "en cola"
+      },
+      "changeFile": "Cambiar…",
+      "clearFile": "Limpiar",
+      "addFile": "+ {{kind}}…",
+      "pickRow": "Elegir",
+      "pickFileTitle": "{{role}} · {{kind}}",
+      "searchFilesPlaceholder": "Buscar archivos"
     },
     "provisioningVarRows": {
       "notSetOption": "sin definir",
@@ -11904,23 +11927,15 @@
       "errNotCidr": "No es una notación CIDR válida (dirección/prefijo)",
       "errCidrPrefixRange": "Prefijo CIDR fuera de rango",
       "errPatternDefault": "No coincide con el patrón requerido",
-      "errRequired": "{{label}} es obligatorio"
-    },
-    "safeId": {
-      "label": "ID segura del usuario",
-      "doorCache": "Caché del host",
-      "doorUpload": "Subir",
-      "doorPath": "Host del agente",
-      "pickAriaLabel": "ID segura en la caché del host",
-      "pickNone": "Elige una ID segura…",
-      "chooseFile": "Elige un archivo…",
-      "pickTitle": "Elige el archivo de ID segura",
-      "sourcePath": "Un archivo en el host del agente, copiado al crear dentro de id-files como {{name}}",
-      "sourcePathNone": "Escribe o navega la ruta de una ID segura en el host del agente",
-      "sourceUploaded": "{{name}} subido a la caché del host como ID segura, colocado en id-files al crear",
-      "sourceUploadNone": "Una subida llega a la caché del host como ID segura; aún no se ha subido nada",
-      "sourceCacheNone": "Ninguna ID segura elegida de la caché del host",
-      "sourceCache": "De la caché del host: {{name}} · sha256 {{hash}} · colocado en id-files al crear"
+      "errRequired": "{{label}} es obligatorio",
+      "errMinItems": "Se requieren al menos {{count}} entradas",
+      "errMaxItems": "Se permiten como máximo {{count}} entradas",
+      "listAdd": "Agregar",
+      "listRemove": "Quitar",
+      "secretChange": "Cambiar",
+      "secretClear": "Limpiar",
+      "secretPick": "+ {{kind}}…",
+      "errNotSecret": "Elige un secreto del host."
     }
   },
   "settings": {
@@ -12246,7 +12261,8 @@
       "certificates": "Certificados",
       "authorities": "Autoridades",
       "requests": "Solicitudes",
-      "keys": "Claves"
+      "keys": "Claves",
+      "secrets": "Secretos"
     },
     "kind": {
       "certificate": "Certificado",
@@ -12254,7 +12270,15 @@
       "request": "Solicitud",
       "key": "Clave",
       "ssh_certificate": "Certificado SSH",
-      "template": "Plantilla"
+      "template": "Plantilla",
+      "password": "Contraseña",
+      "api_key": "Clave de API",
+      "basic_auth": "Autenticación básica",
+      "key_pair": "Par de claves",
+      "oauth_client": "Cliente OAuth",
+      "ssh_key": "Clave SSH",
+      "file": "Archivo",
+      "custom": "Personalizado"
     },
     "status": {
       "valid": "Válido",
@@ -12277,7 +12301,9 @@
     "vault": {
       "title": "Certificados",
       "generate": "Generar",
-      "dropBundle": "Restaurar una copia de seguridad de la bóveda (*.certs.json)"
+      "dropBundle": "Restaurar una copia de seguridad de la bóveda (*.certs.json)",
+      "addSecret": "Añadir secreto",
+      "pickRow": "Elegir"
     },
     "table": {
       "kind": "Tipo",
@@ -12287,13 +12313,15 @@
       "history": "Versiones",
       "subject": "Sujeto",
       "sharedBy": "Compartido por",
-      "published": "Publicado"
+      "published": "Publicado",
+      "profile": "Perfil"
     },
     "actions": {
       "convert": "Convertir",
       "download": "Descargar",
       "delete": "Eliminar",
-      "removeFrom": "Quitar de {{organization}}"
+      "removeFrom": "Quitar de {{organization}}",
+      "edit": "Editar"
     },
     "toolbar": {
       "exportBundle": "Exportar paquete"
@@ -12308,7 +12336,8 @@
       "algorithm": "Algoritmo",
       "issuer": "Emisor",
       "tags": "Etiquetas",
-      "organization": "Organización"
+      "organization": "Organización",
+      "profile": "Perfil"
     },
     "preferences": {
       "title": "Certificados",
@@ -12368,7 +12397,8 @@
       "issuer": "Emisor",
       "request": "Solicitud",
       "issued": "Emitido",
-      "signedWith": "Firmado con esta clave"
+      "signedWith": "Firmado con esta clave",
+      "secret": "Secreto"
     },
     "history": {
       "version": "Versión",
@@ -12652,6 +12682,152 @@
       "title": "Elegir de la bóveda",
       "pick": "Usar",
       "empty": "La bóveda no contiene nada con bytes para entregar."
+    },
+    "secret": {
+      "kind": "Tipo",
+      "profile": "Servicio",
+      "extra": "Valores adicionales",
+      "custom": "Miembros (JSON)",
+      "pickFile": "Archivo",
+      "pickValue": "Elegir…",
+      "addExtra": "Añadir valor",
+      "removeExtra": "Quitar valor",
+      "addTitle": "Añadir secreto",
+      "editTitle": "Editar secreto",
+      "member": {
+        "password": "Contraseña",
+        "key": "Clave",
+        "url": "URL",
+        "account_id": "ID de cuenta",
+        "user": "Usuario",
+        "access_key": "Clave de acceso",
+        "secret_key": "Clave secreta",
+        "region": "Región",
+        "client_id": "ID de cliente",
+        "client_secret": "Secreto de cliente",
+        "issuer": "Emisor",
+        "scopes": "Ámbitos",
+        "private_key": "Clave privada",
+        "public_key": "Clave pública",
+        "passphrase": "Frase de contraseña",
+        "bytes": "Contenido del archivo (base64)",
+        "filename": "Nombre del archivo"
+      }
+    },
+    "profile": {
+      "generic": {
+        "label": "Sin servicio"
+      },
+      "hcl_portal": {
+        "label": "Portal de HCL",
+        "help": {
+          "key": "La clave de API del portal de software de HCL."
+        }
+      },
+      "github": {
+        "label": "GitHub",
+        "help": {
+          "key": "Un token de acceso personal de GitHub."
+        }
+      },
+      "digitalocean": {
+        "label": "DigitalOcean",
+        "help": {
+          "key": "Un token de API de DigitalOcean."
+        }
+      },
+      "cloudflare": {
+        "label": "Cloudflare",
+        "help": {
+          "key": "Un token de API de Cloudflare."
+        }
+      },
+      "wix": {
+        "label": "Wix",
+        "help": {
+          "key": "La clave de API del administrador de claves de API de Wix.",
+          "account_id": "El ID de cuenta que aparece junto a la clave en el administrador de claves de API de Wix."
+        },
+        "extra": {
+          "account_id": "ID de cuenta"
+        }
+      },
+      "openai": {
+        "label": "OpenAI",
+        "help": {
+          "key": "Una clave de API de OpenAI.",
+          "url": "La URL base de la API, la propia de OpenAI o un punto de acceso compatible."
+        },
+        "extra": {
+          "model": "Modelo",
+          "assistant_id": "ID del asistente",
+          "enabled": "Habilitado"
+        }
+      },
+      "stripe": {
+        "label": "Stripe",
+        "help": {
+          "key": "Una clave de API secreta de Stripe."
+        }
+      },
+      "atlas": {
+        "label": "Atlas",
+        "help": {
+          "key": "Un token de acceso de Vagrant Cloud."
+        }
+      },
+      "installer_server": {
+        "label": "Servidor de instaladores",
+        "help": {
+          "url": "La URL del servidor de instaladores.",
+          "user": "El nombre de usuario que acepta el servidor de instaladores.",
+          "password": "La contraseña de ese usuario.",
+          "key": "La clave de API que el servidor de instaladores acepta en lugar de usuario y contraseña."
+        }
+      },
+      "docker_hub": {
+        "label": "Docker Hub",
+        "help": {
+          "user": "El nombre de usuario de Docker Hub.",
+          "password": "La contraseña o el token de acceso de Docker Hub."
+        }
+      },
+      "aws": {
+        "label": "AWS",
+        "help": {
+          "access_key": "El ID de clave de acceso de AWS.",
+          "secret_key": "La clave de acceso secreta de AWS emparejada con el ID de clave de acceso.",
+          "region": "La región de AWS en la que se usa la clave, como us-east-1."
+        }
+      },
+      "acme_dns": {
+        "label": "acme-dns",
+        "help": {
+          "custom": "Un registro de acme-dns por dominio, con su username, password, subdomain y fulldomain bajo el nombre del dominio."
+        }
+      },
+      "notes_id": {
+        "label": "ID de Notes",
+        "help": {
+          "bytes": "El propio archivo de ID de Notes, subido como sus bytes.",
+          "password": "La contraseña que abre el archivo de ID."
+        },
+        "extra": {
+          "id_type": "Tipo de ID"
+        }
+      },
+      "license": {
+        "label": "Licencia",
+        "help": {
+          "bytes": "El propio archivo de licencia, subido como sus bytes.",
+          "key": "La clave de licencia tal como la emitió el fabricante."
+        },
+        "extra": {
+          "product": "Producto",
+          "holder": "Titular",
+          "expiry": "Vencimiento"
+        }
+      }
     }
   }
 }

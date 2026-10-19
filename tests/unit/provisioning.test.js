@@ -5,6 +5,7 @@ import {
   applyPatch,
   changedRolesOf,
   clean,
+  dependencyWarnings,
   hookReasonOf,
   invalidNameProblems,
   manifestRoleOf,
@@ -243,6 +244,28 @@ describe('the roles of a version', () => {
       ).map(row => row.name)
     ).toEqual(['domino', 'startcloud.hcl_roles.traveler']);
     expect(changedRolesOf([{ name: 'domino', enabled: true }], manifest)).toEqual([]);
+  });
+
+  it('warns a role that is on of a dependency absent, below or off, and a role that is off of nothing', () => {
+    const hints = { traveler: ['domino', 'genesis'], domino: [], leap: ['traveler'] };
+    const rows = [
+      { name: 'startcloud.hcl_roles.leap', enabled: true },
+      { name: 'domino', enabled: false },
+      { name: 'traveler', enabled: true },
+    ];
+    expect(dependencyWarnings(rows, hints, 2)).toEqual([
+      { dep: 'domino', kind: 'off' },
+      { dep: 'genesis', kind: 'absent' },
+    ]);
+    expect(dependencyWarnings(rows, hints, 0)).toEqual([{ dep: 'traveler', kind: 'below' }]);
+    expect(dependencyWarnings(rows, hints, 1)).toEqual([]);
+    expect(dependencyWarnings([{ name: 'traveler', enabled: false }], hints, 0)).toEqual([]);
+    expect(dependencyWarnings([{ name: 'traveler' }], hints, 0)).toEqual([
+      { dep: 'domino', kind: 'absent' },
+      { dep: 'genesis', kind: 'absent' },
+    ]);
+    expect(dependencyWarnings(rows, null, 2)).toEqual([]);
+    expect(dependencyWarnings(rows, hints, 7)).toEqual([]);
   });
 });
 

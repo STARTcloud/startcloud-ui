@@ -1,0 +1,97 @@
+{
+  "name": "startcloud",
+  "version": "0.1.28",
+  "dir": "startcloud/0.1.28",
+  "metadata": {
+    "name": "startcloud",
+    "version": "0.1.28",
+    "label": "STARTcloud",
+    "description": "The STARTcloud provisioner, generic edition",
+    "metadata": {
+      "label": "STARTcloud",
+      "description": "The STARTcloud provisioner, generic edition",
+      "defaults": {
+        "settings": {
+          "box": "STARTcloud/debian12-server",
+          "box_url": "https://boxvault.example.com",
+          "box_version": "2025.4.30",
+          "box_arch": "amd64",
+          "os_type": "Debian_64",
+          "firmware_type": "UEFI",
+          "vcpus": 2,
+          "memory": "8G",
+          "setup_wait": 420,
+          "vagrant_user": "startcloud"
+        },
+        "disks": {
+          "boot": { "type": "template", "volume_name": "boot", "mount": "/" },
+          "additional_disks": [
+            {
+              "type": "blank",
+              "size": "50G",
+              "sparse": true,
+              "volume_name": "disk1",
+              "mount": "/local",
+              "filesystem": "xfs"
+            }
+          ]
+        },
+        "networks": [{ "type": "external", "dhcp4": true }]
+      },
+      "configuration": {
+        "groups": [{ "name": "provider", "label": "Provider" }],
+        "fields": [
+          {
+            "name": "VAGRANT_PROVIDER",
+            "label": "Vagrant Provider",
+            "type": "select",
+            "group": "provider",
+            "options_source": "hypervisor"
+          },
+          {
+            "name": "guest_user",
+            "label": "Guest user",
+            "type": "text",
+            "group": "provider",
+            "required": true,
+            "default": "startcloud"
+          }
+        ]
+      },
+      "roles": [
+        {
+          "name": "setup",
+          "label": "Setup",
+          "description": "Sets the timezone and creates the completion and support bundle directories",
+          "collection": "startcloud.startcloud_roles",
+          "default_enabled": true,
+          "required": true
+        },
+        {
+          "name": "networking",
+          "label": "Networking",
+          "description": "Post-boot network configuration and the host's DNS alias records",
+          "collection": "startcloud.startcloud_roles",
+          "tags": "always",
+          "default_enabled": true,
+          "required": true
+        }
+      ]
+    }
+  },
+  "role_specs": {
+    "roles": {
+      "setup": {
+        "collection": "startcloud.startcloud_roles",
+        "short_description": "Sets the timezone and the completion directories",
+        "options": {}
+      },
+      "networking": {
+        "collection": "startcloud.startcloud_roles",
+        "short_description": "Network post boot configurations",
+        "options": {}
+      }
+    }
+  },
+  "playbook_candidates": []
+}

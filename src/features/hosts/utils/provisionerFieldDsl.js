@@ -1,3 +1,5 @@
+import { secretRowsOf } from './agentSettings';
+
 export const DSL_TYPES = [
   'text',
   'textarea',
@@ -10,7 +12,12 @@ export const DSL_TYPES = [
   'ipaddr',
   'cidr',
   'path',
+  'list',
+  'file',
+  'secret',
 ];
+
+const HYPERVISOR_NAMES = { virtualbox: 'virtualbox', bhyve: 'zones', utm: 'utm' };
 
 const PASSWORD_FLOOR = 8;
 
@@ -97,6 +104,102 @@ export const seedAnswers = config => {
   return answers;
 };
 
+/**
+ * The `secret` fields of a configuration, each carrying `kind`, the
+ * store kind its pick narrows to, a secret kind or `certificate` or
+ * `key`, `secret_key`, the key the package's roles read the row under,
+ * and `profile` where the pick narrows further.
+ *
+ * @param {{ fields: Array<Object> }|null} config - The configuration
+ * @returns {Array<Object>} The fields
+ */
+export const secretFieldsOf = config =>
+  (config?.fields || []).filter(field => field.type === 'secret');
+
+/**
+ * The kinds the `secret` fields of a configuration pick among, each once,
+ * in field order.
+ *
+ * @param {{ fields: Array<Object> }|null} config - The configuration
+ * @returns {Array<string>} The kinds
+ */
+export const secretKindsOf = config => [
+  ...new Set(secretFieldsOf(config).map(field => String(field.kind || ''))),
+];
+
+/**
+ * The answers the `secret` fields of a configuration open on: for every
+ * field, the id of the one row of the host's store that matches its
+ * `kind` and, where it names one, its `profile`; several or none leave
+ * the field unpicked. `rowsByKind` holds the host store's rows read for
+ * each kind of `secretKindsOf`.
+ *
+ * @param {{ fields: Array<Object> }|null} config - The configuration
+ * @param {Object<string, Array<Object>>} rowsByKind - The rows by the field's kind
+ * @returns {Object} The answers
+ */
+export const seedSecretAnswers = (config, rowsByKind) => {
+  const answers = {};
+  secretFieldsOf(config).forEach(field => {
+    const kind = String(field.kind || '');
+    const matched = secretRowsOf(rowsByKind?.[kind], kind, field.profile || '');
+    if (matched.length === 1) {
+      answers[field.name] = String(matched[0].id);
+    }
+  });
+  return answers;
+};
+
+/**
+ * The groups a configuration attaches to a role, each carrying `role`,
+ * the bare name of the role whose card draws it.
+ *
+ * @param {{ groups: Array<Object> }|null} config - The configuration
+ * @returns {Array<Object>} The groups
+ */
+export const roleGroupsOf = config =>
+  (config?.groups || []).filter(group => typeof group.role === 'string' && group.role !== '');
+
+/**
+ * The `hypervisor` inventory of a host, its `capabilities.hypervisors`
+ * as the provisioner's provider names, `virtualbox`, `zones` for bhyve
+ * and `utm`, in the host's order, the detected one first, each once.
+ *
+ * @param {Array<string>|null} hypervisors - The host's hypervisors
+ * @returns {Array<string>} The provider names
+ */
+export const hypervisorRowsOf = hypervisors => [
+  ...new Set(
+    (Array.isArray(hypervisors) ? hypervisors : [])
+      .map(name => HYPERVISOR_NAMES[name])
+      .filter(Boolean)
+  ),
+];
+
+/**
+ * The answers a select sourced from an inventory opens on, the first row
+ * of its `options_source` inventory for every such field the inventory
+ * lists rows for, the detected hypervisor among them.
+ *
+ * @param {{ fields: Array<Object> }|null} config - The configuration
+ * @param {Object|null} inventory - The platform inventory
+ * @returns {Object} The answers
+ */
+export const seedInventoryAnswers = (config, inventory) => {
+  const answers = {};
+  (config?.fields || []).forEach(field => {
+    if (field.type !== 'select' || !field.options_source) {
+      return;
+    }
+    const sourced = inventory?.[field.options_source];
+    if (Array.isArray(sourced) && sourced.length > 0) {
+      const [first] = optionRows({ options: sourced });
+      answers[field.name] = first.value;
+    }
+  });
+  return answers;
+};
+
 const numberOf = value => {
   if (value === '' || value === null || value === undefined) {
     return null;
@@ -112,6 +215,11 @@ const COMPARISONS = {
   lte: (current, limit) => current <= limit,
 };
 
+const COUNTS = {
+  min_items: (count, limit) => count >= limit,
+  max_items: (count, limit) => count <= limit,
+};
+
 const matchEntry = (actual, expected) => {
   if (Array.isArray(expected)) {
     return expected.some(candidate => matchEntry(actual, candidate));
@@ -121,9 +229,16 @@ const matchEntry = (actual, expected) => {
       return !matchEntry(actual, expected.not);
     }
     const current = numberOf(actual);
+    const count = Array.isArray(actual) ? actual.length : 0;
     return Object.entries(expected).every(([op, bound]) => {
       const limit = numberOf(bound);
-      if (current === null || limit === null || !COMPARISONS[op]) {
+      if (limit === null) {
+        return false;
+      }
+      if (COUNTS[op]) {
+        return COUNTS[op](count, limit);
+      }
+      if (current === null || !COMPARISONS[op]) {
         return false;
       }
       return COMPARISONS[op](current, limit);
@@ -138,7 +253,9 @@ const matchEntry = (actual, expected) => {
 /**
  * Whether a `show_if` condition holds over a scope, hyperweaver-ui's
  * closed grammar: a map is an AND of its entries, an entry's value a
- * scalar (equals), a list (in), `{ not }`, or `{ gt, gte, lt, lte }`,
+ * scalar (equals), a list (in), `{ not }`, `{ gt, gte, lt, lte }` over
+ * the number the answer reads as, or `{ min_items, max_items }` over
+ * the member count of a list answer, a non-list answer counting none,
  * and a top-level `{ any: [map, map] }` an OR of maps; booleans and
  * strings compare as their canonical strings, an absent value never
  * equal to false.
@@ -340,12 +457,41 @@ const patternError = (field, text, t) => {
   return '';
 };
 
+const requiredError = (field, t) =>
+  t('provisioning.provisionerFieldDsl.errRequired', { label: field.label || field.name });
+
+const listError = (field, value, t) => {
+  const items = Array.isArray(value) ? value : [];
+  const rules = field.validate || {};
+  if (items.length === 0 && field.required) {
+    return requiredError(field, t);
+  }
+  if (rules.min_items !== undefined && items.length < rules.min_items) {
+    return t('provisioning.provisionerFieldDsl.errMinItems', { count: rules.min_items });
+  }
+  if (rules.max_items !== undefined && items.length > rules.max_items) {
+    return t('provisioning.provisionerFieldDsl.errMaxItems', { count: rules.max_items });
+  }
+  const itemField = { ...field, type: field.items || 'text', validate: {} };
+  const itemError = item => {
+    if (isBlank(item)) {
+      return requiredError(field, t);
+    }
+    const text = String(item);
+    return formatError(itemField, text, t) || patternError(field, text, t);
+  };
+  return items.map(itemError).find(Boolean) || '';
+};
+
 /**
  * One field's error text, empty while the value passes: a checkbox
- * always passes; a blank value fails only a required field; a number
- * its coercion and its `min` and `max`; a select or multiselect its
- * declared options; text its length rules, a password's floor of eight,
- * the format of an fqdn, an ipaddr or a cidr, and the author's pattern.
+ * always passes; a list its `min_items` and `max_items` and each member
+ * as its `items` type; a blank value fails only a required field, a
+ * `secret` whose answer is the picked row's id among them; a
+ * number its coercion and its `min` and `max`; a select or multiselect
+ * its declared options; text, a file name among it, its length rules, a
+ * password's floor of eight, the format of an fqdn, an ipaddr or a cidr,
+ * and the author's pattern.
  *
  * @param {Object} field - The field
  * @param {*} value - The answer
@@ -355,6 +501,9 @@ const patternError = (field, text, t) => {
 export const validateField = (field, value, t) => {
   if (field.type === 'checkbox') {
     return '';
+  }
+  if (field.type === 'list') {
+    return listError(field, value, t);
   }
   if (isBlank(value)) {
     return field.required
@@ -366,6 +515,9 @@ export const validateField = (field, value, t) => {
   }
   if (field.type === 'select' || field.type === 'multiselect') {
     return optionsError(field, value, t);
+  }
+  if (field.type === 'secret') {
+    return typeof value === 'string' ? '' : t('provisioning.provisionerFieldDsl.errNotSecret');
   }
   const text = String(value);
   return lengthError(field, text, t) || formatError(field, text, t) || patternError(field, text, t);
@@ -401,8 +553,9 @@ export const validateAnswers = (config, answers, roles, t) => {
 
 /**
  * The option rows a select or multiselect draws: the caller's inventory
- * under the field's `options_source` where it carries one, else the
- * field's own options.
+ * under the field's `options_source` where it carries one, the
+ * `hypervisor` inventory among them, each entry a `{ value, label }` or
+ * a scalar doubling as both, else the field's own options.
  *
  * @param {Object} field - The field
  * @param {Object|null} inventory - The platform inventory
@@ -413,8 +566,5 @@ export const rowsFor = (field, inventory) => {
     field.options_source && Array.isArray(inventory?.[field.options_source])
       ? inventory[field.options_source]
       : null;
-  if (sourced) {
-    return sourced.map(entry => ({ value: entry, label: String(entry) }));
-  }
-  return optionRows(field);
+  return sourced ? optionRows({ options: sourced }) : optionRows(field);
 };
