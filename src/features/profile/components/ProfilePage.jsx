@@ -27,7 +27,17 @@ const plainGuard = call => call();
 
 const noStepUp = () => Promise.reject(new Error('step-up is not offered on this host'));
 
-const ActiveSection = ({ active, account, profile, version, session, guard, placesKey, page }) => {
+const ActiveSection = ({
+  active,
+  account,
+  profile,
+  version,
+  session,
+  guard,
+  placesKey,
+  page,
+  preferencesExtra = null,
+}) => {
   const readOnly = isReadOnly(account);
   if (active === 'security') {
     return (
@@ -50,6 +60,7 @@ const ActiveSection = ({ active, account, profile, version, session, guard, plac
         session={session}
         readOnly={readOnly && !account.preferences}
         onSaved={page.refresh}
+        extra={preferencesExtra}
       />
     );
   }
@@ -108,6 +119,7 @@ ActiveSection.propTypes = {
     signedOut: PropTypes.func.isRequired,
     openEmailChange: PropTypes.func.isRequired,
   }).isRequired,
+  preferencesExtra: PropTypes.node,
 };
 
 const VerificationNotice = ({ verification, onResent }) => {
@@ -270,7 +282,9 @@ const usePlacesKey = places => {
  * membership's logo; `user` and `loaded` are the
  * session state's, the page drawing nothing until `loaded` and sending a
  * visitor to sign in only once `loaded` says there is no session, because
- * the cached account is a paint hint.
+ * the cached account is a paint hint; `preferencesExtra` is the node the
+ * host's features hand the Preferences section to draw under its cards,
+ * the certs feature's Certificates card while the host lists `certs`.
  */
 const ProfilePage = ({
   session,
@@ -283,6 +297,7 @@ const ProfilePage = ({
   admin,
   user = null,
   loaded,
+  preferencesExtra = null,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -363,6 +378,7 @@ const ProfilePage = ({
               signedOut,
               openEmailChange,
             }}
+            preferencesExtra={preferencesExtra}
           />
         )}
       </div>
@@ -385,6 +401,7 @@ ProfilePage.propTypes = {
   admin: PropTypes.bool.isRequired,
   user: PropTypes.object,
   loaded: PropTypes.bool.isRequired,
+  preferencesExtra: PropTypes.node,
 };
 
 export default ProfilePage;

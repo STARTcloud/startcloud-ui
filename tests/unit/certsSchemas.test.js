@@ -23,8 +23,17 @@ const pointersOf = (schema, values) => validateObject(schema, values).map(error 
 const SUBJECT = { CN: 'a', mode: 'generate', keyId: '', alg: 'p256', sans: [], ext_key_usage: [] };
 
 describe('the words the engine takes', () => {
-  it('lists the six algorithms, the four name kinds and the four usages', () => {
-    expect(ALGORITHMS).toEqual(['rsa2048', 'rsa3072', 'rsa4096', 'p256', 'p384', 'ed25519']);
+  it('lists the eight algorithms, the four name kinds and the four usages', () => {
+    expect(ALGORITHMS).toEqual([
+      'rsa2048',
+      'rsa3072',
+      'rsa4096',
+      'p256',
+      'p384',
+      'p521',
+      'secp256k1',
+      'ed25519',
+    ]);
     expect(SAN_KINDS).toEqual(['dns', 'ip', 'email', 'uri']);
     expect(EKUS).toEqual(['serverAuth', 'clientAuth', 'codeSigning', 'emailProtection']);
   });

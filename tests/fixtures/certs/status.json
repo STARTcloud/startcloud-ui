@@ -7,7 +7,7 @@
   },
   "auth": ["backend"],
   "collections": [],
-  "features": ["sidebar", "hosts", "certs", "certs-store"],
+  "features": ["sidebar", "hosts", "certs", "certs-store", "tools"],
   "links": {
     "docs": "",
     "contact": ""

@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import { Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaFileSignature } from 'react-icons/fa6';
 
@@ -61,12 +62,13 @@ export const templateOf = (name, draft, issue) =>
 const EMPTY_DRAFT = { ...EMPTY_SUBJECT, ...EMPTY_KEY_SOURCE };
 
 /**
- * The Request tab of the Generate page: the subject form, the key
- * source and the templates of the vault to load, save and delete, Make
- * request building the PKCS#10 through the engine once the rules pass,
- * busy while it runs, then Save to vault keeping the request linked to
- * its key, the key kept beside it under the common name while it was
- * generated, and Download handing the browser the PEM.
+ * The CSR tab of the Generate page: one line saying what it makes, the
+ * subject form and the key source, Make CSR building the PKCS#10 through
+ * the engine once the rules pass, its glyph a spinner while it runs,
+ * then the optional templates of the vault under the form to load, save
+ * and delete, then Save to vault keeping the request linked to its key,
+ * the key kept beside it under the common name while it was generated,
+ * and Download handing the browser the PEM.
  */
 const RequestTab = ({ fold }) => {
   const { t } = useTranslation();
@@ -124,6 +126,25 @@ const RequestTab = ({ fold }) => {
 
   return (
     <SectionCard title={t('certs.generate.requestTitle')} folded={fold.folded} onFold={fold.onFold}>
+      <p className="text-body-secondary">{t('certs.generate.aboutRequest')}</p>
+      <form onSubmit={make} noValidate>
+        <FormErrorSummary errors={rules.summary} />
+        <SubjectForm draft={draft} rules={rules} onChange={setDraft} />
+        <KeySource draft={draft} rules={rules} onChange={set} keys={keys} />
+        <button
+          type="submit"
+          className="btn btn-primary"
+          data-action="make-request"
+          disabled={engine.busy}
+        >
+          {engine.busy ? (
+            <Spinner animation="border" size="sm" role="status" className="me-1" />
+          ) : (
+            <FaFileSignature className="me-1" aria-hidden="true" />
+          )}
+          {t('certs.generate.makeRequest')}
+        </button>
+      </form>
       <TemplatePicker
         idPrefix="certs-request-template"
         templates={templates}
@@ -140,20 +161,6 @@ const RequestTab = ({ fold }) => {
           }
         }}
       />
-      <form onSubmit={make} noValidate>
-        <FormErrorSummary errors={rules.summary} />
-        <SubjectForm draft={draft} rules={rules} onChange={setDraft} />
-        <KeySource draft={draft} rules={rules} onChange={set} keys={keys} />
-        <button
-          type="submit"
-          className="btn btn-primary"
-          data-action="make-request"
-          disabled={engine.busy}
-        >
-          <FaFileSignature className="me-1" aria-hidden="true" />
-          {t('certs.generate.makeRequest')}
-        </button>
-      </form>
       {made ? (
         <Outcome
           title={t('certs.generate.requestMade')}

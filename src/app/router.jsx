@@ -66,6 +66,7 @@ import {
   sidebar as catalogSidebar,
 } from '../features/catalog';
 import {
+  CertsPreferencesCard,
   ChainPage,
   ComparePage,
   ConvertPage,
@@ -1415,7 +1416,18 @@ const interstitialRoutes = ({ status, cookie, account }) => {
   ]);
 };
 
-const issuerProfile = ({ account, globalAdmin }) => (
+/**
+ * The node the Preferences section draws under its cards: the certs
+ * feature's Certificates card while the host lists `certs`, nothing
+ * otherwise.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @returns {import('react').ReactElement|null} The card
+ */
+const certsPreferencesFor = status =>
+  hasFeatureStrict(status, 'certs') ? <CertsPreferencesCard /> : null;
+
+const issuerProfile = ({ account, globalAdmin, status }) => (
   <ProfilePage
     session={session}
     events={events}
@@ -1427,6 +1439,7 @@ const issuerProfile = ({ account, globalAdmin }) => (
     admin={globalAdmin}
     user={account.user}
     loaded={account.loaded}
+    preferencesExtra={certsPreferencesFor(status)}
   />
 );
 
@@ -1449,6 +1462,7 @@ const BackendProfileRoute = ({ account, status, globalAdmin }) => {
       admin={globalAdmin}
       user={account.user}
       loaded={account.loaded}
+      preferencesExtra={certsPreferencesFor(status)}
     />
   );
 };
@@ -1459,7 +1473,7 @@ BackendProfileRoute.propTypes = {
   globalAdmin: PropTypes.bool.isRequired,
 };
 
-const ApiKeyProfileRoute = ({ account, globalAdmin }) => {
+const ApiKeyProfileRoute = ({ account, status, globalAdmin }) => {
   const { issuerUrl } = account;
   const adapter = useMemo(() => apiKeyAccountFor({ issuerUrl }), [issuerUrl]);
   return (
@@ -1474,12 +1488,14 @@ const ApiKeyProfileRoute = ({ account, globalAdmin }) => {
       admin={globalAdmin}
       user={account.user}
       loaded={account.loaded}
+      preferencesExtra={certsPreferencesFor(status)}
     />
   );
 };
 
 ApiKeyProfileRoute.propTypes = {
   account: sessionStateShape.isRequired,
+  status: PropTypes.object.isRequired,
   globalAdmin: PropTypes.bool.isRequired,
 };
 
@@ -1488,7 +1504,7 @@ const localProfileFor = ({ backend, apiKey, account, status, globalAdmin }) => {
     return <BackendProfileRoute account={account} status={status} globalAdmin={globalAdmin} />;
   }
   if (apiKey) {
-    return <ApiKeyProfileRoute account={account} globalAdmin={globalAdmin} />;
+    return <ApiKeyProfileRoute account={account} status={status} globalAdmin={globalAdmin} />;
   }
   return null;
 };
@@ -1528,7 +1544,7 @@ OrgConsoleRoute.propTypes = {
 };
 
 const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications, ticketUrl }) => {
-  const profile = issuerProfile({ account, globalAdmin });
+  const profile = issuerProfile({ account, globalAdmin, status });
   const notFound = <ErrorPage ticketUrl={ticketUrl} admin={globalAdmin} notFound />;
   return gatedRoutes([
     { path: '/user/profile/:section?', open: cookie, element: profile, token: 'cookie' },
@@ -1689,9 +1705,10 @@ const hostsRoutes = ({ hosts, signedOut, context, organizations }) => {
 
 /**
  * The certs feature's routes, each open while the host advertises
- * `certs`, the Shared and Sync pages open while it advertises
- * `certs-store` as well and drawing the sign-in placard while a needed
- * session is not held.
+ * `certs`, the six tool pages open while it advertises `tools` as well,
+ * the Shared and Sync pages open while it advertises `certs-store` as
+ * well and drawing the sign-in placard while a needed session is not
+ * held.
  *
  * @param {Object} options - The router's side
  * @param {Object} options.status - The payload from `probeStatus`
@@ -1701,9 +1718,16 @@ const hostsRoutes = ({ hosts, signedOut, context, organizations }) => {
  */
 const certsRoutes = ({ status, signedOut, context }) => {
   const certs = hasFeatureStrict(status, 'certs');
+  const tools = hasFeatureStrict(status, 'tools');
   const store = hasFeatureStrict(status, 'certs-store');
   const storePage = (path, element) =>
     signedOut ? <SignInStub titleKey={titleOf(path)} signIn={context.signIn} /> : element;
+  const toolRow = (path, element) => ({
+    path,
+    open: certs && tools,
+    element,
+    token: certs ? 'tools' : 'certs',
+  });
   const storeRow = (path, element) => ({
     path,
     open: certs && store,
@@ -1713,16 +1737,16 @@ const certsRoutes = ({ status, signedOut, context }) => {
   return gatedRoutes(
     [
       { path: '/certs', element: <VaultPage context={context} /> },
-      { path: '/certs/convert', element: <ConvertPage context={context} /> },
-      { path: '/certs/decode', element: <DecodePage context={context} /> },
-      { path: '/certs/match', element: <MatchPage context={context} /> },
-      { path: '/certs/compare', element: <ComparePage context={context} /> },
-      { path: '/certs/chain', element: <ChainPage context={context} /> },
-      { path: '/certs/generate', element: <GeneratePage context={context} /> },
       { path: '/certs/:id', element: <CertRecordRoute context={context} /> },
     ]
       .map(({ path, element }) => ({ path, open: certs, element, token: 'certs' }))
       .concat([
+        toolRow('/certs/convert', <ConvertPage context={context} />),
+        toolRow('/certs/decode', <DecodePage context={context} />),
+        toolRow('/certs/match', <MatchPage context={context} />),
+        toolRow('/certs/compare', <ComparePage context={context} />),
+        toolRow('/certs/chain', <ChainPage context={context} />),
+        toolRow('/certs/generate', <GeneratePage context={context} />),
         storeRow('/certs/shared', <SharedPage context={context} />),
         storeRow('/certs/sync', <SyncPage context={context} />),
       ])
@@ -1796,7 +1820,7 @@ const homeElementFor = ({
     if (!account.user) {
       return <Navigate to={returnTo.signInTo('/')} replace />;
     }
-    return issuerProfile({ account, globalAdmin });
+    return issuerProfile({ account, globalAdmin, status });
   }
   if (fleet) {
     return <FleetPage context={context} mode={mode} />;
@@ -2031,7 +2055,12 @@ const AppRoutes = ({
           path={path}
           element={
             localProfileFor({ backend, apiKey, account, status, globalAdmin }) ||
-            gated(cookie, issuerProfile({ account, globalAdmin }), titleOf('/profile'), 'backend')
+            gated(
+              cookie,
+              issuerProfile({ account, globalAdmin, status }),
+              titleOf('/profile'),
+              'backend'
+            )
           }
         />
       ))}

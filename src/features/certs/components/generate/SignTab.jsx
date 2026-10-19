@@ -1,9 +1,11 @@
 import PropTypes from 'prop-types';
 import { useId, useState } from 'react';
+import { Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaStamp } from 'react-icons/fa6';
+import { FaFileSignature, FaStamp } from 'react-icons/fa6';
 
 import FormErrorSummary from '../../../../components/common/FormErrorSummary';
+import MethodList, { MethodRow } from '../../../../components/common/MethodList';
 import OptionList, { Option } from '../../../../components/common/OptionList';
 import SectionCard from '../../../../components/common/SectionCard';
 import { useNotify } from '../../../../contexts/NoticeContext';
@@ -12,7 +14,7 @@ import { useEngine } from '../../hooks/useEngine';
 import { useVault } from '../../hooks/useVault';
 import { firstOf } from '../../utils/components';
 import { downloadText } from '../../utils/download';
-import { CERT_COMPONENT_KINDS, nameOf, relationships } from '../../utils/records';
+import { CERT_COMPONENT_KINDS, algorithmOf, nameOf, relationships } from '../../utils/records';
 import { SIGN_LABELS, SIGN_SCHEMA } from '../../utils/schemas';
 import { SelectField, SwitchField } from '../fields';
 import InputZone from '../InputZone';
@@ -117,6 +119,51 @@ PastedLine.propTypes = {
   names: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
+const pendingOf = (requests, records) =>
+  requests.filter(request => !records.some(record => record.links?.request_id === request.id));
+
+const PendingRequests = ({ requests, onPick }) => {
+  const { t } = useTranslation();
+  return (
+    <fieldset className="mb-3" data-panel="pending-requests">
+      <legend className="form-label fs-6">
+        {t('certs.generate.pending', { count: requests.length })}
+      </legend>
+      <MethodList empty={t('certs.generate.noPending')}>
+        {requests.map(request => {
+          const algorithm = algorithmOf(request);
+          const pick = (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary"
+              data-action="pick-request"
+              onClick={() => onPick(request)}
+            >
+              <FaStamp className="me-1" aria-hidden="true" />
+              {t('certs.generate.sign')}
+            </button>
+          );
+          return (
+            <MethodRow
+              key={request.id}
+              icon={<FaFileSignature aria-hidden="true" />}
+              label={nameOf(request)}
+              subline={request.facts?.subject_dn || null}
+              badges={algorithm ? <span className="badge bg-secondary">{algorithm}</span> : null}
+              actions={pick}
+            />
+          );
+        })}
+      </MethodList>
+    </fieldset>
+  );
+};
+
+PendingRequests.propTypes = {
+  requests: PropTypes.array.isRequired,
+  onPick: PropTypes.func.isRequired,
+};
+
 const requestInput = (draft, requests) => {
   if (draft.request_mode === 'vault') {
     const record = requests.find(entry => entry.id === draft.request_id) || null;
@@ -144,17 +191,20 @@ const authorityInput = (draft, authorities, records) => {
 };
 
 /**
- * The Sign request tab of the Generate page: the request from the vault
- * or pasted, the vault card picked by default while the vault holds a
- * request and the paste card otherwise, read from the vault's records
- * as they stand, the authority the same way, from the vault, one whose key the vault
- * holds, or pasted as a certificate and its key, each drop adding what
- * it carried so the two may come from two files, the validity, the
- * Authority switch and Copy extensions, Sign issuing the certificate
- * through the engine once the rules say what is held and what is
- * missing, busy while it runs, then Save to vault keeping it linked to
- * the issuer, the request and the request's key, and Download handing
- * the browser the PEM.
+ * The Sign CSR tab of the Generate page: one line saying what it does,
+ * the pending requests, the vault's requests no certificate of the vault
+ * was issued from, one line each with Sign picking it as the request
+ * below, then the request from the vault or pasted, the vault card
+ * picked by default while the vault holds a request and the paste card
+ * otherwise, read from the vault's records as they stand, the authority
+ * the same way, from the vault, one whose key the vault holds, or pasted
+ * as a certificate and its key, each drop adding what it carried so the
+ * two may come from two files, the validity, the Authority switch and
+ * Copy extensions, Sign issuing the certificate through the engine once
+ * the rules say what is held and what is missing, its glyph a spinner
+ * while it runs, then Save to vault keeping it linked to the issuer, the
+ * request and the request's key, and Download handing the browser the
+ * PEM.
  */
 const SignTab = ({ fold }) => {
   const { t } = useTranslation();
@@ -177,6 +227,9 @@ const SignTab = ({ fold }) => {
     idPrefix: 'certs-sign',
   });
   const set = (name, value) => setDraft(current => ({ ...current, [name]: value }));
+
+  const pickRequest = request =>
+    setDraft(current => ({ ...current, request_mode: 'vault', request_id: request.id }));
 
   const onRequest = detected =>
     set('request', firstOf(detected, ['csr']) || (detected ? draft.request : null));
@@ -231,6 +284,8 @@ const SignTab = ({ fold }) => {
 
   return (
     <SectionCard title={t('certs.generate.signTitle')} folded={fold.folded} onFold={fold.onFold}>
+      <p className="text-body-secondary">{t('certs.generate.aboutSign')}</p>
+      <PendingRequests requests={pendingOf(requests, vault.records)} onPick={pickRequest} />
       <form onSubmit={sign} noValidate>
         <FormErrorSummary errors={rules.summary} />
         <Picker
@@ -258,7 +313,11 @@ const SignTab = ({ fold }) => {
         <IssueFields draft={values} rules={rules} onChange={set} />
         <SwitchField name="copy_extensions" draft={values} rules={rules} onChange={set} />
         <button type="submit" className="btn btn-primary" data-action="sign" disabled={engine.busy}>
-          <FaStamp className="me-1" aria-hidden="true" />
+          {engine.busy ? (
+            <Spinner animation="border" size="sm" role="status" className="me-1" />
+          ) : (
+            <FaStamp className="me-1" aria-hidden="true" />
+          )}
           {t('certs.generate.sign')}
         </button>
       </form>

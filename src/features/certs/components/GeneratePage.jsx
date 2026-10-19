@@ -30,9 +30,10 @@ const TABS = [
 ];
 
 /**
- * The Generate page at `/certs/generate`: the tab strip of Key, Request,
- * Certificate and Sign request, each tab one card that makes its thing
- * through the engine and keeps it in the vault, every tab kept mounted
+ * The Generate page at `/certs/generate`: one line saying what the page
+ * does, then the tab strip of Key, CSR, Certificate and Sign CSR, each
+ * tab one card opening with one line saying what it makes, making it
+ * through the engine and keeping it in the vault, every tab kept mounted
  * so a draft survives a change of tab, the folds under
  * `table_prefs_certs_generate`.
  */
@@ -47,6 +48,7 @@ const GeneratePage = ({ context }) => {
 
   return (
     <div className="list row" data-page="certs-generate">
+      <p className="text-body-secondary">{t('certs.generate.about')}</p>
       <TabStrip
         className="mb-3"
         tabs={TABS.map(entry => ({ key: entry.key, label: t(entry.labelKey), icon: entry.icon }))}

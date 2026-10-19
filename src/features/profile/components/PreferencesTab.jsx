@@ -614,11 +614,14 @@ EditablePreferences.propTypes = {
  * `integrations` rows the issuer answers for a person who connected a
  * service, the Hyperweaver card draws over its `hyperweaver` row, its
  * writes reading the record again the way the preferences write does,
- * read-only under the same rule as the rest of the tab.
+ * read-only under the same rule as the rest of the tab; under that, the
+ * `extra` node the host's features hand the page, the certs feature's
+ * Certificates card while the host lists `certs`, a browser preference
+ * drawn editable under a read-only record too.
  */
-const PreferencesTab = ({ account, profile, readOnly, onSaved, session = null }) => {
+const PreferencesTab = ({ account, profile, readOnly, onSaved, session = null, extra = null }) => {
   const folds = useFolds(PREFS_KEY);
-  const after =
+  const hyperweaver =
     account.integrations && Array.isArray(profile.integrations) ? (
       <HyperweaverServiceCard
         integrations={account.integrations}
@@ -627,6 +630,13 @@ const PreferencesTab = ({ account, profile, readOnly, onSaved, session = null })
         onSaved={onSaved}
         className="mt-3 mb-0"
       />
+    ) : null;
+  const after =
+    hyperweaver || extra ? (
+      <>
+        {hyperweaver}
+        {extra}
+      </>
     ) : null;
   if (readOnly) {
     return <ReadOnlyPreferences account={account} profile={profile} folds={folds} after={after} />;
@@ -654,6 +664,7 @@ PreferencesTab.propTypes = {
   session: PropTypes.shape({ savePreferences: PropTypes.func.isRequired }),
   readOnly: PropTypes.bool.isRequired,
   onSaved: PropTypes.func.isRequired,
+  extra: PropTypes.node,
 };
 
 export default PreferencesTab;

@@ -264,7 +264,8 @@ ConvertBody.propTypes = {
 };
 
 /**
- * The Convert page at `/certs/convert`: the Input card, its zone open,
+ * The Convert page at `/certs/convert`: one line saying what the page
+ * does, then the Input card, its zone open,
  * taking files, a paste and a password, every read adding its
  * components to the ones held so a certificate and its key from two
  * files meet, an unlocked read replacing the locked component of the
@@ -295,6 +296,7 @@ const ConvertPage = ({ context }) => {
 
   return (
     <div className="list row" data-page="certs-convert">
+      <p className="text-body-secondary">{t('certs.convert.about')}</p>
       <ConvertBody
         key={recordId}
         record={record}

@@ -2,7 +2,16 @@ import { NON_BLANK } from '../../../utils/validation';
 
 import { PASSWORD_FORMATS } from './formats';
 
-const ALGORITHMS = ['rsa2048', 'rsa3072', 'rsa4096', 'p256', 'p384', 'ed25519'];
+const ALGORITHMS = [
+  'rsa2048',
+  'rsa3072',
+  'rsa4096',
+  'p256',
+  'p384',
+  'p521',
+  'secp256k1',
+  'ed25519',
+];
 
 const SAN_KINDS = ['dns', 'ip', 'email', 'uri'];
 

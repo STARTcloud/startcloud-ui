@@ -12,13 +12,14 @@ import { TEMPLATE_LABELS, templateSchemaOf } from '../../utils/schemas';
 const EMPTY_NAME = { name: '' };
 
 /**
- * The templates of the vault beside a subject form: a select loading
- * one into the form with Delete behind the typed confirmation removing
- * the one picked, drawn only while the vault holds a template, and a
- * name with Save in its input group keeping the form as a new one, the
- * name required and refused while a template already carries it, the
- * refusal drawn under the name and in the summary over the picker on
- * Save; `idPrefix` heads every control id, one prefix a mount.
+ * The optional templates of the vault under a subject form, opening
+ * with one line saying they are optional: a select loading one into the
+ * form with Delete behind the typed confirmation removing the one
+ * picked, drawn only while the vault holds a template, and a name with
+ * Save in its input group keeping the form as a new one, the name
+ * required and refused while a template already carries it, the refusal
+ * drawn under the name and in the summary over the picker on Save;
+ * `idPrefix` heads every control id, one prefix a mount.
  */
 const TemplatePicker = ({ idPrefix, templates, onLoad, onSave, onDelete }) => {
   const { t } = useTranslation();
@@ -47,7 +48,8 @@ const TemplatePicker = ({ idPrefix, templates, onLoad, onSave, onDelete }) => {
   };
 
   return (
-    <div data-panel="templates">
+    <div className="mt-3" data-panel="templates">
+      <p className="text-body-secondary small mb-2">{t('certs.generate.templatesOptional')}</p>
       <FormErrorSummary errors={rules.summary} />
       <div className="row g-3 align-items-start mb-3">
         {templates.length > 0 ? (

@@ -75,7 +75,8 @@ Side.propTypes = {
 };
 
 /**
- * The Compare page at `/certs/compare`: two Input cards side by side,
+ * The Compare page at `/certs/compare`: one line saying what the page
+ * does, then two Input cards side by side,
  * every read adding its components to the side's held ones as Convert
  * does, the newest certificate of a side standing as its material, each
  * followed by that certificate's facts, and once both are read the
@@ -119,23 +120,22 @@ const ComparePage = ({ context }) => {
 
   return (
     <div className="list row" data-page="certs-compare">
+      <p className="text-body-secondary">{t('certs.compare.about')}</p>
       {compared ? <Differences compared={compared} /> : null}
-      <div className="row g-3">
-        <Side
-          titleKey="certs.compare.left"
-          foldKey="compare-left"
-          folds={folds}
-          onDetected={onLeft}
-          cert={left}
-        />
-        <Side
-          titleKey="certs.compare.right"
-          foldKey="compare-right"
-          folds={folds}
-          onDetected={onRight}
-          cert={right}
-        />
-      </div>
+      <Side
+        titleKey="certs.compare.left"
+        foldKey="compare-left"
+        folds={folds}
+        onDetected={onLeft}
+        cert={left}
+      />
+      <Side
+        titleKey="certs.compare.right"
+        foldKey="compare-right"
+        folds={folds}
+        onDetected={onRight}
+        cert={right}
+      />
     </div>
   );
 };

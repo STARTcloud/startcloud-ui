@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import { Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaCertificate } from 'react-icons/fa6';
 
@@ -60,10 +61,11 @@ export const issuedFileName = issued =>
   fileNameOf(stemOf({ name: issued.facts.subject?.CN || 'certificate' }), 'pem', 'crt');
 
 /**
- * The Certificate tab of the Generate page: the subject form, the
- * validity, the Authority switch with its path length, the key source
- * and the templates, Self-sign issuing the certificate through the
- * engine once the rules pass, busy while it runs, then Save to vault
+ * The Certificate tab of the Generate page: one line saying what it
+ * makes, the subject form, the validity, the Authority switch with its
+ * path length and the key source, Self-sign issuing the certificate
+ * through the engine once the rules pass, its glyph a spinner while it
+ * runs, then the optional templates under the form, then Save to vault
  * keeping it as an authority while it is a CA and a certificate
  * otherwise, linked to its key, and Download handing the browser the
  * PEM.
@@ -120,6 +122,26 @@ const CertificateTab = ({ fold }) => {
       folded={fold.folded}
       onFold={fold.onFold}
     >
+      <p className="text-body-secondary">{t('certs.generate.aboutCertificate')}</p>
+      <form onSubmit={sign} noValidate>
+        <FormErrorSummary errors={rules.summary} />
+        <SubjectForm draft={draft} rules={rules} onChange={setDraft} />
+        <IssueFields draft={draft} rules={rules} onChange={set} />
+        <KeySource draft={draft} rules={rules} onChange={set} keys={keys} />
+        <button
+          type="submit"
+          className="btn btn-primary"
+          data-action="self-sign"
+          disabled={engine.busy}
+        >
+          {engine.busy ? (
+            <Spinner animation="border" size="sm" role="status" className="me-1" />
+          ) : (
+            <FaCertificate className="me-1" aria-hidden="true" />
+          )}
+          {t('certs.generate.selfSign')}
+        </button>
+      </form>
       <TemplatePicker
         idPrefix="certs-certificate-template"
         templates={templates}
@@ -142,21 +164,6 @@ const CertificateTab = ({ fold }) => {
           }
         }}
       />
-      <form onSubmit={sign} noValidate>
-        <FormErrorSummary errors={rules.summary} />
-        <SubjectForm draft={draft} rules={rules} onChange={setDraft} />
-        <IssueFields draft={draft} rules={rules} onChange={set} />
-        <KeySource draft={draft} rules={rules} onChange={set} keys={keys} />
-        <button
-          type="submit"
-          className="btn btn-primary"
-          data-action="self-sign"
-          disabled={engine.busy}
-        >
-          <FaCertificate className="me-1" aria-hidden="true" />
-          {t('certs.generate.selfSign')}
-        </button>
-      </form>
       {made ? (
         <Outcome
           title={t('certs.generate.certificateMade')}

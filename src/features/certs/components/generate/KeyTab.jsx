@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import { Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaWandMagicSparkles } from 'react-icons/fa6';
 
@@ -34,10 +35,11 @@ const pemOf = (engine, der_b64) =>
   );
 
 /**
- * The Key tab of the Generate page: the algorithm select, Generate
- * making the key through the engine, busy while it runs, then its name,
- * required, and notes, Save to vault keeping it as a key record once the
- * rules pass and Download handing the browser its PKCS#8 PEM.
+ * The Key tab of the Generate page: one line saying what it makes, the
+ * algorithm select, Generate making the key through the engine, its
+ * glyph a spinner while it runs, then its name, required, and notes,
+ * Save to vault keeping it as a key record once the rules pass and
+ * Download handing the browser its PKCS#8 PEM.
  */
 const KeyTab = ({ fold }) => {
   const { t } = useTranslation();
@@ -89,6 +91,7 @@ const KeyTab = ({ fold }) => {
 
   return (
     <SectionCard title={t('certs.generate.keyTitle')} folded={fold.folded} onFold={fold.onFold}>
+      <p className="text-body-secondary">{t('certs.generate.aboutKey')}</p>
       <form onSubmit={event => event.preventDefault()} noValidate>
         <FormErrorSummary errors={rules.summary} />
         <KeyTypeSelect draft={draft} rules={rules} onChange={set} />
@@ -99,7 +102,11 @@ const KeyTab = ({ fold }) => {
           disabled={engine.busy}
           onClick={generate}
         >
-          <FaWandMagicSparkles className="me-1" aria-hidden="true" />
+          {engine.busy ? (
+            <Spinner animation="border" size="sm" role="status" className="me-1" />
+          ) : (
+            <FaWandMagicSparkles className="me-1" aria-hidden="true" />
+          )}
           {t('certs.generate.generateKey')}
         </button>
         {made ? (

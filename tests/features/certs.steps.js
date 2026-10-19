@@ -85,8 +85,6 @@ const relatedLinks = page => page.locator('[data-panel="record-related"] a');
 
 const recordChain = page => page.locator('[data-panel="record-chain"]');
 
-const kindNode = (page, kind) => page.locator(`.sidebar-tree [data-node="kind:${kind}"]`);
-
 const componentRows = page => certsPage(page).locator('.scope-list .scope-row');
 
 const componentRow = (page, text) => componentRows(page).filter({ hasText: text });
@@ -190,14 +188,6 @@ Then('the download is named {string}', async ({ page }, name) => {
 Then('the engine was served as {string}', async ({ page }, type) => {
   await expect.poll(() => listOf(engineAnswers, page).length).toBeGreaterThan(0);
   expect(listOf(engineAnswers, page).every(answer => answer.startsWith(type))).toBe(true);
-});
-
-Then('the kind node {string} is held', async ({ page }, kind) => {
-  await expect(kindNode(page, kind)).toBeDisabled();
-});
-
-Then('the kind node {string} is offered', async ({ page }, kind) => {
-  await expect(kindNode(page, kind)).toBeEnabled();
 });
 
 Then('the vault heading holds the focus', async ({ page }) => {

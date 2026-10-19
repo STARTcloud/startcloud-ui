@@ -55,8 +55,8 @@ export const createPush = ({
   };
 
   const subscribePush = async () => {
-    const registration = await ensureServiceWorker();
     const vapidKey = await getVapidKey();
+    const registration = await ensureServiceWorker();
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidKey),

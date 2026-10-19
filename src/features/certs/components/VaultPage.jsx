@@ -15,9 +15,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
-import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import RowMenu from '../../../components/common/RowMenu';
-import SectionCard from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
 import StatCard from '../../../components/common/StatCard';
 import SubTable from '../../../components/common/SubTable';
@@ -25,8 +23,6 @@ import UploadZone from '../../../components/common/UploadZone';
 import { StatusMenu, VisibilityMenu, pickedOf } from '../../../components/common/VisibilityPicker';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useArrival } from '../../../hooks/useArrival';
-import { useFolds } from '../../../hooks/useFolds';
-import { useFormRules } from '../../../hooks/useFormRules';
 import { useSelection } from '../../../hooks/useSelection';
 import { pageContextShape } from '../../../utils/itemShape';
 import { canManageRecord } from '../../../utils/permissions';
@@ -36,12 +32,9 @@ import { useStoreWrites } from '../hooks/useStoreWrites';
 import { useVault } from '../hooks/useVault';
 import { useVaultSearch } from '../hooks/useVaultSearch';
 import { focusOn } from '../utils/focus';
-import { foldOf } from '../utils/folds';
 import { KINDS, nameOf, nowOf } from '../utils/records';
-import { PREFERENCES_LABELS, PREFERENCES_SCHEMA } from '../utils/schemas';
 import { patchOfVerbs } from '../utils/sync';
 
-import { TextField } from './fields';
 import { vaultColumns } from './vaultColumns';
 import VaultTreeDialogs from './VaultTreeDialogs';
 
@@ -53,8 +46,6 @@ const KIND_ICONS = {
   ssh_certificate: FaTerminal,
   template: FaLayerGroup,
 };
-
-const PREFERENCES_FOLD = 'preferences';
 
 const HEADING_ID = 'certs-vault-heading';
 
@@ -139,65 +130,6 @@ const KindTiles = ({ records }) => {
 
 KindTiles.propTypes = {
   records: PropTypes.array.isRequired,
-};
-
-const PreferencesCard = ({ thresholdDays, onSave, fold }) => {
-  const { t } = useTranslation();
-  const [draft, setDraft] = useState({ threshold_days: String(thresholdDays) });
-  const rules = useFormRules({
-    schema: PREFERENCES_SCHEMA,
-    values: draft,
-    labels: PREFERENCES_LABELS,
-    idPrefix: 'certs-preferences',
-  });
-
-  const submit = event => {
-    event.preventDefault();
-    if (rules.validateAll()) {
-      onSave(Number(draft.threshold_days));
-    }
-  };
-
-  return (
-    <SectionCard
-      title={t('certs.preferences.title')}
-      folded={fold.folded}
-      onFold={fold.onFold}
-      className="mt-3 mb-3"
-    >
-      <form onSubmit={submit} noValidate>
-        <FormErrorSummary errors={rules.summary} />
-        <div className="row g-3 align-items-end">
-          <div className="col-md-4">
-            <TextField
-              name="threshold_days"
-              type="number"
-              min={1}
-              draft={draft}
-              rules={rules}
-              onChange={(name, value) => setDraft({ [name]: value })}
-              hint={t('certs.preferences.thresholdHint')}
-              className="mb-0"
-            />
-          </div>
-          <div className="col-auto">
-            <button type="submit" className="btn btn-primary">
-              {t('certs.preferences.save')}
-            </button>
-          </div>
-        </div>
-      </form>
-    </SectionCard>
-  );
-};
-
-PreferencesCard.propTypes = {
-  thresholdDays: PropTypes.number.isRequired,
-  onSave: PropTypes.func.isRequired,
-  fold: PropTypes.shape({
-    folded: PropTypes.bool.isRequired,
-    onFold: PropTypes.func.isRequired,
-  }).isRequired,
 };
 
 const Picker = ({ action, count, onAccess }) => {
@@ -309,19 +241,19 @@ const useBundleImport = () => {
  * Visibility and Status pickers over the picked synced rows the person
  * manages, one PUT a row, Delete of the browser's records behind the
  * typed confirmation, and Export bundle of the picked rows) while rows
- * are picked, then Generate and the one Add New, the upload
- * zone taking a `*.certs.json` bundle, a file that is no bundle refused
- * on the zone's own line; one tile a kind linking to the table narrowed
- * to that kind; the table of every record narrowed by the navbar
- * binding of `useVaultSearch` under `table_prefs_certs`, its panel
- * carrying Export bundle, the select column a real checkbox header, a
- * `#<id>` in the URL landing on that row, each row's menu offering
- * Convert, Download, Delete behind the typed confirmation naming the
- * records linked to it and, on a synced row the person manages, Remove
- * from the organization behind its own, the one verb that sends the
- * DELETE; and at the foot the Preferences card holding
- * the expiry threshold in days, a whole number from one checked on blur
- * and on Save. Focus lands on the heading once a delete's dialog has
+ * are picked, then Generate and the one Restore backup, the upload
+ * zone taking a `*.certs.json` vault backup, the file Export bundle
+ * writes, a file that is no backup refused on the zone's own line; one
+ * tile a kind linking to the table narrowed to that kind; the table of
+ * every record narrowed by the navbar binding of `useVaultSearch` under
+ * `table_prefs_certs`, its panel carrying Export bundle, the select
+ * column a real checkbox header, a `#<id>` in the URL landing on that
+ * row, each row's menu offering Convert, Download, Delete behind the
+ * typed confirmation naming the records linked to it and, on a synced
+ * row the person manages, Remove from the organization behind its own,
+ * the one verb that sends the DELETE; the expiry threshold the rows'
+ * Expiring reads is the Preferences page's Certificates card. Focus
+ * lands on the heading once a delete's dialog has
  * gone, and on arrival with `focusHeading` in the location's state, the
  * record page's way after its own delete.
  */
@@ -333,7 +265,6 @@ const VaultPage = ({ context }) => {
   const actions = useRecordActions();
   const store = useStoreWrites();
   const prefsKey = `${context.prefsPrefix}_certs`;
-  const folds = useFolds(prefsKey);
   const [target, setTarget] = useState(null);
   const [removing, setRemoving] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -448,12 +379,6 @@ const VaultPage = ({ context }) => {
         emptyText={t(search.filtering ? 'pages.noMatches' : 'pages.empty')}
         emptyBody={t(search.filtering ? 'pages.noMatchesBody' : 'pages.emptyBody')}
         selection={selection.subtable}
-      />
-      <PreferencesCard
-        key={thresholdDays}
-        thresholdDays={thresholdDays}
-        onSave={days => vault.setPreference('threshold_days', days)}
-        fold={foldOf(folds, PREFERENCES_FOLD)}
       />
       <VaultTreeDialogs
         target={target}

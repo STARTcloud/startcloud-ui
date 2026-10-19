@@ -22,9 +22,25 @@ const storedOpen = group => {
   }
 };
 
-const rowClass = ({ isActive }) => (isActive ? 'sidebar-row active' : 'sidebar-row');
+const searchOf = to => {
+  const at = to.indexOf('?');
+  return at === -1 ? '' : to.slice(at);
+};
 
-const descendsFrom = (pathname, to) => pathname === to || pathname.startsWith(`${to}/`);
+const pathOf = to => {
+  const at = to.indexOf('?');
+  return at === -1 ? to : to.slice(0, at);
+};
+
+const rowClassOf =
+  quiet =>
+  ({ isActive }) =>
+    isActive && !quiet ? 'sidebar-row active' : 'sidebar-row';
+
+const descendsFrom = (pathname, to) => pathname === pathOf(to) || pathname.startsWith(`${to}/`);
+
+const reaches = (pathname, search, to) =>
+  searchOf(to) ? pathname === pathOf(to) && search === searchOf(to) : descendsFrom(pathname, to);
 
 const useOpenKeys = groupKey => {
   const [open, setOpen] = useState(() => storedOpen(groupKey));
@@ -126,11 +142,16 @@ RowBadge.propTypes = {
   count: PropTypes.number.isRequired,
 };
 
-const SectionRow = ({ row, badges, depth = 0, fold = null }) => {
+const SectionRow = ({ row, badges, depth = 0, fold = null, siblings = [] }) => {
   const { t } = useTranslation();
+  const { pathname, search } = useLocation();
   const link = useRef(null);
   const Icon = row.icon;
   const label = t(row.labelKey);
+  const own = searchOf(row.to);
+  const quiet = own
+    ? search !== own
+    : siblings.some(entry => searchOf(entry.to) && reaches(pathname, search, entry.to));
   useCssVar(link, '--sidebar-steps', depth ? String(depth) : null);
   const body = (
     <>
@@ -151,8 +172,8 @@ const SectionRow = ({ row, badges, depth = 0, fold = null }) => {
     <NavLink
       ref={link}
       to={row.to}
-      end={Boolean(row.end)}
-      className={rowClass}
+      end={Boolean(row.end) || Boolean(own)}
+      className={rowClassOf(quiet)}
       title={label}
       aria-expanded={fold ? fold.open : undefined}
       data-sidebar-row
@@ -171,21 +192,23 @@ SectionRow.propTypes = {
     open: PropTypes.bool.isRequired,
     onToggle: PropTypes.func.isRequired,
   }),
+  siblings: PropTypes.arrayOf(childRowShape),
 };
 
-const SectionEntry = ({ row, badges, pathname, opened }) => {
+const SectionEntry = ({ row, badges, pathname, search, opened }) => {
   const children = row.children || [];
   if (children.length === 0) {
     return <SectionRow row={row} badges={badges} />;
   }
   const open =
-    opened.open.includes(row.key) || children.some(child => descendsFrom(pathname, child.to));
+    opened.open.includes(row.key) || children.some(child => reaches(pathname, search, child.to));
   return (
     <>
       <SectionRow
         row={row}
         badges={badges}
         fold={{ open, onToggle: () => opened.toggle(row.key) }}
+        siblings={children}
       />
       {open ? (
         <div className="sidebar-children">
@@ -207,10 +230,11 @@ SectionEntry.propTypes = {
   row: sidebarRowShape.isRequired,
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   pathname: PropTypes.string.isRequired,
+  search: PropTypes.string.isRequired,
   opened: openedShape.isRequired,
 };
 
-const SectionRows = ({ section, badges, pathname, opened }) => {
+const SectionRows = ({ section, badges, pathname, search, opened }) => {
   const { t } = useTranslation();
   if (section.items.length === 0) {
     return null;
@@ -219,7 +243,14 @@ const SectionRows = ({ section, badges, pathname, opened }) => {
     <div className="sidebar-section">
       {section.labelKey ? <div className="sidebar-section-label">{t(section.labelKey)}</div> : null}
       {section.items.map(row => (
-        <SectionEntry key={row.key} row={row} badges={badges} pathname={pathname} opened={opened} />
+        <SectionEntry
+          key={row.key}
+          row={row}
+          badges={badges}
+          pathname={pathname}
+          search={search}
+          opened={opened}
+        />
       ))}
     </div>
   );
@@ -229,6 +260,7 @@ SectionRows.propTypes = {
   section: sidebarSectionShape.isRequired,
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   pathname: PropTypes.string.isRequired,
+  search: PropTypes.string.isRequired,
   opened: openedShape.isRequired,
 };
 
@@ -425,7 +457,7 @@ TreeView.propTypes = {
   opened: openedShape.isRequired,
 };
 
-const GroupView = ({ group, badges, current, pathname }) => {
+const GroupView = ({ group, badges, current, pathname, search }) => {
   const { t } = useTranslation();
   const opened = useOpenKeys(group.key);
   const [view, setView] = useState(
@@ -442,6 +474,7 @@ const GroupView = ({ group, badges, current, pathname }) => {
           section={section}
           badges={badges}
           pathname={pathname}
+          search={search}
           opened={opened}
         />
       ))}
@@ -481,6 +514,7 @@ GroupView.propTypes = {
   badges: PropTypes.objectOf(PropTypes.number).isRequired,
   current: PropTypes.string.isRequired,
   pathname: PropTypes.string.isRequired,
+  search: PropTypes.string.isRequired,
 };
 
 const sizeShape = PropTypes.shape({
@@ -505,7 +539,10 @@ const sizeShape = PropTypes.shape({
  * and an optional badge, active by route, an `external` row followed as
  * a top-level navigation and never active, a row with `children` folding
  * them like a tree node with a caret at the row's right end, open while a
- * child is the current route, the row's own link still navigating) and the
+ * child is the current route, the row's own link still navigating, a row
+ * whose `to` carries a query active only while the route's search is
+ * that query and its parent quiet while a child's query is the route's,
+ * so the kinds under the certs Vault row light one at a time) and the
  * tree entries (a hook answering `{ nodes, menu, labelKey, dialogs }`,
  * the `labelKey` drawn as a section heading above the nodes when the
  * answer carries one, `dialogs` the node a feature draws the dialogs of
@@ -629,6 +666,7 @@ const Sidebar = ({ entries, brand, badges, open, onClose, size, readout = null, 
                 badges={badges}
                 current={current}
                 pathname={pathname}
+                search={search}
               />
             ))}
           </div>

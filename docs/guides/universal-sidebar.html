@@ -498,6 +498,14 @@
     font-weight: 600;
     box-shadow: inset 3px 0 0 var(--primary);
   }
+  .row.off {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .row.off:hover {
+    background: transparent;
+    color: var(--text);
+  }
   .row .i {
     width: 18px;
     text-align: center;
@@ -1379,6 +1387,18 @@
         without the member reads once, as the catalog's and the fleet's do.
       </div>
       <div class="callout changed">
+        <strong>Changed: the Tools group.</strong> A host that lists the `tools` token draws one
+        TOOLS heading, a group every mounted feature folds its own parent row into, the feature's
+        name as the row and its tools as the row's children; without the token no feature's tools
+        draw and their routes are stubs, and with the token alone the heading waits for whatever the
+        mounted features add. The certs feature's Certificates row folds Convert, Decode, Match,
+        Compare, Chain and Generate, and its own `certs` token draws the Certificates section: the
+        Vault row folding Certificates, Authorities, Requests and Keys, each the vault's table
+        narrowed to that kind at `/certs?kind=…`, the one lit the kind the route carries, then
+        Shared and Sync while the host lists `certs-store`; no record is a row of the column, the
+        table being the view that scales. BoxVault · admin and Hyperweaver above draw both.
+      </div>
+      <div class="callout changed">
         <strong>Changed: the corner.</strong> Where the column's right edge meets the top edge of
         the footer's row the corner is one handle for both, "a 2 axis resize to control both": one
         drag sets the column's width and the height of the footer's pane together, the pointer over
@@ -1459,6 +1479,63 @@
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+    };
+    var certsSection = function (store) {
+      return {
+        label: 'Certificates',
+        items: [
+          {
+            key: 'vault',
+            icon: '🗄',
+            label: 'Vault',
+            to: '/certs',
+            open: true,
+            children: [
+              {
+                key: 'kind-certificate',
+                icon: '📜',
+                label: 'Certificates',
+                to: '/certs?kind=certificate',
+              },
+              {
+                key: 'kind-authority',
+                icon: '⛨',
+                label: 'Authorities',
+                to: '/certs?kind=authority',
+              },
+              { key: 'kind-request', icon: '✎', label: 'Requests', to: '/certs?kind=request' },
+              { key: 'kind-key', icon: '🔑', label: 'Keys', to: '/certs?kind=key' },
+            ],
+          },
+        ].concat(
+          store
+            ? [
+                { key: 'shared', icon: '☁', label: 'Shared', to: '/certs/shared' },
+                { key: 'sync', icon: '⟳', label: 'Sync', to: '/certs/sync' },
+              ]
+            : []
+        ),
+      };
+    };
+    var certsTools = {
+      label: 'Tools',
+      items: [
+        {
+          key: 'tools-certs',
+          icon: '📜',
+          label: 'Certificates',
+          to: '/certs/convert',
+          open: true,
+          children: [
+            { key: 'convert', icon: '⇄', label: 'Convert', to: '/certs/convert' },
+            { key: 'decode', icon: '🔍', label: 'Decode', to: '/certs/decode' },
+            { key: 'match', icon: '⚭', label: 'Match', to: '/certs/match' },
+            { key: 'compare', icon: '⇔', label: 'Compare', to: '/certs/compare' },
+            { key: 'chain', icon: '⛓', label: 'Chain', to: '/certs/chain' },
+            { key: 'generate', icon: '✦', label: 'Generate', to: '/certs/generate' },
+          ],
+        },
+      ],
     };
     var backends = {
       auth: {
@@ -1541,7 +1618,7 @@
         brand: 'BoxVault',
         mark: 'B',
         role: 'boxvault',
-        features: ['admin', 'org-console', 'uploads', 'watches'],
+        features: ['admin', 'org-console', 'uploads', 'watches', 'certs', 'certs-store', 'tools'],
         title: 'Admin',
         active: 'boxorgs',
         homeTitle: 'Home',
@@ -1555,10 +1632,12 @@
               { key: 'boxsystem', icon: '▤', label: 'System', to: '/admin/system' },
             ],
           },
+          certsSection(true),
+          certsTools,
         ],
         ctx: { boxconfig: ['app', 'auth', 'db', 'mail'] },
-        crumbs: function (item) {
-          return ['Admin', item.label];
+        crumbs: function (item, path) {
+          return path;
         },
       },
       vdi: {
@@ -1649,10 +1728,11 @@
         brand: 'Hyperweaver',
         mark: 'H',
         role: 'hyperweaver-server',
-        features: ['machines', 'zfs', 'tasks', 'host-power'],
+        features: ['machines', 'zfs', 'tasks', 'host-power', 'certs', 'tools'],
         title: 'Datacenter',
         active: 'zone-1',
         home: 'dc',
+        sections: [certsSection(false), certsTools],
         actionMenu: {
           'zone-1': 'Machine controls',
           'zone-2': 'Machine controls',
@@ -1747,7 +1827,7 @@
       hw: 'Hyperweaver · the swap',
     };
     var state = { backend: 'auth', rail: false, active: null, open: {}, view: null };
-    var treeOf = function (b) {
+    var mainTreeOf = function (b) {
       if (b.views) {
         var v =
           b.views.filter(function (x) {
@@ -1756,6 +1836,13 @@
         return v.tree;
       }
       return b.tree || null;
+    };
+    var treeOf = function (b) {
+      var nodes = [];
+      (b.sections || []).forEach(function (s) {
+        nodes = nodes.concat(s.tree || s.items || []);
+      });
+      return nodes.concat(mainTreeOf(b) || []);
     };
     var chrome = function (b, crumbs, action) {
       var c = b.none
@@ -1824,7 +1911,10 @@
           var h =
             '<button class="row' +
             (on ? ' on' : '') +
-            '" data-pick="' +
+            (n.disabled ? ' off' : '') +
+            '"' +
+            (n.disabled ? ' disabled' : '') +
+            ' data-pick="' +
             esc(n.key) +
             '" title="' +
             esc(n.label) +
@@ -1840,7 +1930,9 @@
           h += n.icon
             ? '<span class="i">' + esc(n.icon) + '</span>'
             : '<span class="dot' + (n.dot ? ' ' + n.dot : '') + '"></span>';
-          h += '<span class="l">' + esc(n.label) + '</span></button>';
+          h += '<span class="l">' + esc(n.label) + '</span>';
+          h += n.badge ? '<span class="b">' + esc(n.badge) + '</span>' : '';
+          h += '</button>';
           if (kids && isOpen(n)) {
             h += '<div class="kids">' + treeHtml(n.children) + '</div>';
           }
@@ -1865,24 +1957,11 @@
         top +
         '</div><div class="sb-nav">';
       (b.sections || []).forEach(function (s) {
-        h += '<div>' + (s.label ? '<div class="sb-sec">' + esc(s.label) + '</div>' : '');
-        s.items.forEach(function (it) {
-          h +=
-            '<button class="row' +
-            (it.key === state.active ? ' on' : '') +
-            '" data-pick="' +
-            esc(it.key) +
-            '" title="' +
-            esc(it.label) +
-            '"><span class="i">' +
-            esc(it.icon) +
-            '</span><span class="l">' +
-            esc(it.label) +
-            '</span>' +
-            (it.badge ? '<span class="b">' + esc(it.badge) + '</span>' : '') +
-            '</button>';
-        });
-        h += '</div>';
+        h +=
+          '<div>' +
+          (s.label ? '<div class="sb-sec">' + esc(s.label) + '</div>' : '') +
+          treeHtml(s.tree || s.items) +
+          '</div>';
       });
       if (b.views) {
         var cur = state.view || b.views[0].key;
@@ -1903,7 +1982,7 @@
             .join('') +
           '</select></div>';
       }
-      var tree = treeOf(b);
+      var tree = mainTreeOf(b);
       if (tree) {
         h += '<div>' + treeHtml(tree) + '</div>';
       }
@@ -1915,12 +1994,21 @@
       h += '</div>';
       return h;
     };
-    var allItems = function (b) {
-      var out = [];
-      (b.sections || []).forEach(function (s) {
-        out = out.concat(s.items);
-      });
-      return out;
+    var locate = function (b, key) {
+      var secs = b.sections || [];
+      for (var i = 0; i < secs.length; i++) {
+        var src = secs[i].tree || secs[i].items || [];
+        var hit = findNode(src, key);
+        if (hit) {
+          return {
+            item: hit,
+            path: (secs[i].label ? [secs[i].label] : []).concat(pathTo(src, key, [])),
+          };
+        }
+      }
+      var tr = mainTreeOf(b);
+      var node = tr ? findNode(tr, key) : null;
+      return node ? { item: node, path: pathTo(tr, key, []) } : null;
     };
     var render = function () {
       var b = backends[state.backend];
@@ -1930,14 +2018,10 @@
       var item = null,
         crumbs = [];
       if (!b.none) {
-        var tr = treeOf(b);
-        item =
-          allItems(b).filter(function (i) {
-            return i.key === state.active;
-          })[0] || (tr ? findNode(tr, state.active) : null);
+        var found = locate(b, state.active);
+        item = found ? found.item : null;
         if (item) {
-          var path = tr ? pathTo(tr, item.key, []) : null;
-          crumbs = b.crumbs(item, path || [item.label]);
+          crumbs = b.crumbs(item, found.path);
         } else if (state.active === 'home') {
           crumbs = b.homeTitle ? [b.homeTitle] : [];
         }
@@ -2035,13 +2119,15 @@
         render();
         return;
       } else if (el.hasAttribute('data-pick')) {
+        var nn = findNode(treeOf(backends[state.backend]), el.getAttribute('data-pick'));
+        if (nn && !nn.to) {
+          state.open[nn.key] = !isOpen(nn);
+          render();
+          return;
+        }
         state.active = el.getAttribute('data-pick');
-        var tr = treeOf(backends[state.backend]);
-        if (tr) {
-          var nn = findNode(tr, state.active);
-          if (nn && nn.children && nn.children.length && !isOpen(nn)) {
-            state.open[nn.key] = true;
-          }
+        if (nn && nn.children && nn.children.length && !isOpen(nn)) {
+          state.open[nn.key] = true;
         }
       }
       render();

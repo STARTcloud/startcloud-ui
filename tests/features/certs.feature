@@ -9,36 +9,45 @@ Feature: certs
     And the chrome draws no sidebar row "Convert"
     And the chrome draws no sidebar row "Shared"
 
-  Scenario: Sidebar: a host that lists certs without certs-store draws the Vault and the tools and no Shared or Sync row
+  Scenario: Sidebar: a host that lists certs and tools without certs-store draws the Vault and the Tools group's Certificates row with the six tools under it, and no Shared or Sync row
     Given the host answers the certs fixture
     And the host answers the certs-nostore fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/"
+    When I open "/certs/convert"
     Then the chrome draws the sidebar row "Vault"
     And the chrome draws the sidebar row "Convert"
     And the chrome draws the sidebar row "Generate"
+    And the sidebar row "Convert" links to "/certs/convert"
     And the chrome draws no sidebar row "Shared"
     And the chrome draws no sidebar row "Sync"
 
-  Scenario: Sidebar: a host that lists certs-store draws Shared and Sync for a signed-in person, and the By kind tree holds every kind as a held row while the vault is empty
+  Scenario: Sidebar: a host that lists certs without tools draws the Vault and no tool row, and the tool routes are stubs
     Given the host answers the certs fixture
+    And the host answers the certs-notools fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs"
+    Then the chrome draws the sidebar row "Vault"
+    And the chrome draws the sidebar row "Shared"
+    And the chrome draws no sidebar row "Convert"
+    And the chrome draws no sidebar row "Generate"
+    When I open "/certs/convert"
+    Then the chrome draws no sidebar row "Convert"
+    And the chrome draws the sidebar row "Vault"
+
+  Scenario: Sidebar: a host that lists certs-store draws Shared and Sync for a signed-in person, and the Vault row folds the four kinds, each linking to the vault narrowed to it
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs?kind=authority"
     Then the chrome draws the sidebar row "Shared"
     And the chrome draws the sidebar row "Sync"
     And the sidebar row "Shared" links to "/certs/shared"
     And the sidebar row "Sync" links to "/certs/sync"
-    And the kind node "certificate" is held
-    And the kind node "authority" is held
-    And the kind node "request" is held
-    And the kind node "key" is held
-    When I click "Add New"
-    And I drop "vault.certs.json" into the vault
-    Then I see "2 records imported"
-    And the kind node "certificate" is offered
-    And the kind node "key" is offered
-    And the kind node "authority" is held
-    And the kind node "request" is held
+    And the chrome draws the sidebar row "Certificates"
+    And the chrome draws the sidebar row "Authorities"
+    And the chrome draws the sidebar row "Requests"
+    And the chrome draws the sidebar row "Keys"
+    And the sidebar row "Authorities" links to "/certs?kind=authority"
+    And the sidebar row "Keys" links to "/certs?kind=key"
 
   Scenario: Visitor: a person who never signed in is sent from the vault to sign in with the page as the return path, no banner drawn and the list of servers never asked for
     Given the host answers the certs fixture
@@ -288,7 +297,7 @@ Feature: certs
     And the vault heading holds the focus
     And I do not see "Local leaf"
 
-  Scenario: Vault: the record page's Delete of a pulled row sends no DELETE and lands on the vault with the heading focused, and the tree node's Delete does the same from the vault
+  Scenario: Vault: the record page's Delete of a pulled row sends no DELETE and lands on the vault with the heading focused, and the vault row's Delete does the same from the vault narrowed to Authorities
     Given the host answers the certs fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/shared"
@@ -303,9 +312,9 @@ Feature: certs
     And the vault heading holds the focus
     And the vault lists 1 rows
     And the host was not sent DELETE to "/api/certs/row-leaf"
-    When I open the tree node "Authorities"
-    And I right-click the tree node "Fixture Root CA"
-    And I pick the tree menu row "delete"
+    When I open "/certs?kind=authority"
+    Then the vault lists 1 rows
+    When I press "delete" on the vault row "Fixture Root CA"
     And I confirm the open dialog
     Then I see "Fixture Root CA was removed."
     And the vault heading holds the focus

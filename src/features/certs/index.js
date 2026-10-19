@@ -1,5 +1,6 @@
 import { lazy } from 'react';
 
+export { default as CertsPreferencesCard } from './components/CertsPreferencesCard';
 export { default as VaultProvider } from './hooks/useVault';
 export { sidebar } from './sidebar';
 

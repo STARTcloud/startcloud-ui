@@ -93,14 +93,14 @@ Side.propTypes = {
 };
 
 /**
- * The Match page at `/certs/match`: two Input cards, one for a
- * certificate or a request and one for a key, every read adding its
- * components to the side's held ones as Convert does, the newest of the
- * side's kind standing as its material, a side that read material of
- * the other kind alone saying so in its heading, and once both are read
- * the verdict as the heading's state, whether the key is the one the
- * certificate or the request carries, over both public key hashes and
- * the algorithm.
+ * The Match page at `/certs/match`: one line saying what the page does,
+ * then two Input cards side by side, one for a certificate or a request
+ * and one for a key, every read adding its components to the side's held
+ * ones as Convert does, the newest of the side's kind standing as its
+ * material, a side that read material of the other kind alone saying so
+ * in its heading, and once both are read the verdict as the heading's
+ * state, whether the key is the one the certificate or the request
+ * carries, over both public key hashes and the algorithm.
  */
 const MatchPage = ({ context }) => {
   const { t } = useTranslation();
@@ -143,24 +143,23 @@ const MatchPage = ({ context }) => {
 
   return (
     <div className="list row" data-page="certs-match">
-      <div className="row g-3">
-        <Side
-          titleKey="certs.match.subject"
-          foldKey="match-subject"
-          folds={folds}
-          side={subject}
-          missingKey="certs.match.noSubject"
-          onDetected={onSubject}
-        />
-        <Side
-          titleKey="certs.match.key"
-          foldKey="match-key"
-          folds={folds}
-          side={key}
-          missingKey="certs.match.noKey"
-          onDetected={onKey}
-        />
-      </div>
+      <p className="text-body-secondary">{t('certs.match.about')}</p>
+      <Side
+        titleKey="certs.match.subject"
+        foldKey="match-subject"
+        folds={folds}
+        side={subject}
+        missingKey="certs.match.noSubject"
+        onDetected={onSubject}
+      />
+      <Side
+        titleKey="certs.match.key"
+        foldKey="match-key"
+        folds={folds}
+        side={key}
+        missingKey="certs.match.noKey"
+        onDetected={onKey}
+      />
       {verdict ? <Verdict pair={verdict} /> : null}
     </div>
   );

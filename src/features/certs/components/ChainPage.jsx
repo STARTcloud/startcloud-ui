@@ -57,7 +57,8 @@ Loaded.propTypes = {
 };
 
 /**
- * The Chain page at `/certs/chain`: the Input card taking certificates
+ * The Chain page at `/certs/chain`: one line saying what the page does,
+ * then the Input card taking certificates
  * one file or paste at a time, a duplicate and a key each ignored with
  * one notice line, the list of the certificates loaded with a remove
  * control each, Build drawing the chain the engine orders, the leaf
@@ -141,6 +142,7 @@ const ChainPage = ({ context }) => {
 
   return (
     <div className="list row" data-page="certs-chain">
+      <p className="text-body-secondary">{t('certs.chain.about')}</p>
       <SectionCard title={t('certs.chain.input')} {...foldOf(folds, 'input')}>
         <InputZone onDetected={detected} />
       </SectionCard>

@@ -184,7 +184,8 @@ Decoded.propTypes = {
 };
 
 /**
- * The Decode page at `/certs/decode`: the Input card, every read adding
+ * The Decode page at `/certs/decode`: one line saying what the page
+ * does, then the Input card, every read adding
  * its components to the ones held exactly as Convert does, an unlocked
  * read replacing the locked component of the same file; a select over
  * every component read, the facts of the picked one under it, its
@@ -247,6 +248,7 @@ const DecodePage = ({ context }) => {
 
   return (
     <div className="list row" data-page="certs-decode">
+      <p className="text-body-secondary">{t('certs.decode.about')}</p>
       <SectionCard title={t('certs.decode.input')} {...foldOf(folds, 'input')}>
         <InputZone onDetected={detected} />
       </SectionCard>
