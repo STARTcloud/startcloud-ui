@@ -1,7 +1,7 @@
 import { featuresOf, machineOf } from './fleet.js';
 import { ago, now, ok, problem, refusal } from './kit.js';
 import { documentOf } from './machine-provisioning.js';
-import { knobOverridesOf, pendingChangesOf } from './machine-settings.js';
+import { knobOverridesOf, machineCredentialsOf, pendingChangesOf } from './machine-settings.js';
 import { queue } from './tasks.js';
 
 const ACTIVE = ['pending', 'running'];
@@ -339,6 +339,7 @@ const detail = ctx => {
     active_vnc_session: null,
     pending_tasks: pendingOf(host, row),
     system_status: row.status,
+    credentials: machineCredentialsOf(host, row),
   };
   const pending = pendingChangesOf(host, row);
   const overrides = knobOverridesOf(host, row);
@@ -551,7 +552,8 @@ const notes = ctx => {
 /**
  * The reads and the writes of the machine page on both agents, each
  * answering as the agent of the host's kind does: `GET machines/{name}`,
- * the detail, hyperweaver-agent's with `web_address`,
+ * the detail with the machine's `credentials` as `{ id, use, default,
+ * kind, name }`, hyperweaver-agent's with `web_address`,
  * `knob_current.devices` and the NAT port forwards of its configuration
  * as `configuration.nat_forwards`, and zoneweaver-agent's with the
  * zone's own

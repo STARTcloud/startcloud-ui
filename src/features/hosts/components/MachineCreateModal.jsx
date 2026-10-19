@@ -3,6 +3,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'r
 import { Dropdown, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
+import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { fetchMachineDefaults, fetchMachineOsTypes } from '../api/machineCreate';
@@ -145,6 +146,24 @@ const withTyped = (typed, paths) => {
 };
 
 const marksOf = (fromPackage, typed) => new Set([...fromPackage].filter(path => !typed.has(path)));
+
+const SEEDED_PATHS = ['settings.server_id'];
+
+const BOX_PATHS = BOX_SETTING_KEYS.map(key => `settings.${key}`);
+
+/**
+ * Whether the wizard holds a draft a close would lose: a name, or a member
+ * the person typed, the next server id and a handed box's fields, which
+ * the wizard fills itself, left out.
+ *
+ * @param {Object} form - The wizard's form
+ * @param {boolean} seeded - Whether a handed box filled the box fields
+ * @returns {boolean} Whether the wizard is dirty
+ */
+const dirtyOf = (form, seeded) => {
+  const own = seeded ? [...SEEDED_PATHS, ...BOX_PATHS] : SEEDED_PATHS;
+  return Boolean(form.nameText || form.name) || [...form.typed].some(path => !own.includes(path));
+};
 
 const fieldMapOf = error =>
   error?.status === REFUSED &&
@@ -1666,6 +1685,7 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   };
   const downloadsQueued = Object.keys(form.downloads).length;
   const confirming = stepId === 'confirm';
+  const guard = useDiscardGuard(dirtyOf(form, Boolean(seedBox)), onClose);
 
   const submit = event => {
     event.preventDefault();
@@ -1697,7 +1717,7 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
 
   return (
     <>
-      <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
+      <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
         <form onSubmit={submit} noValidate data-dialog="machine-create" data-step={stepId}>
           <Modal.Header closeButton>
             <Modal.Title as="h5">
@@ -1726,7 +1746,13 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
             <StepBody wizard={wizard} />
           </Modal.Body>
           <Modal.Footer>
-            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              data-action="cancel"
+              onClick={guard.close}
+              disabled={busy}
+            >
               {t('pages.confirm.cancel')}
             </button>
             <button
@@ -1789,6 +1815,7 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
           </Modal.Footer>
         </form>
       </Modal>
+      <DiscardPrompt {...guard.prompt} />
       {catalogOpen && pickedFamily ? (
         <VersionCatalogModal
           catalogs={feeds.catalogs}

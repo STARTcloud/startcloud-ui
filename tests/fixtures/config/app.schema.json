@@ -47,6 +47,18 @@
           "order": 4,
           "requiresRestart": true,
           "restartReason": "the listener is bound at boot"
+        },
+        "trust_proxy": {
+          "type": "boolean",
+          "default": false,
+          "title": "Trust proxy",
+          "order": 5
+        },
+        "public_registration": {
+          "type": "boolean",
+          "default": true,
+          "title": "Public registration",
+          "order": 6
         }
       },
       "required": ["origin", "api_listen_port_unencrypted", "api_listen_port_encrypted"]
@@ -61,6 +73,12 @@
           "writeOnly": true,
           "title": "Gravatar API key",
           "order": 2
+        },
+        "default_image": {
+          "type": "string",
+          "default": "identicon",
+          "title": "Default image",
+          "order": 3
         }
       }
     },
@@ -75,6 +93,13 @@
           "default": "info",
           "title": "Log level",
           "order": 1
+        },
+        "format": {
+          "type": "string",
+          "enum": ["text", "json"],
+          "default": "json",
+          "title": "Log format",
+          "order": 2
         },
         "categories": {
           "type": "object",

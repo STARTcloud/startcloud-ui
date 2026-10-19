@@ -23,16 +23,6 @@ const STATUS_TONES = {
   down: 'danger',
 };
 
-const SENTENCES = {
-  running: 'machine.machineListPanel.runningSentence',
-  stopped: 'machine.machineListPanel.stoppedSentence',
-  paused: 'machine.machineListPanel.pausedSentence',
-  suspended: 'machine.machineListPanel.suspendedSentence',
-  configured: 'machine.machineListPanel.configuredSentence',
-  starting: 'machine.machineListPanel.transitioningSentence',
-  stopping: 'machine.machineListPanel.transitioningSentence',
-};
-
 const GUEST_ADDRESS = /^\/VirtualBox\/GuestInfo\/Net\/(?<nic>\d+)\/V4\/IP$/u;
 
 const CLOUD_INIT_PREFIX = '/Hyperweaver/CloudInit/';
@@ -171,15 +161,6 @@ export const statusOf = row => String(row?.status || 'unknown').toLowerCase();
  * @returns {string} The Bootstrap tone
  */
 export const statusTone = status => STATUS_TONES[String(status || '').toLowerCase()] || 'secondary';
-
-/**
- * The key of the sentence that says a machine's state in words,
- * hyperweaver-ui's own, empty for a status that has none.
- *
- * @param {string} status - The machine's status
- * @returns {string} The locale key, or the empty string
- */
-export const sentenceKey = status => SENTENCES[String(status || '').toLowerCase()] || '';
 
 /**
  * A row's configuration, the object both agents answer it as, an empty

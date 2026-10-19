@@ -447,6 +447,30 @@ export const transferWithTask = (transfer, task) => ({
     task.progress_info && typeof task.progress_info === 'object' ? task.progress_info : {},
 });
 
+/**
+ * The storage locations with the artifact registry's file count and size
+ * laid over each, matched by path, a member the registry answers taking
+ * the place of the location's own.
+ *
+ * @param {Array<Object>} storagePaths - The locations of `GET artifacts/storage/paths`
+ * @param {Array<Object>} locations - The registry's locations, the same route's `paths`
+ * @returns {Array<Object>} The locations
+ */
+export const storagePathsWithCounts = (storagePaths, locations) => {
+  const byPath = new Map(locations.map(location => [location.path, location]));
+  return storagePaths.map(row => {
+    const location = byPath.get(row.path);
+    if (!location) {
+      return row;
+    }
+    return {
+      ...row,
+      ...(location.file_count === undefined ? {} : { file_count: location.file_count }),
+      ...(location.total_size === undefined ? {} : { total_size: location.total_size }),
+    };
+  });
+};
+
 export const matchesStoragePath = matcher(row => [row.name, row.path, row.type]);
 
 export const matchesArtifact = matcher(row => [

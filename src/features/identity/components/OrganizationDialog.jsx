@@ -7,6 +7,7 @@ import AddressFields, {
   EMPTY_ADDRESS,
   addressShape,
 } from '../../../components/common/AddressFields';
+import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -185,15 +186,25 @@ SelectField.propTypes = {
  * issuer's `organization` form, the `422` painted by pointer and the
  * `409 unique` on the name; one `save(patch)` through the adapter's
  * `update` with the changed fields, the access mode, the default role and
- * the address on Save, an empty customer id clearing it.
+ * the address on Save, an empty customer id clearing it; while a field or
+ * the address differs from the row, a backdrop click, Escape, the close
+ * button and Cancel ask the discard prompt.
  */
 const OrganizationDialog = ({ org, save, onClose, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const formRef = useRef(null);
-  const [form, setForm] = useState(() => recordOf(org));
-  const [address, setAddress] = useState(() => ({ ...EMPTY_ADDRESS, ...(org.address || {}) }));
+  const [opened] = useState(() => ({
+    form: recordOf(org),
+    address: { ...EMPTY_ADDRESS, ...(org.address || {}) },
+  }));
+  const [form, setForm] = useState(opened.form);
+  const [address, setAddress] = useState(opened.address);
   const [busy, setBusy] = useState(false);
+  const guard = useDiscardGuard(
+    JSON.stringify({ form, address }) !== JSON.stringify(opened),
+    onClose
+  );
   const zones = useMemo(() => timeZones(), []);
   const rules = useFormRules({
     formKey: 'organization',
@@ -235,91 +246,105 @@ const OrganizationDialog = ({ org, save, onClose, onSaved }) => {
   const shared = { form, rules, onChange };
 
   return (
-    <Modal show onHide={onClose} onEntered={focusFirst} dialogClassName="form-modal" scrollable>
-      <form ref={formRef} onSubmit={submit} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">
-            {t('admin.organizations.edit.title', { org: org.name })}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
-          <h5>{t('admin.organizations.edit.details')}</h5>
-          <div className="row">
-            <div className="col-12">
-              <TextField name="name" {...shared} />
+    <>
+      <Modal
+        show
+        onHide={guard.close}
+        onEntered={focusFirst}
+        dialogClassName="form-modal"
+        scrollable
+      >
+        <form ref={formRef} onSubmit={submit} noValidate>
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">
+              {t('admin.organizations.edit.title', { org: org.name })}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormErrorSummary errors={rules.summary} />
+            <h5>{t('admin.organizations.edit.details')}</h5>
+            <div className="row">
+              <div className="col-12">
+                <TextField name="name" {...shared} />
+              </div>
+              <div className="col-md-6">
+                <TextField name="email" type="email" {...shared} />
+              </div>
+              <div className="col-md-6">
+                <TextField name="website_url" type="url" {...shared} />
+              </div>
+              <div className="col-md-6">
+                <TextField name="logo_url" type="url" {...shared} />
+              </div>
+              <div className="col-md-6">
+                <TextField name="description" {...shared} />
+              </div>
+              <div className="col-md-4">
+                <TextField name="locale" {...shared} />
+              </div>
+              <div className="col-md-4">
+                <SelectField
+                  name="timezone"
+                  options={['', ...zones]}
+                  labelOf={zone => zone || t('admin.organizations.field.timezoneNone')}
+                  {...shared}
+                />
+              </div>
+              <div className="col-md-4">
+                <TextField name="telephone" type="tel" {...shared} />
+              </div>
             </div>
-            <div className="col-md-6">
-              <TextField name="email" type="email" {...shared} />
+            <h5>{t('admin.organizations.edit.address')}</h5>
+            <AddressFields
+              value={address}
+              onChange={setAddress}
+              idPrefix="admin-organization-address"
+            />
+            <h5>{t('admin.organizations.edit.access')}</h5>
+            <div className="row">
+              <div className="col-md-4">
+                <SelectField
+                  name="access_mode"
+                  options={ACCESS_MODES}
+                  labelOf={mode => t(ACCESS_MODE_KEYS[mode])}
+                  {...shared}
+                />
+              </div>
+              <div className="col-md-4">
+                <SelectField
+                  name="default_role"
+                  options={DEFAULT_ROLES}
+                  labelOf={role => t(`roles.${role.toLowerCase()}`)}
+                  {...shared}
+                />
+              </div>
+              <div className="col-md-4">
+                <TextField
+                  name="customer_id"
+                  hint={t('admin.organizations.field.customerIdHint')}
+                  transform={value => value.toUpperCase()}
+                  {...shared}
+                />
+              </div>
             </div>
-            <div className="col-md-6">
-              <TextField name="website_url" type="url" {...shared} />
-            </div>
-            <div className="col-md-6">
-              <TextField name="logo_url" type="url" {...shared} />
-            </div>
-            <div className="col-md-6">
-              <TextField name="description" {...shared} />
-            </div>
-            <div className="col-md-4">
-              <TextField name="locale" {...shared} />
-            </div>
-            <div className="col-md-4">
-              <SelectField
-                name="timezone"
-                options={['', ...zones]}
-                labelOf={zone => zone || t('admin.organizations.field.timezoneNone')}
-                {...shared}
-              />
-            </div>
-            <div className="col-md-4">
-              <TextField name="telephone" type="tel" {...shared} />
-            </div>
-          </div>
-          <h5>{t('admin.organizations.edit.address')}</h5>
-          <AddressFields
-            value={address}
-            onChange={setAddress}
-            idPrefix="admin-organization-address"
-          />
-          <h5>{t('admin.organizations.edit.access')}</h5>
-          <div className="row">
-            <div className="col-md-4">
-              <SelectField
-                name="access_mode"
-                options={ACCESS_MODES}
-                labelOf={mode => t(ACCESS_MODE_KEYS[mode])}
-                {...shared}
-              />
-            </div>
-            <div className="col-md-4">
-              <SelectField
-                name="default_role"
-                options={DEFAULT_ROLES}
-                labelOf={role => t(`roles.${role.toLowerCase()}`)}
-                {...shared}
-              />
-            </div>
-            <div className="col-md-4">
-              <TextField
-                name="customer_id"
-                hint={t('admin.organizations.field.customerIdHint')}
-                transform={value => value.toUpperCase()}
-                {...shared}
-              />
-            </div>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            {t('admin.buttons.cancel')}
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {t('admin.buttons.save')}
-          </button>
-        </Modal.Footer>
-      </form>
-    </Modal>
+          </Modal.Body>
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={guard.close}
+              disabled={busy}
+            >
+              {t('admin.buttons.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {t('admin.buttons.save')}
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 

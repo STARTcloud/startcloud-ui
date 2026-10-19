@@ -195,14 +195,13 @@ export const fetchMachinePriorities = (status, id) =>
 
 /**
  * The orchestration's dry run, `POST machines/orchestration/test` with
- * the strategy, hyperweaver-ui's `parallel_by_priority`, answered
- * `{ total_machines, estimated_duration, execution_plan }`.
+ * the strategy, answered `{ total_machines, estimated_duration,
+ * execution_plan }` over the priorities the agent holds.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} strategy - The strategy the plan is drawn for
  * @returns {Promise<Object>} The plan
  */
-export const testOrchestration = (status, id) =>
-  client.post(agentPath(status, id, 'machines/orchestration/test'), {
-    strategy: 'parallel_by_priority',
-  });
+export const testOrchestration = (status, id, strategy) =>
+  client.post(agentPath(status, id, 'machines/orchestration/test'), { strategy });

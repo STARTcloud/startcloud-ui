@@ -58,10 +58,6 @@ export const HCL_KINDS = ['installer', 'fixpack', 'hotfix'];
 
 export const ARTIFACT_PAGE_SIZE = 200;
 
-export const LOCATION_FORM = { name: '', path: '', type: 'iso', enabled: true };
-
-export const LOCATION_DELETE_OPTIONS = { recursive: false, remove_db_records: true, force: false };
-
 /**
  * The type of a storage location by its id, empty for an id the list
  * does not hold.
@@ -144,33 +140,6 @@ export const artifactStatusOf = artifact => {
     ? { key: 'hashed', tone: 'info', values: {} }
     : { key: 'unhashed', tone: 'warning', values: {} };
 };
-
-/**
- * The body of a storage location's create or edit, hyperweaver-ui's: the
- * name and whether it is enabled on an edit, the path and the type with
- * them on a create.
- *
- * @param {Object} form - The form, the shape of `LOCATION_FORM`
- * @param {boolean} editing - Whether an existing location is edited
- * @returns {Object} The body
- */
-export const locationBody = (form, editing) =>
-  editing
-    ? { name: form.name.trim(), enabled: form.enabled }
-    : { name: form.name.trim(), path: form.path.trim(), type: form.type, enabled: form.enabled };
-
-/**
- * Why a storage location form cannot be sent: a name, and a path on a
- * create.
- *
- * @param {Object} form - The form
- * @param {boolean} editing - Whether an existing location is edited
- * @returns {string} The locale key, or the empty string
- */
-export const locationProblem = (form, editing) =>
-  !form.name.trim() || (!editing && !form.path.trim())
-    ? 'host.installerFiles.locationNamePathRequired'
-    : '';
 
 /**
  * The locations an artifact may move or copy to, hyperweaver-ui's rule:

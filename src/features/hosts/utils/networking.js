@@ -81,14 +81,41 @@ export const prefixOf = row => {
 };
 
 /**
- * The key one address row is told from another by, its address object
- * and its `addr`, because an agent may name every address of one
- * interface and version by the same address object.
+ * The key one address is told from another by, its interface and its
+ * address without the prefix, the one key the monitoring read and the
+ * managed read share, because the two name one address by different
+ * address objects.
  *
- * @param {Object} row - The address row
+ * @param {Object} row - The address row of either read
  * @returns {string} The key
  */
-export const addressKey = row => `${row.addrobj}|${row.addr}`;
+export const addressKey = row => `${row?.interface || ''}|${addressOf(row)}`;
+
+/**
+ * The rows of the one addresses table: every address of the monitoring
+ * read and of the managed read once by `addressKey`, a row of the
+ * managed read carrying its own members over the monitoring row's and
+ * itself as `managed`, every other row `managed` null.
+ *
+ * @param {Object} options - The two reads' rows
+ * @param {Array<Object>} options.addresses - The rows of `addressRows`
+ * @param {Array<Object>} options.managed - The rows of `GET network/addresses`
+ * @returns {Array<Object>} One row an address
+ */
+export const joinedAddressRows = ({ addresses, managed }) => {
+  const joined = new Map();
+  addresses.forEach(row => {
+    const key = addressKey(row);
+    if (!joined.has(key)) {
+      joined.set(key, { ...row, managed: null });
+    }
+  });
+  managed.forEach(row => {
+    const key = addressKey(row);
+    joined.set(key, { ...joined.get(key), ...row, managed: row });
+  });
+  return [...joined.values()];
+};
 
 /**
  * The key one route is told from another by, its destination, its
@@ -266,6 +293,8 @@ export const matchesAddress = matcher(row => [
   row.ip_address,
   row.addr,
   row.addrobj,
+  row.type,
+  row.state,
 ]);
 
 export const matchesRoute = matcher(row => [
@@ -284,12 +313,19 @@ const wordsOf = member => row => (row[member] ? [String(row[member])] : []);
 
 /**
  * The filter groups of the addresses table, one per enumerable column:
- * the version and the state.
+ * the type, the version and the state.
  */
 export const ADDRESS_FILTERS = [
   {
+    key: 'type',
+    labelKey: 'host.ipAddressTableManagement.type',
+    values: wordsOf('type'),
+    activeClass: 'bg-secondary',
+    labelFor: wordOf,
+  },
+  {
     key: 'version',
-    labelKey: 'host.ipAddressTable.type',
+    labelKey: 'host.ipAddressTableManagement.version',
     values: wordsOf('ip_version'),
     activeClass: 'bg-info',
     labelFor: wordOf,

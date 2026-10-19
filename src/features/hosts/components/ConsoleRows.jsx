@@ -1,12 +1,16 @@
 import PropTypes from 'prop-types';
+import { useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaWindowMaximize, FaWindowRestore } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 
+import { useMachineDetail } from '../hooks/useMachineDetail';
 import { useConsoleActions } from '../hooks/useOpenConsole';
 import { opensInHeld, setOpensIn, useOpensIn } from '../hooks/useTerminal';
-import { consoleDoorsOf, consoleRoute } from '../utils/consoles';
+import { asksConnectAs, consoleDoorsOf, consoleRoute, credentialsFor } from '../utils/consoles';
+
+import ConnectAsDialog from './ConnectAsDialog';
 
 /**
  * One console row of the Controls menu, the logout row's shape: the
@@ -81,21 +85,41 @@ ConsoleRow.propTypes = {
  * host's row lists, each drawn as `ConsoleRow`: in the footer it opens
  * the console there through the console store, its session started and
  * the pane shown on the Consoles view; on the page it opens the
- * machine's page with that console in its `console` query; the place is
- * read when the row is pressed, because the published command list is
- * renewed only when a row's key, label or disabled state changes.
+ * machine's page with that console in its `console` query; an SSH or RDP
+ * row of a machine whose held detail names more than one credential of
+ * the use asks the Connect as dialog first, the pick riding the start in
+ * the footer and the `credential` query on the page. The place and the
+ * held detail are read when the row is pressed, because the published
+ * command list is renewed only when a row's key, label or disabled state
+ * changes.
  *
  * @param {Object} options
  * @param {string} options.id - The registry id, or `self` on an agent role
  * @param {string} options.name - The machine's name
  * @param {Object|null} options.server - The host's registry row
  * @param {boolean} options.busy - Whether an action is in flight
- * @returns {Array<Object>} The commands
+ * @returns {{ commands: Array<Object>, dialogs: import('react').ReactNode }} The commands and the Connect as dialog
  */
 export const useConsoleCommands = ({ id, name, server, busy }) => {
   const navigate = useNavigate();
   const actions = useConsoleActions();
-  return consoleDoorsOf(server).map(door => ({
+  const { detail } = useMachineDetail(id, name, { ask: false });
+  const detailRef = useRef(detail);
+  const [asking, setAsking] = useState('');
+
+  useEffect(() => {
+    detailRef.current = detail;
+  });
+
+  const go = (kind, credentialId) => {
+    if (opensInHeld() === 'page') {
+      navigate(consoleRoute(id, name, kind, credentialId));
+      return;
+    }
+    actions.open({ kind, id, name, server, placed: 'footer', credentialId });
+  };
+
+  const commands = consoleDoorsOf(server).map(door => ({
     key: `console-${door.key}`,
     group: 'console',
     icon: door.icon,
@@ -105,11 +129,24 @@ export const useConsoleCommands = ({ id, name, server, busy }) => {
     disabled: busy,
     Row: ConsoleRow,
     run: () => {
-      if (opensInHeld() === 'page') {
-        navigate(consoleRoute(id, name, door.key));
+      if (asksConnectAs(detailRef.current, door.key)) {
+        setAsking(door.key);
         return;
       }
-      actions.open({ kind: door.key, id, name, server, placed: 'footer' });
+      go(door.key, '');
     },
   }));
+
+  const dialogs = asking ? (
+    <ConnectAsDialog
+      credentials={credentialsFor(detail, asking)}
+      onPick={credentialId => {
+        setAsking('');
+        go(asking, credentialId);
+      }}
+      onClose={() => setAsking('')}
+    />
+  ) : null;
+
+  return { commands, dialogs };
 };

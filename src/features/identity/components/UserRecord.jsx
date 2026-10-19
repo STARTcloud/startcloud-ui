@@ -4,6 +4,7 @@ import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaCommentSms, FaKey, FaMobileScreen } from 'react-icons/fa6';
 
+import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MethodList, { MethodRow } from '../../../components/common/MethodList';
@@ -137,6 +138,7 @@ const EmailDialog = ({ initial, save, onClose, onSaved }) => {
   const notify = useNotify();
   const [form, setForm] = useState({ email: initial });
   const [busy, setBusy] = useState(false);
+  const guard = useDiscardGuard(form.email !== initial, onClose);
   const rules = useFormRules({
     formKey: 'email',
     schema: EMAIL_SCHEMA,
@@ -166,41 +168,49 @@ const EmailDialog = ({ initial, save, onClose, onSaved }) => {
   };
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={submit} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">{t('admin.users.record.emailTitle')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
-          <Field
-            id={rules.idFor('email')}
-            label={t(EMAIL_LABELS.email)}
-            error={rules.errors.email || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="email"
-                className="form-control"
-                autoComplete="off"
-                value={form.email}
-                onChange={event => setForm({ email: event.target.value })}
-                onBlur={() => rules.onBlur('email')}
-              />
-            )}
-          </Field>
-        </Modal.Body>
-        <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            {t('admin.buttons.cancel')}
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {t('admin.buttons.save')}
-          </button>
-        </Modal.Footer>
-      </form>
-    </Modal>
+    <>
+      <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
+        <form onSubmit={submit} noValidate>
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">{t('admin.users.record.emailTitle')}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormErrorSummary errors={rules.summary} />
+            <Field
+              id={rules.idFor('email')}
+              label={t(EMAIL_LABELS.email)}
+              error={rules.errors.email || ''}
+            >
+              {aria => (
+                <input
+                  {...aria}
+                  type="email"
+                  className="form-control"
+                  autoComplete="off"
+                  value={form.email}
+                  onChange={event => setForm({ email: event.target.value })}
+                  onBlur={() => rules.onBlur('email')}
+                />
+              )}
+            </Field>
+          </Modal.Body>
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={guard.close}
+              disabled={busy}
+            >
+              {t('admin.buttons.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {t('admin.buttons.save')}
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 

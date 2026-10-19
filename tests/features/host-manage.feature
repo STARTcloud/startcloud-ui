@@ -331,15 +331,17 @@ Feature: host-manage
     Then the "history" table of the section page lists 2 rows
     And the "history" table of the section page draws the "status" column
 
-  Scenario: Provisioning: the orchestration, its status, the enable behind the typed confirmation, the dry run and a priority written to the machine
+  Scenario: Provisioning: the orchestration, its status, the enable behind the typed confirmation, the dry run and a typed priority written on Apply
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/orchestration"
     Then the section page notes "orchestration"
     And the section page draws the "boot-order" panel
+    And the boot order draws its header row
+    And the section page's "orchestration-apply" action is held
     And the host was sent GET to "/api/agents/3/machines/priorities" 1 times
-    When I press the section page's "orchestration-plan" action
+    When I press the section page's "orchestration-preview" action
     Then the host was sent POST to "/api/agents/3/machines/orchestration/test" 1 times
     And the section page draws the "orchestration-plan" panel
     When I press the section page's "orchestration-toggle" action
@@ -347,23 +349,33 @@ Feature: host-manage
     Then the host was sent POST to "/api/agents/3/machines/orchestration/enable" 1 times
     And the host was sent GET to "/api/agents/3/machines/orchestration/status" 2 times
     When I type "90" into the section field "boot-priority-db-1"
-    And I press the section page's "priority-save" action
+    Then the host was not sent PUT to "/api/agents/3/machines/db-1"
+    When I press the section page's "orchestration-apply" action
     Then the host was sent PUT to "/api/agents/3/machines/db-1" carrying "boot_priority" as "90"
     And the host was sent GET to "/api/agents/3/machines/priorities" 2 times
+    And the section page's "orchestration-apply" action is held
 
-  Scenario: Provisioning: the strategy is one merge patch of the machines configuration file at its leaf and the status read again
+  Scenario: Provisioning: the strategy is a draft, Preview draws the dry run of the drafted strategy, Apply writes it as one merge patch of the machines configuration file at its leaf with one notice and the status read again
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/orchestration"
     Then the section page notes "orchestration"
     And the host was sent GET to "/api/agents/3/machines/orchestration/status" 1 times
+    And the section page's "orchestration-apply" action is held
     When I choose "sequential" in the section field "orchestration-strategy"
+    Then the host was not sent PUT to "/api/agents/3/config/machines"
+    And the page raised 0 success notices
+    When I press the section page's "orchestration-preview" action
+    Then the host was sent POST to "/api/agents/3/machines/orchestration/test" carrying "strategy" as "sequential"
+    And the section page draws the "orchestration-plan" panel
+    When I press the section page's "orchestration-apply" action
     Then the host was sent PUT to "/api/agents/3/config/machines" carrying "sequential" at "/machines/orchestration/strategy"
     And the host was sent PUT to "/api/agents/3/config/machines" carrying nothing at "/machines/orchestration/enabled"
     And the host was not sent GET to "/api/agents/3/config/machines"
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/machines/orchestration/status" 2 times
+    And the section page's "orchestration-apply" action is held
 
   Scenario: System: the runlevel behind runlevel, a change a queued task behind the typed confirmation
     Given the host answers the hosts fixture

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
+import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -84,6 +85,38 @@ DialogFooter.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
+const sameRoles = (chosen, roles) =>
+  [...chosen].sort().join('\n') === [...new Set(roles)].sort().join('\n');
+
+/**
+ * One form dialog of a Users row over its draft, the guard's prompt drawn
+ * beside it: while `dirty`, a backdrop click, Escape and the close button
+ * ask the discard prompt before the dialog closes.
+ */
+const GuardedDialog = ({ guard, onSubmit, title, children }) => (
+  <>
+    <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
+      <form onSubmit={onSubmit} noValidate>
+        <Modal.Header closeButton>
+          <Modal.Title as="h5">{title}</Modal.Title>
+        </Modal.Header>
+        {children}
+      </form>
+    </Modal>
+    <DiscardPrompt {...guard.prompt} />
+  </>
+);
+
+GuardedDialog.propTypes = {
+  guard: PropTypes.shape({
+    close: PropTypes.func.isRequired,
+    prompt: PropTypes.object.isRequired,
+  }).isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
 /**
  * The Roles dialog of a Users row: one checkbox per role of the
  * catalog, saved in one `save(roles)` with the whole set; mounted per
@@ -94,6 +127,7 @@ export const RolesDialog = ({ user, catalog, save, onClose, onSaved }) => {
   const notify = useNotify();
   const [chosen, setChosen] = useState(() => new Set(user.roles));
   const [busy, setBusy] = useState(false);
+  const guard = useDiscardGuard(!sameRoles(chosen, user.roles), onClose);
 
   const toggle = role =>
     setChosen(current => {
@@ -122,30 +156,29 @@ export const RolesDialog = ({ user, catalog, save, onClose, onSaved }) => {
   const names = [...new Set([...catalog, ...user.roles])];
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={submit} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">{t('admin.users.roles.title', { user: user.username })}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {names.map(role => (
-            <div className="form-check" key={role}>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id={`role-${role}`}
-                checked={chosen.has(role)}
-                onChange={() => toggle(role)}
-              />
-              <label className="form-check-label" htmlFor={`role-${role}`}>
-                {role}
-              </label>
-            </div>
-          ))}
-        </Modal.Body>
-        <DialogFooter busy={busy} label={t('admin.buttons.save')} onClose={onClose} />
-      </form>
-    </Modal>
+    <GuardedDialog
+      guard={guard}
+      onSubmit={submit}
+      title={t('admin.users.roles.title', { user: user.username })}
+    >
+      <Modal.Body>
+        {names.map(role => (
+          <div className="form-check" key={role}>
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id={`role-${role}`}
+              checked={chosen.has(role)}
+              onChange={() => toggle(role)}
+            />
+            <label className="form-check-label" htmlFor={`role-${role}`}>
+              {role}
+            </label>
+          </div>
+        ))}
+      </Modal.Body>
+      <DialogFooter busy={busy} label={t('admin.buttons.save')} onClose={guard.close} />
+    </GuardedDialog>
   );
 };
 
@@ -165,10 +198,12 @@ RolesDialog.propTypes = {
 export const PrimaryOrgDialog = ({ user, save, onClose, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const [uuid, setUuid] = useState(
+  const [opened] = useState(
     () => user.organizations.find(org => org.primary)?.uuid || user.organizations[0]?.uuid || ''
   );
+  const [uuid, setUuid] = useState(opened);
   const [busy, setBusy] = useState(false);
+  const guard = useDiscardGuard(uuid !== opened, onClose);
 
   const submit = event => {
     event.preventDefault();
@@ -184,36 +219,31 @@ export const PrimaryOrgDialog = ({ user, save, onClose, onSaved }) => {
   };
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={submit} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">{t('admin.users.primaryOrg.title')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>{t('admin.users.primaryOrg.body', { user: user.username })}</p>
-          <label className="form-label" htmlFor="primary-org">
-            {t('admin.users.primaryOrg.label')}
-          </label>
-          <select
-            id="primary-org"
-            className="form-select"
-            value={uuid}
-            onChange={event => setUuid(event.target.value)}
-          >
-            {user.organizations.map(org => (
-              <option key={org.uuid} value={org.uuid}>
-                {org.name}
-              </option>
-            ))}
-          </select>
-        </Modal.Body>
-        <DialogFooter
-          busy={busy || !uuid}
-          label={t('admin.users.primaryOrg.confirm')}
-          onClose={onClose}
-        />
-      </form>
-    </Modal>
+    <GuardedDialog guard={guard} onSubmit={submit} title={t('admin.users.primaryOrg.title')}>
+      <Modal.Body>
+        <p>{t('admin.users.primaryOrg.body', { user: user.username })}</p>
+        <label className="form-label" htmlFor="primary-org">
+          {t('admin.users.primaryOrg.label')}
+        </label>
+        <select
+          id="primary-org"
+          className="form-select"
+          value={uuid}
+          onChange={event => setUuid(event.target.value)}
+        >
+          {user.organizations.map(org => (
+            <option key={org.uuid} value={org.uuid}>
+              {org.name}
+            </option>
+          ))}
+        </select>
+      </Modal.Body>
+      <DialogFooter
+        busy={busy || !uuid}
+        label={t('admin.users.primaryOrg.confirm')}
+        onClose={guard.close}
+      />
+    </GuardedDialog>
   );
 };
 
@@ -245,6 +275,7 @@ export const BulkPrimaryOrgDialog = ({ users, save, onClose, onSaved }) => {
   }, [users]);
   const [uuid, setUuid] = useState(shared[0]?.uuid || '');
   const [busy, setBusy] = useState(false);
+  const guard = useDiscardGuard(uuid !== (shared[0]?.uuid || ''), onClose);
 
   const onSubmit = event => {
     event.preventDefault();
@@ -260,41 +291,40 @@ export const BulkPrimaryOrgDialog = ({ users, save, onClose, onSaved }) => {
   };
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={onSubmit} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">{t('admin.users.bulk.setPrimaryOrganization')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {shared.length === 0 ? (
-            <p className="text-muted mb-0">{t('admin.users.bulk.noSharedOrg')}</p>
-          ) : (
-            <>
-              <label className="form-label" htmlFor="bulk-primary-org">
-                {t('admin.users.primaryOrg.label')}
-              </label>
-              <select
-                id="bulk-primary-org"
-                className="form-select"
-                value={uuid}
-                onChange={event => setUuid(event.target.value)}
-              >
-                {shared.map(org => (
-                  <option key={org.uuid} value={org.uuid}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-        </Modal.Body>
-        <DialogFooter
-          busy={busy || shared.length === 0 || !uuid}
-          label={t('admin.users.primaryOrg.confirm')}
-          onClose={onClose}
-        />
-      </form>
-    </Modal>
+    <GuardedDialog
+      guard={guard}
+      onSubmit={onSubmit}
+      title={t('admin.users.bulk.setPrimaryOrganization')}
+    >
+      <Modal.Body>
+        {shared.length === 0 ? (
+          <p className="text-muted mb-0">{t('admin.users.bulk.noSharedOrg')}</p>
+        ) : (
+          <>
+            <label className="form-label" htmlFor="bulk-primary-org">
+              {t('admin.users.primaryOrg.label')}
+            </label>
+            <select
+              id="bulk-primary-org"
+              className="form-select"
+              value={uuid}
+              onChange={event => setUuid(event.target.value)}
+            >
+              {shared.map(org => (
+                <option key={org.uuid} value={org.uuid}>
+                  {org.name}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+      </Modal.Body>
+      <DialogFooter
+        busy={busy || shared.length === 0 || !uuid}
+        label={t('admin.users.primaryOrg.confirm')}
+        onClose={guard.close}
+      />
+    </GuardedDialog>
   );
 };
 
@@ -316,6 +346,7 @@ export const CustomerIdDialog = ({ title, hint, initial, save, onClose, onSaved 
   const notify = useNotify();
   const [form, setForm] = useState({ customer_id: initial });
   const [busy, setBusy] = useState(false);
+  const guard = useDiscardGuard(form.customer_id !== initial, onClose);
   const rules = useFormRules({
     schema: CUSTOMER_ID_SCHEMA,
     values: form,
@@ -344,34 +375,29 @@ export const CustomerIdDialog = ({ title, hint, initial, save, onClose, onSaved 
   };
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={submit} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">{title}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
-          <Field
-            id={rules.idFor('customer_id')}
-            label={t('admin.users.customerId.label')}
-            hint={hint}
-            error={rules.errors.customer_id || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="text"
-                className="form-control"
-                value={form.customer_id}
-                onChange={event => setForm({ customer_id: event.target.value.toUpperCase() })}
-                onBlur={() => rules.onBlur('customer_id')}
-              />
-            )}
-          </Field>
-        </Modal.Body>
-        <DialogFooter busy={busy} label={t('admin.buttons.save')} onClose={onClose} />
-      </form>
-    </Modal>
+    <GuardedDialog guard={guard} onSubmit={submit} title={title}>
+      <Modal.Body>
+        <FormErrorSummary errors={rules.summary} />
+        <Field
+          id={rules.idFor('customer_id')}
+          label={t('admin.users.customerId.label')}
+          hint={hint}
+          error={rules.errors.customer_id || ''}
+        >
+          {aria => (
+            <input
+              {...aria}
+              type="text"
+              className="form-control"
+              value={form.customer_id}
+              onChange={event => setForm({ customer_id: event.target.value.toUpperCase() })}
+              onBlur={() => rules.onBlur('customer_id')}
+            />
+          )}
+        </Field>
+      </Modal.Body>
+      <DialogFooter busy={busy} label={t('admin.buttons.save')} onClose={guard.close} />
+    </GuardedDialog>
   );
 };
 

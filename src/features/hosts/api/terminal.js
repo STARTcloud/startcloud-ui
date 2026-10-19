@@ -103,18 +103,20 @@ export const HOST_SHELL = {
 
 /**
  * The SSH shell of one machine as a terminal source: `POST
- * machines/{name}/ssh/start` with the candidate address `ipIndex` names,
+ * machines/{name}/ssh/start` with the candidate address `ipIndex` names
+ * and the machine's credential `credentialId` names,
  * `DELETE ssh/sessions/{id}/stop`, the socket at `ssh/{id}` with a ticket
  * bound to the machine, and nothing sent as it opens, the agent's own
  * connecting line filling the first screen.
  *
  * @param {string} name - The machine name
  * @param {number} [ipIndex] - The candidate address to target, 0-based
+ * @param {string} [credentialId] - The id of the machine's credential
  * @returns {Object} The source
  */
-export const sshShell = (name, ipIndex = 0) => ({
+export const sshShell = (name, ipIndex = 0, credentialId = '') => ({
   key: 'ssh',
-  start: (status, id) => startSshSession(status, id, name, ipIndex),
+  start: (status, id) => startSshSession(status, id, name, ipIndex, credentialId),
   stop: stopSshSession,
   socketPath: session => sshSocketPath(session.id),
   ticketMachine: name,

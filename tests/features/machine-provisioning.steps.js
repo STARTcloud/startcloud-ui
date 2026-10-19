@@ -10,6 +10,11 @@ const editorOf = page => page.locator('[data-panel="provisioning-editor"]');
 
 const dialogOf = page => page.getByRole('dialog').last();
 
+const rolesListOf = page => page.locator('[data-list="roles"]');
+
+const runGlyphOf = (page, name) =>
+  rolesListOf(page).locator(`[data-role="${name}"] [data-action="run-role"]`);
+
 When('I pick the editor tab {string}', async ({ page }, key) => {
   await editorOf(page).locator(`[data-tab="${key}"]`).click();
 });
@@ -21,6 +26,14 @@ When('I add the catalog role {string}', async ({ page }, name) => {
 When('I add the custom role {string}', async ({ page }, name) => {
   await editorOf(page).locator('.hw-cat-custom input').fill(name);
   await editorOf(page).locator('[data-action="role-add-custom"]').click();
+});
+
+When('I press the run glyph of the role {string}', async ({ page }, name) => {
+  await runGlyphOf(page, name).click();
+});
+
+When("I press the editor's {string} action", async ({ page }, action) => {
+  await editorOf(page).locator(`[data-action="${action}"]`).first().click();
 });
 
 When('I replace the Hosts.yml with {string}', async ({ page }, text) => {
@@ -71,6 +84,25 @@ Then('the editor lists {int} step cards', async ({ page }, count) => {
 
 Then('the catalog lists {int} roles', async ({ page }, count) => {
   await expect(editorOf(page).locator('.hw-cat-item')).toHaveCount(count);
+});
+
+Then('the run glyph of the role {string} is held', async ({ page }, name) => {
+  await expect(runGlyphOf(page, name)).toBeDisabled();
+});
+
+Then('the editor offers no {string}', async ({ page }, action) => {
+  await expect(editorOf(page).locator('.hw-role-card').first()).toBeVisible();
+  await expect(editorOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);
+});
+
+Then('the roles editor offers no {string}', async ({ page }, action) => {
+  await expect(rolesListOf(page).locator('[data-role]').first()).toBeVisible();
+  await expect(rolesListOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);
+});
+
+Then('the roles catalog draws no search box', async ({ page }) => {
+  await expect(page.locator('.hw-cat-item').first()).toBeVisible();
+  await expect(page.locator('.hw-cat-search')).toHaveCount(0);
 });
 
 Then('the Hosts.yml editor reads {string}', async ({ page }, text) => {

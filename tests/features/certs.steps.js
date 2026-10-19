@@ -58,6 +58,10 @@ const actionOf = (page, action) =>
 
 const zoneOf = (page, panel) => page.locator(`[data-panel="${panel}"] input[type="file"]`);
 
+const inputPanel = page => page.locator('[data-panel="certs-input"]');
+
+const inputArea = page => inputPanel(page).locator('textarea');
+
 const vaultRows = page => page.locator('[data-page="certs-vault"] tbody tr');
 
 const vaultRow = (page, text) => vaultRows(page).filter({ hasText: text }).first();
@@ -143,7 +147,50 @@ When('I drop {string} into the vault', async ({ page }, name) => {
 });
 
 When('I paste the fixture {string} into the input zone', async ({ page }, name) => {
-  await page.locator('[data-panel="certs-input"] textarea').fill(textOf(MATERIAL[name]));
+  await inputArea(page).fill(textOf(MATERIAL[name]));
+});
+
+When('I drop {string} onto the input textarea', async ({ page }, name) => {
+  const file = fileOf(name);
+  const dataTransfer = await page.evaluateHandle(
+    ({ fileName, mimeType, bytes }) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([new Uint8Array(bytes)], fileName, { type: mimeType }));
+      return transfer;
+    },
+    { fileName: file.name, mimeType: file.mimeType, bytes: [...file.buffer] }
+  );
+  await inputArea(page).dispatchEvent('drop', { dataTransfer });
+});
+
+Then('the input zone invites a drop', async ({ page }) => {
+  await expect(
+    inputPanel(page).locator('[data-overlay="drop"] [data-action="browse"]')
+  ).toBeVisible();
+});
+
+Then('the input zone invites no drop', async ({ page }) => {
+  await expect(inputArea(page)).toBeVisible();
+  await expect(inputPanel(page).locator('[data-overlay="drop"]')).toHaveCount(0);
+});
+
+Then('the input textarea shows the text of {string}', async ({ page }, name) => {
+  await expect(inputArea(page)).toHaveValue(textOf(MATERIAL[name]));
+  await expect(inputArea(page)).toBeEditable();
+});
+
+Then('the input textarea holds a binary file', async ({ page }) => {
+  await expect(inputArea(page)).toHaveAttribute('data-held', 'binary');
+  await expect(inputArea(page)).not.toBeEditable();
+});
+
+Then('the input zone names the held file {string}', async ({ page }, name) => {
+  await expect(inputPanel(page).locator('[data-chip="held-file"]')).toHaveText(name);
+});
+
+Then('the input zone names no held file', async ({ page }) => {
+  await expect(inputArea(page)).toBeVisible();
+  await expect(inputPanel(page).locator('[data-chip="held-file"]')).toHaveCount(0);
 });
 
 When("I press the certs page's {string} action", async ({ page }, action) => {

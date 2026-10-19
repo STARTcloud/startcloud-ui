@@ -138,6 +138,9 @@
   "active_vnc_session": null,
   "pending_tasks": [],
   "system_status": "running",
+  "credentials": [
+    { "id": "sec-deploy", "use": "ssh", "default": true, "kind": "ssh_key", "name": "deploy" }
+  ],
   "web_address": null,
   "knob_current": {
     "ram": 8192,

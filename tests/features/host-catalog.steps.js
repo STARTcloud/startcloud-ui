@@ -66,10 +66,6 @@ When(
   }
 );
 
-Then('the catalog card {string} lists {int} locations', async ({ page }, panel, count) => {
-  await expect(frameOf(page).locator(`[data-panel="${panel}"] [data-location]`)).toHaveCount(count);
-});
-
 Then('the catalog source {string} offers {string}', async ({ page }, name, action) => {
   await expect(sourceOf(page, name).locator(`[data-action="${action}"]`)).toBeVisible();
 });

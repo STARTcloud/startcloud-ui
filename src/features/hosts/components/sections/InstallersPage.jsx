@@ -1,11 +1,12 @@
 import PropTypes from 'prop-types';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { pageContextShape } from '../../../../utils/itemShape';
 import { artifactParamGroups, useArtifactStorageData } from '../../hooks/useArtifactStorage';
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { catalogParamGroups, useManageCatalogData } from '../../hooks/useManageCatalogData';
-import { matchesArtifact, matchesStoragePath } from '../../utils/artifacts';
+import { matchesArtifact, matchesStoragePath, storagePathsWithCounts } from '../../utils/artifacts';
 import { matchesArtifact as matchesInstaller } from '../../utils/manageCatalog';
 import {
   ARTIFACT_COLUMNS as INSTALLER_COLUMNS,
@@ -25,7 +26,9 @@ import SectionPane from '../SectionPane';
  * `InstallerFilesSection` while it lists `artifacts` and
  * `provisioner-registry`, the storage locations, artifacts and installer
  * files read once for this page, their request filters in the navbar's
- * panel.
+ * panel; the storage locations are the one table, each row taking the
+ * artifact registry's file count and size where the registry answers
+ * them, matched by path, and a write to a location reads both again.
  */
 const InstallersPage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
@@ -39,13 +42,35 @@ const InstallersPage = ({ id, server, context, section, onRefresh }) => {
     t,
   });
   const ctx = { ...context, t, language: i18n.language, id, server };
+  const storagePaths = useMemo(
+    () => storagePathsWithCounts(artifacts.rows.storagePaths, catalog.rows.locations),
+    [artifacts.rows.storagePaths, catalog.rows.locations]
+  );
+  const { storagePaths: pathsRead } = artifacts.reads;
+  const { locations: locationsRead } = catalog.reads;
+  const data = {
+    ...artifacts,
+    rows: { ...artifacts.rows, storagePaths },
+    reads: {
+      ...artifacts.reads,
+      storagePaths: {
+        ...pathsRead,
+        refresh: () => {
+          pathsRead.refresh();
+          if (catalog.gates.installers) {
+            locationsRead.refresh();
+          }
+        },
+      },
+    },
+  };
   const search = useHostManageSearch({
     section,
     tables: {
       storagePaths: tableOf({
         key: 'storage-paths',
         labelKey: 'artifacts.artifactManagement.storageLocationsTab',
-        rows: artifacts.rows.storagePaths,
+        rows: storagePaths,
         columns: STORAGE_PATH_COLUMNS,
         matches: matchesStoragePath,
         filterGroups: STORAGE_PATH_FILTERS,
@@ -102,7 +127,7 @@ const InstallersPage = ({ id, server, context, section, onRefresh }) => {
           id={id}
           server={server}
           ctx={ctx}
-          data={artifacts}
+          data={data}
           search={tables}
           filtering={search.filtering}
         />

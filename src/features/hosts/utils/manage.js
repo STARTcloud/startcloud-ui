@@ -829,29 +829,50 @@ const rowOf = (priorities, name) =>
   (priorities?.machines || []).find(machine => machine.name === name) || null;
 
 /**
- * The priorities the order would write, one a machine whose number the
- * order changes.
+ * Whether the order was moved away from the one the held priorities
+ * answer.
  *
  * @param {Array<string>} order - The machine names, first boots first
  * @param {Object|null} priorities - The answer of `GET machines/priorities`
- * @returns {Array<{ name: string, priority: number }>} The changes
+ * @returns {boolean} True while a machine stands at another position
  */
-export const priorityChanges = (order, priorities) =>
-  order
-    .map((name, index) => ({ name, priority: priorityForIndex(index) }))
-    .filter(change => {
-      const row = rowOf(priorities, change.name);
-      return row && row.priority !== change.priority;
-    });
+export const orderMoved = (order, priorities) => {
+  const held = orderOf(priorities);
+  return order.length !== held.length || order.some((name, index) => name !== held[index]);
+};
+
+const draftPriority = ({ typed, moved, index, row }) => {
+  if (typed !== undefined) {
+    return Number(typed);
+  }
+  return moved ? priorityForIndex(index) : row.priority;
+};
 
 /**
- * Whether the order differs from the priorities the agent holds.
+ * The boot priorities a draft of the orchestration would write, one a
+ * machine whose number the draft changes: the number typed into its row
+ * first, the spaced number of its position while the order was moved,
+ * its held number otherwise.
  *
- * @param {Array<string>} order - The machine names
- * @param {Object|null} priorities - The answer of `GET machines/priorities`
- * @returns {boolean} True while a write would change a priority
+ * @param {Object} draft - The draft
+ * @param {Array<string>} draft.order - The machine names, first boots first
+ * @param {Object|null} draft.priorities - The answer of `GET machines/priorities`
+ * @param {Object<string, string>} draft.edits - The numbers typed, by machine name
+ * @returns {Array<{ name: string, priority: number }>} The changes
  */
-export const orderDiffers = (order, priorities) => priorityChanges(order, priorities).length > 0;
+export const draftChanges = ({ order, priorities, edits }) => {
+  const moved = orderMoved(order, priorities);
+  return order
+    .map((name, index) => {
+      const row = rowOf(priorities, name);
+      if (!row) {
+        return null;
+      }
+      const priority = draftPriority({ typed: edits[name], moved, index, row });
+      return priority === row.priority ? null : { name, priority };
+    })
+    .filter(Boolean);
+};
 
 /**
  * The order with the dragged machine moved to the position of the one it

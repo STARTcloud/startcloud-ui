@@ -291,4 +291,15 @@ describe('secretRowsOf', () => {
     expect(secretRowsOf(rows, 'certificate').map(row => row.id)).toEqual(['e', 'f']);
     expect(secretRowsOf(rows, 'key').map(row => row.id)).toEqual(['g', 'h']);
   });
+
+  it("admits the password, SSH key and key pair rows to a machine's credential", () => {
+    expect(pickKindsOf('credential')).toEqual(['password', 'ssh_key', 'key_pair']);
+    const held = [
+      { id: 'p', kind: 'password', name: 'admin' },
+      { id: 's', kind: 'ssh_key', name: 'deploy' },
+      { id: 'k', kind: 'key_pair', name: 's3' },
+      { id: 'a', kind: 'api_key', name: 'git' },
+    ];
+    expect(secretRowsOf(held, 'credential').map(row => row.id)).toEqual(['p', 's', 'k']);
+  });
 });

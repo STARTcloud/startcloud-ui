@@ -51,6 +51,28 @@ Feature: config contract
     And the host was sent POST to "/api/config/app/test" carrying "https://boxvault.startcloud.com" at "/boxvault/origin"
     And the host was sent POST to "/api/config/app/test" carrying "info" at "/logging/level"
 
+  Scenario: 4. default: a field the file leaves empty draws the schema's default with the default mark, a set value equal to the default or not draws as a value, and the default never reaches the merge patch
+    When I open "/admin/config/app"
+    Then I see "Application"
+    And the label "Default image" is marked default
+    And the control "Default image" has the placeholder "identicon"
+    And the control "Default image" has the value ""
+    And the label "Public registration" is marked default
+    And the switch "Public registration" is on
+    And the label "Log format" is marked default
+    And the select "Log format" reads "json" on its blank option
+    And the label "Trust proxy" is not marked default
+    And the switch "Trust proxy" is on
+    And the label "Log level" is not marked default
+    And the control "Log level" has the value "info"
+    And the label "HTTPS port" is not marked default
+    When I fill "Origin" with "https://boxvault.example.com"
+    And I click "Update Configuration"
+    Then I see "Configuration updated successfully."
+    And the host was sent PUT to "/api/config/app" carrying nothing at "/gravatar/default_image"
+    And the host was sent PUT to "/api/config/app" carrying nothing at "/boxvault/public_registration"
+    And the host was sent PUT to "/api/config/app" carrying nothing at "/logging/format"
+
   Scenario: 7. every collection an additionalProperties map with propertyNames, drawn by the generic map component
     When I open "/admin/config/app"
     Then I see "Log categories"

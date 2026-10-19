@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CONSOLE_KINDS,
+  asksConnectAs,
   captureFileName,
   consoleAdmin,
+  consoleCredentialParamOf,
   consoleDoorsOf,
   consoleParamOf,
   consoleRoute,
+  credentialsFor,
+  doorCredentialOf,
   guestIpsOf,
   hostHasConsoles,
   hostOffersConsole,
@@ -47,6 +51,9 @@ describe('consoleDoorsOf', () => {
 describe('consoleRoute and standaloneConsoleRoute', () => {
   it('names the console in the machine route query and the full-window pages', () => {
     expect(consoleRoute('1', 'dev 1', 'vnc')).toBe('/hosts/1/machines/dev%201?console=vnc');
+    expect(consoleRoute('self', 'dev-1', 'ssh', 'sec a')).toBe(
+      '/hosts/self/machines/dev-1?console=ssh&credential=sec%20a'
+    );
     expect(standaloneConsoleRoute('self', 'dev-1', 'vnc')).toBe(
       '/hosts/self/machines/dev-1/console/vnc'
     );
@@ -64,6 +71,13 @@ describe('consoleParamOf', () => {
     expect(consoleParamOf(new URLSearchParams('console=zlogin'))).toBe('zlogin');
     expect(consoleParamOf(new URLSearchParams('console=serial'))).toBe('');
     expect(consoleParamOf(new URLSearchParams(''))).toBe('');
+  });
+
+  it('answers the credential the query names and the empty string otherwise', () => {
+    expect(consoleCredentialParamOf(new URLSearchParams('console=ssh&credential=sec-a'))).toBe(
+      'sec-a'
+    );
+    expect(consoleCredentialParamOf(new URLSearchParams('console=ssh'))).toBe('');
   });
 });
 
@@ -103,6 +117,46 @@ describe('sshAddressesOf', () => {
     });
     expect(sshAddressesOf(null)).toEqual({ ipCandidates: [], ipIndex: 0, nextIndex: null });
     expect(sshAddressesOf({ ip_index: 'x' }).ipIndex).toBe(0);
+  });
+});
+
+describe('credentialsFor and doorCredentialOf', () => {
+  const detail = {
+    credentials: [
+      { id: 'a', use: 'ssh', default: false },
+      { id: 'b', use: 'ssh', default: true },
+      { id: 'c', use: 'rdp', default: true },
+      { use: 'ssh' },
+    ],
+  };
+
+  it('lists the credentials of one use, the default first', () => {
+    expect(credentialsFor(detail, 'ssh').map(row => row.id)).toEqual(['b', 'a']);
+    expect(credentialsFor(detail, 'console')).toEqual([]);
+    expect(credentialsFor(null, 'ssh')).toEqual([]);
+  });
+
+  it('starts a door with the default while the use holds more than one and with none otherwise', () => {
+    expect(doorCredentialOf(detail, 'ssh')).toBe('b');
+    expect(doorCredentialOf(detail, 'rdp')).toBe('');
+    expect(doorCredentialOf({}, 'ssh')).toBe('');
+  });
+
+  it('asks Connect as for SSH or RDP while the use holds more than one credential', () => {
+    expect(asksConnectAs(detail, 'ssh')).toBe(true);
+    expect(asksConnectAs(detail, 'rdp')).toBe(false);
+    expect(
+      asksConnectAs(
+        {
+          credentials: [
+            { id: 'a', use: 'vnc' },
+            { id: 'b', use: 'vnc' },
+          ],
+        },
+        'vnc'
+      )
+    ).toBe(false);
+    expect(asksConnectAs(null, 'ssh')).toBe(false);
   });
 });
 

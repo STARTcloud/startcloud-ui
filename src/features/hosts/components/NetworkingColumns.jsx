@@ -16,6 +16,7 @@ import {
   prefixOf,
   zoneOf,
 } from '../utils/networking';
+import { addressTypeTone } from '../utils/networkingManagement';
 
 import { trendColumn } from './TrendCell';
 
@@ -39,13 +40,20 @@ const versionWord = (row, ctx) => row.ip_version || ctx.t('host.ipAddressTable.i
 
 const addressState = (row, ctx) => row.state || ctx.t('host.ipAddressTable.active');
 
+const typeWord = (row, ctx) =>
+  String(row.type || '').toLowerCase() === 'addrconf'
+    ? ctx.t('host.ipAddressTableManagement.auto')
+    : row.type || '';
+
 /**
- * The columns of the addresses table, hyperweaver-ui's: the interface,
- * the address, the prefix, the version and the state in its tone. The
+ * The columns of the one addresses table: the interface, the address,
+ * the prefix, the address object, the type, the version, the state in
+ * its tone and the Managed badge of a row the managed read answers. The
  * address and the prefix are read as the row's backend answers them,
  * `ip_address` and `prefix_length` where a row carries them and the two
- * parts of `addr` otherwise, each column drawn only while a row carries
- * its value; a cell a row has no value for reads hyperweaver-ui's word.
+ * parts of `addr` otherwise; the address, the prefix, the address
+ * object, the type and the Managed column draw only while a row carries
+ * their value; a cell a row has no value for reads hyperweaver-ui's word.
  */
 export const ADDRESS_COLUMNS = [
   {
@@ -74,9 +82,27 @@ export const ADDRESS_COLUMNS = [
     render: (row, ctx) => code(prefixWord(row, ctx)),
   },
   {
+    key: 'addrobj',
+    kind: 'text',
+    labelKey: 'host.ipAddressTableManagement.addressObject',
+    priority: 5,
+    when: hasAny(row => row.addrobj),
+    value: row => row.addrobj || '',
+    render: row => code(row.addrobj),
+  },
+  {
+    key: 'type',
+    kind: 'badge',
+    labelKey: 'host.ipAddressTableManagement.type',
+    priority: 6,
+    when: hasAny(row => row.type),
+    value: typeWord,
+    render: (row, ctx) => (row.type ? badge(addressTypeTone(row.type), typeWord(row, ctx)) : null),
+  },
+  {
     key: 'version',
     kind: 'badge',
-    labelKey: 'host.ipAddressTable.type',
+    labelKey: 'host.ipAddressTableManagement.version',
     priority: 3,
     value: versionWord,
     render: (row, ctx) => badge('info', versionWord(row, ctx)),
@@ -87,6 +113,20 @@ export const ADDRESS_COLUMNS = [
     labelKey: 'host.ipAddressTable.status',
     value: addressState,
     render: (row, ctx) => badge(addressTone(row.state), addressState(row, ctx)),
+  },
+  {
+    key: 'managed',
+    kind: 'badge',
+    labelKey: 'hosts.networking.addresses.managed',
+    priority: 4,
+    when: hasAny(row => row.managed),
+    value: (row, ctx) => (row.managed ? ctx.t('hosts.networking.addresses.managed') : ''),
+    render: (row, ctx) =>
+      row.managed ? (
+        <span className="badge text-bg-primary" data-badge="managed">
+          {ctx.t('hosts.networking.addresses.managed')}
+        </span>
+      ) : null,
   },
 ];
 

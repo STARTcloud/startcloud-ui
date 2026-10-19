@@ -15,15 +15,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useSelection } from '../../../hooks/useSelection';
 import { downloadArtifactFile } from '../api/artifacts';
-import {
-  copyArtifact,
-  createArtifactStoragePath,
-  deleteArtifactStoragePath,
-  deleteArtifacts,
-  moveArtifact,
-  scanArtifacts,
-  updateArtifactStoragePath,
-} from '../api/provisioning';
+import { copyArtifact, deleteArtifacts, moveArtifact, scanArtifacts } from '../api/provisioning';
 import { fetchTemplateSources } from '../api/templates';
 import { useManageRead, useManageSend, useTaskFollow } from '../hooks/useHostManage';
 import { hostHasFeature } from '../utils/capabilities';
@@ -36,13 +28,11 @@ import {
   tableStateOf,
 } from '../utils/manageCatalog';
 
-import { ARTIFACT_COLUMNS, ArtifactRowActions, LocationsCard } from './ArtifactColumns';
+import { ARTIFACT_COLUMNS, ArtifactRowActions } from './ArtifactColumns';
 import {
   DeleteArtifactsModal,
   DownloadModal,
   HclDownloadModal,
-  LocationDeleteModal,
-  LocationFormModal,
   RegisterModal,
   RegistryDownloadModal,
   TransferModal,
@@ -119,27 +109,6 @@ const InstallerDialogs = ({ dialog, id, server, rows, sender, count, offered, on
       );
     case 'hcl':
       return <HclDownloadModal {...entry} server={server} roleOptions={roleOptions} />;
-    case 'location-add':
-    case 'location-edit':
-      return (
-        <LocationFormModal
-          id={id}
-          server={server}
-          editing={dialog.location || null}
-          busy={sender.busy}
-          onClose={on.close}
-          onSubmit={on.saveLocation}
-        />
-      );
-    case 'location-delete':
-      return (
-        <LocationDeleteModal
-          location={dialog.location}
-          busy={sender.busy}
-          onClose={on.close}
-          onSubmit={on.deleteLocation}
-        />
-      );
     case 'move':
     case 'copy':
       return (
@@ -178,15 +147,14 @@ InstallerDialogs.propTypes = {
     close: PropTypes.func.isRequired,
     done: PropTypes.func.isRequired,
     switchSource: PropTypes.func.isRequired,
-    saveLocation: PropTypes.func.isRequired,
-    deleteLocation: PropTypes.func.isRequired,
     transfer: PropTypes.func.isRequired,
     deleteSelected: PropTypes.func.isRequired,
   }).isRequired,
 };
 
 /**
- * The installer files of a host: the storage locations card, the Upload,
+ * The installer files of a host, the storage locations drawn by the one
+ * table of `ArtifactStorageSection`: the Upload,
  * Register path, From BoxVault, Download URL and HCL portal dialogs,
  * From BoxVault while the host lists `templates`, its registries read
  * through `GET templates/sources`, the Download URL and HCL portal
@@ -236,58 +204,14 @@ const InstallerFilesSection = ({
   }, []);
   const tableCtx = { ...ctx, onMissing };
 
-  const write = async ({ call, doneKey, values = {}, failKey, followed = true }) => {
+  const write = async ({ call, doneKey, values = {}, failKey }) => {
     const { answer, error } = await send({ call, doneKey, values, failKey });
     if (!error) {
       setDialog(null);
-      if (followed) {
-        follow(answer);
-      }
+      follow(answer);
       reread();
     }
     return !error;
-  };
-
-  const onLocationAction = (action, location) => {
-    if (action === 'edit' || action === 'delete') {
-      setDialog({ kind: `location-${action}`, location });
-      return;
-    }
-    if (action === 'scan') {
-      write({
-        call: () => scanArtifacts(status, id, { storage_path_id: location.id }),
-        doneKey: 'host.installerFiles.scanOfQueued',
-        values: { name: location.name },
-        failKey: 'host.installerFiles.scanFailed',
-      });
-      return;
-    }
-    const enabled = location.enabled === false;
-    write({
-      call: () => updateArtifactStoragePath(status, id, location.id, { enabled }),
-      doneKey: enabled
-        ? 'host.installerFiles.locationEnabled'
-        : 'host.installerFiles.locationDisabled',
-      values: { name: location.name },
-      failKey: 'host.installerFiles.locationUpdateFailed',
-      followed: false,
-    });
-  };
-
-  const saveLocation = body => {
-    const editing = dialog.location || null;
-    write({
-      call: () =>
-        editing
-          ? updateArtifactStoragePath(status, id, editing.id, body)
-          : createArtifactStoragePath(status, id, body),
-      doneKey: editing
-        ? 'host.installerFiles.locationUpdated'
-        : 'host.installerFiles.locationAdded',
-      values: { name: body.name },
-      failKey: 'host.installerFiles.locationSaveFailed',
-      followed: false,
-    });
   };
 
   const download = async artifact => {
@@ -338,12 +262,6 @@ const InstallerFilesSection = ({
 
   return (
     <div data-panel="installer-files-body">
-      <LocationsCard
-        locations={rows.locations}
-        busy={busy}
-        onAction={onLocationAction}
-        onAdd={() => setDialog({ kind: 'location-add' })}
-      />
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div className="d-flex flex-wrap gap-2">
           {openers.map(([kind, Icon, labelKey, tone]) => (
@@ -458,14 +376,6 @@ const InstallerFilesSection = ({
             reread();
           },
           switchSource: kind => setDialog(current => ({ kind, seed: current?.seed || null })),
-          saveLocation,
-          deleteLocation: options =>
-            write({
-              call: () => deleteArtifactStoragePath(status, id, dialog.location.id, options),
-              doneKey: 'host.installerFiles.locationDeleteQueued',
-              values: { name: dialog.location.name },
-              failKey: 'host.installerFiles.locationDeleteFailed',
-            }),
           transfer,
           deleteSelected,
         }}

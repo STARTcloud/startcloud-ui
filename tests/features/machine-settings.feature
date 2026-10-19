@@ -53,6 +53,38 @@ Feature: machine settings
     And the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
     And the host was sent GET to "/api/agents/1/machines" 2 times
 
+  Scenario: Machine page: the Credentials tab lists the machine's credentials, Add credential picks a password, SSH key or key pair row of the host's store and Apply sends credentials whole at once, one default a use
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-tools fixture
+    And the host answers the hosts-settings fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/settings"
+    And I pick the settings tab "credentials"
+    Then the credentials tab lists 1 credentials
+    And the credential "sec-deploy" names "deploy"
+    And the credential "sec-deploy" is the default
+    When I press the settings page's "credential-add" action
+    Then the credentials tab lists 2 credentials
+    When I press the "secret-pick" action of the last credential
+    Then the "secret-pick" dialog is open
+    And the host was sent GET to "/api/agents/1/certs" 3 times
+    When I press "secret-pick-row" on the row "domino-admin" of the dialog table "secret-pick"
+    Then no dialog is open
+    And the credential "sec-domino" names "domino-admin"
+    When I flip the default of the credential "sec-domino"
+    Then the credential "sec-domino" is the default
+    When I press the settings page's "apply-settings" action
+    Then the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "sec-deploy" at "/credentials/0/id"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "false" at "/credentials/0/default"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "sec-domino" at "/credentials/1/id"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "ssh" at "/credentials/1/use"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "true" at "/credentials/1/default"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying nothing at "/credentials/1/name"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying nothing at "/vcpus"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" 1 times
+    And the settings page notes no "running-choice"
+
   Scenario: Machine page: a write one request and one notice, Stop, apply and start sends the stop and waits on the hosts topic, never on a clock
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture

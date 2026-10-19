@@ -6,7 +6,8 @@ const { When, Then } = createBdd(test);
 
 const frameOf = page => page.locator('[data-page="host-section"]');
 
-const sectionOf = (page, name) => frameOf(page).locator(`[data-section="networking-${name}"]`);
+const sectionOf = (page, name) =>
+  frameOf(page).locator(`[data-section="networking-${name}"], [data-panel="networking-${name}"]`);
 
 const rowOf = (page, name, text) =>
   sectionOf(page, name).locator('tbody tr').filter({ hasText: text }).first();
@@ -93,6 +94,15 @@ Then('the {string} section of the networking page says {string}', async ({ page 
 
 Then('the {string} section row {string} offers {string}', async ({ page }, name, text, tool) => {
   await expect(rowOf(page, name, text).locator(`[data-tool="${tool}"]`)).toBeVisible();
+});
+
+Then('the {string} section row {string} is marked managed', async ({ page }, name, text) => {
+  await expect(rowOf(page, name, text).locator('[data-badge="managed"]')).toHaveCount(1);
+});
+
+Then('the {string} section row {string} is not marked managed', async ({ page }, name, text) => {
+  await expect(rowOf(page, name, text)).toBeVisible();
+  await expect(rowOf(page, name, text).locator('[data-badge="managed"]')).toHaveCount(0);
 });
 
 Then('the {string} section row {string} offers no {string}', async ({ page }, name, text, tool) => {

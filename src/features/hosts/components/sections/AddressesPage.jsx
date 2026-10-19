@@ -9,17 +9,14 @@ import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useHostSeriesRefresh } from '../../hooks/useHostSeries';
 import { useNetworkingTools } from '../../hooks/useNetworkingTools';
-import { ADDRESS_FILTERS, addressKey, addressRows, matchesAddress } from '../../utils/networking';
 import {
-  MANAGED_ADDRESS_FILTERS,
-  managedAddressKey,
-  matchesManagedAddress,
-  uniqueRows,
-} from '../../utils/networkingManagement';
+  ADDRESS_FILTERS,
+  addressRows,
+  joinedAddressRows,
+  matchesAddress,
+} from '../../utils/networking';
 import IpAddressManagement from '../IpAddressManagement';
-import { MANAGED_ADDRESS_COLUMNS } from '../IpAddressTableManagement';
 import { ADDRESS_COLUMNS } from '../NetworkingColumns';
-import NetworkingTable from '../NetworkingTable';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
 import TaskDialog from '../TaskDialog';
@@ -28,31 +25,27 @@ const INTERFACE_SORT = [{ column: 'interface', direction: 'asc' }];
 
 const NO_ROWS = [];
 
-const FOLD_TITLES = {
-  addresses: ['host.ipAddressTable.expand', 'host.ipAddressTable.collapse'],
-};
+const listOf = (data, member) => (Array.isArray(data?.[member]) ? data[member] : NO_ROWS);
 
-const foldOf = ({ folds, key, t }) => {
-  const folded = folds.folded(key);
-  const [expand, collapse] = FOLD_TITLES[key] || ['', ''];
+const readingOf = reads => {
+  const offered = reads.filter(read => read.offered);
   return {
-    folded,
-    onFold: () => folds.toggle(key),
-    title: expand ? t(folded ? expand : collapse) : '',
+    offered: offered.length > 0,
+    loaded: offered.length > 0 && offered.every(read => read.loaded || read.failed),
+    failed: offered.length > 0 && offered.every(read => read.failed),
   };
 };
 
-const listOf = (data, member) => (Array.isArray(data?.[member]) ? data[member] : NO_ROWS);
-
 /**
  * The IP addresses page of a host: the heading counting the addresses
- * and Refresh in its pane, and under it the IP addresses table, a
- * folding glass section over the one table narrowed by the page's
- * search, and the IP address management behind the tokens its read
- * names, every write through the one `useNetworkingTools` and the task
- * dialog it opens drawn once; the folds kept under
- * `table_prefs_addresses`. Refresh reads every held answer of the host
- * and every drawn series again.
+ * and Refresh in its pane, and under it the one addresses table, a
+ * folding glass section over the rows of the monitoring read,
+ * `ip-addresses`, and of the managed read, `network-addresses`, each
+ * address once, narrowed by the page's search, the management of the
+ * managed rows on it and every write through the one
+ * `useNetworkingTools` and the task dialog it opens drawn once; the
+ * fold kept under `table_prefs_addresses`. Refresh reads every held
+ * answer of the host and every drawn series again.
  */
 const AddressesPage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
@@ -63,11 +56,12 @@ const AddressesPage = ({ id, server, context, section, onRefresh }) => {
   const addresses = useHostReading(id, 'ip-addresses');
   const managed = useHostReading(id, 'network-addresses');
   const tools = useNetworkingTools();
-  const addressList = useMemo(() => addressRows(addresses.data), [addresses.data]);
-  const managedList = useMemo(
-    () => uniqueRows(listOf(managed.data, 'addresses'), managedAddressKey),
-    [managed.data]
+  const managedList = useMemo(() => listOf(managed.data, 'addresses'), [managed.data]);
+  const rows = useMemo(
+    () => joinedAddressRows({ addresses: addressRows(addresses.data), managed: managedList }),
+    [addresses.data, managedList]
   );
+  const reading = readingOf([addresses, managed]);
   const ctx = { ...context, t, language: i18n.language };
   const search = useHostManageSearch({
     section,
@@ -75,28 +69,19 @@ const AddressesPage = ({ id, server, context, section, onRefresh }) => {
       addresses: tableOf({
         key: 'addresses',
         labelKey: 'host.ipAddressTable.title',
-        rows: addressList,
+        rows,
         columns: ADDRESS_COLUMNS,
         matches: matchesAddress,
         filterGroups: ADDRESS_FILTERS,
         defaultSort: INTERFACE_SORT,
-        offered: addresses.offered,
-      }),
-      managedAddresses: tableOf({
-        key: 'managedAddresses',
-        labelKey: 'host.ipAddressManagement.title',
-        rows: managedList,
-        columns: MANAGED_ADDRESS_COLUMNS,
-        matches: matchesManagedAddress,
-        filterGroups: MANAGED_ADDRESS_FILTERS,
-        defaultSort: INTERFACE_SORT,
-        offered: managed.offered,
+        offered: reading.offered,
       }),
     },
     ctx,
     prefsPrefix: context.prefsPrefix,
     placeholderKey: 'hosts.networking.search',
   });
+  const folded = folds.folded('addresses');
 
   const refresh = () => {
     onRefresh();
@@ -108,34 +93,25 @@ const AddressesPage = ({ id, server, context, section, onRefresh }) => {
     <SectionPane
       section={section}
       server={server}
-      count={addresses.offered && addresses.loaded ? addressList.length : null}
+      count={reading.loaded ? rows.length : null}
       actions={<RefreshButton onRefresh={refresh} />}
     >
-      {addresses.offered ? (
-        <NetworkingTable
-          panel="networking-addresses"
-          title={t('host.ipAddressTable.title')}
-          columns={ADDRESS_COLUMNS}
-          table={search.tables.addresses}
-          rowKey={addressKey}
-          ctx={ctx}
-          emptyKey="host.ipAddressTable.noData"
-          reading={addresses}
-          filtering={search.filtering}
-          fold={foldOf({ folds, key: 'addresses', t })}
-        />
-      ) : null}
-      {managed.offered ? (
+      {reading.offered ? (
         <IpAddressManagement
           id={id}
           server={server}
           role={context.user?.role}
-          rows={managedList}
-          reading={managed}
-          table={search.tables.managedAddresses}
+          managedRows={managedList}
+          managedOffered={managed.offered}
+          reading={reading}
+          table={search.tables.addresses}
           ctx={ctx}
           filtering={search.filtering}
-          fold={foldOf({ folds, key: 'manage-addresses', t })}
+          fold={{
+            folded,
+            onFold: () => folds.toggle('addresses'),
+            title: t(folded ? 'host.ipAddressTable.expand' : 'host.ipAddressTable.collapse'),
+          }}
           tools={tools}
         />
       ) : null}

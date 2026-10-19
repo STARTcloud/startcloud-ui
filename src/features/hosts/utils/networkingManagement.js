@@ -42,12 +42,6 @@ const POLICY_TONES = {
   L2L3L4: 'dark',
 };
 const LACP_TONES = { active: 'success', passive: 'info', off: 'secondary' };
-const ADDRESS_STATE_TONES = {
-  ok: 'success',
-  disabled: 'warning',
-  down: 'danger',
-  duplicate: 'danger',
-};
 const ADDRESS_TYPE_TONES = { static: 'info', dhcp: 'primary', addrconf: 'primary' };
 const PROTECTION_TONES = { stp: 'success', rstp: 'info', none: 'secondary' };
 const LINK_STATE_TONES = { up: 'success', down: 'danger' };
@@ -267,25 +261,6 @@ export const addressDeleteParams = ({ rows, row, goAgent }) => {
 export const canEnableAddress = row => lower(row?.state) === 'disabled';
 
 export const canDisableAddress = row => lower(row?.state) === 'ok';
-
-/**
- * The address hyperweaver-ui's management table drew: `addr`, the
- * address and its prefix otherwise, the address alone last.
- *
- * @param {Object} row - The address row
- * @returns {string} The text, empty for a row that carries none
- */
-export const managedAddressOf = row => {
-  if (row?.addr) {
-    return String(row.addr);
-  }
-  if (row?.ip_address && row?.prefix_length) {
-    return `${row.ip_address}/${row.prefix_length}`;
-  }
-  return String(row?.ip_address || '');
-};
-
-export const addressStateTone = state => ADDRESS_STATE_TONES[lower(state)] || 'secondary';
 
 export const addressTypeTone = type => ADDRESS_TYPE_TONES[lower(type)] || 'secondary';
 
@@ -1063,15 +1038,6 @@ export const forwardLineOf = forward =>
 const matcher = membersOf => (row, needle) =>
   membersOf(row).some(text => lower(text).includes(needle));
 
-export const matchesManagedAddress = matcher(row => [
-  row.interface,
-  row.addrobj,
-  row.addr,
-  row.ip_address,
-  row.type,
-  row.state,
-]);
-
 export const matchesVnic = matcher(row => [row.link, row.over, row.macaddress, row.zone]);
 
 export const matchesVlan = matcher(row => [row.link, row.over, row.vid]);
@@ -1099,34 +1065,6 @@ export const matchesSpace = matcher(row => [
 const wordsOf = member => row => (row[member] ? [String(row[member])] : []);
 
 const wordOf = value => value;
-
-/**
- * The filter groups of the managed addresses table, one per enumerable
- * column: the type, the version and the state.
- */
-export const MANAGED_ADDRESS_FILTERS = [
-  {
-    key: 'type',
-    labelKey: 'host.ipAddressTableManagement.type',
-    values: wordsOf('type'),
-    activeClass: 'bg-info',
-    labelFor: wordOf,
-  },
-  {
-    key: 'version',
-    labelKey: 'host.ipAddressTableManagement.version',
-    values: wordsOf('ip_version'),
-    activeClass: 'bg-primary',
-    labelFor: wordOf,
-  },
-  {
-    key: 'state',
-    labelKey: 'host.ipAddressTableManagement.state',
-    values: wordsOf('state'),
-    activeClass: 'bg-secondary',
-    labelFor: wordOf,
-  },
-];
 
 /**
  * The filter groups of the VNICs table, hyperweaver-ui's three filters:
@@ -1219,15 +1157,6 @@ export const SPACE_FILTERS = [
  * @returns {string} The key
  */
 export const namedKey = row => nameOf(row);
-
-/**
- * The key one managed address is told from another by, its address
- * object and its address, hyperweaver-ui's dedupe.
- *
- * @param {Object} row - The address row
- * @returns {string} The key
- */
-export const managedAddressKey = row => `${row.addrobj}|${row.ip_address || row.addr || ''}`;
 
 /**
  * The rows of a managed list each once by their key, hyperweaver-ui's

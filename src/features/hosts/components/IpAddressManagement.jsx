@@ -7,41 +7,43 @@ import ConfirmModal from '../../../components/common/ConfirmModal';
 import { useStatus } from '../../../contexts/StatusContext';
 import { createAddress, deleteAddress, disableAddress, enableAddress } from '../api/networking';
 import { useHostReading } from '../hooks/useHostReadings';
+import { addressKey } from '../utils/networking';
 import {
   addressBody,
   addressDeleteParams,
   addressInterfacesOf,
   isGoAgent,
-  managedAddressKey,
 } from '../utils/networkingManagement';
 import { canControlHosts } from '../utils/permissions';
 
 import IpAddressCreateModal from './IpAddressCreateModal';
-import { IpAddressRowActions, MANAGED_ADDRESS_COLUMNS } from './IpAddressTableManagement';
+import { IpAddressRowActions } from './IpAddressTableManagement';
+import { ADDRESS_COLUMNS } from './NetworkingColumns';
 import NetworkingTable from './NetworkingTable';
 
 const NONE = { kind: '', row: null };
 
 /**
- * The IP addresses section of the networking page's management,
- * hyperweaver-ui's `IpAddressManagement` over the one folding table:
- * the addresses the host answers, each with Enable, Disable and Delete,
- * and Create in the heading. A create sends `POST network/addresses`
- * with `addressBody`; a delete, behind the typed confirmation, sends
- * `DELETE network/addresses/{addrobj}` with `addressDeleteParams`; Enable
- * and Disable send their `PUT`, the Disable of a VirtualBox or UTM host
- * behind a confirmation of its own, hyperweaver-ui's, because that
- * agent takes the whole interface down. Every write goes through the
- * page's one `useNetworkingTools`, which raises the notice, follows the
- * queued task and reads the held addresses again. Create, Enable,
- * Disable and Delete draw for a role that controls hosts alone; every
- * other role reads the table with no actions column.
+ * The one addresses table of the Addresses page, a folding glass section:
+ * every address of the monitoring read and of the managed read once, the
+ * Managed badge on a row the managed read answers, and, while the host
+ * offers the managed read and the person controls hosts, Create in the
+ * heading and Enable, Disable and Delete on each managed row. A create
+ * sends `POST network/addresses` with `addressBody`; a delete, behind the
+ * typed confirmation, sends `DELETE network/addresses/{addrobj}` with
+ * `addressDeleteParams` over the managed rows; Enable and Disable send
+ * their `PUT`, the Disable of a VirtualBox or UTM host behind a
+ * confirmation of its own, hyperweaver-ui's, because that agent takes
+ * the whole interface down. Every write goes through the page's one
+ * `useNetworkingTools`, which raises the notice, follows the queued task
+ * and reads the held addresses again.
  */
 const IpAddressManagement = ({
   id,
   server,
   role,
-  rows,
+  managedRows,
+  managedOffered,
   reading,
   table,
   ctx,
@@ -56,7 +58,7 @@ const IpAddressManagement = ({
   const [creating, setCreating] = useState(false);
   const [confirm, setConfirm] = useState(NONE);
   const goAgent = isGoAgent(server);
-  const writable = canControlHosts(role);
+  const writable = canControlHosts(role) && managedOffered;
   const options = useMemo(
     () =>
       addressInterfacesOf({ vnics: vnics.data?.vnics, interfaces: interfaces.data?.interfaces }),
@@ -80,7 +82,12 @@ const IpAddressManagement = ({
     tools.send({
       id,
       call: () =>
-        deleteAddress(status, id, row.addrobj, addressDeleteParams({ rows, row, goAgent })),
+        deleteAddress(
+          status,
+          id,
+          row.addrobj,
+          addressDeleteParams({ rows: managedRows, row, goAgent })
+        ),
       doneKey: 'hosts.networking.tools.addressDeleted',
       values: { name: row.addrobj },
       failKey: 'host.ipAddressManagement.errors.deleteError',
@@ -143,13 +150,11 @@ const IpAddressManagement = ({
   return (
     <>
       <NetworkingTable
-        panel="networking-managed-addresses"
-        section
-        title={t('host.ipAddressManagement.title')}
-        count={t('host.ipAddressManagement.ipAddresses', { total: rows.length })}
-        columns={MANAGED_ADDRESS_COLUMNS}
+        panel="networking-addresses"
+        title={t('host.ipAddressTable.title')}
+        columns={ADDRESS_COLUMNS}
         table={table}
-        rowKey={managedAddressKey}
+        rowKey={addressKey}
         RowActions={writable ? IpAddressRowActions : null}
         actionsProps={{
           busy: tools.busy,
@@ -158,7 +163,7 @@ const IpAddressManagement = ({
           onDelete: row => setConfirm({ kind: 'delete', row }),
         }}
         ctx={ctx}
-        emptyKey="host.ipAddressTableManagement.noData"
+        emptyKey="host.ipAddressTable.noData"
         reading={reading}
         filtering={filtering}
         fold={fold}
@@ -199,8 +204,12 @@ IpAddressManagement.propTypes = {
   id: PropTypes.string.isRequired,
   server: PropTypes.object.isRequired,
   role: PropTypes.string,
-  rows: PropTypes.array.isRequired,
-  reading: PropTypes.object.isRequired,
+  managedRows: PropTypes.array.isRequired,
+  managedOffered: PropTypes.bool.isRequired,
+  reading: PropTypes.shape({
+    loaded: PropTypes.bool.isRequired,
+    failed: PropTypes.bool.isRequired,
+  }).isRequired,
   table: PropTypes.object.isRequired,
   ctx: PropTypes.object.isRequired,
   filtering: PropTypes.bool.isRequired,

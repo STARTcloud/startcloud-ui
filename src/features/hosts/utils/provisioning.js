@@ -15,6 +15,11 @@ let uiIdSeq = 0;
 
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
+const bareOf = name =>
+  String(name || '')
+    .split('.')
+    .pop();
+
 /**
  * The route of a machine's Provisioning page, `run` naming the pipeline
  * action the page runs on arrival where the row that opens it asks for
@@ -409,10 +414,92 @@ export const roleHintsOf = version => {
   );
 };
 
-const bareOf = name =>
-  String(name || '')
-    .split('.')
-    .pop();
+/**
+ * The argument spec of one role name among a version's `role_specs`,
+ * matched on the bare name, a dotted name of another collection matching
+ * none.
+ *
+ * @param {Object<string, Object>|null} specs - The specs by bare name
+ * @param {string} name - The role name, dotted or bare
+ * @returns {Object|null} The spec
+ */
+export const roleSpecOf = (specs, name) => {
+  if (!specs || !name) {
+    return null;
+  }
+  const bare = bareOf(name);
+  const spec = specs[bare];
+  if (!spec) {
+    return null;
+  }
+  if (name.includes('.') && spec.collection && name !== `${spec.collection}.${bare}`) {
+    return null;
+  }
+  return spec;
+};
+
+const textMatches = (needle, texts) =>
+  needle === '' ||
+  texts.some(text =>
+    String(text || '')
+      .toLowerCase()
+      .includes(needle)
+  );
+
+/**
+ * Whether one entry of the roles catalog matches a lower-cased needle, by
+ * its bare name and its spec's short description; every entry for an
+ * empty needle.
+ *
+ * @param {string} bare - The role's bare name
+ * @param {Object|null} spec - The role's argument spec
+ * @param {string} needle - The lower-cased query
+ * @returns {boolean} True when it matches
+ */
+export const catalogRoleMatches = (bare, spec, needle) =>
+  textMatches(needle, [bare, spec?.short_description]);
+
+/**
+ * Whether one role of the run matches a lower-cased needle, by its name,
+ * the manifest's label and description and the spec's short description;
+ * every role for an empty needle.
+ *
+ * @param {Object} role - The run's role row
+ * @param {{ manifestRole: Object|null, spec: Object|null }} found - The role's manifest entry and spec
+ * @param {string} needle - The lower-cased query
+ * @returns {boolean} True when it matches
+ */
+export const runRoleMatches = (role, { manifestRole, spec }, needle) =>
+  textMatches(needle, [
+    role.name,
+    manifestRole?.label,
+    manifestRole?.description,
+    spec?.short_description,
+  ]);
+
+/**
+ * How many entries of the roles catalog and roles of the run one
+ * lower-cased needle matches, and how many there are.
+ *
+ * @param {Object} options - The catalog, the run and the needle
+ * @param {Object<string, Object>|null} options.specs - The catalog's specs by bare name
+ * @param {Array<Object>} options.roles - The run's role rows
+ * @param {Array<Object>} options.manifest - The manifest's roles
+ * @param {string} options.needle - The lower-cased query
+ * @returns {{ matched: number, total: number }} The counts
+ */
+export const roleSearchCounts = ({ specs, roles, manifest, needle }) => {
+  const catalog = Object.entries(specs || {});
+  const caught = catalog.filter(([bare, spec]) => catalogRoleMatches(bare, spec, needle)).length;
+  const run = roles.filter(role =>
+    runRoleMatches(
+      role,
+      { manifestRole: manifestRoleOf(manifest, role.name), spec: roleSpecOf(specs, role.name) },
+      needle
+    )
+  ).length;
+  return { matched: caught + run, total: catalog.length + roles.length };
+};
 
 /**
  * The dependency warnings one role row of a run draws from the hints of

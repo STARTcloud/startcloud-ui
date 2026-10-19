@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import StepCardList from './ProvisioningStepList';
+import StepCardList, { RunStepButton } from './ProvisioningStepList';
 import { LinesField, OptionalBoolSelect } from './ProvisioningVarRows';
 
 const RUN_MODES = ['always', 'once', 'not_first'];
@@ -253,9 +253,18 @@ PlaybookBody.propTypes = {
  * The Playbooks tab of the provisioning editor: the first playbook
  * group's `local` and `remote` lists, one card per entry, the render
  * order the run order; a drag reorders within a list and the runs
- * selector moves an entry to the end of the other list.
+ * selector moves an entry to the end of the other list; where `onRun` is
+ * given each card with a path draws the play glyph that hands `onRun`
+ * `{ playbook: path }`.
  */
-const ProvisioningPlaybooksTab = ({ playbookLists, pathOptions, onChange, disabled, makeRow }) => {
+const ProvisioningPlaybooksTab = ({
+  playbookLists,
+  pathOptions,
+  onChange,
+  disabled,
+  makeRow,
+  onRun = null,
+}) => {
   const { t } = useTranslation();
   const { local, remote } = playbookLists;
   const pathListId =
@@ -290,6 +299,18 @@ const ProvisioningPlaybooksTab = ({ playbookLists, pathOptions, onChange, disabl
           onPlacementChange={target => moveTo(playbook, target)}
         />
       )}
+      renderActions={
+        onRun
+          ? playbook => (
+              <RunStepButton
+                action="run-playbook"
+                title={t('provisioning.provisioningPlaybooksTab.runPlaybookTitle')}
+                disabled={disabled || !String(playbook.playbook || '').trim()}
+                onRun={() => onRun({ playbook: playbook.playbook })}
+              />
+            )
+          : null
+      }
     />
   );
 
@@ -331,6 +352,7 @@ ProvisioningPlaybooksTab.propTypes = {
   onChange: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
   makeRow: PropTypes.func.isRequired,
+  onRun: PropTypes.func,
 };
 
 export default ProvisioningPlaybooksTab;

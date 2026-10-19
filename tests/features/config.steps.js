@@ -67,6 +67,32 @@ Then('the label {string} carries the badge {string}', async ({ page }, label, ba
   ).toBeVisible();
 });
 
+Then('the label {string} is marked default', async ({ page }, label) => {
+  await expect(
+    page.locator('label', { hasText: label }).locator('[data-mark="default"]')
+  ).toBeVisible();
+});
+
+Then('the label {string} is not marked default', async ({ page }, label) => {
+  await expect(page.locator('label', { hasText: label })).toBeVisible();
+  await expect(
+    page.locator('label', { hasText: label }).locator('[data-mark="default"]')
+  ).toHaveCount(0);
+});
+
+Then('the control {string} has the placeholder {string}', async ({ page }, label, text) => {
+  await expect(page.getByLabel(label)).toHaveAttribute('placeholder', text);
+});
+
+Then('the switch {string} is on', async ({ page }, label) => {
+  await expect(page.getByLabel(label)).toBeChecked();
+});
+
+Then('the select {string} reads {string} on its blank option', async ({ page }, label, text) => {
+  await expect(page.getByLabel(label)).toHaveValue('');
+  await expect(page.getByLabel(label).locator('option[value=""]')).toHaveText(text);
+});
+
 Then('the map keys are {string}', async ({ page }, keys) => {
   await expect
     .poll(() => mapKeys(page).evaluateAll(nodes => nodes.map(node => node.value).join(',')))

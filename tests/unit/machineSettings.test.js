@@ -11,10 +11,14 @@ import {
   buildZoneChanges,
   changedNicEntries,
   cpuChangesOf,
+  credentialsWire,
   editableFields,
   immediateOnlyChanges,
   messageBase,
+  newCredentialRow,
+  patchedCredentialRows,
   pendingCount,
+  seedCredentialRows,
   visibleTabs,
   warningsSuffix,
   zoneBootDevicesOf,
@@ -44,8 +48,12 @@ const knobCurrent = {
     cpu: { hotplug: 'off', execution_cap: 100 },
     serial: [{ port: 1, io_base: '0x3F8', irq: 4, mode: 'disconnected' }],
   },
-  credentials: { vagrant_user: 'vagrant' },
 };
+
+const credentials = [
+  { id: 'sec-deploy', use: 'ssh', default: true, kind: 'ssh_key', name: 'deploy' },
+  { id: 'sec-domino', use: 'rdp', default: false, kind: 'password', name: 'domino-admin' },
+];
 
 describe('asFormString', () => {
   it('answers a list joined, an object by its enabled and nothing as the empty string', () => {
@@ -58,7 +66,7 @@ describe('asFormString', () => {
 });
 
 describe('buildSeed', () => {
-  const seed = buildSeed({ type: 'generic', ram: '4G' }, knobCurrent);
+  const seed = buildSeed({ type: 'generic', ram: '4G' }, knobCurrent, credentials);
 
   it('reads the knobs from knob_current over the configuration, os_type from type', () => {
     expect(seed.values.ram).toBe('8192');
@@ -86,13 +94,54 @@ describe('buildSeed', () => {
       },
     ]);
     expect(seed.nicRows[1].cable_connected).toBe('on');
-    expect(seed.creds.vagrant_user).toBe('vagrant');
+    expect(credentialsWire(seed.credentials)).toEqual([
+      { id: 'sec-deploy', use: 'ssh', default: true },
+      { id: 'sec-domino', use: 'rdp', default: false },
+    ]);
+    expect(seed.credentials[0].name).toBe('deploy');
     expect(buildSeed({}, {}).guestAgent).toBeNull();
+    expect(buildSeed({}, {}).credentials).toEqual([]);
+  });
+});
+
+describe('the credential rows', () => {
+  it('seeds the named rows of a known use, a row without an id dropped', () => {
+    const rows = seedCredentialRows([...credentials, { use: 'ssh' }, { id: 'x', use: 'odd' }]);
+    expect(rows.map(row => [row.id, row.use])).toEqual([
+      ['sec-deploy', 'ssh'],
+      ['sec-domino', 'rdp'],
+      ['x', 'ssh'],
+    ]);
+    expect(new Set(rows.map(row => row.key)).size).toBe(3);
+  });
+
+  it('adds a row that is the default of its use only while no row of the use is', () => {
+    const rows = seedCredentialRows(credentials);
+    expect(newCredentialRow(rows).default).toBe(false);
+    expect(newCredentialRow(rows, 'console').default).toBe(true);
+    expect(newCredentialRow(rows, 'console').id).toBe('');
+  });
+
+  it('keeps one default a use, a row made the default taking it from the others', () => {
+    const rows = [...seedCredentialRows(credentials), newCredentialRow([], 'ssh')];
+    const [, rdp, fresh] = rows;
+    const next = patchedCredentialRows(rows, fresh.key, { id: 'sec-domino', default: true });
+    expect(next.map(row => row.default)).toEqual([false, false, true]);
+    const moved = patchedCredentialRows(next, rdp.key, { use: 'ssh', default: true });
+    expect(moved.map(row => row.default)).toEqual([false, true, false]);
+  });
+
+  it('sends the picked rows alone as id, use and default', () => {
+    const rows = [...seedCredentialRows(credentials), newCredentialRow([], 'vagrant')];
+    expect(credentialsWire(rows)).toEqual([
+      { id: 'sec-deploy', use: 'ssh', default: true },
+      { id: 'sec-domino', use: 'rdp', default: false },
+    ]);
   });
 });
 
 describe('buildScalarChanges', () => {
-  const seed = buildSeed({}, knobCurrent);
+  const seed = buildSeed({}, knobCurrent, credentials);
   const base = {
     values: { ...seed.values },
     initial: seed.values,
@@ -105,8 +154,7 @@ describe('buildScalarChanges', () => {
     bootPriority: seed.bootPriority,
     consolePort: seed.consolePort,
     consoleHost: seed.consoleHost,
-    credsTouched: [],
-    creds: seed.creds,
+    credentials: seed.credentials,
   };
 
   it('sends nothing while nothing differs from the seed', () => {
@@ -132,14 +180,19 @@ describe('buildScalarChanges', () => {
     });
   });
 
-  it('sends every touched credential as typed and only ram and vcpus of a UTM machine', () => {
+  it('sends the whole credentials list while it differs and only ram and vcpus of a UTM machine', () => {
     expect(
       buildScalarChanges({
         ...base,
-        credsTouched: ['vagrant_user_pass'],
-        creds: { ...seed.creds, vagrant_user_pass: '' },
+        credentials: seed.credentials.slice(1),
       })
-    ).toEqual({ vagrant_user_pass: '' });
+    ).toEqual({ credentials: [{ id: 'sec-domino', use: 'rdp', default: false }] });
+    expect(
+      buildScalarChanges({
+        ...base,
+        credentials: [...seed.credentials, newCredentialRow(seed.credentials)],
+      })
+    ).toEqual({});
     expect(
       buildScalarChanges({
         ...base,
@@ -283,7 +336,8 @@ describe('buildUtmSection', () => {
 
 describe('immediateOnlyChanges', () => {
   it('is true for the keys an agent keeps at once and flag-only NIC entries', () => {
-    expect(immediateOnlyChanges({ boot_priority: 50, vagrant_user: 'x' })).toBe(true);
+    expect(immediateOnlyChanges({ boot_priority: 50, credentials: [] })).toBe(true);
+    expect(immediateOnlyChanges({ vagrant_user: 'x' })).toBe(false);
     expect(immediateOnlyChanges({ nics: [{ adapter: 1, remove_on_completion: true }] })).toBe(true);
     expect(immediateOnlyChanges({ nics: [{ adapter: 1, speed: 100 }] })).toBe(false);
     expect(immediateOnlyChanges({ vcpus: '8' })).toBe(false);

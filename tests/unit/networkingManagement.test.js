@@ -4,7 +4,6 @@ import { NETWORKING_READS, READS, readOffered } from '../../src/features/hosts/u
 import {
   AGGREGATE_FILTERS,
   CDP_FMRI,
-  MANAGED_ADDRESS_FILTERS,
   MANAGEMENT_SECTIONS,
   SPACE_FILTERS,
   VLAN_FILTERS,
@@ -48,11 +47,8 @@ import {
   isGoAgent,
   lacpTone,
   linksArrayOf,
-  managedAddressKey,
-  managedAddressOf,
   matchesAggregate,
   matchesBridge,
-  matchesManagedAddress,
   matchesNamed,
   matchesSpace,
   matchesVlan,
@@ -273,24 +269,15 @@ describe('the addresses', () => {
     expect(bareAddressOf({})).toBe('');
   });
 
-  it('draws the managed address, its key, its enable and disable and its rows once', () => {
-    expect(managedAddressOf({ addr: '10.0.0.5/24' })).toBe('10.0.0.5/24');
-    expect(managedAddressOf({ ip_address: '10.0.0.5', prefix_length: 24 })).toBe('10.0.0.5/24');
-    expect(managedAddressOf({ ip_address: '10.0.0.5' })).toBe('10.0.0.5');
-    expect(managedAddressOf({})).toBe('');
-    expect(managedAddressKey({ addrobj: 'a/v4', ip_address: '1.1.1.1' })).toBe('a/v4|1.1.1.1');
-    expect(managedAddressKey({ addrobj: 'a/v4', addr: '1.1.1.2/24' })).toBe('a/v4|1.1.1.2/24');
+  it('offers enable and disable by the state and keeps the rows of a list once by their key', () => {
     expect(canEnableAddress({ state: 'Disabled' })).toBe(true);
     expect(canEnableAddress({ state: 'ok' })).toBe(false);
     expect(canDisableAddress({ state: 'ok' })).toBe(true);
     expect(canDisableAddress({ state: 'down' })).toBe(false);
-    const rows = [
-      { addrobj: 'a/v4', addr: '1.1.1.1/24' },
-      { addrobj: 'a/v4', addr: '1.1.1.1/24' },
-      { addrobj: 'a/v4', addr: '1.1.1.2/24' },
-    ];
-    expect(uniqueRows(rows, managedAddressKey)).toHaveLength(2);
-    expect(uniqueRows(null, managedAddressKey)).toEqual([]);
+    const rows = [{ link: 'vnic0' }, { link: 'vnic0' }, { name: 'vnic1' }];
+    const keyOf = row => row.name || row.link;
+    expect(uniqueRows(rows, keyOf)).toHaveLength(2);
+    expect(uniqueRows(null, keyOf)).toEqual([]);
   });
 
   it('lists the interfaces an address can be created on, VNICs and physical ones once each', () => {
@@ -309,22 +296,6 @@ describe('the addresses', () => {
       { name: 'igb0', type: 'Physical', state: 'up' },
     ]);
     expect(addressInterfacesOf({})).toEqual([]);
-  });
-
-  it('finds a managed address and filters it by type, version and state', () => {
-    const row = {
-      interface: 'igb0',
-      addrobj: 'igb0/v4static',
-      addr: '10.0.0.5/24',
-      type: 'static',
-      state: 'ok',
-    };
-    expect(matchesManagedAddress(row, 'igb0/v4')).toBe(true);
-    expect(matchesManagedAddress(row, 'static')).toBe(true);
-    expect(matchesManagedAddress(row, 'vnic')).toBe(false);
-    expect(MANAGED_ADDRESS_FILTERS.map(group => group.key)).toEqual(['type', 'version', 'state']);
-    expect(MANAGED_ADDRESS_FILTERS[1].values({ ip_version: 'v6' })).toEqual(['v6']);
-    expect(MANAGED_ADDRESS_FILTERS[2].values({})).toEqual([]);
   });
 });
 

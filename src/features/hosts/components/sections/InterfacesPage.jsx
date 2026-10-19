@@ -13,7 +13,6 @@ import { INTERFACE_FILTERS, matchesInterface } from '../../utils/networking';
 import { latestPer } from '../../utils/resources';
 import { networkSeries } from '../../utils/series';
 import { interfaceColumnsFor } from '../NetworkingColumns';
-import NetworkingSummary from '../NetworkingSummary';
 import NetworkingTable from '../NetworkingTable';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
@@ -36,8 +35,8 @@ const foldOf = ({ folds, key, t }) => {
 
 /**
  * The Interfaces page of a host: the heading counting the interfaces
- * and Refresh in its pane, and under it the network summary and the
- * interfaces table, a folding glass section over the one table narrowed
+ * and Refresh in its pane, and under it the interfaces table, a folding
+ * glass section over the one table narrowed
  * by the page's search, its trend column a sparkline an interface over
  * the host's window from the one network series `useHostSeries` holds;
  * the folds kept under `table_prefs_interfaces`.
@@ -97,7 +96,6 @@ const InterfacesPage = ({ id, server, context, section, onRefresh }) => {
         count={interfaces.offered && interfaces.loaded ? interfaceList.length : null}
         actions={<RefreshButton onRefresh={refresh} />}
       >
-        {interfaces.offered ? <NetworkingSummary interfaces={interfaceList} folds={folds} /> : null}
         {interfaces.offered ? (
           <NetworkingTable
             panel="networking-interfaces"

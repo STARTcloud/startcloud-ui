@@ -355,3 +355,10 @@ When('I type {string} into the page field {string}', async ({ page }, text, id) 
 When("I press the page's {string} action", async ({ page }, action) => {
   await page.locator(`[data-action="${action}"]`).click();
 });
+
+When('I click the backdrop of the open dialog', async ({ page }) => {
+  await page
+    .locator('.modal.show')
+    .last()
+    .click({ position: { x: 5, y: 5 } });
+});

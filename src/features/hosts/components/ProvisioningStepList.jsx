@@ -1,18 +1,53 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaChevronDown, FaGripVertical, FaPlus, FaTrash } from 'react-icons/fa6';
+import { FaChevronDown, FaGripVertical, FaPlay, FaPlus, FaTrash } from 'react-icons/fa6';
 
 import { applyPatch } from '../utils/provisioning';
 
 /**
+ * The play glyph of one card of the provisioning editor that runs that
+ * role, script or playbook alone; `action` is its `data-action` and
+ * `title` its tooltip and label.
+ */
+export const RunStepButton = ({ action, title, disabled = false, onRun }) => (
+  <button
+    type="button"
+    className="btn btn-sm btn-outline-success"
+    data-action={action}
+    title={title}
+    aria-label={title}
+    disabled={disabled}
+    onClick={onRun}
+  >
+    <FaPlay aria-hidden="true" />
+  </button>
+);
+
+RunStepButton.propTypes = {
+  action: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  disabled: PropTypes.bool,
+  onRun: PropTypes.func.isRequired,
+};
+
+/**
  * The ordered card list the Folders, Playbooks, Scripts and Hooks tabs
  * share, hyperweaver-ui's step list: numbered cards, a drag to reorder,
- * a chevron that opens the full field set and a trash, the array order
- * the sync and run order on the wire; a fresh row opens straight into
- * its fields.
+ * the actions `renderActions` draws for a row where given, a chevron
+ * that opens the full field set and a trash, the array order the sync
+ * and run order on the wire; a fresh row opens straight into its fields.
  */
-const StepCardList = ({ rows, onChange, disabled, addLabel, makeRow, renderTitle, renderBody }) => {
+const StepCardList = ({
+  rows,
+  onChange,
+  disabled,
+  addLabel,
+  makeRow,
+  renderTitle,
+  renderBody,
+  renderActions = null,
+}) => {
   const { t } = useTranslation();
   const [dragId, setDragId] = useState(null);
   const [expanded, setExpanded] = useState(() => new Set());
@@ -78,6 +113,7 @@ const StepCardList = ({ rows, onChange, disabled, addLabel, makeRow, renderTitle
             <span className="hw-run-num">{index + 1}</span>
             <div className="hw-rc-name">{renderTitle(row)}</div>
             <div className="hw-rc-actions">
+              {renderActions ? renderActions(row) : null}
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary hw-expander"
@@ -131,6 +167,7 @@ StepCardList.propTypes = {
   makeRow: PropTypes.func.isRequired,
   renderTitle: PropTypes.func.isRequired,
   renderBody: PropTypes.func.isRequired,
+  renderActions: PropTypes.func,
 };
 
 export default StepCardList;

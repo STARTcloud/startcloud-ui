@@ -162,7 +162,7 @@ RdpSettingsDropdown.propTypes = {
  * and Stop RDP; the
  * session itself is `RdpSessionHost`, the target the start chose,
  * `console` for the hypervisor's remote display and `guest` for the
- * guest's own.
+ * guest's own, with the credential the start named.
  */
 const RdpConsoleDisplay = ({
   id,
@@ -344,6 +344,7 @@ const RdpConsoleDisplay = ({
           machineName={name}
           settings={rdpSettings}
           target={target}
+          credentialId={machineDetails.rdp_session?.credential_id || ''}
           uiRef={uiRef}
           connectKey={connectKey}
           onPhase={setPhase}

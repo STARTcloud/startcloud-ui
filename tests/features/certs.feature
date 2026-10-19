@@ -179,6 +179,42 @@ Feature: certs
     When I press the certs page's "download-pem" action
     Then the download is named "pasted.pem"
 
+  Scenario: Input: the empty textarea invites the drop, a PEM dropped on it is read and its text shown in it with the file named on the chip, and typing over the text makes the typed text the material
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    And the browser records its downloads
+    When I open "/certs/decode"
+    Then the input zone invites a drop
+    And the input zone names no held file
+    When I drop "leaf.pem" onto the input textarea
+    Then the decoded heading reads "www.fixture.test"
+    And the input textarea shows the text of "leaf.pem"
+    And the input zone names the held file "leaf.pem"
+    And the input zone invites no drop
+    When I paste the fixture "root.pem" into the input zone
+    Then the input zone names no held file
+    When I press the certs page's "read" action
+    Then the decoded heading reads "Fixture Root CA"
+    When I press the certs page's "download-pem" action
+    Then the download is named "pasted.pem"
+
+  Scenario: Input: a PKCS#12 read stays a held file, the textarea read-only on it with the file named on the chip, and Unlock reads the held bytes with the password
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/decode"
+    And I drop "legacy.pfx" into the input zone
+    Then the decoded heading reads "Locked, needs a password"
+    And the input textarea holds a binary file
+    And the input zone names the held file "legacy.pfx"
+    And the input zone invites no drop
+    When I fill the control "certs-input/password" with "secret"
+    And I press the certs page's "read" action
+    Then the decoded heading reads "www.fixture.test"
+    And the input textarea holds a binary file
+    When I press the certs page's "clear" action
+    Then the input zone invites a drop
+    And the input zone names no held file
+
   Scenario: Match: the certificate's key is the one the key file carries
     Given the host answers the certs fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"

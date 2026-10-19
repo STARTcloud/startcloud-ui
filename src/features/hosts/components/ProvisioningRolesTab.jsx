@@ -11,7 +11,14 @@ import {
 } from 'react-icons/fa6';
 
 import { roleGroupsOf } from '../utils/provisionerFieldDsl';
-import { changedRolesOf, dependencyWarnings, manifestRoleOf } from '../utils/provisioning';
+import {
+  catalogRoleMatches,
+  changedRolesOf,
+  dependencyWarnings,
+  manifestRoleOf,
+  roleSpecOf,
+  runRoleMatches,
+} from '../utils/provisioning';
 import {
   bareRoleName,
   downloadKeyOf,
@@ -27,6 +34,7 @@ import {
 import ArtifactPickModal from './ArtifactPickModal';
 import ArtifactPickRow from './ArtifactPickRow';
 import DslConfigForm, { DslFieldInput } from './ProvisionerFieldDsl';
+import { RunStepButton } from './ProvisioningStepList';
 import { VarRowList, ROLE_NAME_PATTERN, applyPatch } from './ProvisioningVarRows';
 
 const NO_COLLECTION = 'no collection';
@@ -41,20 +49,10 @@ const DEPENDENCY_KEYS = {
   off: 'provisioning.provisioningRolesTab.dependencyOff',
 };
 
-const specFor = (specs, name) => {
-  if (!specs || !name) {
-    return null;
-  }
-  const bare = bareRoleName(name);
-  const spec = specs[bare];
-  if (!spec) {
-    return null;
-  }
-  if (name.includes('.') && spec.collection && name !== `${spec.collection}.${bare}`) {
-    return null;
-  }
-  return spec;
-};
+const needleOf = query =>
+  String(query ?? '')
+    .trim()
+    .toLowerCase();
 
 const blankToUndefined = value => (value === '' ? undefined : value);
 
@@ -151,20 +149,15 @@ PackagePicker.propTypes = {
   onPicked: PropTypes.func.isRequired,
 };
 
-const RoleCatalog = ({ specs, disabled, onAdd, onDragNew }) => {
+const RoleCatalog = ({ specs, query: boundQuery = null, disabled, onAdd, onDragNew }) => {
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
+  const [ownQuery, setOwnQuery] = useState('');
   const [collapsed, setCollapsed] = useState(() => new Set());
+  const needle = needleOf(boundQuery ?? ownQuery);
 
   const groups = {};
   Object.entries(specs).forEach(([bare, spec]) => {
-    const matches =
-      query === '' ||
-      bare.includes(query.toLowerCase()) ||
-      String(spec.short_description || '')
-        .toLowerCase()
-        .includes(query.toLowerCase());
-    if (!matches) {
+    if (!catalogRoleMatches(bare, spec, needle)) {
       return;
     }
     const collection = spec.collection || NO_COLLECTION;
@@ -216,21 +209,23 @@ const RoleCatalog = ({ specs, disabled, onAdd, onDragNew }) => {
 
   return (
     <>
-      <div className="hw-cat-search">
-        <input
-          className="form-control form-control-sm"
-          type="search"
-          placeholder={t('provisioning.provisioningRolesTab.searchRolesPlaceholder')}
-          aria-label={t('provisioning.provisioningRolesTab.searchRolesAriaLabel')}
-          value={query}
-          onChange={event => setQuery(event.target.value)}
-        />
-      </div>
+      {boundQuery === null ? (
+        <div className="hw-cat-search">
+          <input
+            className="form-control form-control-sm"
+            type="search"
+            placeholder={t('provisioning.provisioningRolesTab.searchRolesPlaceholder')}
+            aria-label={t('provisioning.provisioningRolesTab.searchRolesAriaLabel')}
+            value={ownQuery}
+            onChange={event => setOwnQuery(event.target.value)}
+          />
+        </div>
+      ) : null}
       <div className="hw-cat-scroll">
         {Object.keys(groups)
           .sort()
           .map(collection => {
-            const open = query !== '' || !collapsed.has(collection);
+            const open = needle !== '' || !collapsed.has(collection);
             return (
               <div key={collection}>
                 <button
@@ -254,6 +249,7 @@ const RoleCatalog = ({ specs, disabled, onAdd, onDragNew }) => {
 
 RoleCatalog.propTypes = {
   specs: PropTypes.object.isRequired,
+  query: PropTypes.string,
   disabled: PropTypes.bool,
   onAdd: PropTypes.func.isRequired,
   onDragNew: PropTypes.func.isRequired,
@@ -744,6 +740,7 @@ const RoleCard = ({
   onOpenPick,
   onPickFile,
   onFetch,
+  onRun,
 }) => {
   const { t } = useTranslation();
   const on = isOn(role);
@@ -780,6 +777,14 @@ const RoleCard = ({
           onPatch={onPatch}
         />
         <div className="hw-rc-actions">
+          {onRun ? (
+            <RunStepButton
+              action="run-role"
+              title={t('provisioning.provisioningRolesTab.runRoleTitle')}
+              disabled={disabled || !on || !String(role.name || '').trim()}
+              onRun={onRun}
+            />
+          ) : null}
           <button
             type="button"
             className="btn btn-sm btn-outline-secondary"
@@ -884,6 +889,7 @@ RoleCard.propTypes = {
   onOpenPick: PropTypes.func.isRequired,
   onPickFile: PropTypes.func.isRequired,
   onFetch: PropTypes.func,
+  onRun: PropTypes.func,
 };
 
 const manifestOrder = (roles, manifest) => {
@@ -982,7 +988,11 @@ FilePickDialog.propTypes = {
  * this role drawn through the field DSL while `fieldConfig` is given,
  * the role's own settings from its argument spec through the field DSL
  * with their defaults, written to `vars` as the card opens, then the
- * free variables and the environment.
+ * free variables and the environment. The catalog draws its own search
+ * box while `query` is null; a `query` string narrows the catalog and
+ * the run by name and description in its place, each card keeping its
+ * place in the run. Where `onRun` is given each card of a role that is
+ * on draws the play glyph that hands `onRun` `{ roles: [name] }`.
  */
 const ProvisioningRolesTab = ({
   roles,
@@ -1007,6 +1017,8 @@ const ProvisioningRolesTab = ({
   inventory,
   onArtifactsReload,
   host,
+  query,
+  onRun,
 }) => {
   const { t } = useTranslation();
   const [drag, setDrag] = useState(null);
@@ -1016,7 +1028,7 @@ const ProvisioningRolesTab = ({
 
   const withDefaults = (rows, uiId) => {
     const seeded = rows.map(row =>
-      row._ui_id === uiId ? withSpecDefaults(row, specFor(specs, row.name)) : row
+      row._ui_id === uiId ? withSpecDefaults(row, roleSpecOf(specs, row.name)) : row
     );
     return seeded.some((row, index) => row !== rows[index]) ? seeded : rows;
   };
@@ -1099,6 +1111,7 @@ const ProvisioningRolesTab = ({
   const changed = changedRolesOf(roles, manifest);
   const changedIds = new Set(changed.map(row => row._ui_id));
   const onCount = roles.filter(isOn).length;
+  const needle = needleOf(query);
   const fields = fieldsOf({
     fieldConfig,
     roles,
@@ -1130,6 +1143,7 @@ const ProvisioningRolesTab = ({
           {hasCatalog ? (
             <RoleCatalog
               specs={specs}
+              query={query}
               disabled={disabled}
               onAdd={name => insertAt(name, roles.length)}
               onDragNew={name => {
@@ -1189,7 +1203,10 @@ const ProvisioningRolesTab = ({
         <div className="d-flex flex-column gap-2" role="list" data-list="roles">
           {roles.map((role, index) => {
             const manifestRole = manifestRoleOf(manifest, role.name);
-            const spec = specFor(specs, role.name);
+            const spec = roleSpecOf(specs, role.name);
+            if (!runRoleMatches(role, { manifestRole, spec }, needle)) {
+              return null;
+            }
             return (
               <RoleCard
                 key={role._ui_id}
@@ -1246,6 +1263,7 @@ const ProvisioningRolesTab = ({
                 onOpenPick={kind => setPicking({ uiId: role._ui_id, kind })}
                 onPickFile={(kind, row) => pickFile(role._ui_id, kind, row)}
                 onFetch={onFetch}
+                onRun={onRun ? () => onRun({ roles: [role.name] }) : null}
               />
             );
           })}
@@ -1306,6 +1324,8 @@ ProvisioningRolesTab.propTypes = {
   inventory: PropTypes.object,
   onArtifactsReload: PropTypes.func,
   host: PropTypes.object,
+  query: PropTypes.string,
+  onRun: PropTypes.func,
 };
 
 export default ProvisioningRolesTab;

@@ -137,19 +137,27 @@ export const startZloginSession = async (status, id, name) => {
  * `POST machines/{name}/ssh/start`, answered the session row, `{ id,
  * machine_name, ssh_host, ssh_port, ssh_username, ip_candidates,
  * ip_index }`; `ipIndex` picks among the guest's candidate addresses,
- * sent as `ip_index` when it is not the first.
+ * sent as `ip_index` when it is not the first, and `credentialId` names
+ * the machine's credential the session signs in with, sent as
+ * `credential_id` where given.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {string} name - The machine name
  * @param {number} [ipIndex] - The candidate address to target, 0-based
+ * @param {string} [credentialId] - The id of the machine's credential
  * @returns {Promise<Object>} The session row
  */
-export const startSshSession = (status, id, name, ipIndex = 0) =>
-  client.post(
+export const startSshSession = (status, id, name, ipIndex = 0, credentialId = '') => {
+  const body = {
+    ...(Number.isInteger(ipIndex) && ipIndex > 0 ? { ip_index: ipIndex } : {}),
+    ...(credentialId ? { credential_id: credentialId } : {}),
+  };
+  return client.post(
     machinePath(status, id, name, '/ssh/start'),
-    Number.isInteger(ipIndex) && ipIndex > 0 ? { ip_index: ipIndex } : undefined
+    Object.keys(body).length > 0 ? body : undefined
   );
+};
 
 /**
  * Stop one SSH session, `DELETE ssh/sessions/{sessionId}/stop`.
@@ -178,16 +186,21 @@ export const fetchRdpInfo = (status, id, name) => client.get(machinePath(status,
 /**
  * Open the agent host's own RDP client at one machine,
  * `POST machines/{name}/open-rdp`, behind `host-launchers`; `target`
- * `console` or `guest`, the agent's default when none is given.
+ * `console` or `guest`, the agent's default when none is given, and
+ * `credential_id` the machine's credential where given.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {string} name - The machine name
  * @param {string} [target] - `console` or `guest`
+ * @param {string} [credentialId] - The id of the machine's credential
  * @returns {Promise<Object>} The agent's answer
  */
-export const openRdp = (status, id, name, target = '') =>
-  client.post(machinePath(status, id, name, '/open-rdp'), target ? { target } : {});
+export const openRdp = (status, id, name, target = '', credentialId = '') =>
+  client.post(machinePath(status, id, name, '/open-rdp'), {
+    ...(target ? { target } : {}),
+    ...(credentialId ? { credential_id: credentialId } : {}),
+  });
 
 /**
  * Open one machine's working directory in the agent host's file manager,
@@ -266,3 +279,14 @@ export const rdpBridgePath = name => `machines/${encodeURIComponent(name)}/rdp-b
  * @returns {string} The query to append
  */
 export const rdpTargetQuery = target => (target === 'guest' ? '&target=guest' : '');
+
+/**
+ * The query the RDP bridge's socket URL carries for the machine's
+ * credential the session signs in with, `&credential_id=` after the
+ * ticket, and nothing for none.
+ *
+ * @param {string} credentialId - The id of the machine's credential
+ * @returns {string} The query to append
+ */
+export const rdpCredentialQuery = credentialId =>
+  credentialId ? `&credential_id=${encodeURIComponent(credentialId)}` : '';

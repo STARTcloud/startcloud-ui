@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
+import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useNotify } from '../../../contexts/NoticeContext';
@@ -269,6 +270,7 @@ const PublishDialog = ({ template, source, subject, body, onClose, onPublished }
   const notify = useNotify();
   const [form, setForm] = useState({ version: '' });
   const [busy, setBusy] = useState(false);
+  const guard = useDiscardGuard(form.version !== '', onClose);
   const rules = useFormRules({
     formKey: 'emailTemplates',
     schema: PUBLISH_SCHEMA,
@@ -303,40 +305,48 @@ const PublishDialog = ({ template, source, subject, body, onClose, onPublished }
   };
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={publish} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">{t('admin.emailTemplates.publishTitle')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
-          <Field
-            id={rules.idFor('version')}
-            label={t('admin.emailTemplates.publishVersion')}
-            error={rules.errors.version || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="text"
-                className="form-control"
-                value={form.version}
-                onChange={event => setForm({ version: event.target.value })}
-                onBlur={() => rules.onBlur('version')}
-              />
-            )}
-          </Field>
-        </Modal.Body>
-        <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            {t('admin.buttons.cancel')}
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {t('admin.emailTemplates.publish')}
-          </button>
-        </Modal.Footer>
-      </form>
-    </Modal>
+    <>
+      <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
+        <form onSubmit={publish} noValidate>
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">{t('admin.emailTemplates.publishTitle')}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormErrorSummary errors={rules.summary} />
+            <Field
+              id={rules.idFor('version')}
+              label={t('admin.emailTemplates.publishVersion')}
+              error={rules.errors.version || ''}
+            >
+              {aria => (
+                <input
+                  {...aria}
+                  type="text"
+                  className="form-control"
+                  value={form.version}
+                  onChange={event => setForm({ version: event.target.value })}
+                  onBlur={() => rules.onBlur('version')}
+                />
+              )}
+            </Field>
+          </Modal.Body>
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={guard.close}
+              disabled={busy}
+            >
+              {t('admin.buttons.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {t('admin.emailTemplates.publish')}
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 
@@ -389,15 +399,17 @@ export const EmailTemplateCopyDialog = ({
   const { t } = useTranslation();
   const notify = useNotify();
   const bodyRef = useRef(null);
-  const [form, setForm] = useState(() => ({
+  const [opened] = useState(() => ({
     site: source?.site || '',
     locale: source?.locale || '',
     version: source?.version || '',
     subject: source?.subject || '',
     body: source?.body || '',
   }));
+  const [form, setForm] = useState(opened);
   const [busy, setBusy] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const guard = useDiscardGuard(JSON.stringify(form) !== JSON.stringify(opened), onClose);
   const schema = editing ? SAVE_SCHEMA : COPY_SCHEMA;
   const rules = useFormRules({
     formKey: 'emailTemplates',
@@ -469,107 +481,115 @@ export const EmailTemplateCopyDialog = ({
   );
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={save} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">{title}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
-          <div className="row">
-            <div className="col-md-4">
-              <SelectField
-                name="site"
-                form={form}
-                rules={rules}
-                onChange={onChange}
-                labels={COPY_LABELS}
-                options={siteOptionsOf(t, sites)}
-                disabled={editing}
-              />
+    <>
+      <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
+        <form onSubmit={save} noValidate>
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">{title}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormErrorSummary errors={rules.summary} />
+            <div className="row">
+              <div className="col-md-4">
+                <SelectField
+                  name="site"
+                  form={form}
+                  rules={rules}
+                  onChange={onChange}
+                  labels={COPY_LABELS}
+                  options={siteOptionsOf(t, sites)}
+                  disabled={editing}
+                />
+              </div>
+              <div className="col-md-4">
+                <SelectField
+                  name="locale"
+                  form={form}
+                  rules={rules}
+                  onChange={onChange}
+                  labels={COPY_LABELS}
+                  options={localeOptionsOf(t)}
+                  disabled={editing}
+                />
+              </div>
+              <div className="col-md-4">{versionField}</div>
             </div>
-            <div className="col-md-4">
-              <SelectField
-                name="locale"
-                form={form}
-                rules={rules}
-                onChange={onChange}
-                labels={COPY_LABELS}
-                options={localeOptionsOf(t)}
-                disabled={editing}
-              />
+            <TextField
+              name="subject"
+              form={form}
+              rules={rules}
+              onChange={onChange}
+              labels={COPY_LABELS}
+            />
+            <ArgumentChips args={args} onInsert={insertArgument} />
+            <div className="row">
+              <div className="col-md-6">
+                <Field
+                  id={rules.idFor('body')}
+                  label={t(COPY_LABELS.body)}
+                  error={rules.errors.body || ''}
+                >
+                  {aria => (
+                    <textarea
+                      {...aria}
+                      ref={bodyRef}
+                      className="form-control font-monospace"
+                      rows="12"
+                      value={form.body}
+                      onChange={event => onChange('body', event.target.value)}
+                      onBlur={() => rules.onBlur('body')}
+                    />
+                  )}
+                </Field>
+              </div>
+              <div className="col-md-6">
+                <div className="form-label">{t('admin.emailTemplates.previewTitle')}</div>
+                <PreviewFrame body={form.body} args={args} />
+              </div>
             </div>
-            <div className="col-md-4">{versionField}</div>
-          </div>
-          <TextField
-            name="subject"
-            form={form}
-            rules={rules}
-            onChange={onChange}
-            labels={COPY_LABELS}
-          />
-          <ArgumentChips args={args} onInsert={insertArgument} />
-          <div className="row">
-            <div className="col-md-6">
-              <Field
-                id={rules.idFor('body')}
-                label={t(COPY_LABELS.body)}
-                error={rules.errors.body || ''}
-              >
-                {aria => (
-                  <textarea
-                    {...aria}
-                    ref={bodyRef}
-                    className="form-control font-monospace"
-                    rows="12"
-                    value={form.body}
-                    onChange={event => onChange('body', event.target.value)}
-                    onBlur={() => rules.onBlur('body')}
-                  />
-                )}
-              </Field>
-            </div>
-            <div className="col-md-6">
-              <div className="form-label">{t('admin.emailTemplates.previewTitle')}</div>
-              <PreviewFrame body={form.body} args={args} />
-            </div>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            {t('admin.buttons.cancel')}
-          </button>
-          {editing ? (
+          </Modal.Body>
+          <Modal.Footer>
             <button
               type="button"
-              className="btn btn-outline-secondary"
+              className="btn btn-secondary"
+              onClick={guard.close}
               disabled={busy}
-              onClick={() => setPublishing(true)}
             >
-              {t('admin.emailTemplates.publish')}
+              {t('admin.buttons.cancel')}
             </button>
-          ) : null}
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {editing
-              ? t('admin.emailTemplates.saveAsRevision', { version: source.version })
-              : t('admin.emailTemplates.save')}
-          </button>
-        </Modal.Footer>
-      </form>
-      {publishing ? (
-        <PublishDialog
-          template={template}
-          source={source}
-          subject={form.subject}
-          body={form.body}
-          onClose={() => setPublishing(false)}
-          onPublished={() => {
-            onSaved();
-            onClose();
-          }}
-        />
-      ) : null}
-    </Modal>
+            {editing ? (
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                disabled={busy}
+                onClick={() => setPublishing(true)}
+              >
+                {t('admin.emailTemplates.publish')}
+              </button>
+            ) : null}
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {editing
+                ? t('admin.emailTemplates.saveAsRevision', { version: source.version })
+                : t('admin.emailTemplates.save')}
+            </button>
+          </Modal.Footer>
+        </form>
+        {publishing ? (
+          <PublishDialog
+            template={template}
+            source={source}
+            subject={form.subject}
+            body={form.body}
+            onClose={() => setPublishing(false)}
+            onPublished={() => {
+              onSaved();
+              onClose();
+            }}
+          />
+        ) : null}
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 

@@ -44,6 +44,9 @@ const DURATION_FORMATS = { ttl: TTL_UNITS, duration: DURATION_UNITS };
 
 const isUnset = value => value === null || value === undefined;
 
+const isEmpty = value =>
+  isUnset(value) || value === '' || (Array.isArray(value) && value.length === 0);
+
 const textOf = value => (isUnset(value) ? '' : String(value));
 
 const castTo = (type, raw) => {
@@ -121,7 +124,7 @@ const BooleanControl = ({ field, value, aria, onChange, onBlur }) => (
       {...aria}
       type="checkbox"
       className="form-check-input"
-      checked={Boolean(value)}
+      checked={Boolean(isUnset(value) ? field.default : value)}
       disabled={field.readOnly}
       onChange={event => onChange(event.target.checked)}
       onBlur={onBlur}
@@ -140,7 +143,7 @@ const SelectControl = ({ field, value, aria, onChange, onBlur }) => (
     onChange={event => onChange(typedValue(field, event.target.value))}
     onBlur={onBlur}
   >
-    {isUnset(value) ? <option value="" /> : null}
+    {isEmpty(value) ? <option value="">{defaultText(field.default)}</option> : null}
     {field.enum.map(option => (
       <option key={String(option)} value={String(option)}>
         {String(option)}
@@ -360,8 +363,7 @@ const controlFor = field => {
   return TextControl;
 };
 
-const showsDefaultHint = field =>
-  !isUnset(field.default) && (field.type === 'boolean' || Array.isArray(field.enum));
+const drawsDefault = (field, value) => isEmpty(value) && !isUnset(field.default);
 
 /**
  * One configuration schema property drawn by its `type` through `Field`:
@@ -377,10 +379,13 @@ const showsDefaultHint = field =>
  * Spring style, written back as `30m`), and a text input otherwise; the
  * label is the property's `title` with a
  * restart badge when it `requiresRestart` and a deprecation note when it is
- * `deprecated`, the hint its `description`; `default` is the placeholder
- * of a text or numeric control and the `configManager.defaultHint` line
- * after the description on a boolean or an `enum`, whose control stays
- * unset until set; a `readOnly` control is drawn disabled, never editable;
+ * `deprecated`, the hint its `description`; while the value is empty or
+ * absent and the property carries a `default`, the label carries the
+ * muted `config.defaultMark` badge and the control draws the default
+ * without taking it as a value: the placeholder of a text, numeric,
+ * password, comma list or duration control, the switch in the default's
+ * state, the blank option of a select reading the default; a value equal
+ * to the default draws as a value; a `readOnly` control is drawn disabled, never editable;
  * a `${NAME:default}` placeholder value draws as its plain text, the
  * password control showing it unmasked with no live value on reveal; a
  * JSON `null` draws as an empty control, a cleared text control answers
@@ -399,20 +404,15 @@ const ConfigField = ({ field, id, value, error = '', onChange, onBlur, action = 
       {field.deprecated && (
         <span className="badge text-bg-secondary ms-2">{t('configManager.deprecated')}</span>
       )}
+      {drawsDefault(field, value) && (
+        <span className="badge bg-body-secondary text-body-secondary ms-2" data-mark="default">
+          {t('config.defaultMark')}
+        </span>
+      )}
     </>
-  );
-  const hint = showsDefaultHint(field) ? (
-    <>
-      {field.description}
-      <span className="d-block">
-        {t('configManager.defaultHint', { value: defaultText(field.default) })}
-      </span>
-    </>
-  ) : (
-    field.description
   );
   return (
-    <Field id={id} label={label} hint={hint} error={error} required={field.required}>
+    <Field id={id} label={label} hint={field.description} error={error} required={field.required}>
       {aria => {
         const control = (
           <Control field={field} value={value} aria={aria} onChange={onChange} onBlur={onBlur} />

@@ -15,14 +15,14 @@ import {
   isSystemUser,
   matchesProcess,
   matchesService,
+  draftChanges,
   movedOrder,
-  orderDiffers,
+  orderMoved,
   orderOf,
   parseMemorySize,
   passwordBody,
   passwordProblem,
   peerIndicator,
-  priorityChanges,
   priorityForIndex,
   roleCreateBody,
   runlevelsOf,
@@ -363,13 +363,31 @@ describe('the orchestration', () => {
     expect(orderOf(null)).toEqual([]);
   });
 
-  it('writes only the machines whose number the order changes', () => {
+  it('draws no change while the draft holds the held order and no typed number', () => {
     const order = ['db-1', 'web-1', 'cache-1'];
-    expect(orderDiffers(order, priorities)).toBe(true);
-    expect(priorityChanges(order, priorities)).toEqual([{ name: 'cache-1', priority: 90 }]);
-    expect(orderDiffers(['db-1', 'web-1'], { machines: priorities.machines.slice(0, 2) })).toBe(
-      false
-    );
+    expect(orderMoved(order, priorities)).toBe(false);
+    expect(draftChanges({ order, priorities, edits: {} })).toEqual([]);
+    expect(draftChanges({ order, priorities, edits: { 'web-1': '95' } })).toEqual([]);
+  });
+
+  it('writes the spaced numbers of a moved order, only the machines whose number changes', () => {
+    const order = ['web-1', 'db-1', 'cache-1'];
+    expect(orderMoved(order, priorities)).toBe(true);
+    expect(draftChanges({ order, priorities, edits: {} })).toEqual([
+      { name: 'web-1', priority: 100 },
+      { name: 'db-1', priority: 95 },
+      { name: 'cache-1', priority: 90 },
+    ]);
+  });
+
+  it('writes a typed number over the spaced one and keeps an invalid one for the check', () => {
+    const order = ['db-1', 'web-1', 'cache-1'];
+    expect(draftChanges({ order, priorities, edits: { 'cache-1': '60' } })).toEqual([
+      { name: 'cache-1', priority: 60 },
+    ]);
+    expect(draftChanges({ order, priorities, edits: { 'db-1': '' } })).toEqual([
+      { name: 'db-1', priority: 0 },
+    ]);
   });
 
   it('moves the dragged row to the hovered position', () => {

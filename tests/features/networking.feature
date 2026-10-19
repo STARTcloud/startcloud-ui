@@ -21,7 +21,7 @@ Feature: networking
     And the host was sent GET to "/api/agents/99/stats"
     And the host was not sent GET to "/api/agents/99/monitoring/network/interfaces"
 
-  Scenario: Addresses: every table behind the tokens of its read, a host that lists the address tokens and no `monitoring` draws the frame and asks for no monitoring read
+  Scenario: Addresses: every read behind the tokens it names, a host that lists the address tokens and no `monitoring` draws the one addresses table from the managed read and asks for no monitoring read
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -29,6 +29,8 @@ Feature: networking
     When I open "/hosts/4/network/addresses"
     Then the networking page draws its frame
     And I see "Bare"
+    And the networking page draws the "addresses" table
+    And the host was sent GET to "/api/agents/4/network/addresses"
     And the networking page draws no monitoring table and no chart
     And the networking page draws no network summary
     And the host was not sent GET to "/api/agents/4/monitoring/network/interfaces"
@@ -36,23 +38,25 @@ Feature: networking
     And the host was not sent GET to "/api/agents/4/monitoring/network/ipaddresses"
     And the host was not sent GET to "/api/agents/4/monitoring/network/routes"
 
-  Scenario: Interfaces: the network summary, hyperweaver-ui's card, the first section of the page with its five counts
+  Scenario: Interfaces: the heading counts the interfaces and the interfaces table is the first section, no summary card over it
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/interfaces"
-    Then the network summary is the first section of the networking page
-    And the network summary counts 3 in all, 2 physical, 1 virtual, 2 up and 1 down
+    Then the heading of the networking page counts 3
+    And the "interfaces" table is the first section of the networking page
+    And the networking page draws no network summary
     And the page draws no key of hyperweaver-ui in place of its text
 
-  Scenario: Interfaces: the network summary on hyperweaver-agent counts the interfaces its row answers
+  Scenario: Interfaces: the heading on hyperweaver-agent counts the interfaces its row answers
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/network/interfaces"
-    Then the network summary counts 2 in all, 2 physical, 0 virtual, 1 up and 1 down
+    Then the heading of the networking page counts 2
+    And the networking page draws no network summary
     And the page draws no key of hyperweaver-ui in place of its text
 
   Scenario: Addresses: the IP addresses on zoneweaver-agent, the newest row of each address object, the address read from `ip_address` and the prefix from `prefix_length`
@@ -269,13 +273,11 @@ Feature: networking
     And the host answers the hosts-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/interfaces"
-    Then the "summary" section of the networking page is open
-    When I fold the "summary" section of the networking page
-    And I fold the "interfaces" section of the networking page
-    Then the "summary" section of the networking page is folded
-    And the "interfaces" section of the networking page is folded
+    Then the "interfaces" section of the networking page is open
+    When I fold the "interfaces" section of the networking page
+    Then the "interfaces" section of the networking page is folded
     When I load the page again
-    Then the "summary" section of the networking page is folded
+    Then the "interfaces" section of the networking page is folded
     When I open "/hosts/3/network/addresses"
     Then the "addresses" table of the networking page lists 4 rows
     When I fold the "addresses" section of the networking page

@@ -6,6 +6,7 @@ import { FaCheck } from 'react-icons/fa6';
 import TabStrip from '../../../components/common/TabStrip';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import {
   fetchArtifacts,
   fetchMissingArtifact,
@@ -29,6 +30,7 @@ import {
   manifestRolesOf,
   playbookListsOf,
   roleHintsOf,
+  roleSearchCounts,
   stripTag,
   tagRow,
   tagRows,
@@ -61,6 +63,10 @@ const NO_VERSION = { specs: null, hints: null, manifest: [], candidates: null, c
 const NO_DOWNLOADS = {};
 
 const NO_VARS = {};
+
+const NO_GROUPS = [];
+
+const clearNothing = () => undefined;
 
 const jsonOf = doc => JSON.stringify(clean(doc), null, 2);
 
@@ -219,7 +225,38 @@ const useDownloads = ({ status, id, onLanded }) => {
   return { queued, fetch };
 };
 
-const EditorTab = ({ tab, doc, busy, registry, edit, downloads, fields }) => {
+const SearchedRolesTab = ({ roles, specs = null, manifest, ...rest }) => {
+  const { t } = useTranslation();
+  const [query, setQuery] = useState('');
+  const { matched, total } = roleSearchCounts({
+    specs,
+    roles,
+    manifest,
+    needle: query.trim().toLowerCase(),
+  });
+
+  useNavbarSearchBinding({
+    query,
+    onQueryChange: setQuery,
+    placeholder: t('provisioning.provisioningRolesTab.searchRolesPlaceholder'),
+    matched,
+    total,
+    groups: NO_GROUPS,
+    onClearFilters: clearNothing,
+  });
+
+  return (
+    <ProvisioningRolesTab roles={roles} specs={specs} manifest={manifest} {...rest} query={query} />
+  );
+};
+
+SearchedRolesTab.propTypes = {
+  roles: PropTypes.array.isRequired,
+  specs: PropTypes.object,
+  manifest: PropTypes.array.isRequired,
+};
+
+const EditorTab = ({ tab, doc, busy, registry, edit, downloads, fields, onRun }) => {
   const { t } = useTranslation();
   const provName = typeof doc.provisioner_name === 'string' ? doc.provisioner_name : undefined;
   const provVersion =
@@ -242,6 +279,7 @@ const EditorTab = ({ tab, doc, busy, registry, edit, downloads, fields }) => {
         disabled={busy}
         onChange={next => edit.provisioning('shell', next)}
         makeRow={() => tagRow({ script: '' })}
+        onRun={onRun}
       />
     );
   }
@@ -253,6 +291,7 @@ const EditorTab = ({ tab, doc, busy, registry, edit, downloads, fields }) => {
         disabled={busy}
         onChange={next => edit.update(withPlaybookLists(doc, next))}
         makeRow={() => tagRow({ playbook: '', run: 'once' })}
+        onRun={onRun}
       />
     );
   }
@@ -270,7 +309,7 @@ const EditorTab = ({ tab, doc, busy, registry, edit, downloads, fields }) => {
   }
   if (tab === 'roles') {
     return (
-      <ProvisioningRolesTab
+      <SearchedRolesTab
         roles={listOf(doc.roles)}
         specs={registry.specs}
         hints={registry.hints}
@@ -295,6 +334,7 @@ const EditorTab = ({ tab, doc, busy, registry, edit, downloads, fields }) => {
         inventory={fields.inventory}
         onArtifactsReload={registry.loadArtifacts}
         host={fields.host}
+        onRun={onRun}
       />
     );
   }
@@ -348,6 +388,7 @@ EditorTab.propTypes = {
     inventory: PropTypes.object.isRequired,
     host: PropTypes.object.isRequired,
   }).isRequired,
+  onRun: PropTypes.func,
 };
 
 const JsonTab = ({ text, busy, onChange, onApply }) => {
@@ -401,9 +442,13 @@ JsonTab.propTypes = {
  * `provisioner`, refusing only unapplied JSON and names that would break
  * the run, and hands the agent's message to `onSaved`; Discard reseeds
  * from the stored document, which the editor takes again whenever the
- * store's content changes.
+ * store's content changes. While the Roles tab draws, the navbar search
+ * narrows its catalog and its run by name and description. Where `onRun`
+ * is given each role, script and playbook card draws the play glyph that
+ * hands `onRun` the narrowing of one run, `{ roles: [name] }`,
+ * `{ scripts: [path] }` or `{ playbook: path }`.
  */
-const ProvisioningEditor = ({ id, name, document = null, onSaved }) => {
+const ProvisioningEditor = ({ id, name, document = null, onSaved, onRun = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const server = useHostRow(id);
@@ -558,6 +603,7 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved }) => {
           edit={edit}
           downloads={downloads}
           fields={fields}
+          onRun={onRun}
         />
       )}
 
@@ -595,6 +641,7 @@ ProvisioningEditor.propTypes = {
   name: PropTypes.string.isRequired,
   document: PropTypes.object,
   onSaved: PropTypes.func.isRequired,
+  onRun: PropTypes.func,
 };
 
 export default ProvisioningEditor;

@@ -28,6 +28,10 @@ describe('seededForm', () => {
     expect(form.cpuTopo).toEqual({ sockets: '', cores: '', threads: '' });
     expect(form.addDisks).toEqual([]);
     expect(seed.values.vcpus).toBe('2');
+    expect(form.credentials).toEqual([]);
+    const held = seededForm({}, knobCurrent, [{ id: 'sec-deploy', use: 'ssh', default: true }]);
+    expect(held.form.credentials).toBe(held.seed.credentials);
+    expect(held.form.credentials[0].id).toBe('sec-deploy');
   });
 });
 
@@ -59,17 +63,28 @@ describe('formTools', () => {
     expect(isMarkedAttachment(held.form, entry)).toBe(false);
   });
 
-  it('writes a hardware value, a credential with its touched mark and a zone NIC edit', () => {
+  it('writes a hardware value and a zone NIC edit', () => {
     const { held, tools } = stateOf();
     tools.setHardwareValue('cpu', 'hotplug', 'on');
-    tools.setCred('vagrant_user', 'x');
-    tools.setCred('vagrant_user', 'y');
     tools.editZoneNic('vnic0', 'vlan_id', '5');
     tools.editZoneNicProp('vnic0', 'mtu', '9000');
     expect(held.form.hardware).toEqual({ cpu: { hotplug: 'on' } });
-    expect(held.form.creds).toEqual({ vagrant_user: 'y' });
-    expect(held.form.credsTouched).toEqual(['vagrant_user']);
     expect(held.form.zoneNicEdits).toEqual({ vnic0: { vlan_id: '5', props: { mtu: '9000' } } });
+  });
+
+  it('adds, patches and removes a credential row, one default a use', () => {
+    const { held, tools } = stateOf();
+    tools.addCredential();
+    tools.addCredential();
+    const [first, second] = held.form.credentials;
+    expect([first.default, second.default]).toEqual([true, false]);
+    tools.patchCredential(second.key, { id: 'sec-deploy', name: 'deploy', default: true });
+    expect(held.form.credentials.map(row => [row.id, row.default])).toEqual([
+      ['', false],
+      ['sec-deploy', true],
+    ]);
+    tools.removeCredential(first.key);
+    expect(held.form.credentials.map(row => row.id)).toEqual(['sec-deploy']);
   });
 });
 

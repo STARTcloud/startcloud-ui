@@ -77,6 +77,7 @@ Feature: consoles
     When I open "/hosts/1/machines/dev-1"
     And I press the console panel's "console-start-ssh" action
     Then the host was sent POST to "/api/agents/1/machines/dev-1/ssh/start" 1 times
+    And the host was sent POST to "/api/agents/1/machines/dev-1/ssh/start" carrying nothing at "/credential_id"
     And the console panel draws the "ssh" display
     And the console panel draws the "ssh" viewer
     And I see "vagrant@dev-1"
@@ -87,6 +88,21 @@ Feature: consoles
     When I press the console panel's "console-stop" action
     Then the host was sent DELETE to "/api/agents/1/ssh/sessions/c1000000-0000-4000-8000-000000000001/stop" 1 times
     And the console panel draws the "inactive" display
+
+  Scenario: Console section: the SSH door of a machine holding two SSH credentials opens Connect as, the default first, and the start carries the credential picked
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/dev-1"
+    Then the console panel draws the "inactive" display
+    When I press the console panel's "console-start-ssh" action
+    Then the console panel's Connect as menu lists "sec-deploy,sec-domino"
+    And the host was not sent POST to "/api/machines/dev-1/ssh/start"
+    When I connect as "sec-domino"
+    Then the host was sent POST to "/api/machines/dev-1/ssh/start" carrying "credential_id" as "sec-domino"
+    And the host was sent POST to "/api/machines/dev-1/ssh/start" 1 times
+    And the console panel draws the "ssh" display
 
   Scenario: Console section: Start VRDP reads the remote display facts and the RDP console draws its header with the connection details and the launchers
     Given the host answers the agent fixture
@@ -364,3 +380,125 @@ Feature: consoles
     Then the console panel draws the "inactive" display
     And the document carries "data-brand" as "shi"
     And the console placeholder mark is "/brand/hyperweaver/mark.svg"
+
+  Scenario: Console doors: the machine heading's SSH door of a machine holding two SSH credentials asks Connect as, the default first, before it starts
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/dev-1"
+    Then the console panel draws the "inactive" display
+    When I press the machine heading's "console-ssh" door
+    Then the Connect as dialog lists "sec-deploy,sec-domino"
+    And the host was not sent POST to "/api/machines/dev-1/ssh/start"
+    And the path is "/hosts/self/machines/dev-1"
+    When I connect as "sec-domino" in the Connect as dialog
+    Then the host was sent POST to "/api/machines/dev-1/ssh/start" carrying "credential_id" as "sec-domino"
+    And the host was sent POST to "/api/machines/dev-1/ssh/start" 1 times
+    And no Connect as dialog is open
+    And the console panel draws the "ssh" display
+
+  Scenario: Console doors: the hardware card's SSH door of a machine holding two SSH credentials asks Connect as before it starts
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/dev-1"
+    And I press the hardware card's "console-ssh" door
+    Then the Connect as dialog lists "sec-deploy,sec-domino"
+    And the host was not sent POST to "/api/machines/dev-1/ssh/start"
+    When I connect as "sec-deploy" in the Connect as dialog
+    Then the host was sent POST to "/api/machines/dev-1/ssh/start" carrying "credential_id" as "sec-deploy"
+    And the console panel draws the "ssh" display
+
+  Scenario: Console doors: the SSH door of a row of the machines list opens the machine's page, which asks Connect as before it starts
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines"
+    And I open the More menu of the row of "dev-1"
+    And I press "console-ssh" on the row of "dev-1"
+    Then the Connect as dialog lists "sec-deploy,sec-domino"
+    And the path is "/hosts/self/machines/dev-1"
+    And the host was not sent POST to "/api/machines/dev-1/ssh/start"
+    When I connect as "sec-domino" in the Connect as dialog
+    Then the host was sent POST to "/api/machines/dev-1/ssh/start" carrying "credential_id" as "sec-domino"
+    And the console panel draws the "ssh" display
+
+  Scenario: Console doors: the SSH row of the tree's menu opens the machine's page, which asks Connect as before it starts, and Cancel starts nothing
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines"
+    And I right-click the tree node "dev-1"
+    And I press the tree menu's "console-ssh" row
+    Then the Connect as dialog lists "sec-deploy,sec-domino"
+    And the path is "/hosts/self/machines/dev-1"
+    When I click "Cancel"
+    Then no Connect as dialog is open
+    And the host was not sent POST to "/api/machines/dev-1/ssh/start"
+    And the console panel draws the "inactive" display
+
+  Scenario: Console doors: the console query carrying a credential starts with that credential and asks nothing
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/dev-1?console=ssh&credential=sec-domino"
+    Then the host was sent POST to "/api/machines/dev-1/ssh/start" carrying "credential_id" as "sec-domino"
+    And the path is "/hosts/self/machines/dev-1"
+    And no Connect as dialog is open
+    And the console panel draws the "ssh" display
+
+  Scenario: Console doors: the SSH row of the Controls menu on this page asks Connect as and carries the pick in the console query
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/dev-1"
+    And I click "Machine controls"
+    And I press the Controls menu's "console-ssh" scope glyph
+    And I press the Controls menu's "console-ssh" row
+    Then the Connect as dialog lists "sec-deploy,sec-domino"
+    And the host was not sent POST to "/api/machines/dev-1/ssh/start"
+    When I connect as "sec-domino" in the Connect as dialog
+    Then the host was sent POST to "/api/machines/dev-1/ssh/start" carrying "credential_id" as "sec-domino"
+    And the host was sent POST to "/api/machines/dev-1/ssh/start" 1 times
+    And the path is "/hosts/self/machines/dev-1"
+    And the console panel draws the "ssh" display
+
+  Scenario: Console placement: the SSH row of the Controls menu in the footer asks Connect as, the footer's shell starts with the pick and its Restart keeps it
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/dev-1"
+    And I click "Machine controls"
+    And I press the Controls menu's "console-ssh" row
+    Then the Connect as dialog lists "sec-deploy,sec-domino"
+    And the host was not sent POST to "/api/machines/dev-1/ssh/start"
+    When I connect as "sec-domino" in the Connect as dialog
+    Then the host was sent POST to "/api/machines/dev-1/ssh/start" carrying "credential_id" as "sec-domino"
+    And the footer pane draws the "ssh" console of "dev-1"
+    And the console panel says the "ssh" console is in the footer
+    When I press the footer's "consoles" toggle
+    And I press the footer drop-up's "restart" row
+    Then the host was sent POST to "/api/machines/dev-1/ssh/start" 2 times, each carrying "credential_id" as "sec-domino"
+
+  Scenario: Console placement: the RDP row of the Controls menu in the footer asks Connect as for a machine holding two RDP credentials and the footer's bridge signs in with the pick
+    Given the host answers the agent fixture
+    And the host answers the agent-machines fixture
+    And the host answers the agent-consoles fixture
+    And the host answers the agent-rdp-credentials fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/self/machines/dev-1"
+    And I click "Machine controls"
+    And I press the Controls menu's "console-rdp" row
+    Then the Connect as dialog lists "sec-domino,sec-desktop"
+    And the host was not sent GET to "/api/machines/dev-1/vnc"
+    When I connect as "sec-desktop" in the Connect as dialog
+    Then the host was sent GET to "/api/machines/dev-1/vnc" 1 times
+    And the footer pane draws the "rdp" console of "dev-1"
+    And the footer pane draws the RDP viewer signing in as "sec-desktop"

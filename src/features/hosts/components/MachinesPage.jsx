@@ -29,7 +29,6 @@ import {
   nounKeyOf,
   provisionerOf,
   rolesOf,
-  sentenceKey,
   statusOf,
   statusTone,
   systemLine,
@@ -67,11 +66,6 @@ const FLAGS = [
 
 const flagsOf = row => FLAGS.filter(flag => row[flag.member]);
 
-const sentenceOf = (row, ctx) => {
-  const key = sentenceKey(statusOf(row));
-  return key ? ctx.t(key, { noun: ctx.noun, status: statusOf(row) }) : '';
-};
-
 const wordOf = value => value;
 
 const badges = (words, tone) => (
@@ -86,11 +80,11 @@ const badges = (words, tone) => (
 
 /**
  * The columns of the machines list: the name linking to the machine's
- * page, the status badge in its tone and the sentence that says it, the
- * server id, the provisioner, the roles, the system line, the hypervisor
- * and the backing as badges, the orphaned and auto-discovered flags and
- * the tags, every column after the sentence drawn only while a row
- * carries its value, because the agents answer different rows.
+ * page, the status badge in its tone, the server id, the provisioner,
+ * the roles, the system line, the hypervisor and the backing as badges,
+ * the orphaned and auto-discovered flags and the tags, every column after
+ * the status drawn only while a row carries its value, because the
+ * agents answer different rows.
  *
  * @param {string} id - The registry id, or `self` on an agent role
  * @returns {Array<Object>} The columns
@@ -117,15 +111,6 @@ const columnsFor = id => [
         {statusOf(row)}
       </span>
     ),
-  },
-  {
-    key: 'sentence',
-    kind: 'text',
-    labelKey: 'hosts.machines.column.sentence',
-    priority: 9,
-    prose: true,
-    value: sentenceOf,
-    render: (row, ctx) => <span className="fst-italic text-muted">{sentenceOf(row, ctx)}</span>,
   },
   {
     key: 'server_id',

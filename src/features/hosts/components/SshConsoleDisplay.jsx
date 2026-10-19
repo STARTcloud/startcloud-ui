@@ -120,7 +120,11 @@ const SshConsoleDisplay = ({
   const handleNextAddress = async () => {
     await consoles.close(consoleKey);
     setMachineDetails(prev => ({ ...prev, ssh_session: null }));
-    await startSshPreview({ ...starters, ipIndex: nextIndex });
+    await startSshPreview({
+      ...starters,
+      ipIndex: nextIndex,
+      credentialId: session?.credential_id || '',
+    });
   };
 
   return (

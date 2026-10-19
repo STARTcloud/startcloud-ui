@@ -466,6 +466,7 @@ const TermsPage = () => {
     <button
       type="button"
       className="btn btn-sm btn-primary"
+      data-action="term-create"
       onClick={() => setDocumentDialog({ open: true, document: null })}
     >
       <FaPlus className="me-1" aria-hidden="true" />

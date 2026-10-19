@@ -26,6 +26,7 @@ import {
   hostHasNetworking,
   interfaceSpec,
   intervalOf,
+  joinedAddressRows,
   matchesAddress,
   matchesInterface,
   matchesRoute,
@@ -109,11 +110,13 @@ describe('addressOf, prefixOf, addressKey and routeKey', () => {
     expect(prefixOf(null)).toBe('');
   });
 
-  it('tells two addresses of one address object apart by their addr', () => {
-    const first = { addrobj: 'en0/v4', addr: '10.0.0.5/24' };
-    const second = { addrobj: 'en0/v4', addr: '10.0.0.6/24' };
-    expect(addressKey(first)).toBe('en0/v4|10.0.0.5/24');
+  it('keys an address by its interface and its address without the prefix, whatever its address object', () => {
+    const first = { interface: 'en0', addrobj: 'en0/v4', addr: '10.0.0.5/24' };
+    const second = { interface: 'en0', addrobj: 'en0/v4', addr: '10.0.0.6/24' };
+    const managed = { interface: 'en0', addrobj: 'en0/v4static', ip_address: '10.0.0.5' };
+    expect(addressKey(first)).toBe('en0|10.0.0.5');
     expect(addressKey(first)).not.toBe(addressKey(second));
+    expect(addressKey(managed)).toBe(addressKey(first));
   });
 
   it('tells one route from another by destination, gateway, interface and version', () => {
@@ -145,6 +148,27 @@ describe('addressRows and routeRows', () => {
       ],
     };
     expect(addressRows(answer).map(row => row.ip_address)).toEqual(['10.0.0.9', '127.0.0.1']);
+  });
+
+  it('joins the two reads into one row an address, a managed row over the read one and marked', () => {
+    const addresses = [
+      { interface: 'igb0', addrobj: 'igb0/v4', ip_address: '10.0.0.31', state: 'tentative' },
+      { interface: 'lo0', addrobj: 'lo0/v4', ip_address: '127.0.0.1', state: 'ok' },
+    ];
+    const managed = [
+      { interface: 'igb0', addrobj: 'igb0/v4static', addr: '10.0.0.31/24', state: 'ok' },
+      { interface: 'vnic1', addrobj: 'vnic1/v4static', addr: '192.168.50.1/24', state: 'disabled' },
+    ];
+    const rows = joinedAddressRows({ addresses, managed });
+    expect(rows.map(row => [addressKey(row), row.addrobj, row.state])).toEqual([
+      ['igb0|10.0.0.31', 'igb0/v4static', 'ok'],
+      ['lo0|127.0.0.1', 'lo0/v4', 'ok'],
+      ['vnic1|192.168.50.1', 'vnic1/v4static', 'disabled'],
+    ]);
+    expect(rows[0].managed).toBe(managed[0]);
+    expect(rows[1].managed).toBeNull();
+    expect(rows[2].managed).toBe(managed[1]);
+    expect(joinedAddressRows({ addresses: [], managed: [] })).toEqual([]);
   });
 
   it('answers no row for an answer without the member', () => {
@@ -261,11 +285,18 @@ describe('packetsOf, intervalOf and carries', () => {
 });
 
 describe('the matches of the four tables', () => {
-  it('finds an address by its interface, its address and its address object', () => {
-    const row = { interface: 'igb0', ip_address: '10.0.0.9', addrobj: 'igb0/v4' };
+  it('finds an address by its interface, its address, its address object, its type and its state', () => {
+    const row = {
+      interface: 'igb0',
+      ip_address: '10.0.0.9',
+      addrobj: 'igb0/v4',
+      type: 'static',
+      state: 'ok',
+    };
     expect(matchesAddress(row, 'igb')).toBe(true);
     expect(matchesAddress(row, '10.0.0')).toBe(true);
     expect(matchesAddress(row, '/v4')).toBe(true);
+    expect(matchesAddress(row, 'static')).toBe(true);
     expect(matchesAddress(row, 'vnic')).toBe(false);
     expect(matchesAddress({ interface: 'en0' }, 'en0')).toBe(true);
   });
@@ -308,9 +339,11 @@ describe('the matches of the four tables', () => {
 });
 
 describe('the filter groups', () => {
-  it('names the version and the state of an address', () => {
-    expect(ADDRESS_FILTERS.map(group => group.key)).toEqual(['version', 'state']);
-    const [version, state] = ADDRESS_FILTERS;
+  it('names the type, the version and the state of an address', () => {
+    expect(ADDRESS_FILTERS.map(group => group.key)).toEqual(['type', 'version', 'state']);
+    const [type, version, state] = ADDRESS_FILTERS;
+    expect(type.values({ type: 'dhcp' })).toEqual(['dhcp']);
+    expect(type.values({})).toEqual([]);
     expect(version.values({ ip_version: 'v4' })).toEqual(['v4']);
     expect(version.values({})).toEqual([]);
     expect(state.values({ state: 'ok' })).toEqual(['ok']);

@@ -26,6 +26,9 @@ export default {
   'POST /api/agents/1/machines/dev-1/display': { status: 200, file: 'display-200.json' },
   'GET /api/servers/1/machines/dev-1/orgs': { status: 200, file: 'machine-orgs-200.json' },
   'PUT /api/servers/1/machines/dev-1/orgs': { status: 200, file: 'machine-orgs-put-200.json' },
+  'GET /api/agents/1/certs?kind=password': { status: 200, file: 'certs-password-200.json' },
+  'GET /api/agents/1/certs?kind=ssh_key': { status: 200, file: 'certs-ssh-key-200.json' },
+  'GET /api/agents/1/certs?kind=key_pair': { status: 200, file: 'certs-key-pair-200.json' },
   'GET /api/organizations': { status: 200, file: 'organizations-200.json' },
   'GET /api/userinfo/claims': { status: 200, file: 'claims-200.json' },
 };

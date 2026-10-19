@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
+import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import { discoverBoxes, getBoxDownloadLink, listOrgBoxes } from '../api/boxvaultAPI';
 
 const orgSlugOf = box =>
@@ -62,7 +63,8 @@ Picker.propTypes = {
  * `settings.box_url`. A session that is not federated, the one without
  * an OIDC token to forward, reads the sentence saying so and asks for
  * nothing; a server without the integration answers 503 and reads its
- * own sentence.
+ * own sentence. While a box is picked or a slug typed, a backdrop click,
+ * Escape, the close button and Cancel ask the discard prompt.
  */
 const BoxVaultPickerModal = ({ user, onClose, onPicked }) => {
   const { t } = useTranslation();
@@ -79,6 +81,7 @@ const BoxVaultPickerModal = ({ user, onClose, onPicked }) => {
   const [versionPick, setVersionPick] = useState('');
   const [providerPick, setProviderPick] = useState('');
   const [archPick, setArchPick] = useState('');
+  const guard = useDiscardGuard(Boolean(selectedKey || orgSlug.trim()), onClose);
 
   const failed = failure => {
     const key = blockedKeyOf(failure.status);
@@ -201,153 +204,161 @@ const BoxVaultPickerModal = ({ user, onClose, onPicked }) => {
   };
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={submit} noValidate data-dialog="boxvault-picker">
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">{t('machineEdit.boxVaultPicker.title')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {blockedKey ? (
-            <div className="alert alert-warning" role="status" data-note="boxvault-blocked">
-              {t(blockedKey)}
-            </div>
-          ) : null}
-          {error ? (
-            <div className="alert alert-danger" role="alert" data-note="problem">
-              {error}
-            </div>
-          ) : null}
-          {blockedKey ? null : (
-            <>
-              <p className="form-text text-muted mt-0">{t('machineEdit.boxVaultPicker.help')}</p>
-              <div className="row g-3">
-                <div className="col-12 col-md-6">
-                  <label className="form-label" htmlFor="boxvault-org-slug">
-                    {t('machineEdit.boxVaultPicker.orgSlug')}
-                  </label>
-                  <div className="input-group">
-                    <input
-                      id="boxvault-org-slug"
-                      className="form-control"
-                      type="text"
-                      list="boxvault-org-slugs"
-                      placeholder={t('machineEdit.boxVaultPicker.orgSlugPlaceholder')}
-                      value={orgSlug}
-                      onChange={event => setOrgSlug(event.target.value)}
-                      disabled={loading}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary"
-                      data-action="load-org"
-                      onClick={loadOrg}
-                      disabled={loading || !orgSlug.trim()}
-                    >
-                      {t('machineEdit.boxVaultPicker.loadOrgBoxes')}
-                    </button>
-                  </div>
-                  <datalist id="boxvault-org-slugs">
-                    {knownSlugs.map(slug => (
-                      <option key={slug} value={slug} />
-                    ))}
-                  </datalist>
-                  <span className="form-text text-muted">
-                    {t('machineEdit.boxVaultPicker.orgSlugHint')}
-                  </span>
-                </div>
+    <>
+      <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
+        <form onSubmit={submit} noValidate data-dialog="boxvault-picker">
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">{t('machineEdit.boxVaultPicker.title')}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {blockedKey ? (
+              <div className="alert alert-warning" role="status" data-note="boxvault-blocked">
+                {t(blockedKey)}
               </div>
-              {loading ? (
-                <div className="text-center py-3">
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"
-                  />
-                  {t('machineEdit.boxVaultPicker.loading')}
-                </div>
-              ) : (
+            ) : null}
+            {error ? (
+              <div className="alert alert-danger" role="alert" data-note="problem">
+                {error}
+              </div>
+            ) : null}
+            {blockedKey ? null : (
+              <>
+                <p className="form-text text-muted mt-0">{t('machineEdit.boxVaultPicker.help')}</p>
                 <div className="row g-3">
                   <div className="col-12 col-md-6">
-                    <label className="form-label" htmlFor="boxvault-box">
-                      {t('machineEdit.boxVaultPicker.box')}
+                    <label className="form-label" htmlFor="boxvault-org-slug">
+                      {t('machineEdit.boxVaultPicker.orgSlug')}
                     </label>
-                    <select
-                      id="boxvault-box"
-                      className="form-select"
-                      value={selectedKey}
-                      onChange={event => pickBox(event.target.value)}
-                    >
-                      <option value="">
-                        {t(
-                          boxes.length > 0
-                            ? 'machineEdit.boxVaultPicker.selectABox'
-                            : 'machineEdit.boxVaultPicker.noBoxes'
-                        )}
-                      </option>
-                      {boxes.map(box => {
-                        const key = `${box.orgSlug}/${box.name}`;
-                        return (
-                          <option key={key} value={key}>
-                            {key}
-                            {box.isPublic === false
-                              ? t('machineEdit.boxVaultPicker.privateSuffix')
-                              : ''}
-                          </option>
-                        );
-                      })}
-                    </select>
+                    <div className="input-group">
+                      <input
+                        id="boxvault-org-slug"
+                        className="form-control"
+                        type="text"
+                        list="boxvault-org-slugs"
+                        placeholder={t('machineEdit.boxVaultPicker.orgSlugPlaceholder')}
+                        value={orgSlug}
+                        onChange={event => setOrgSlug(event.target.value)}
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        data-action="load-org"
+                        onClick={loadOrg}
+                        disabled={loading || !orgSlug.trim()}
+                      >
+                        {t('machineEdit.boxVaultPicker.loadOrgBoxes')}
+                      </button>
+                    </div>
+                    <datalist id="boxvault-org-slugs">
+                      {knownSlugs.map(slug => (
+                        <option key={slug} value={slug} />
+                      ))}
+                    </datalist>
+                    <span className="form-text text-muted">
+                      {t('machineEdit.boxVaultPicker.orgSlugHint')}
+                    </span>
                   </div>
-                  <Picker
-                    id="boxvault-version"
-                    labelKey="machineEdit.boxVaultPicker.version"
-                    value={versionPick}
-                    options={versions.map(versionNumberOf)}
-                    disabled={!selected}
-                    onChange={next => {
-                      setVersionPick(next);
-                      setProviderPick('');
-                      setArchPick('');
-                    }}
-                  />
-                  <Picker
-                    id="boxvault-provider"
-                    labelKey="machineEdit.boxVaultPicker.provider"
-                    value={providerPick}
-                    options={providers.map(provider => provider.name)}
-                    disabled={!selectedVersion}
-                    onChange={next => {
-                      setProviderPick(next);
-                      setArchPick('');
-                    }}
-                  />
-                  <Picker
-                    id="boxvault-arch"
-                    labelKey="machineEdit.boxVaultPicker.architecture"
-                    value={archPick}
-                    options={architectures.map(architecture => architecture.name)}
-                    disabled={!selectedProvider}
-                    onChange={setArchPick}
-                  />
                 </div>
-              )}
-            </>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={minting}>
-            {t('machineEdit.boxVaultPicker.cancel')}
-          </button>
-          <button
-            type="submit"
-            className="btn btn-primary"
-            data-action="submit"
-            disabled={loading || minting || Boolean(blockedKey) || !selected}
-          >
-            {t('machineEdit.boxVaultPicker.useThisBox')}
-          </button>
-        </Modal.Footer>
-      </form>
-    </Modal>
+                {loading ? (
+                  <div className="text-center py-3">
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    />
+                    {t('machineEdit.boxVaultPicker.loading')}
+                  </div>
+                ) : (
+                  <div className="row g-3">
+                    <div className="col-12 col-md-6">
+                      <label className="form-label" htmlFor="boxvault-box">
+                        {t('machineEdit.boxVaultPicker.box')}
+                      </label>
+                      <select
+                        id="boxvault-box"
+                        className="form-select"
+                        value={selectedKey}
+                        onChange={event => pickBox(event.target.value)}
+                      >
+                        <option value="">
+                          {t(
+                            boxes.length > 0
+                              ? 'machineEdit.boxVaultPicker.selectABox'
+                              : 'machineEdit.boxVaultPicker.noBoxes'
+                          )}
+                        </option>
+                        {boxes.map(box => {
+                          const key = `${box.orgSlug}/${box.name}`;
+                          return (
+                            <option key={key} value={key}>
+                              {key}
+                              {box.isPublic === false
+                                ? t('machineEdit.boxVaultPicker.privateSuffix')
+                                : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    <Picker
+                      id="boxvault-version"
+                      labelKey="machineEdit.boxVaultPicker.version"
+                      value={versionPick}
+                      options={versions.map(versionNumberOf)}
+                      disabled={!selected}
+                      onChange={next => {
+                        setVersionPick(next);
+                        setProviderPick('');
+                        setArchPick('');
+                      }}
+                    />
+                    <Picker
+                      id="boxvault-provider"
+                      labelKey="machineEdit.boxVaultPicker.provider"
+                      value={providerPick}
+                      options={providers.map(provider => provider.name)}
+                      disabled={!selectedVersion}
+                      onChange={next => {
+                        setProviderPick(next);
+                        setArchPick('');
+                      }}
+                    />
+                    <Picker
+                      id="boxvault-arch"
+                      labelKey="machineEdit.boxVaultPicker.architecture"
+                      value={archPick}
+                      options={architectures.map(architecture => architecture.name)}
+                      disabled={!selectedProvider}
+                      onChange={setArchPick}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={guard.close}
+              disabled={minting}
+            >
+              {t('machineEdit.boxVaultPicker.cancel')}
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              data-action="submit"
+              disabled={loading || minting || Boolean(blockedKey) || !selected}
+            >
+              {t('machineEdit.boxVaultPicker.useThisBox')}
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 

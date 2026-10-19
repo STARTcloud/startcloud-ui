@@ -5,7 +5,7 @@ import { FaRotate } from 'react-icons/fa6';
 
 import { useStatus } from '../../../contexts/StatusContext';
 import { log } from '../../../lib/logger';
-import { rdpBridgePath, rdpTargetQuery } from '../api/consoleAPI';
+import { rdpBridgePath, rdpCredentialQuery, rdpTargetQuery } from '../api/consoleAPI';
 import { socketUrl, wsTicket } from '../api/terminal';
 
 const DESKTOP = { minWidth: 640, maxWidth: 4096, minHeight: 480, maxHeight: 2160 };
@@ -40,7 +40,8 @@ export const paneDesktopSize = rect => ({
  * once, fetches the client of `rdpClient` into it, the WASM initialized
  * once per page and never loaded with the page, asks a ticket bound to the machine and connects over the agent's
  * RDCleanPath bridge, `machines/{name}/rdp-bridge` at the path the role
- * fixes, `&target=guest` for the guest's own RDP server; the parent owns
+ * fixes, `&target=guest` for the guest's own RDP server and
+ * `&credential_id=` for the machine's credential `credentialId` names; the parent owns
  * the header, the settings, read at connect time, the target and the
  * reconnect, a bump of `connectKey`, and reads the live user interaction
  * through `uiRef` for its own buttons. The overlay draws the connecting,
@@ -51,6 +52,7 @@ const RdpSessionHost = ({
   machineName,
   settings,
   target = 'console',
+  credentialId = '',
   uiRef,
   connectKey,
   onPhase = null,
@@ -95,7 +97,7 @@ const RdpSessionHost = ({
         }
         const proxy = `${socketUrl(status, id, rdpBridgePath(machineName), ticket)}${rdpTargetQuery(
           target
-        )}`;
+        )}${rdpCredentialQuery(credentialId)}`;
         const builder = ui
           .configBuilder()
           .withUsername('')
@@ -190,11 +192,16 @@ const RdpSessionHost = ({
         container.removeChild(element);
       }
     };
-  }, [status, id, machineName, target, connectKey, uiRef, setPhase, t]);
+  }, [status, id, machineName, target, credentialId, connectKey, uiRef, setPhase, t]);
 
   return (
     <>
-      <div ref={containerRef} className="hw-rdp-screen" data-viewer="rdp" />
+      <div
+        ref={containerRef}
+        className="hw-rdp-screen"
+        data-viewer="rdp"
+        data-credential={credentialId || undefined}
+      />
       {phase !== 'connected' ? (
         <div className="hw-rdp-overlay" data-note={`rdp-${phase}`}>
           <div className="text-center p-4">
@@ -248,6 +255,7 @@ RdpSessionHost.propTypes = {
   id: PropTypes.string.isRequired,
   machineName: PropTypes.string.isRequired,
   target: PropTypes.oneOf(['console', 'guest']),
+  credentialId: PropTypes.string,
   settings: PropTypes.shape({
     colorDepth: PropTypes.number,
     lossy: PropTypes.bool,

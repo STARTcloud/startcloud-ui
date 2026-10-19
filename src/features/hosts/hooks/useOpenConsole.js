@@ -47,7 +47,15 @@ const stopQuietly = (source, status, id, sessionId) =>
     log.api.warn('Error stopping terminal session', { error: error.message });
   });
 
-const sourceOf = entry => (entry.kind === 'host_shell' ? HOST_SHELL : sshShell(entry.name));
+const sourceOf = entry =>
+  entry.kind === 'host_shell'
+    ? HOST_SHELL
+    : sshShell(entry.name, 0, entry.session?.credential_id || '');
+
+const withCredential = (session, entry) =>
+  entry.session?.credential_id
+    ? { ...session, credential_id: entry.session.credential_id }
+    : session;
 
 const othersOf = ({ kind, id, name, session }) =>
   isHeldKind(kind)
@@ -64,7 +72,8 @@ const othersOf = ({ kind, id, name, session }) =>
  * The openers and the actions of the console store, the ones that reach
  * an agent or the zone terminal provider: `open` starts a console of one
  * kind and adds it, the host shell through `POST term/start`, SSH, VNC,
- * RDP and zlogin through the one start each console header calls, the
+ * RDP and zlogin through the one start each console header calls, SSH
+ * and RDP with the machine's credential `credentialId` names, the
  * zlogin session through the provider, a host shell or an SSH shell
  * started afresh on every open, each session its own tab numbered after
  * the first of its host or machine, a display or a zlogin terminal
@@ -75,7 +84,8 @@ const othersOf = ({ kind, id, name, session }) =>
  * provider's cleanup, the VNC display and the RDP bridge left as they
  * are; `reconnect` opens a new socket to the same session of a held
  * console and draws a VNC or RDP viewer again; `restart` stops the
- * session of a held console and starts a new one, and stops and starts
+ * session of a held console and starts a new one, an SSH shell with the
+ * credential its session carries, and stops and starts
  * a zlogin session through the provider; `move` places a console in the
  * footer or on the page, a zlogin terminal's history kept across the
  * move through the provider's own preserve and restore. A refusal is
@@ -141,7 +151,7 @@ export const useConsoleActions = () => {
   );
 
   const start = useCallback(
-    async ({ kind, id, name, target }) => {
+    async ({ kind, id, name, target, credentialId }) => {
       if (kind === 'host_shell') {
         return HOST_SHELL.start(status, id);
       }
@@ -156,7 +166,7 @@ export const useConsoleActions = () => {
         setActiveConsoleType: NOOP,
       };
       if (kind === 'ssh') {
-        await startSshPreview(starters);
+        await startSshPreview({ ...starters, credentialId });
         return taken.read().ssh_session || null;
       }
       if (kind === 'zlogin') {
@@ -172,14 +182,22 @@ export const useConsoleActions = () => {
         });
         return taken.read().active_vnc_session ? taken.read().vnc_session_info || {} : null;
       }
-      await startRdpPreview({ ...starters, target: target || 'console' });
+      await startRdpPreview({ ...starters, target: target || 'console', credentialId });
       return taken.read().rdp_session || null;
     },
     [status, setError, startZloginSessionExplicitly]
   );
 
   const open = useCallback(
-    async ({ kind, id, name = '', target = '', server = null, placed = 'footer' }) => {
+    async ({
+      kind,
+      id,
+      name = '',
+      target = '',
+      server = null,
+      placed = 'footer',
+      credentialId = '',
+    }) => {
       if (!isHeldKind(kind)) {
         const key = consoleKeyOf({ kind, id, name, target });
         const existing = consolesHeld().find(entry => entry.key === key);
@@ -194,7 +212,7 @@ export const useConsoleActions = () => {
       }
       let session = null;
       try {
-        session = await start({ kind, id, name, target });
+        session = await start({ kind, id, name, target, credentialId });
       } catch (error) {
         setError(error.message);
         return null;
@@ -253,7 +271,7 @@ export const useConsoleActions = () => {
           await stopQuietly(sourceOf(entry), status, entry.id, old.id);
         }
         try {
-          const session = await sourceOf(entry).start(status, entry.id);
+          const session = withCredential(await sourceOf(entry).start(status, entry.id), entry);
           setConsoleSession(key, session);
           module.rejoinHeld(key, session);
         } catch (error) {

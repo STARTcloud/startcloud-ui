@@ -1,9 +1,8 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaCheck, FaHourglassHalf } from 'react-icons/fa6';
+import { FaCheck, FaHourglassHalf, FaPlus, FaTrash } from 'react-icons/fa6';
 
-import RevealInput from '../../../components/common/RevealInput';
 import TabStrip from '../../../components/common/TabStrip';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { fetchMachineDefaults, fetchOsTypes } from '../api/machines';
@@ -15,7 +14,7 @@ import { hostHasFeature, hostHasHypervisor } from '../utils/capabilities';
 import { flattenBridgedInterfaces, isoFilenames, zfsPoolOptions } from '../utils/machineHelpers';
 import { hardwareOf } from '../utils/machines';
 import {
-  CRED_FIELDS,
+  CREDENTIAL_USES,
   editableFields,
   filesystemsOf,
   knobValuesOf,
@@ -37,8 +36,8 @@ import {
 import MachineOrgAccess from './MachineOrgAccess';
 import MachineSettingsStatus from './MachineSettingsStatus';
 import NetworkAdaptersEditor from './NetworkAdaptersEditor';
-import { PathInput } from './PathPicker';
 import ResourceControlsEditor from './ResourceControlsEditor';
+import SecretPickModal, { SecretPickRow } from './SecretPickModal';
 import StorageDevicesEditor from './StorageDevicesEditor';
 import TaskDialog from './TaskDialog';
 import UsbPanel from './UsbPanel';
@@ -181,84 +180,152 @@ CpuTopologySection.propTypes = {
   disabled: PropTypes.bool,
 };
 
-const CredentialField = ({ field, value, onChange, host, disabled }) => {
+const CredentialRow = ({ row, disabled, onPatch, onPick, onRemove }) => {
   const { t } = useTranslation();
-  const inputId = `machine-cred-${field.key}`;
-  const placeholder = t('machineEdit.machineSettings.unchangedPlaceholder');
-  let control;
-  if (field.isPath) {
-    control = (
-      <PathInput
-        id={inputId}
-        value={value}
-        onChange={onChange}
-        status={host.status}
-        hostId={host.hostId}
-        server={host.server}
-        mode="file"
-        pickTitle={t('machineEdit.machineSettings.pickPrivateKeyFile')}
-        placeholder={placeholder}
-        disabled={disabled}
-      />
-    );
-  } else if (field.isSecret) {
-    control = (
-      <RevealInput
-        id={inputId}
-        placeholder={placeholder}
-        value={value}
-        onChange={event => onChange(event.target.value)}
-        disabled={disabled}
-      />
-    );
-  } else {
-    control = (
-      <input
-        id={inputId}
-        className="form-control"
-        type="text"
-        placeholder={placeholder}
-        value={value}
-        onChange={event => onChange(event.target.value)}
-        disabled={disabled}
-      />
-    );
-  }
+  const useId = `machine-cred-use-${row.key}`;
+  const defaultId = `machine-cred-default-${row.key}`;
   return (
-    <div className="col-12 col-md-4" data-field={field.key}>
-      <label className="form-label" htmlFor={inputId}>
-        {t(`machineEdit.machineSettings.credField.${field.key}`)}
-      </label>
-      {control}
+    <div
+      className="row g-2 align-items-center"
+      data-credential-row={row.key}
+      data-credential={row.id}
+      data-credential-use={row.use}
+    >
+      <div className="col-12 col-md-3">
+        <label className="form-label small mb-1" htmlFor={useId}>
+          {t('machineEdit.machineSettings.credentialUse')}
+        </label>
+        <select
+          id={useId}
+          className="form-select form-select-sm"
+          value={row.use}
+          disabled={disabled}
+          onChange={event => onPatch({ use: event.target.value })}
+        >
+          {CREDENTIAL_USES.map(use => (
+            <option key={use} value={use}>
+              {t(`machineEdit.machineSettings.credentialUseOption.${use}`)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="col-12 col-md-5 d-flex align-items-center gap-2">
+        <SecretPickRow
+          label={t('machineEdit.machineSettings.credentialSecret')}
+          picked={row.id ? { id: row.id, name: row.name } : null}
+          disabled={disabled}
+          onOpen={onPick}
+          onClear={() => onPatch({ id: '', kind: '', name: '' })}
+          attributes={{ 'data-credential-pick': row.key }}
+        />
+        {row.kind ? (
+          <code className="small" data-credential-kind={row.kind}>
+            {row.kind}
+          </code>
+        ) : null}
+      </div>
+      <div className="col-6 col-md-2">
+        <div className="form-check form-switch mb-0">
+          <input
+            id={defaultId}
+            className="form-check-input"
+            type="checkbox"
+            role="switch"
+            data-action="credential-default"
+            checked={row.default}
+            disabled={disabled}
+            onChange={event => onPatch({ default: event.target.checked })}
+          />
+          <label className="form-check-label" htmlFor={defaultId}>
+            {t('machineEdit.machineSettings.credentialDefault')}
+          </label>
+        </div>
+      </div>
+      <div className="col-6 col-md-2 text-end">
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-danger"
+          data-action="credential-remove"
+          title={t('machineEdit.machineSettings.credentialRemove')}
+          aria-label={t('machineEdit.machineSettings.credentialRemove')}
+          disabled={disabled}
+          onClick={onRemove}
+        >
+          <FaTrash aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 };
 
-CredentialField.propTypes = {
-  field: PropTypes.object.isRequired,
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  host: PropTypes.object.isRequired,
+CredentialRow.propTypes = {
+  row: PropTypes.shape({
+    key: PropTypes.string.isRequired,
+    id: PropTypes.string.isRequired,
+    use: PropTypes.string.isRequired,
+    default: PropTypes.bool.isRequired,
+    kind: PropTypes.string,
+    name: PropTypes.string,
+  }).isRequired,
   disabled: PropTypes.bool,
+  onPatch: PropTypes.func.isRequired,
+  onPick: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
 };
 
 const CredentialsTab = ({ page }) => {
   const { t } = useTranslation();
+  const [picking, setPicking] = useState('');
+  const { form, tools, formDisabled } = page;
   return (
-    <div className="row g-3" data-tab-body="credentials">
-      <p className="form-text text-muted mt-0 mb-0">
+    <div data-tab-body="credentials">
+      <p className="form-text text-muted mt-0">
         {t('machineEdit.machineSettings.credentialsHint')}
       </p>
-      {CRED_FIELDS.map(field => (
-        <CredentialField
-          key={field.key}
-          field={field}
-          value={page.form.creds[field.key] ?? ''}
-          onChange={value => page.tools.setCred(field.key, value)}
+      <div className="d-flex flex-column gap-2 mb-2" data-list="credentials">
+        {form.credentials.map(row => (
+          <CredentialRow
+            key={row.key}
+            row={row}
+            disabled={formDisabled}
+            onPatch={patch => tools.patchCredential(row.key, patch)}
+            onPick={() => setPicking(row.key)}
+            onRemove={() => tools.removeCredential(row.key)}
+          />
+        ))}
+      </div>
+      {form.credentials.length === 0 ? (
+        <p className="text-muted small" data-note="no-credentials">
+          {t('machineEdit.machineSettings.noCredentials')}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        data-action="credential-add"
+        disabled={formDisabled}
+        onClick={tools.addCredential}
+      >
+        <FaPlus className="me-1" aria-hidden="true" />
+        {t('machineEdit.machineSettings.addCredential')}
+      </button>
+      {picking ? (
+        <SecretPickModal
+          kind="credential"
           host={page.host}
-          disabled={page.formDisabled}
+          title={t('machineEdit.machineSettings.pickCredentialTitle')}
+          disabled={formDisabled}
+          onPick={secret => {
+            tools.patchCredential(picking, {
+              id: String(secret.id),
+              kind: secret.kind || '',
+              name: secret.name || '',
+            });
+            setPicking('');
+          }}
+          onClose={() => setPicking('')}
         />
-      ))}
+      ) : null}
     </div>
   );
 };
@@ -605,7 +672,11 @@ const useSettingsFeeds = ({ status, hostId, server }) => {
 /**
  * The Settings page of one machine, hyperweaver-ui's Settings tab: the
  * tabs over every editor, each seeded from `knob_current` over the
- * configuration, and Apply sending the changed members alone as one
+ * configuration, the Credentials tab a list of the machine's credentials
+ * from `credentials`, each row its use, the host store's password, SSH
+ * key or key pair row picked through the secret pick dialog, its
+ * Default switch, one default a use, and Remove, with Add credential,
+ * sent whole as `credentials` while the list changed, and Apply sending the changed members alone as one
  * `PUT machines/{name}`, the modify wire of both agents, through
  * `useSettingsApply`. The form seeds itself again from the detail the
  * held copies answer after a write, and Reset seeds it again by hand.
@@ -618,6 +689,7 @@ const MachineSettings = ({
   hypervisor = '',
   configuration = null,
   knobCurrent = null,
+  credentials = null,
   pendingChanges = null,
   rawDetails = null,
   running,
@@ -629,7 +701,8 @@ const MachineSettings = ({
   const [seeded, setSeeded] = useState(() => ({
     configuration,
     knobCurrent,
-    ...seededForm(configuration, knobCurrent),
+    credentials,
+    ...seededForm(configuration, knobCurrent, credentials),
   }));
   const [form, setForm] = useState(seeded.form);
   const [resourceChanges, setResourceChanges] = useState(null);
@@ -639,14 +712,23 @@ const MachineSettings = ({
   const feeds = useSettingsFeeds({ status, hostId, server });
 
   const resetForm = () => {
-    const next = { configuration, knobCurrent, ...seededForm(configuration, knobCurrent) };
+    const next = {
+      configuration,
+      knobCurrent,
+      credentials,
+      ...seededForm(configuration, knobCurrent, credentials),
+    };
     setSeeded(next);
     setForm(next.form);
     setResourceChanges(null);
     setResourceNonce(nonce => nonce + 1);
   };
 
-  if (seeded.configuration !== configuration || seeded.knobCurrent !== knobCurrent) {
+  if (
+    seeded.configuration !== configuration ||
+    seeded.knobCurrent !== knobCurrent ||
+    seeded.credentials !== credentials
+  ) {
     resetForm();
   }
 
@@ -793,6 +875,7 @@ MachineSettings.propTypes = {
   hypervisor: PropTypes.string,
   configuration: PropTypes.object,
   knobCurrent: PropTypes.object,
+  credentials: PropTypes.arrayOf(PropTypes.object),
   pendingChanges: PropTypes.object,
   rawDetails: PropTypes.object,
   running: PropTypes.bool.isRequired,

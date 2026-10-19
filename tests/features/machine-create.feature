@@ -46,6 +46,30 @@ Feature: machine create
     When I press the tree menu's "new-machine" row
     Then the "machine-create" dialog is open
 
+  Scenario: Create wizard: a typed name makes a backdrop click, Escape and Cancel ask before the wizard closes, Keep editing keeps the name and Discard closes it
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine"
+    Then the "machine-create" dialog is open
+    When I type "web-3.example.com" into the field "machine-create-name-input"
+    And I click the backdrop of the open dialog
+    Then the "discard-changes" dialog is open
+    When I press the open dialog's "keep-editing" action
+    Then the "discard-changes" dialog is closed
+    And the "machine-create" dialog is open
+    And the field "machine-create-name-input" reads "web-3.example.com"
+    When I press "Escape"
+    Then the "discard-changes" dialog is open
+    When I press the open dialog's "keep-editing" action
+    Then the "discard-changes" dialog is closed
+    When I press the open dialog's "cancel" action
+    Then the "discard-changes" dialog is open
+    When I press the open dialog's "discard" action
+    Then no dialog is open
+    And the path is "/hosts/1"
+
   Scenario: Create wizard: the doors behind `machine-create`, a host whose row lists no machine-create and a person who may not create draw no door
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
@@ -730,6 +754,7 @@ Feature: machine create
     And I send the open dialog
     Then the wizard is on the step "provisioning"
     And the roles list reads "setup,networking,ssl,domino_install,domino_leap,domino_iq,quick_start,haproxy,lockdown"
+    And the roles editor offers no "run-role"
     And the role "setup" is on
     And the role "ssl" is on
     And the role "domino_install" is on

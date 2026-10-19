@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PIPELINE_ACTIONS,
   applyPatch,
+  catalogRoleMatches,
   changedRolesOf,
   clean,
   dependencyWarnings,
@@ -19,7 +20,10 @@ import {
   provisioningRoute,
   requestedActionOf,
   roleHintsOf,
+  roleSearchCounts,
+  roleSpecOf,
   rowProvisions,
+  runRoleMatches,
   seedRoles,
   stripTag,
   structureOf,
@@ -266,6 +270,55 @@ describe('the roles of a version', () => {
     ]);
     expect(dependencyWarnings(rows, null, 2)).toEqual([]);
     expect(dependencyWarnings(rows, hints, 7)).toEqual([]);
+  });
+});
+
+describe('the roles search', () => {
+  const specs = {
+    domino: { collection: 'startcloud.hcl_roles', short_description: 'Installs HCL Domino' },
+    traveler: {
+      collection: 'startcloud.hcl_roles',
+      short_description: 'Installs HCL Traveler on a Domino server',
+    },
+    networking: { collection: 'startcloud.startcloud_roles', short_description: 'Guest network' },
+  };
+  const manifest = [{ name: 'domino', label: 'Domino Server', description: 'The mail server' }];
+
+  it('reads the spec of a bare or matching dotted name and none of another collection', () => {
+    expect(roleSpecOf(specs, 'domino')).toBe(specs.domino);
+    expect(roleSpecOf(specs, 'startcloud.hcl_roles.domino')).toBe(specs.domino);
+    expect(roleSpecOf(specs, 'other.coll.domino')).toBeNull();
+    expect(roleSpecOf(null, 'domino')).toBeNull();
+    expect(roleSpecOf(specs, 'leap')).toBeNull();
+  });
+
+  it('matches a catalog entry by its name and its description and every entry for no needle', () => {
+    expect(catalogRoleMatches('traveler', specs.traveler, 'domino server')).toBe(true);
+    expect(catalogRoleMatches('domino', specs.domino, 'domino server')).toBe(false);
+    expect(catalogRoleMatches('networking', specs.networking, 'netw')).toBe(true);
+    expect(catalogRoleMatches('networking', specs.networking, '')).toBe(true);
+  });
+
+  it('matches a role of the run by its name, its label and the descriptions', () => {
+    const role = { name: 'startcloud.hcl_roles.domino' };
+    const found = { manifestRole: manifest[0], spec: specs.domino };
+    expect(runRoleMatches(role, found, 'domino server')).toBe(true);
+    expect(runRoleMatches(role, found, 'mail')).toBe(true);
+    expect(runRoleMatches(role, found, 'hcl_roles')).toBe(true);
+    expect(runRoleMatches(role, found, 'leap')).toBe(false);
+    expect(runRoleMatches({ name: 'x' }, { manifestRole: null, spec: null }, '')).toBe(true);
+  });
+
+  it('counts the catalog and the run a needle matches', () => {
+    const roles = [{ name: 'startcloud.hcl_roles.domino' }, { name: 'custom.role' }];
+    expect(roleSearchCounts({ specs, roles, manifest, needle: 'domino' })).toEqual({
+      matched: 3,
+      total: 5,
+    });
+    expect(roleSearchCounts({ specs: null, roles, manifest: [], needle: '' })).toEqual({
+      matched: 2,
+      total: 2,
+    });
   });
 });
 

@@ -22,7 +22,6 @@ import {
   provisionerOf,
   rolesOf,
   rowActionsOf,
-  sentenceKey,
   statusOf,
   statusTone,
   systemLine,
@@ -229,20 +228,6 @@ describe('statusTone', () => {
     expect(statusTone('unknown')).toBe('secondary');
     expect(statusTone('')).toBe('secondary');
     expect(statusTone(undefined)).toBe('secondary');
-  });
-});
-
-describe('sentenceKey', () => {
-  it('names the sentence of a status that has one', () => {
-    expect(sentenceKey('running')).toBe('machine.machineListPanel.runningSentence');
-    expect(sentenceKey('starting')).toBe('machine.machineListPanel.transitioningSentence');
-    expect(sentenceKey('stopping')).toBe('machine.machineListPanel.transitioningSentence');
-    expect(sentenceKey('Configured')).toBe('machine.machineListPanel.configuredSentence');
-  });
-
-  it('answers empty for a status without a sentence', () => {
-    expect(sentenceKey('installed')).toBe('');
-    expect(sentenceKey('')).toBe('');
   });
 });
 

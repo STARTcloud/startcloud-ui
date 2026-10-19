@@ -77,15 +77,20 @@ export const hostHasConsoles = server => consoleDoorsOf(server).length > 0;
 
 /**
  * The route that opens one console of a machine, the machine's page with
- * the console named in its `console` query, the query the console panel
- * reads once and drops.
+ * the console named in its `console` query and the machine's credential
+ * a door picked before the route moves in its `credential` query, the
+ * queries the console panel reads once and drops.
  *
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {string} name - The machine name
  * @param {string} kind - The console's key, `vnc`, `zlogin`, `ssh` or `rdp`
+ * @param {string} [credentialId] - The id of the machine's credential picked
  * @returns {string} The route
  */
-export const consoleRoute = (id, name, kind) => `${machineRoute(id, name)}?console=${kind}`;
+export const consoleRoute = (id, name, kind, credentialId = '') =>
+  `${machineRoute(id, name)}?console=${kind}${
+    credentialId ? `&credential=${encodeURIComponent(credentialId)}` : ''
+  }`;
 
 /**
  * The route of the full-window console page of a machine, the VNC
@@ -113,6 +118,15 @@ export const consoleParamOf = params => {
   const kind = params.get('console') || '';
   return CONSOLE_KINDS.includes(kind) ? kind : '';
 };
+
+/**
+ * The machine's credential a machine route's query names for the console
+ * it opens, the empty string for a query that names none.
+ *
+ * @param {URLSearchParams} params - The route's search params
+ * @returns {string} The credential's id, or the empty string
+ */
+export const consoleCredentialParamOf = params => params.get('credential') || '';
 
 /**
  * Whether the person's role, the hyperweaver-server member's own, may
@@ -148,6 +162,48 @@ export const guestIpsOf = detail => {
   const ips = detail?.configuration?.guest_info?.ips;
   return Array.isArray(ips) ? ips.map(String) : [];
 };
+
+/**
+ * The credentials of one use the detail names, `credentials`, each
+ * `{ id, use, default, kind, name }`, the default first and the rest in
+ * the detail's order.
+ *
+ * @param {Object|null} detail - The answer of `GET machines/{name}`
+ * @param {string} use - `ssh`, `rdp`, `console` or `vagrant`
+ * @returns {Array<Object>} The credentials
+ */
+export const credentialsFor = (detail, use) => {
+  const rows = (Array.isArray(detail?.credentials) ? detail.credentials : []).filter(
+    row => row && row.id && row.use === use
+  );
+  return [...rows.filter(row => row.default === true), ...rows.filter(row => row.default !== true)];
+};
+
+/**
+ * The credential a launch that draws no menu starts with, the native RDP
+ * client's right-click: the first of `credentialsFor` where the machine
+ * holds more than one of the use, none where it holds one or none, the
+ * agent choosing then.
+ *
+ * @param {Object|null} detail - The answer of `GET machines/{name}`
+ * @param {string} use - `ssh` or `rdp`
+ * @returns {string} The credential's id, or the empty string
+ */
+export const doorCredentialOf = (detail, use) => {
+  const rows = credentialsFor(detail, use);
+  return rows.length > 1 ? String(rows[0].id) : '';
+};
+
+/**
+ * Whether a console door asks Connect as before it starts: SSH or RDP
+ * while the detail names more than one credential of that use.
+ *
+ * @param {Object|null} detail - The answer of `GET machines/{name}`
+ * @param {string} kind - The console's key
+ * @returns {boolean} True while the person picks the credential first
+ */
+export const asksConnectAs = (detail, kind) =>
+  (kind === 'ssh' || kind === 'rdp') && credentialsFor(detail, kind).length > 1;
 
 /**
  * The addresses of an SSH session, hyperweaver-ui's next-address rule:

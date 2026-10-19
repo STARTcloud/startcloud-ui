@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import StepCardList from './ProvisioningStepList';
+import StepCardList, { RunStepButton } from './ProvisioningStepList';
 
 const ScriptTitle = ({ row }) => {
   const { t } = useTranslation();
@@ -50,9 +50,10 @@ ScriptBody.propTypes = {
 /**
  * The Scripts tab of the provisioning editor: `provisioning.shell`, its
  * enabled switch and one card per script path in run order, each path a
- * bare string on the wire.
+ * bare string on the wire; where `onRun` is given each card with a path
+ * draws the play glyph that hands `onRun` `{ scripts: [path] }`.
  */
-const ProvisioningScriptsTab = ({ shell, onChange, makeRow, disabled }) => {
+const ProvisioningScriptsTab = ({ shell, onChange, makeRow, disabled, onRun = null }) => {
   const { t } = useTranslation();
   const scripts = Array.isArray(shell?.scripts) ? shell.scripts : [];
   return (
@@ -85,6 +86,18 @@ const ProvisioningScriptsTab = ({ shell, onChange, makeRow, disabled }) => {
         makeRow={makeRow}
         renderTitle={row => <ScriptTitle row={row} />}
         renderBody={(row, patch) => <ScriptBody row={row} patch={patch} disabled={disabled} />}
+        renderActions={
+          onRun
+            ? row => (
+                <RunStepButton
+                  action="run-script"
+                  title={t('provisioning.provisioningScriptsTab.runScriptTitle')}
+                  disabled={disabled || !String(row.script || '').trim()}
+                  onRun={() => onRun({ scripts: [row.script] })}
+                />
+              )
+            : null
+        }
       />
     </div>
   );
@@ -95,6 +108,7 @@ ProvisioningScriptsTab.propTypes = {
   onChange: PropTypes.func.isRequired,
   makeRow: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
+  onRun: PropTypes.func,
 };
 
 export default ProvisioningScriptsTab;

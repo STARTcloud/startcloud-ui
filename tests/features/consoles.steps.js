@@ -251,6 +251,62 @@ Then('the stored {string} carries {string} as {string}', async ({ page }, key, m
     .toBe(value);
 });
 
+const connectAsOf = page => page.locator('[data-dialog="connect-as"]');
+
+When("I press the machine heading's {string} door", async ({ page }, action) => {
+  await page.locator(`[data-page="machine"] .section-heading [data-action="${action}"]`).click();
+});
+
+When("I press the hardware card's {string} door", async ({ page }, action) => {
+  await page.locator(`[data-panel="machine-hardware"] [data-action="${action}"]`).click();
+});
+
+Then('the Connect as dialog lists {string}', async ({ page }, ids) => {
+  const items = connectAsOf(page).locator('[data-menu="connect-as"] [data-credential]');
+  await expect(items.first()).toBeVisible();
+  await expect
+    .poll(() => items.evaluateAll(nodes => nodes.map(node => node.dataset.credential).join(',')))
+    .toBe(ids);
+});
+
+When('I connect as {string} in the Connect as dialog', async ({ page }, id) => {
+  await connectAsOf(page).locator(`[data-credential="${id}"]`).click();
+});
+
+Then('no Connect as dialog is open', async ({ page }) => {
+  await expect(connectAsOf(page)).toHaveCount(0);
+});
+
+Then(
+  'the host was sent {word} to {string} {int} times, each carrying {string} as {string}',
+  async ({ host }, method, pathname, count, member, value) => {
+    await expect
+      .poll(() =>
+        host
+          .answered(method, pathname)
+          .map(call => String(call.body?.[member]))
+          .join(',')
+      )
+      .toBe(Array(count).fill(value).join(','));
+  }
+);
+
+Then('the footer pane draws the RDP viewer signing in as {string}', async ({ page }, id) => {
+  await expect(paneOf(page).locator(`[data-viewer="rdp"][data-credential="${id}"]`)).toBeAttached();
+});
+
+When('I connect as {string}', async ({ page }, id) => {
+  await panelOf(page).locator(`[data-menu="connect-as"] [data-credential="${id}"]`).click();
+});
+
+Then("the console panel's Connect as menu lists {string}", async ({ page }, ids) => {
+  const items = panelOf(page).locator('[data-menu="connect-as"] [data-credential]');
+  await expect(items.first()).toBeVisible();
+  await expect
+    .poll(() => items.evaluateAll(nodes => nodes.map(node => node.dataset.credential).join(',')))
+    .toBe(ids);
+});
+
 Then('the stored {string} holds {int} entries', async ({ page }, key, count) => {
   await expect
     .poll(() =>

@@ -118,16 +118,19 @@ export const deleteArtifacts = (status, id, artifactIds) =>
 
 /**
  * Scan the storage locations, `POST artifacts/scan`, hyperweaver-ui's
- * body: no checksums verified, no orphan removed; a queued task.
+ * body: no checksums verified, no orphan removed, every location or the
+ * one `storage_path_id` names; a queued task.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} [pathId] - The location's id, every location without it
  * @returns {Promise<Object>} The agent's answer
  */
-export const scanArtifacts = (status, id) =>
+export const scanArtifacts = (status, id, pathId = '') =>
   client.post(agentPath(status, id, 'artifacts/scan'), {
     verify_checksums: false,
     remove_orphaned: false,
+    ...(pathId ? { storage_path_id: pathId } : {}),
   });
 
 /**

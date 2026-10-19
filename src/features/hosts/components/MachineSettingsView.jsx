@@ -58,6 +58,7 @@ const MachineSettingsView = ({ id, name, context }) => {
         hypervisor={detail.machine_info?.hypervisor || row.machine?.hypervisor || ''}
         configuration={configuration}
         knobCurrent={detail.knob_current || null}
+        credentials={detail.credentials ?? null}
         pendingChanges={detail.pending_changes || null}
         rawDetails={detail}
         running={isRunning(stats, name)}

@@ -26,12 +26,14 @@ export const apiKeysOf = answer => listOf(answer?.entities);
 const PICK_KINDS = {
   certificate: ['certificate', 'authority'],
   key: ['key', 'ssh_certificate'],
+  credential: ['password', 'ssh_key', 'key_pair'],
 };
 
 /**
  * The store kinds a `secret` field's pick admits: a `certificate` field
  * the certificate and authority rows, a `key` field the key and SSH
- * certificate rows, a secret kind its own rows, and no kind every secret
+ * certificate rows, a machine's `credential` the password, SSH key and
+ * key pair rows, a secret kind its own rows, and no kind every secret
  * kind.
  *
  * @param {string} kind - The field's kind, empty for every secret kind

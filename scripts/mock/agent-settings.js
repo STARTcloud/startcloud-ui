@@ -261,6 +261,17 @@ const stateOf = host => {
   return states.get(host.id);
 };
 
+/**
+ * One row of a host's certs store by its id, null for an id the store
+ * does not hold.
+ *
+ * @param {Object} host - The host
+ * @param {string} rowId - The row's id
+ * @returns {Object|null} The row
+ */
+export const hostStoreRowOf = (host, rowId) =>
+  stateOf(host).store.find(row => row.id === String(rowId)) || null;
+
 const mintKey = (host, name, description, role = 'admin', identity = null) => {
   const state = stateOf(host);
   const key = freshKey();

@@ -164,9 +164,12 @@ describe('startSshPreview', () => {
     const { details, setters } = settersOf();
     api.startSshSession.mockResolvedValue({ id: 'c1', ssh_host: '10.0.0.5' });
     await startSshPreview({ status, id: '1', name: 'dev-1', ...setters, ipIndex: 1 });
-    expect(api.startSshSession).toHaveBeenCalledWith(status, '1', 'dev-1', 1);
-    expect(details.current.ssh_session.id).toBe('c1');
+    expect(api.startSshSession).toHaveBeenCalledWith(status, '1', 'dev-1', 1, '');
+    expect(details.current.ssh_session).toEqual({ id: 'c1', ssh_host: '10.0.0.5' });
     expect(setters.setActiveConsoleType).toHaveBeenCalledWith('ssh');
+    await startSshPreview({ status, id: '1', name: 'dev-1', ...setters, credentialId: 'sec-a' });
+    expect(api.startSshSession).toHaveBeenLastCalledWith(status, '1', 'dev-1', 0, 'sec-a');
+    expect(details.current.ssh_session.credential_id).toBe('sec-a');
     const refusal = Object.assign(new Error('ip_index out of range'), {
       data: { ip_candidates: ['10.0.0.5', '10.0.0.6'] },
     });
@@ -177,12 +180,12 @@ describe('startSshPreview', () => {
     );
   });
 
-  it('hints at the SSH user when the agent names vagrant_user', async () => {
+  it('hints at an SSH credential when the agent names vagrant_user', async () => {
     const { setters } = settersOf();
     api.startSshSession.mockRejectedValue(new Error('no vagrant_user configured'));
     await startSshPreview({ status, id: '1', name: 'dev-1', ...setters });
     expect(setters.setError).toHaveBeenCalledWith(
-      'SSH session failed: no vagrant_user configured — set the SSH user under Edit Machine → Credentials.'
+      "SSH session failed: no vagrant_user configured — add a credential of use SSH on the machine's Credentials tab."
     );
   });
 });
@@ -205,6 +208,22 @@ describe('startRdpPreview', () => {
     await startRdpPreview({ status, id: '1', name: 'dev-1', ...setters, target: 'guest' });
     expect(details.current.rdp_session).toEqual({ target: 'guest' });
     expect(api.fetchVncInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the credential the start names on the console state', async () => {
+    const { details, setters } = settersOf();
+    api.fetchVncInfo.mockResolvedValue({ vrde_enabled: true, running: true });
+    await startRdpPreview({ status, id: '1', name: 'dev-1', ...setters, credentialId: 'sec-a' });
+    expect(details.current.rdp_session).toEqual({ target: 'console', credential_id: 'sec-a' });
+    await startRdpPreview({
+      status,
+      id: '1',
+      name: 'dev-1',
+      ...setters,
+      target: 'guest',
+      credentialId: 'sec-b',
+    });
+    expect(details.current.rdp_session).toEqual({ target: 'guest', credential_id: 'sec-b' });
   });
 
   it('refuses the console target while the machine is off', async () => {
@@ -255,7 +274,16 @@ describe('launchRdp', () => {
       targets: [{ type: 'guest', rdp_url: 'rdp://10.0.0.5:3389' }],
     });
     await launchRdp({ status, id: 'self', name: 'dev-1', isDirect: true, ...setters });
-    expect(api.openRdp).toHaveBeenCalledWith(status, 'self', 'dev-1');
+    expect(api.openRdp).toHaveBeenCalledWith(status, 'self', 'dev-1', '', '');
+    await launchRdp({
+      status,
+      id: 'self',
+      name: 'dev-1',
+      isDirect: true,
+      ...setters,
+      credentialId: 'sec-a',
+    });
+    expect(api.openRdp).toHaveBeenLastCalledWith(status, 'self', 'dev-1', '', 'sec-a');
     await launchRdp({ status, id: '1', name: 'dev-1', isDirect: false, ...setters });
     expect(globalThis.window.open).toHaveBeenCalledWith('rdp://10.0.0.5:3389');
     api.fetchRdpInfo.mockResolvedValue({ targets: [{ type: 'console' }] });

@@ -20,9 +20,7 @@ import {
   importProblem,
   installedKeysOf,
   knownHashOf,
-  locationBody,
   locationNeedsRole,
-  locationProblem,
   matchesArtifact,
   matchesPackage,
   matchesProvisioner,
@@ -120,21 +118,6 @@ describe('the installer files', () => {
     expect(artifactStatusOf({ checksum_verified: true }).key).toBe('verified');
     expect(artifactStatusOf({ checksum: null }).key).toBe('unhashed');
     expect(artifactStatusOf({ checksum: 'abc' }).key).toBe('hashed');
-  });
-
-  it('builds the location bodies and refuses an empty one', () => {
-    const form = { name: ' Images ', path: ' /rpool/images ', type: 'image', enabled: false };
-    expect(locationBody(form, false)).toEqual({
-      name: 'Images',
-      path: '/rpool/images',
-      type: 'image',
-      enabled: false,
-    });
-    expect(locationBody(form, true)).toEqual({ name: 'Images', enabled: false });
-    expect(locationProblem({ name: '', path: '/x', type: 'iso', enabled: true }, false)).toBe(
-      'host.installerFiles.locationNamePathRequired'
-    );
-    expect(locationProblem({ name: 'x', path: '', type: 'iso', enabled: true }, true)).toBe('');
   });
 
   it('offers the other locations of the same type, reads the roles and the query', () => {

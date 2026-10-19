@@ -18,16 +18,18 @@ import { patchConfigFile } from '../api/manage';
 import { useManageRead, useManageSend } from '../hooks/useHostManage';
 import {
   STRATEGIES,
+  draftChanges,
   movedOrder,
-  orderDiffers,
+  orderMoved,
   orderOf,
-  priorityChanges,
   priorityForIndex,
   strategyPatch,
   validPriority,
 } from '../utils/manage';
 
 const DEFAULT_STRATEGY = 'parallel_by_priority';
+
+const NO_EDITS = {};
 
 const rowOf = (priorities, name) =>
   (priorities?.machines || []).find(machine => machine.name === name) || null;
@@ -67,9 +69,120 @@ Plan.propTypes = {
   }).isRequired,
 };
 
-const OrderRow = ({ name, index, row, dragged, differs, edit, busy, drag, onEdit, onSave }) => {
+const Controls = ({
+  state = null,
+  strategy,
+  busy,
+  dirty,
+  onStrategy,
+  onToggle,
+  onPreview,
+  onApply,
+}) => {
   const { t } = useTranslation();
-  const edited = edit !== undefined && row && Number(edit) !== row.priority;
+  const enabled = Boolean(state?.orchestration_enabled);
+  return (
+    <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
+      <span>
+        {t('host.orchestrationPanel.status')}{' '}
+        {state ? (
+          <span
+            className={`badge text-bg-${enabled ? 'success' : 'secondary'}`}
+            data-note="orchestration"
+          >
+            {t(enabled ? 'host.orchestrationPanel.enabled' : 'host.orchestrationPanel.disabled')}
+          </span>
+        ) : (
+          <span className="text-muted">{t('host.orchestrationPanel.unknown')}</span>
+        )}
+      </span>
+      {state ? (
+        <span className="d-inline-flex align-items-center gap-1 small">
+          {t('host.orchestrationPanel.strategy')}
+          <select
+            id="orchestration-strategy"
+            className="form-select form-select-sm w-auto"
+            aria-label={t('host.orchestrationPanel.strategyAriaLabel')}
+            data-field="strategy"
+            value={strategy}
+            onChange={event => onStrategy(event.target.value)}
+            disabled={busy}
+          >
+            {STRATEGIES.map(entry => (
+              <option key={entry} value={entry}>
+                {entry}
+              </option>
+            ))}
+          </select>
+        </span>
+      ) : null}
+      {state ? (
+        <button
+          type="button"
+          className={`btn btn-sm ${enabled ? 'btn-outline-danger' : 'btn-primary'}`}
+          data-action="orchestration-toggle"
+          onClick={onToggle}
+          disabled={busy}
+        >
+          {t(
+            enabled
+              ? 'host.orchestrationPanel.disableOrchestration'
+              : 'host.orchestrationPanel.enableOrchestration'
+          )}
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-info"
+        data-action="orchestration-preview"
+        onClick={onPreview}
+        disabled={busy}
+      >
+        <FaListOl className="me-1" aria-hidden="true" />
+        {t('host.orchestrationPanel.previewShutdownPlan')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-primary"
+        data-action="orchestration-apply"
+        onClick={onApply}
+        disabled={busy || !dirty}
+      >
+        <FaCheck className="me-1" aria-hidden="true" />
+        {t('host.orchestrationPanel.apply')}
+      </button>
+    </div>
+  );
+};
+
+Controls.propTypes = {
+  state: PropTypes.object,
+  strategy: PropTypes.string.isRequired,
+  busy: PropTypes.bool.isRequired,
+  dirty: PropTypes.bool.isRequired,
+  onStrategy: PropTypes.func.isRequired,
+  onToggle: PropTypes.func.isRequired,
+  onPreview: PropTypes.func.isRequired,
+  onApply: PropTypes.func.isRequired,
+};
+
+const OrderHeader = () => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="d-flex align-items-center gap-2 px-2 small fw-semibold text-muted"
+      data-row="boot-order-header"
+    >
+      <span>{t('host.orchestrationPanel.machineColumn')}</span>
+      <span className="ms-auto d-inline-block boot-priority-input">
+        {t('host.orchestrationPanel.priorityColumn')}
+      </span>
+    </div>
+  );
+};
+
+const OrderRow = ({ name, index, row, dragged, moved, edit, busy, drag, onEdit }) => {
+  const { t } = useTranslation();
   return (
     <div
       role="listitem"
@@ -92,31 +205,20 @@ const OrderRow = ({ name, index, row, dragged, differs, edit, busy, drag, onEdit
       {row && !row.has_custom_priority ? (
         <span className="badge text-bg-light">{t('host.orchestrationPanel.default')}</span>
       ) : null}
-      {differs ? <span className="text-muted small">→ {priorityForIndex(index)}</span> : null}
-      <span className="ms-auto d-inline-flex align-items-center gap-1">
-        <input
-          id={`boot-priority-${name}`}
-          className="form-control form-control-sm boot-priority-input"
-          type="number"
-          min="1"
-          max="100"
-          aria-label={t('host.orchestrationPanel.bootPriorityFor', { name })}
-          value={edit ?? row?.priority ?? ''}
-          onChange={event => onEdit(name, event.target.value)}
-          disabled={busy}
-        />
-        {edited ? (
-          <button
-            type="button"
-            className="btn btn-sm btn-primary py-0"
-            data-action="priority-save"
-            onClick={() => onSave(name)}
-            disabled={busy}
-          >
-            {t('host.orchestrationPanel.save')}
-          </button>
-        ) : null}
-      </span>
+      {moved && edit === undefined ? (
+        <span className="text-muted small">→ {priorityForIndex(index)}</span>
+      ) : null}
+      <input
+        id={`boot-priority-${name}`}
+        className="form-control form-control-sm boot-priority-input ms-auto"
+        type="number"
+        min="1"
+        max="100"
+        aria-label={t('host.orchestrationPanel.bootPriorityFor', { name })}
+        value={edit ?? row?.priority ?? ''}
+        onChange={event => onEdit(name, event.target.value)}
+        disabled={busy}
+      />
     </div>
   );
 };
@@ -126,7 +228,7 @@ OrderRow.propTypes = {
   index: PropTypes.number.isRequired,
   row: PropTypes.object,
   dragged: PropTypes.bool.isRequired,
-  differs: PropTypes.bool.isRequired,
+  moved: PropTypes.bool.isRequired,
   edit: PropTypes.string,
   busy: PropTypes.bool.isRequired,
   drag: PropTypes.shape({
@@ -135,23 +237,24 @@ OrderRow.propTypes = {
     over: PropTypes.func.isRequired,
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
 };
 
 /**
- * The orchestration of a host, hyperweaver-ui's panel as the body of
- * the Manage page's Orchestration section: the status and the strategy
- * of `GET machines/orchestration/status`, Enable behind the typed
- * confirmation and Disable, Preview shutdown plan, the dry run of
- * `POST machines/orchestration/test`, and the boot order of
- * `GET machines/priorities`, rows dragged into order with Apply order
- * writing spaced priorities to the machines whose number changed, and
- * each row's own priority written on Save, both `PUT machines/{name}`
- * with `boot_priority`. The strategy is one merge patch of
- * `PUT config/machines` at `/machines/orchestration/strategy`. Every write
- * raises one notice and reads again on a success what it changed, the
- * status after a toggle or a strategy and the priorities after a
- * priority. Nothing polls.
+ * The orchestration of a host, the body of the host's Orchestration
+ * page: the status of `GET machines/orchestration/status`, Enable behind
+ * the typed confirmation and Disable, each written at once, and a draft
+ * over the strategy and the boot order of `GET machines/priorities`, the
+ * strategy select, the rows dragged into order and each row's typed
+ * priority under one header row naming the machine and the boot
+ * priority. Preview draws the dry run of
+ * `POST machines/orchestration/test` with the draft's strategy over the
+ * priorities the agent holds; Apply, held while the draft equals what the
+ * agent holds, writes the draft in one go, the strategy as one merge
+ * patch of `PUT config/machines` at `/machines/orchestration/strategy`
+ * and each changed priority as `PUT machines/{name}` with
+ * `boot_priority`, raises one notice and reads again on a success what it
+ * changed; a typed priority outside one to a hundred is refused with its
+ * notice and nothing sent. Nothing polls.
  */
 const OrchestrationPanel = ({ id }) => {
   const { t } = useTranslation();
@@ -167,90 +270,86 @@ const OrchestrationPanel = ({ id }) => {
     true
   );
   const [plan, setPlan] = useState(null);
+  const [strategy, setStrategy] = useState(null);
   const [order, setOrder] = useState([]);
-  const [edits, setEdits] = useState({});
+  const [edits, setEdits] = useState(NO_EDITS);
   const [dragName, setDragName] = useState(null);
   const [confirming, setConfirming] = useState(false);
   const [seen, setSeen] = useState(null);
+  const [seenState, setSeenState] = useState(null);
   const state = orchestration.data;
   const held = priorities.data;
   const enabled = Boolean(state?.orchestration_enabled);
-  const differs = orderDiffers(order, held);
+  const stored = state?.strategy || DEFAULT_STRATEGY;
+  const drawn = strategy ?? stored;
+  const moved = orderMoved(order, held);
+  const changes = draftChanges({ order, priorities: held, edits });
+  const strategyChanged = Boolean(state) && drawn !== stored;
+  const dirty = strategyChanged || changes.length > 0;
 
   if (held !== seen) {
     setSeen(held);
     setOrder(orderOf(held));
-    setEdits({});
+    setEdits(NO_EDITS);
   }
 
-  const write = async ({ call, doneKey, values = {}, reread }) => {
-    const { error } = await send({
-      call,
-      doneKey,
-      values,
-      failKey: 'hosts.manage.orchestration.failed',
-    });
-    if (!error) {
-      reread();
-    }
-    return !error;
-  };
+  if (state !== seenState) {
+    setSeenState(state);
+    setStrategy(null);
+  }
 
-  const toggle = () => {
+  const toggle = async () => {
     setConfirming(false);
-    write({
+    const { error } = await send({
       call: () => (enabled ? disableOrchestration(status, id) : enableOrchestration(status, id)),
       doneKey: enabled
         ? 'host.orchestrationPanel.disabledMessage'
         : 'host.orchestrationPanel.enabledMessage',
-      reread: orchestration.refresh,
+      values: {},
+      failKey: 'hosts.manage.orchestration.failed',
     });
+    if (!error) {
+      orchestration.refresh();
+    }
   };
 
-  const savePriority = name => {
-    const value = Number(edits[name]);
-    if (!validPriority(value)) {
+  const apply = async () => {
+    if (changes.some(change => !validPriority(change.priority))) {
       notify('danger', t('host.orchestrationPanel.priorityRange'));
       return;
     }
-    write({
-      call: () => modifyMachine(status, id, name, { boot_priority: value }),
-      doneKey: 'host.orchestrationPanel.prioritySet',
-      values: { name, value },
-      reread: priorities.refresh,
-    });
-  };
-
-  const applyOrder = () => {
-    const changes = priorityChanges(order, held);
-    write({
+    const { error } = await send({
       call: () =>
-        Promise.all(
-          changes.map(change =>
+        Promise.all([
+          ...(strategyChanged
+            ? [patchConfigFile(status, id, 'machines', strategyPatch(drawn))]
+            : []),
+          ...changes.map(change =>
             modifyMachine(status, id, change.name, { boot_priority: change.priority })
-          )
-        ),
-      doneKey: 'host.orchestrationPanel.bootOrderApplied',
-      values: { count: changes.length },
-      reread: priorities.refresh,
+          ),
+        ]),
+      doneKey: 'host.orchestrationPanel.applied',
+      values: { strategy: drawn, count: changes.length },
+      failKey: 'hosts.manage.orchestration.failed',
     });
+    if (error) {
+      return;
+    }
+    if (strategyChanged) {
+      orchestration.refresh();
+    }
+    if (changes.length > 0) {
+      priorities.refresh();
+    }
   };
 
   const preview = async () => {
     try {
-      setPlan(await testOrchestration(status, id));
+      setPlan(await testOrchestration(status, id, drawn));
     } catch (error) {
       notify('danger', t('host.orchestrationPanel.dryRunFailed', { message: error.message }));
     }
   };
-
-  const setStrategy = strategy =>
-    write({
-      call: () => patchConfigFile(status, id, 'machines', strategyPatch(strategy)),
-      doneKey: 'host.orchestrationPanel.strategySet',
-      values: { strategy },
-      reread: orchestration.refresh,
-    });
 
   const drag = {
     start: setDragName,
@@ -265,103 +364,41 @@ const OrchestrationPanel = ({ id }) => {
           {t('host.orchestrationPanel.statusUnavailable', { message: orchestration.message })}
         </div>
       ) : null}
-      <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
-        <span>
-          {t('host.orchestrationPanel.status')}{' '}
-          {state ? (
-            <span
-              className={`badge text-bg-${enabled ? 'success' : 'secondary'}`}
-              data-note="orchestration"
-            >
-              {t(enabled ? 'host.orchestrationPanel.enabled' : 'host.orchestrationPanel.disabled')}
-            </span>
-          ) : (
-            <span className="text-muted">{t('host.orchestrationPanel.unknown')}</span>
-          )}
-        </span>
-        {state ? (
-          <span className="d-inline-flex align-items-center gap-1 small">
-            {t('host.orchestrationPanel.strategy')}
-            <select
-              id="orchestration-strategy"
-              className="form-select form-select-sm w-auto"
-              aria-label={t('host.orchestrationPanel.strategyAriaLabel')}
-              data-field="strategy"
-              value={state.strategy || DEFAULT_STRATEGY}
-              onChange={event => setStrategy(event.target.value)}
-              disabled={busy}
-            >
-              {STRATEGIES.map(strategy => (
-                <option key={strategy} value={strategy}>
-                  {strategy}
-                </option>
-              ))}
-            </select>
-          </span>
-        ) : null}
-        {state ? (
-          <button
-            type="button"
-            className={`btn btn-sm ${enabled ? 'btn-outline-danger' : 'btn-primary'}`}
-            data-action="orchestration-toggle"
-            onClick={() => (enabled ? toggle() : setConfirming(true))}
-            disabled={busy}
-          >
-            {t(
-              enabled
-                ? 'host.orchestrationPanel.disableOrchestration'
-                : 'host.orchestrationPanel.enableOrchestration'
-            )}
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-info"
-          data-action="orchestration-plan"
-          onClick={preview}
-          disabled={busy}
-        >
-          <FaListOl className="me-1" aria-hidden="true" />
-          {t('host.orchestrationPanel.previewShutdownPlan')}
-        </button>
-      </div>
+      <Controls
+        state={state}
+        strategy={drawn}
+        busy={busy}
+        dirty={dirty}
+        onStrategy={setStrategy}
+        onToggle={() => (enabled ? toggle() : setConfirming(true))}
+        onPreview={preview}
+        onApply={apply}
+      />
       {plan ? <Plan plan={plan} /> : null}
       {held && order.length > 0 ? (
         <div className="card mb-3" data-panel="boot-order">
           <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h6 className="fw-bold mb-0">{t('host.orchestrationPanel.bootOrderTitle')}</h6>
-              {differs ? (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  data-action="order-apply"
-                  onClick={applyOrder}
-                  disabled={busy}
-                >
-                  <FaCheck className="me-1" aria-hidden="true" />
-                  {t('host.orchestrationPanel.applyOrder')}
-                </button>
-              ) : null}
-            </div>
-            <div className="d-flex flex-column gap-1" role="list">
-              {order.map((name, index) => (
-                <OrderRow
-                  key={name}
-                  name={name}
-                  index={index}
-                  row={rowOf(held, name)}
-                  dragged={dragName === name}
-                  differs={differs}
-                  edit={edits[name]}
-                  busy={busy}
-                  drag={drag}
-                  onEdit={(machine, value) =>
-                    setEdits(current => ({ ...current, [machine]: value }))
-                  }
-                  onSave={savePriority}
-                />
-              ))}
+            <h6 className="fw-bold mb-2">{t('host.orchestrationPanel.bootOrderTitle')}</h6>
+            <div className="d-flex flex-column gap-1">
+              <OrderHeader />
+              <div className="d-flex flex-column gap-1" role="list">
+                {order.map((name, index) => (
+                  <OrderRow
+                    key={name}
+                    name={name}
+                    index={index}
+                    row={rowOf(held, name)}
+                    dragged={dragName === name}
+                    moved={moved}
+                    edit={edits[name]}
+                    busy={busy}
+                    drag={drag}
+                    onEdit={(machine, value) =>
+                      setEdits(current => ({ ...current, [machine]: value }))
+                    }
+                  />
+                ))}
+              </div>
             </div>
             <p className="form-text text-muted mb-0">
               {t('host.orchestrationPanel.bootOrderHelp')}

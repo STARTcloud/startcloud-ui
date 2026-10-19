@@ -247,7 +247,8 @@ const withRun = (commands, busy, runOf) =>
  * Share link; Power on, Shutdown, Restart, Reset and Inject NMI, Pause,
  * Suspend and Resume, Guest shutdown and Guest reboot, Run in guest and
  * Set display size, each by the machine's state and the host's gates; the
- * console, application, tool, zone and provisioning commands; Force kill
+ * console commands with their Connect as dialog, the application, tool,
+ * zone and provisioning commands; Force kill
  * and Destroy for a role that may destroy, the privilege line otherwise.
  * An action is one request through `useHostActions`, the host's stats,
  * machine rows and the machine's detail read again after a success.
@@ -298,7 +299,7 @@ export const useMachineCommands = ({ status, id, name, server, user, wanted }) =
       key => () => run(key)
     ),
     ...withRun(guestToolCommands(guestTools), busy, key => () => setTool(key)),
-    ...consoles,
+    ...consoles.commands,
     ...applications,
     ...tools.commands,
     ...zones.commands,
@@ -308,6 +309,7 @@ export const useMachineCommands = ({ status, id, name, server, user, wanted }) =
 
   const dialogs = (
     <>
+      {consoles.dialogs}
       {tools.dialogs}
       {zones.dialogs}
       <MachineDangerDialogs action={danger} name={name} onClose={() => setDanger('')} onRun={run} />

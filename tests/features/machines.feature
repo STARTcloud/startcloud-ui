@@ -14,6 +14,15 @@ Feature: machines
     And the host was sent GET to "/api/agents/1/stats" 1 times
     And the host controls toggle is "Host actions"
 
+  Scenario: Machine page: the machines list draws the state badge column and no column that says the state in words
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines"
+    Then the machines list draws 3 rows
+    And the machines list draws the "status" column
+    And the machines list draws no "sentence" column
+
   Scenario: Machine page: the machines list by the host's tokens, a host whose row lists no machines is asked for none
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture

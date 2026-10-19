@@ -18,8 +18,6 @@ const RAW_KEY = /\b(?:host|navbar|chrome)\.[a-z][A-Za-z]+\.[a-z][A-Za-z]+/u;
 const frameOf = page => page.locator('[data-page="host-section"]');
 
 const MONITORING_PANELS = [
-  'networking-summary',
-  'networking-addresses',
   'networking-routes',
   'networking-interfaces',
   'networking-bandwidth',
@@ -253,7 +251,6 @@ Then('the {string} section of the networking page is folded', async ({ page }, n
   await expect(section).toHaveAttribute('data-folded', 'true');
   await expect(section.locator('table')).toHaveCount(0);
   await expect(section.locator('[data-chart]')).toHaveCount(0);
-  await expect(section.locator('[data-counts="interfaces"]')).toBeHidden();
 });
 
 Then('the {string} section of the networking page is open', async ({ page }, name) => {
@@ -263,31 +260,22 @@ Then('the {string} section of the networking page is open', async ({ page }, nam
   );
 });
 
-Then('the network summary is the first section of the networking page', async ({ page }) => {
-  await expect(summaryOf(page)).toBeVisible();
+Then('the {string} table is the first section of the networking page', async ({ page }, name) => {
+  await expect(tableOf(page, name)).toBeVisible();
   await expect(frameOf(page).locator('[data-panel]').first()).toHaveAttribute(
     'data-panel',
-    'networking-summary'
+    `networking-${name}`
   );
+});
+
+Then('the heading of the networking page counts {int}', async ({ page }, count) => {
+  await expect(frameOf(page).locator('.section-heading').first()).toContainText(`· ${count}`);
 });
 
 Then('the networking page draws no network summary', async ({ page }) => {
   await expect(frameOf(page)).toBeVisible();
   await expect(summaryOf(page)).toHaveCount(0);
 });
-
-Then(
-  'the network summary counts {int} in all, {int} physical, {int} virtual, {int} up and {int} down',
-  async ({ page }, total, physical, virtual, up, down) => {
-    const counts = summaryOf(page).locator('[data-counts="interfaces"]');
-    await expect(counts).toHaveAttribute('data-total', String(total));
-    await expect(counts).toHaveAttribute('data-physical', String(physical));
-    await expect(counts).toHaveAttribute('data-virtual', String(virtual));
-    await expect(counts).toHaveAttribute('data-up', String(up));
-    await expect(counts).toHaveAttribute('data-down', String(down));
-    await expect(counts.locator('[data-count] .badge')).toHaveCount(10);
-  }
-);
 
 Then('the zone {string} of an interface opens {string}', async ({ page }, zone, href) => {
   const link = tableOf(page, 'interfaces')

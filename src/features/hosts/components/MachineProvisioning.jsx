@@ -152,7 +152,11 @@ const useProvisionStatus = ({ status, id, name, offered }) => {
  * task with View task where the host lists `tasks`, a 200 no-op that
  * skipped everything reported as a warning, and the host-hooks refusal,
  * the 409 with `needs_confirmation`, asking the typed confirmation
- * before the same request goes again with `confirm_host_hooks`. The
+ * before the same request goes again with `confirm_host_hooks`. On a
+ * machine whose status reads `provisioned`, for a person the pipeline
+ * rows are offered to, the editor's play glyphs send the same
+ * `POST machines/{name}/provision` narrowed to one role, one script or
+ * one playbook, with the same notice and task. The
  * status is read again when the queued task ends on the stream, when
  * the task dialog closes, on the stream's fresh opening and its `reset`,
  * and after a stored document with the detail; nothing polls.
@@ -171,6 +175,7 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
   const { state, read } = useProvisionStatus({ status, id, name, offered });
   const [busy, setBusy] = useState(false);
   const [hookReason, setHookReason] = useState('');
+  const [hookOptions, setHookOptions] = useState({});
   const [hostsYml, setHostsYml] = useState(false);
   const [task, setTask] = useState(null);
   const [watched, setWatched] = useState('');
@@ -224,6 +229,7 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
       read();
     } catch (error) {
       if (kind === 'provision' && needsHookConfirmation(error)) {
+        setHookOptions(options);
         setHookReason(hookReasonOf(error));
         return;
       }
@@ -271,8 +277,17 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
 
   const confirmHooks = () => {
     confirmedRef.current = true;
-    run('provision', { confirm_host_hooks: true });
+    run('provision', { ...hookOptions, confirm_host_hooks: true });
   };
+
+  const runOne =
+    gates.rows && state?.provisioning_status === 'provisioned'
+      ? options => {
+          if (!busy) {
+            run('provision', options);
+          }
+        }
+      : null;
 
   return (
     <div className="row g-3 mb-3">
@@ -333,7 +348,13 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
             folded={folds.folded(EDITOR_FOLD)}
             onFold={() => folds.toggle(EDITOR_FOLD)}
           >
-            <ProvisioningEditor id={id} name={name} document={document} onSaved={saved} />
+            <ProvisioningEditor
+              id={id}
+              name={name}
+              document={document}
+              onSaved={saved}
+              onRun={runOne}
+            />
           </SectionCard>
         </div>
       ) : null}

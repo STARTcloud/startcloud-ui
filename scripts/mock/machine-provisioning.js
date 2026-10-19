@@ -485,9 +485,50 @@ const queued = (ctx, { operation, message, metadata, more = {} }) => {
   });
 };
 
+const playbooksOf = document => {
+  const playbooks = document.provisioning?.ansible?.playbooks;
+  const group = (Array.isArray(playbooks) ? playbooks[0] : playbooks) || {};
+  return [...(group.local || []), ...(group.remote || [])];
+};
+
+const scriptsOf = document =>
+  Array.isArray(document.provisioning?.shell?.scripts) ? document.provisioning.shell.scripts : [];
+
+const narrowingOf = (host, row, document, body) => {
+  const narrowed = ['roles', 'scripts', 'playbook'].filter(key => body[key] !== undefined);
+  if (narrowed.length === 0) {
+    return { narrowing: {} };
+  }
+  if (narrowed.length > 1) {
+    return { problem: 'Name one of roles, scripts or playbook' };
+  }
+  if (stateOf(host, row).status !== 'provisioned') {
+    return { problem: 'A narrowed run needs a machine that has provisioned once' };
+  }
+  const [key] = narrowed;
+  const wanted = key === 'playbook' ? [body.playbook] : body[key];
+  if (!Array.isArray(wanted) || wanted.length === 0 || wanted.some(item => !item)) {
+    return { problem: `${key} must name at least one entry` };
+  }
+  const known = {
+    roles: (document.roles || []).map(role => role.name),
+    scripts: scriptsOf(document),
+    playbook: playbooksOf(document).map(playbook => playbook.playbook),
+  }[key];
+  const unknown = wanted.filter(item => !known.includes(item));
+  if (unknown.length > 0) {
+    return { problem: `The document holds no ${key} ${unknown.join(', ')}` };
+  }
+  return { narrowing: { [key]: body[key] } };
+};
+
 const provision = ctx => {
   const { host, row, document, body } = ctx;
   const { confirmed } = storeOf(host);
+  const { narrowing, problem: refused } = narrowingOf(host, row, document, body);
+  if (refused) {
+    return refusal(400, refused);
+  }
   if (hooksOf(document).length > 0 && !body.confirm_host_hooks && !confirmed.has(row.name)) {
     return ok(
       {
@@ -505,7 +546,7 @@ const provision = ctx => {
   return queued(ctx, {
     operation: 'machine_provision_orchestration',
     message: 'Provisioning pipeline queued',
-    metadata: { skip_boot: Boolean(body.skip_boot), steps: PROVISION_STEPS },
+    metadata: { skip_boot: Boolean(body.skip_boot), steps: PROVISION_STEPS, ...narrowing },
     more: { steps: PROVISION_STEPS },
   });
 };
@@ -521,12 +562,6 @@ const sync = ctx => {
     metadata: { syncback, folder_count: chosen.length },
     more: { folder_count: chosen.length },
   });
-};
-
-const playbooksOf = document => {
-  const playbooks = document.provisioning?.ansible?.playbooks;
-  const group = (Array.isArray(playbooks) ? playbooks[0] : playbooks) || {};
-  return [...(group.local || []), ...(group.remote || [])];
 };
 
 const runProvisioners = ctx => {
@@ -675,7 +710,9 @@ const version = ctx => {
  * `POST machines/{name}/provision`, refused 409 with `needs_confirmation`
  * and `reason` while the document runs host hooks not yet confirmed and
  * queued as one orchestration task otherwise, its `parent_task_id` the
- * task's; `POST machines/{name}/sync`, `syncback` choosing the flagged
+ * task's, one of `roles`, `scripts` or `playbook` narrowing the run on a
+ * machine that has provisioned once to entries the document holds and
+ * refused 400 otherwise; `POST machines/{name}/sync`, `syncback` choosing the flagged
  * folders; and `POST machines/{name}/run-provisioners`, a 200 no-op with
  * `playbooks_skipped` while every playbook runs once and the machine was
  * provisioned. `GET` and `PUT machines/{name}/hosts-yml` read and save the

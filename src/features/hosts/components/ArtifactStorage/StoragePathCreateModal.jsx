@@ -21,10 +21,10 @@ const TYPE_KEYS = {
 };
 
 /**
- * The dialog that makes a storage location, hyperweaver-ui's: the name,
- * the absolute path with Browse, the type among the five kinds, the enabled switch and the
- * notes on what the agent does with it; Create sends
- * `POST artifacts/storage/paths` once.
+ * The one dialog that makes a storage location, hyperweaver-ui's: the
+ * name, the absolute path with Browse picking the storage root, the type
+ * among the five kinds, the enabled switch and the notes on what the
+ * agent does with it; Create sends `POST artifacts/storage/paths` once.
  */
 const StoragePathCreateModal = ({ id, server, busy, onClose, onSubmit }) => {
   const { t } = useTranslation();
@@ -76,6 +76,7 @@ const StoragePathCreateModal = ({ id, server, busy, onClose, onSubmit }) => {
           status={status}
           hostId={id}
           server={server}
+          pickTitle={t('host.installerFiles.pickStorageRoot')}
           disabled={busy}
           placeholder={t('artifacts.storagePathCreateModal.pathPlaceholder')}
         />

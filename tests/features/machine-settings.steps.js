@@ -12,6 +12,12 @@ const settingsTab = (page, key) => settingsOf(page).locator(`.nav-tabs [data-tab
 
 const dialogOf = page => page.getByRole('dialog').last();
 
+const credentialRowsOf = page =>
+  settingsOf(page).locator('[data-list="credentials"] [data-credential-row]');
+
+const credentialOf = (page, id) =>
+  settingsOf(page).locator(`[data-list="credentials"] [data-credential="${id}"]`);
+
 const zoneDiskOf = (page, name) =>
   settingsOf(page).locator(`[data-editor="storage-devices"] [data-zone-disk="${name}"]`);
 
@@ -29,6 +35,27 @@ When("I press the settings page's {string} action", async ({ page }, action) => 
 
 When('I press {string} on the zone disk {string}', async ({ page }, action, name) => {
   await zoneDiskOf(page, name).locator(`[data-action="${action}"]`).click();
+});
+
+When('I press the {string} action of the last credential', async ({ page }, action) => {
+  await credentialRowsOf(page).last().locator(`[data-action="${action}"]`).click();
+});
+
+When('I flip the default of the credential {string}', async ({ page }, id) => {
+  await credentialOf(page, id).locator('[data-action="credential-default"]').click();
+});
+
+Then('the credentials tab lists {int} credentials', async ({ page }, count) => {
+  await expect(settingsOf(page).locator('[data-action="credential-add"]')).toBeVisible();
+  await expect(credentialRowsOf(page)).toHaveCount(count);
+});
+
+Then('the credential {string} names {string}', async ({ page }, id, name) => {
+  await expect(credentialOf(page, id).locator('[data-credential-pick] code')).toHaveText(name);
+});
+
+Then('the credential {string} is the default', async ({ page }, id) => {
+  await expect(credentialOf(page, id).locator('[data-action="credential-default"]')).toBeChecked();
 });
 
 When('I press the preset {string}', async ({ page }, preset) => {

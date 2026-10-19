@@ -1,6 +1,6 @@
 Feature: host installer files and provisioners
 
-  Scenario: Installer files: the section behind `artifacts` and `provisioner-registry` together, the storage locations card and the artifacts table from the one read each, beside the artifacts section of `artifacts` alone, on the Installer files page
+  Scenario: Installer files: the section behind `artifacts` and `provisioner-registry` together, the storage locations table and the artifacts table from the one read each, beside the artifacts section of `artifacts` alone, on the Installer files page
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -8,7 +8,7 @@ Feature: host installer files and provisioners
     Then the section page "installers" draws
     And the host column draws no "recipes" row
     And the artifact section draws
-    And the catalog card "installer-locations" lists 3 locations
+    And the "storage-paths" table of the section page lists 3 rows
     And the "installers" table of the section page lists 4 rows
     And the "installers" table of the section page draws the "status" column
     And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page offers "move"
@@ -23,7 +23,7 @@ Feature: host installer files and provisioners
     When I open "/hosts/self/provisioning/installers"
     Then the section page "installers" draws
     And the artifact section draws
-    And the catalog card "installer-locations" lists 3 locations
+    And the "storage-paths" table of the section page lists 3 rows
     And the "installers" table of the section page lists 5 rows
     And the "installers" table of the section page draws the "version" column
     And the row "Domino_14.5_Linux_English.tar" of the "installers" table of the section page reads "14.5.0" in its "version" column
@@ -115,7 +115,7 @@ Feature: host installer files and provisioners
     And I check the section switch "artifact-scan-verify"
     And I press the section page's "artifact-scan" action
     Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "verify_checksums" as "true"
-    When I press the action "location-scan" of the catalog location "loc-installers"
+    When I press the action "scan" of the catalog location "loc-installers"
     Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "storage_path_id" as "loc-installers"
 
   Scenario: Installer files: a location is added with its type and path, toggled with `enabled` alone, and a built-in one offers no edit and no delete
@@ -123,28 +123,45 @@ Feature: host installer files and provisioners
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    Then the catalog location "loc-iso" offers no "location-delete"
-    And the catalog location "loc-installers" offers "location-delete"
-    When I press the section page's "location-add" action
-    And I type "Images" into the field "location-name"
-    And I pick "image" in the catalog dialog select "location-type"
-    And I type "/rpool/images" into the field "location-path"
-    And I submit the catalog dialog "artifact-location"
+    Then the catalog location "loc-iso" offers no "delete"
+    And the catalog location "loc-installers" offers "delete"
+    When I press the section page's "storage-path-create" action
+    And I type "Images" into the field "storage-path-name"
+    And I pick "image" in the catalog dialog select "storage-path-type"
+    And I type "/rpool/images" into the field "storage-path-path"
+    And I submit the catalog dialog "storage-path-create"
     Then the host was sent POST to "/api/agents/3/artifacts/storage/paths" carrying "type" as "image"
     And the host was sent POST to "/api/agents/3/artifacts/storage/paths" carrying "path" as "/rpool/images"
-    When I press the action "location-toggle" of the catalog location "loc-iso"
+    When I press the action "toggle" of the catalog location "loc-iso"
     Then the host was sent PUT to "/api/agents/3/artifacts/storage/paths/loc-iso" carrying "enabled" as "false"
 
-  Scenario: Installer files: a location's delete sends the three switches as a queued task
+  Scenario: Installer files: a location's delete waits behind the typed confirmation and removes its records
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
-    And I press the action "location-delete" of the catalog location "loc-installers"
-    And I check the field "location-delete-recursive"
-    And I submit the catalog dialog "artifact-location-delete"
-    Then the host was sent DELETE to "/api/agents/3/artifacts/storage/paths/loc-installers" carrying "recursive" as "true"
-    And the host was sent DELETE to "/api/agents/3/artifacts/storage/paths/loc-installers" carrying "remove_db_records" as "true"
+    And I press the action "delete" of the catalog location "loc-installers"
+    Then the host was not sent DELETE to "/api/agents/3/artifacts/storage/paths/loc-installers"
+    When I confirm the open dialog
+    Then the host was sent DELETE to "/api/agents/3/artifacts/storage/paths/loc-installers" carrying "remove_db_records" as "true"
+    And the host was sent DELETE to "/api/agents/3/artifacts/storage/paths/loc-installers" carrying "recursive" as "false"
+
+  Scenario: Installer files: the storage locations are one table, each row the registry's file count, its Scan and its Enable toggle, and no locations card beside it
+    Given the host answers the hosts fixture
+    And the host answers the hosts-installers fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/provisioning/installers"
+    Then the "storage-paths" table of the section page lists 3 rows
+    And the section page draws no "installer-locations" panel
+    And the section page offers no "location-add"
+    And the row "HCL installers" of the "storage-paths" table of the section page reads "1" in its "files" column
+    And the row "HCL installers" of the "storage-paths" table of the section page offers "scan"
+    And the row "HCL installers" of the "storage-paths" table of the section page offers "toggle"
+    And the row "ISO library" of the "storage-paths" table of the section page offers no "delete"
+    When I press "scan" on the row "HCL installers" of the "storage-paths" table of the section page
+    Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "storage_path_id" as "loc-installers"
+    When I press "toggle" on the row "ISO library" of the "storage-paths" table of the section page
+    Then the host was sent PUT to "/api/agents/3/artifacts/storage/paths/loc-iso" carrying "enabled" as "false"
 
   Scenario: Installer files: picked rows are deleted together, the files with them when the switch says so
     Given the host answers the hosts fixture

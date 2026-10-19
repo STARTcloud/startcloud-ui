@@ -10,7 +10,6 @@ import {
   cpuUsage,
   cpuUsageBetween,
   healthTone,
-  interfaceCounts,
   latestPer,
   memoryUsage,
   summaryRows,
@@ -157,7 +156,7 @@ describe('swapUsage', () => {
   });
 });
 
-describe('latestPer and interfaceCounts', () => {
+describe('latestPer', () => {
   const rows = [
     { link: 'vnic0', class: 'vnic', state: 'up', scan_timestamp: '2026-09-27T12:00:00.000Z' },
     { link: 'igb0', class: 'phys', state: 'down', scan_timestamp: '2026-09-27T11:59:00.000Z' },
@@ -174,11 +173,6 @@ describe('latestPer and interfaceCounts', () => {
       ['vnic0', 'up'],
     ]);
     expect(latestPer(null, row => row.link)).toEqual([]);
-  });
-
-  it('counts the interfaces in all, physical, virtual, up and down', () => {
-    const counts = interfaceCounts(latestPer(rows, row => row.link));
-    expect(counts).toEqual({ total: 3, physical: 2, virtual: 1, up: 2, down: 1 });
   });
 });
 

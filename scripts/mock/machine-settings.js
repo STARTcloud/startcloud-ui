@@ -1,3 +1,4 @@
+import { hostStoreRowOf } from './agent-settings.js';
 import {
   featuresOf,
   hypervisorsOf,
@@ -23,6 +24,14 @@ const IMMEDIATE_KEYS = [
   'vagrant_user',
   'vagrant_user_pass',
   'vagrant_user_private_key_path',
+  'credentials',
+];
+const CREDENTIAL_USES = ['ssh', 'rdp', 'console', 'vagrant'];
+const CREDENTIAL_KINDS = ['password', 'ssh_key', 'key_pair'];
+const SEEDED_CREDENTIALS = [
+  { id: 'sec-0011', use: 'ssh', default: true },
+  { id: 'sec-0001', use: 'ssh', default: false },
+  { id: 'sec-0001', use: 'rdp', default: true },
 ];
 const FLAG_KEYS = ['physical', 'adapter', 'remove_on_completion'];
 const SCALAR_KEYS = [
@@ -112,6 +121,7 @@ const storeOf = host => {
       execs: new Map(),
       vnicProps: new Map(),
       datasetProps: new Map(),
+      credentials: new Map(),
       nextPid: 4100,
     });
   }
@@ -219,6 +229,47 @@ export const knobOverridesOf = (host, row) => storeOf(host).knobs.get(row.name) 
  */
 export const pendingChangesOf = (host, row) => storeOf(host).pending.get(row.name) || null;
 
+const heldCredentialsOf = (host, row) => {
+  const { credentials } = storeOf(host);
+  if (!credentials.has(row.name)) {
+    const first = host.kind !== 'zoneweaver' && host.machines[0]?.name === row.name;
+    credentials.set(row.name, first ? SEEDED_CREDENTIALS : []);
+  }
+  return credentials.get(row.name);
+};
+
+/**
+ * The credentials of a machine as `GET machines/{name}` answers them,
+ * each `{ id, use, default, kind, name }`, the kind and the name read
+ * from the host's certs store and never a member value.
+ *
+ * @param {Object} host - The host
+ * @param {Object} row - The machine the mock holds
+ * @returns {Array<Object>} The credentials
+ */
+export const machineCredentialsOf = (host, row) =>
+  heldCredentialsOf(host, row).map(entry => {
+    const stored = hostStoreRowOf(host, entry.id);
+    return { ...entry, kind: stored?.kind || '', name: stored?.name || '' };
+  });
+
+const credentialsProblem = (host, list) => {
+  if (!Array.isArray(list)) {
+    return 'credentials must be a list';
+  }
+  const bad = list.find(
+    entry =>
+      !entry ||
+      !CREDENTIAL_USES.includes(entry.use) ||
+      !CREDENTIAL_KINDS.includes(hostStoreRowOf(host, entry.id)?.kind)
+  );
+  if (bad) {
+    return `credential ${bad?.id || ''} names no password, ssh_key or key_pair row, or no use`;
+  }
+  const defaults = list.filter(entry => entry.default === true).map(entry => entry.use);
+  return new Set(defaults).size === defaults.length ? '' : 'one default credential a use';
+};
+
 const keepKnobs = (host, name, changes) => {
   const { knobs } = storeOf(host);
   const kept = Object.fromEntries(
@@ -229,6 +280,16 @@ const keepKnobs = (host, name, changes) => {
 
 const kept = (host, row, body) => {
   keepKnobs(host, row.name, body);
+  if (body.credentials) {
+    storeOf(host).credentials.set(
+      row.name,
+      body.credentials.map(entry => ({
+        id: String(entry.id),
+        use: entry.use,
+        default: entry.default === true,
+      }))
+    );
+  }
   return ok({
     success: true,
     machine_name: row.name,
@@ -289,7 +350,9 @@ const queuedModify = ({ host, person, row, body }) => {
  * Modify one machine, the `PUT machines/{name}` body that carries
  * neither `snapshots` nor `provisioner`, hyperweaver-ui's modify wire: a
  * body of the members an agent keeps at once answers `completed` with no
- * task; `resize_disks` of a zone answers `resized_disks` at once; a
+ * task, `credentials` among them, each `{ id, use, default }` naming a
+ * password, SSH key or key pair row of the host's store, one default a
+ * use, refused 400 otherwise; `resize_disks` of a zone answers `resized_disks` at once; a
  * memory the host cannot spare is refused 400 with `details`; a running
  * machine accrues everything else as `pending_power_cycle`; a machine
  * that is off queues a `machine_modify` or `zone_modify` task, its
@@ -306,6 +369,11 @@ export const modified = ctx => {
   }
   if (Array.isArray(body.resize_disks) && isZone(host)) {
     return resized(ctx);
+  }
+  const credentialRefusal =
+    body.credentials === undefined ? '' : credentialsProblem(host, body.credentials);
+  if (credentialRefusal) {
+    return refusal(400, credentialRefusal);
   }
   if (immediateOnly(body)) {
     return kept(host, row, body);

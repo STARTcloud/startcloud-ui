@@ -4,6 +4,7 @@ import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaPlus, FaXmark } from 'react-icons/fa6';
 
+import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { PRIVATE_MEMBERS, SECRET_KINDS, SECRET_MEMBERS, newId, newRecord } from '../utils/records';
@@ -255,7 +256,9 @@ ExtraRows.propTypes = {
  * file's bytes as a textarea and the bytes read from a picked file, a
  * `custom` row's map as JSON text, the notes, and the extra rows of
  * named values with Add and Remove; Save hands `onSave` the record once
- * the rules pass. `data-dialog` is `secret-record`.
+ * the rules pass. While the draft differs from the one it opened on, a
+ * backdrop click, Escape, the close button and Cancel ask the discard
+ * prompt. `data-dialog` is `secret-record`.
  */
 const SecretRecordModal = ({
   record = null,
@@ -268,7 +271,9 @@ const SecretRecordModal = ({
   onClose,
 }) => {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState(() => secretDraftOf(record, kind, profileId));
+  const [opened] = useState(() => secretDraftOf(record, kind, profileId));
+  const [draft, setDraft] = useState(opened);
+  const guard = useDiscardGuard(JSON.stringify(draft) !== JSON.stringify(opened), onClose);
   const schema = useMemo(() => secretSchemaOf(draft.kind), [draft.kind]);
   const rules = useFormRules({ schema, values: draft, labels: SECRET_LABELS, idPrefix });
   const profile = profileOf(draft.profile);
@@ -310,68 +315,76 @@ const SecretRecordModal = ({
   const hintOf = member => (profile?.help?.[member] ? t(profile.help[member]) : '');
 
   return (
-    <Modal show onHide={onClose} scrollable>
-      <form onSubmit={submit} noValidate data-dialog="secret-record" data-kind={draft.kind}>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">
-            {t(record ? 'certs.secret.editTitle' : 'certs.secret.addTitle')}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
-          <SelectField
-            name="kind"
-            options={kinds.map(entry => ({ value: entry, label: t(`certs.kind.${entry}`) }))}
-            draft={draft}
-            rules={rules}
-            onChange={set}
-            disabled={Boolean(record) || Boolean(kind)}
-          />
-          <SelectField
-            name="profile"
-            options={profilesOf(draft.kind).map(entry => ({
-              value: entry.id,
-              label: t(entry.labelKey),
-            }))}
-            blank={t('certs.profile.generic.label')}
-            draft={draft}
-            rules={rules}
-            onChange={set}
-          />
-          <TextField name="name" draft={draft} rules={rules} onChange={set} />
-          {members.map(member => (
-            <MemberField
-              key={member}
-              member={member}
+    <>
+      <Modal show onHide={guard.close} scrollable>
+        <form onSubmit={submit} noValidate data-dialog="secret-record" data-kind={draft.kind}>
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">
+              {t(record ? 'certs.secret.editTitle' : 'certs.secret.addTitle')}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormErrorSummary errors={rules.summary} />
+            <SelectField
+              name="kind"
+              options={kinds.map(entry => ({ value: entry, label: t(`certs.kind.${entry}`) }))}
               draft={draft}
               rules={rules}
               onChange={set}
-              hint={hintOf(member)}
+              disabled={Boolean(record) || Boolean(kind)}
             />
-          ))}
-          {draft.kind === 'custom' ? (
-            <TextAreaField
-              name="custom"
+            <SelectField
+              name="profile"
+              options={profilesOf(draft.kind).map(entry => ({
+                value: entry.id,
+                label: t(entry.labelKey),
+              }))}
+              blank={t('certs.profile.generic.label')}
               draft={draft}
               rules={rules}
               onChange={set}
-              rows={JSON_ROWS}
-              monospace
             />
-          ) : null}
-          <ExtraRows draft={draft} rules={rules} profile={profile} onChange={set} />
-          <TextAreaField name="notes" draft={draft} rules={rules} onChange={set} />
-        </Modal.Body>
-        <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            {t('pages.confirm.cancel')}
-          </button>
-          <button type="submit" className="btn btn-primary" data-action="submit" disabled={busy}>
-            {t('certs.record.save')}
-          </button>
-        </Modal.Footer>
-      </form>
-    </Modal>
+            <TextField name="name" draft={draft} rules={rules} onChange={set} />
+            {members.map(member => (
+              <MemberField
+                key={member}
+                member={member}
+                draft={draft}
+                rules={rules}
+                onChange={set}
+                hint={hintOf(member)}
+              />
+            ))}
+            {draft.kind === 'custom' ? (
+              <TextAreaField
+                name="custom"
+                draft={draft}
+                rules={rules}
+                onChange={set}
+                rows={JSON_ROWS}
+                monospace
+              />
+            ) : null}
+            <ExtraRows draft={draft} rules={rules} profile={profile} onChange={set} />
+            <TextAreaField name="notes" draft={draft} rules={rules} onChange={set} />
+          </Modal.Body>
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={guard.close}
+              disabled={busy}
+            >
+              {t('pages.confirm.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" data-action="submit" disabled={busy}>
+              {t('certs.record.save')}
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 

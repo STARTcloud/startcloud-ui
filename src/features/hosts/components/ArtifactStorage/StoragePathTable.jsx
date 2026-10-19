@@ -6,9 +6,10 @@ import {
   FaCompactDisc,
   FaFolder,
   FaHardDrive,
-  FaPause,
+  FaMagnifyingGlass,
   FaPen,
-  FaPlay,
+  FaToggleOff,
+  FaToggleOn,
   FaTrash,
 } from 'react-icons/fa6';
 
@@ -199,31 +200,37 @@ export const STORAGE_PATH_FILTERS = [
 ];
 
 /**
- * The actions of one storage location's row, hyperweaver-ui's: Edit,
- * Disable or Enable by its state, and Delete; every button held while a
+ * The actions of one storage location's row, hyperweaver-ui's: Scan of
+ * that location, Enable or Disable by its state, Edit and Delete, the
+ * last two never of a built-in location; every button held while a
  * request is in flight.
  */
 export const StoragePathRowActions = ({ row, busy, onAction }) => {
   const { t } = useTranslation();
   const toggle = row.enabled
-    ? { tone: 'warning', Icon: FaPause, label: t('artifacts.storagePathTable.disableTooltip') }
-    : { tone: 'success', Icon: FaPlay, label: t('artifacts.storagePathTable.enableTooltip') };
+    ? { Icon: FaToggleOn, label: t('artifacts.storagePathTable.disableTooltip') }
+    : { Icon: FaToggleOff, label: t('artifacts.storagePathTable.enableTooltip') };
+  const builtIn = row.source === 'builtin';
   return (
-    <span className="d-inline-flex align-items-center gap-1" data-storage-path={row.name}>
+    <span
+      className="d-inline-flex align-items-center gap-1"
+      data-storage-path={row.name}
+      data-location={row.id}
+    >
       <button
         type="button"
-        className="btn btn-sm btn-outline-secondary"
-        title={t('artifacts.storagePathTable.editTooltip')}
-        aria-label={t('artifacts.storagePathTable.editTooltip')}
-        data-action="edit"
+        className="btn btn-sm btn-outline-warning"
+        title={t('host.installerFiles.scanThisLocation')}
+        aria-label={t('host.installerFiles.scanThisLocation')}
+        data-action="scan"
         disabled={busy}
-        onClick={() => onAction('edit', row)}
+        onClick={() => onAction('scan', row)}
       >
-        <FaPen aria-hidden="true" />
+        <FaMagnifyingGlass aria-hidden="true" />
       </button>
       <button
         type="button"
-        className={`btn btn-sm btn-outline-${toggle.tone}`}
+        className="btn btn-sm btn-outline-secondary"
         title={toggle.label}
         aria-label={toggle.label}
         data-action="toggle"
@@ -232,25 +239,42 @@ export const StoragePathRowActions = ({ row, busy, onAction }) => {
       >
         <toggle.Icon aria-hidden="true" />
       </button>
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-danger"
-        title={t('artifacts.storagePathTable.deleteTooltip')}
-        aria-label={t('artifacts.storagePathTable.deleteTooltip')}
-        data-action="delete"
-        disabled={busy}
-        onClick={() => onAction('delete', row)}
-      >
-        <FaTrash aria-hidden="true" />
-      </button>
+      {builtIn ? null : (
+        <>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            title={t('artifacts.storagePathTable.editTooltip')}
+            aria-label={t('artifacts.storagePathTable.editTooltip')}
+            data-action="edit"
+            disabled={busy}
+            onClick={() => onAction('edit', row)}
+          >
+            <FaPen aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger"
+            title={t('artifacts.storagePathTable.deleteTooltip')}
+            aria-label={t('artifacts.storagePathTable.deleteTooltip')}
+            data-action="delete"
+            disabled={busy}
+            onClick={() => onAction('delete', row)}
+          >
+            <FaTrash aria-hidden="true" />
+          </button>
+        </>
+      )}
     </span>
   );
 };
 
 StoragePathRowActions.propTypes = {
   row: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     name: PropTypes.string,
     enabled: PropTypes.bool,
+    source: PropTypes.string,
   }).isRequired,
   busy: PropTypes.bool.isRequired,
   onAction: PropTypes.func.isRequired,

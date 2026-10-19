@@ -19,19 +19,14 @@ import {
 import { useManageRead } from '../hooks/useHostManage';
 import { pickDefaultSource, sourceKeyOf, sourceLabelOf } from '../utils/boxCatalog';
 import {
-  ARTIFACT_TYPES,
   FILE_SOURCES,
   HCL_KINDS,
-  LOCATION_DELETE_OPTIONS,
-  LOCATION_FORM,
   ROLE_TYPES,
   downloadBody,
   formatSize,
   hclBody,
   hclProblem,
-  locationBody,
   locationNeedsRole,
-  locationProblem,
   registerBody,
   registryDownloadBody,
   registryFileMatches,
@@ -1091,175 +1086,6 @@ RegistryDownloadModal.propTypes = {
   seed: seedShape,
   offered: PropTypes.arrayOf(PropTypes.string),
   onSwitch: PropTypes.func,
-};
-
-/**
- * The storage location dialog, hyperweaver-ui's add and edit: the name,
- * the type and the path, fixed on an edit, with the browse button, and
- * the enabled switch; the submit hands the body of `locationBody` up.
- */
-export const LocationFormModal = ({ id, server, editing, busy, onClose, onSubmit }) => {
-  const { t } = useTranslation();
-  const status = useStatus();
-  const [form, setForm] = useState(() =>
-    editing
-      ? {
-          name: editing.name,
-          path: editing.path,
-          type: editing.type,
-          enabled: editing.enabled !== false,
-        }
-      : LOCATION_FORM
-  );
-  const [problem, setProblem] = useState('');
-  const patch = changes => setForm(current => ({ ...current, ...changes }));
-
-  const submit = () => {
-    const why = locationProblem(form, Boolean(editing));
-    setProblem(why);
-    if (!why) {
-      onSubmit(locationBody(form, Boolean(editing)));
-    }
-  };
-
-  return (
-    <ToolFormDialog
-      dialog="artifact-location"
-      title={
-        editing
-          ? t('host.installerFiles.editLocationTitle', { name: editing.name })
-          : t('host.installerFiles.addStorageLocation')
-      }
-      submitKey={editing ? 'host.installerFiles.save' : 'host.installerFiles.addLocation'}
-      problemKey={problem}
-      busy={busy}
-      onClose={onClose}
-      onSubmit={submit}
-    >
-      <div className="row g-3">
-        <div className="col-12 col-md-4">
-          <label className="form-label" htmlFor="location-name">
-            {t('host.installerFiles.name')}
-          </label>
-          <input
-            id="location-name"
-            className="form-control"
-            value={form.name}
-            onChange={event => patch({ name: event.target.value })}
-            disabled={busy}
-          />
-        </div>
-        <div className="col-12 col-md-3">
-          <label className="form-label" htmlFor="location-type">
-            {t(editing ? 'host.installerFiles.typeFixed' : 'host.installerFiles.type')}
-          </label>
-          <select
-            id="location-type"
-            className="form-select"
-            value={form.type}
-            onChange={event => patch({ type: event.target.value })}
-            disabled={busy || Boolean(editing)}
-          >
-            {ARTIFACT_TYPES.map(type => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="col-12 col-md-5">
-          <label className="form-label" htmlFor="location-path">
-            {t(
-              editing
-                ? 'host.installerFiles.pathAgentHostFixed'
-                : 'host.installerFiles.pathAgentHost'
-            )}
-          </label>
-          {editing ? (
-            <input id="location-path" className="form-control" value={form.path} disabled />
-          ) : (
-            <PathInput
-              id="location-path"
-              value={form.path}
-              onChange={path => patch({ path })}
-              status={status}
-              hostId={id}
-              server={server}
-              pickTitle={t('host.installerFiles.pickStorageRoot')}
-              disabled={busy}
-            />
-          )}
-        </div>
-        <div className="col-12">
-          <SwitchField
-            id="location-enabled"
-            labelKey="host.installerFiles.enabled"
-            checked={form.enabled}
-            onChange={enabled => patch({ enabled })}
-            disabled={busy}
-          />
-        </div>
-      </div>
-    </ToolFormDialog>
-  );
-};
-
-LocationFormModal.propTypes = {
-  id: PropTypes.string.isRequired,
-  server: PropTypes.object.isRequired,
-  editing: PropTypes.object,
-  busy: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSubmit: PropTypes.func.isRequired,
-};
-
-const DELETE_OPTION_KEYS = {
-  recursive: 'host.installerFiles.deleteOptRecursive',
-  remove_db_records: 'host.installerFiles.deleteOptRemoveRecords',
-  force: 'host.installerFiles.deleteOptForce',
-};
-
-/**
- * The delete location dialog, hyperweaver-ui's: the path named, the
- * three switches of the delete, recursive, the records removed and
- * forced; the submit hands the options up, a queued task.
- */
-export const LocationDeleteModal = ({ location, busy, onClose, onSubmit }) => {
-  const { t } = useTranslation();
-  const [options, setOptions] = useState(LOCATION_DELETE_OPTIONS);
-  return (
-    <ToolFormDialog
-      dialog="artifact-location-delete"
-      title={t('host.installerFiles.deleteLocationTitle', { name: location.name })}
-      submitKey="host.installerFiles.queueDelete"
-      variant="danger"
-      busy={busy}
-      onClose={onClose}
-      onSubmit={() => onSubmit(options)}
-    >
-      <p>
-        {t('host.installerFiles.removeLocationBefore')} <code>{location.path}</code>{' '}
-        {t('host.installerFiles.removeLocationAfter')}
-      </p>
-      {Object.entries(DELETE_OPTION_KEYS).map(([key, labelKey]) => (
-        <SwitchField
-          key={key}
-          id={`location-delete-${key}`}
-          labelKey={labelKey}
-          checked={options[key]}
-          onChange={checked => setOptions(current => ({ ...current, [key]: checked }))}
-          disabled={busy}
-        />
-      ))}
-    </ToolFormDialog>
-  );
-};
-
-LocationDeleteModal.propTypes = {
-  location: PropTypes.shape({ name: PropTypes.string, path: PropTypes.string }).isRequired,
-  busy: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSubmit: PropTypes.func.isRequired,
 };
 
 /**

@@ -122,7 +122,7 @@ export const startZloginPreview = async ({
 
 const sshHint = error => {
   if (/vagrant_user/iu.test(error.message || '')) {
-    return ' — set the SSH user under Edit Machine → Credentials.';
+    return " — add a credential of use SSH on the machine's Credentials tab.";
   }
   const candidates = error.data?.ip_candidates;
   return Array.isArray(candidates) ? ` — candidate addresses: ${candidates.join(', ')}.` : '';
@@ -132,10 +132,12 @@ const sshHint = error => {
  * Start the SSH console, `POST machines/{name}/ssh/start`, the session
  * row kept in the console's state for the shell to attach to; `ipIndex`
  * targets one of a multi-homed guest's candidate addresses, the next
- * one after a dead connect. A refusal is said with the agent's hint,
- * the SSH user to set or the legal candidates a 400 names.
+ * one after a dead connect, and `credentialId` the machine's credential
+ * the session signs in with, kept on the session row as `credential_id`.
+ * A refusal is said with the agent's hint, the SSH credential to add or
+ * the legal candidates a 400 names.
  *
- * @param {Object} options - The machine, the state setters and the address index
+ * @param {Object} options - The machine, the state setters, the address index and the credential
  * @returns {Promise<void>} Settles when the console state moved or the refusal was said
  */
 export const startSshPreview = async ({
@@ -147,12 +149,16 @@ export const startSshPreview = async ({
   setMachineDetails,
   setActiveConsoleType,
   ipIndex = 0,
+  credentialId = '',
 }) => {
   try {
     setLoading(true);
-    const session = await startSshSession(status, id, name, ipIndex);
+    const session = await startSshSession(status, id, name, ipIndex, credentialId);
     if (session?.id) {
-      setMachineDetails(prev => ({ ...prev, ssh_session: session }));
+      setMachineDetails(prev => ({
+        ...prev,
+        ssh_session: credentialId ? { ...session, credential_id: credentialId } : session,
+      }));
       setActiveConsoleType('ssh');
     } else {
       setError('SSH session failed: the agent answered no session.');
@@ -171,9 +177,10 @@ export const startSshPreview = async ({
  * running check and the display facts the connection panel draws, and
  * `guest`, the guest's own RDP server, which the bridge resolves itself
  * and needs no read. The pane opens its socket on its own; no agent
- * session row exists.
+ * session row exists. `credentialId` names the machine's credential the
+ * bridge signs in with, kept on the console state as `credential_id`.
  *
- * @param {Object} options - The machine, the state setters and the target
+ * @param {Object} options - The machine, the state setters, the target and the credential
  * @returns {Promise<void>} Settles when the console state moved or the refusal was said
  */
 export const startRdpPreview = async ({
@@ -185,15 +192,17 @@ export const startRdpPreview = async ({
   setMachineDetails,
   setActiveConsoleType,
   target = 'console',
+  credentialId = '',
 }) => {
+  const credential = credentialId ? { credential_id: credentialId } : {};
   try {
     setLoading(true);
     if (target === 'guest') {
-      setMachineDetails(prev => ({ ...prev, rdp_session: { target: 'guest' } }));
+      setMachineDetails(prev => ({ ...prev, rdp_session: { target: 'guest', ...credential } }));
       setActiveConsoleType('rdp');
       return;
     }
-    const facts = {};
+    const facts = { ...credential };
     let info = null;
     try {
       info = await fetchVncInfo(status, id, name);
@@ -227,17 +236,26 @@ export const startRdpPreview = async ({
  * `POST machines/{name}/open-rdp` launches the host's own client; on the
  * server role the guest's `rdp_url` of `GET machines/{name}/rdp` is handed
  * to the browser, and a machine whose only target is the display on the
- * agent host's loopback is said to be reachable from that host alone.
+ * agent host's loopback is said to be reachable from that host alone;
+ * `credentialId` rides the launch as `credential_id` where given.
  *
- * @param {Object} options - The machine, whether the page is served by the agent and the setters
+ * @param {Object} options - The machine, whether the page is served by the agent, the setters and the credential
  * @returns {Promise<void>} Settles when the client opened or the refusal was said
  */
-export const launchRdp = async ({ status, id, name, isDirect, setLoading, setError }) => {
+export const launchRdp = async ({
+  status,
+  id,
+  name,
+  isDirect,
+  setLoading,
+  setError,
+  credentialId = '',
+}) => {
   setLoading(true);
   try {
     const info = await fetchRdpInfo(status, id, name);
     if (isDirect) {
-      await openRdp(status, id, name);
+      await openRdp(status, id, name, '', credentialId);
       return;
     }
     const guest = (info?.targets || []).find(target => target.type === 'guest');

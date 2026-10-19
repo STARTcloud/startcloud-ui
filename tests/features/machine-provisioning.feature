@@ -79,6 +79,63 @@ Feature: machine provisioning
     And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying nothing at "/provisioner/roles/0/enabled"
     And the host was sent PUT to "/api/agents/1/machines/dev-1" 1 times
 
+  Scenario: Provisioning page: the navbar search narrows the Roles tab's catalog and run by name and description, the catalog drawing no search box of its own
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-provisioning fixture
+    And the host answers the hosts-search fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/provisioning"
+    And I pick the editor tab "roles"
+    Then the catalog lists 5 roles
+    And the roles catalog draws no search box
+    When I press "/"
+    And I type "traveler" in the navbar search box
+    Then the catalog lists 1 roles
+    And the roles list reads "traveler"
+    And the navbar search count reads "2 / 7"
+    When I type "domino server" in the navbar search box
+    Then the catalog lists 1 roles
+    And the roles list reads "domino,traveler"
+    When I type "" in the navbar search box
+    Then the catalog lists 5 roles
+    And the roles list reads "domino,traveler"
+
+  Scenario: Provisioning page: on a provisioned machine each role, script and playbook card runs alone, the play glyph sending the provision narrowed to roles, scripts or playbook with one notice a run, a role that is off held
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-provisioning fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/provisioning"
+    And I pick the editor tab "roles"
+    Then the provisioning status reads "provisioned"
+    When I press the run glyph of the role "domino"
+    Then the host was sent POST to "/api/agents/1/machines/dev-1/provision" carrying "startcloud.hcl_roles.domino" at "/roles/0"
+    And the host was sent POST to "/api/agents/1/machines/dev-1/provision" carrying nothing at "/scripts"
+    And the page raised 1 success notice
+    When I flip the role "traveler"
+    Then the run glyph of the role "traveler" is held
+    When I pick the editor tab "scripts"
+    And I press the editor's "run-script" action
+    Then the host was sent POST to "/api/agents/1/machines/dev-1/provision" carrying "./scripts/aliases.sh" at "/scripts/0"
+    And the page raised 2 success notices
+    When I pick the editor tab "playbooks"
+    And I press the editor's "run-playbook" action
+    Then the host was sent POST to "/api/agents/1/machines/dev-1/provision" carrying "ansible/playbook.yml" at "/playbook"
+    And the host was sent POST to "/api/agents/1/machines/dev-1/provision" 3 times
+    And the page raised 3 success notices
+
+  Scenario: Provisioning page: a machine whose status is not provisioned draws no play glyph on its cards
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-provisioning fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-2/provisioning"
+    Then the provisioning status reads "not_started"
+    When I pick the editor tab "playbooks"
+    Then the editor lists 1 step cards
+    And the editor offers no "run-playbook"
+
   Scenario: Provisioning page: a write one request and one notice, Store refuses a role name that is no name and sends nothing
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture

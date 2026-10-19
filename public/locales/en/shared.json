@@ -1381,13 +1381,15 @@
       "confirmMessage": "Update {{app}} from {{currentVersion}} to {{latestVersion}}? The update is downloaded and applied, then {{app}} restarts on the new version."
     }
   },
+  "config": {
+    "defaultMark": "default"
+  },
   "configManager": {
     "updateSuccess": "Configuration updated successfully.",
     "restartBadge": "restart",
     "deprecated": "Deprecated",
     "search": "Search settings",
     "noFiles": "This server has no configuration files to edit.",
-    "defaultHint": "Default: {{value}}",
     "restarting": "Restarting.",
     "schemaVersion": "Schema version {{version}}",
     "settingsCount_one": "{{count}} setting",
@@ -2611,7 +2613,6 @@
         "zone": "Zones"
       },
       "column": {
-        "sentence": "Summary",
         "id": "Server ID",
         "provisioner": "Provisioner",
         "roles": "Roles",
@@ -2739,6 +2740,9 @@
       },
       "hostsFile": {
         "empty": "No entries"
+      },
+      "addresses": {
+        "managed": "Managed"
       }
     },
     "manage": {
@@ -3241,6 +3245,12 @@
         "keyword": "restart",
         "confirm": "Restart"
       }
+    },
+    "discard": {
+      "title": "Discard changes?",
+      "message": "The changes made in this dialog are lost.",
+      "keep": "Keep editing",
+      "discard": "Discard"
     },
     "card": {
       "updated": "updated {{time}}"
@@ -5520,7 +5530,9 @@
       "liveScreenshotHint": "Live screenshot — start a console above to interact",
       "startConsoleAlt": "Start Console",
       "noActiveConsoleSession": "No Active Console Session",
-      "clickButtonsToStart": "Click the buttons above to start a console session"
+      "clickButtonsToStart": "Click the buttons above to start a console session",
+      "connectAs": "Connect as",
+      "connectAsDefault": "default"
     },
     "standaloneConsole": {
       "invalidAddress": "Invalid console address.",
@@ -6261,7 +6273,6 @@
       "interface": "Interface",
       "ipAddress": "IP Address",
       "netmaskPrefix": "Netmask/Prefix",
-      "type": "Type",
       "status": "Status",
       "na": "N/A",
       "ipv4": "IPv4",
@@ -6270,32 +6281,14 @@
     },
     "ipAddressTableManagement": {
       "auto": "auto",
-      "unknown": "Unknown",
-      "ipv4": "IPv4",
-      "ipv6": "IPv6",
-      "na": "N/A",
       "loading": "Loading IP addresses...",
-      "noData": "No IP addresses found",
-      "interface": "Interface",
       "addressObject": "Address Object",
-      "ipAddress": "IP Address",
       "type": "Type",
       "version": "Version",
-      "state": "State",
       "actions": "Actions",
       "enableAddress": "Enable Address",
       "disableAddress": "Disable Address",
       "deleteAddress": "Delete Address"
-    },
-    "networkSummary": {
-      "title": "Network Summary",
-      "expand": "Expand section",
-      "collapse": "Collapse section",
-      "totalInterfaces": "Total Interfaces",
-      "physical": "Physical",
-      "virtual": "Virtual",
-      "up": "Up",
-      "down": "Down"
     },
     "ntpConfirmActionModal": {
       "syncTitle": "Force Time Synchronization",
@@ -8019,14 +8012,10 @@
       "enabledMessage": "Orchestration enabled — persisted to config, fully applies at the next agent start.",
       "toggleFailed": "Toggle failed: {{message}}",
       "priorityRange": "Priority must be 1–100.",
-      "prioritySet": "Priority for {{name}} set to {{value}} (immediate).",
       "priorityUpdateFailed": "Priority update failed for {{name}}: {{message}}",
       "priorityWritesFailed": "{{failed}} of {{total}} priority writes failed: {{message}}",
-      "bootOrderApplied_one": "Boot order applied — {{count}} priority updated (immediate).",
-      "bootOrderApplied_other": "Boot order applied — {{count}} priorities updated (immediate).",
       "dryRunFailed": "Dry run failed: {{message}}",
       "readSettingsFailed": "Could not read settings: {{message}}",
-      "strategySet": "Strategy set to {{strategy}} — fully applies at the next agent start.",
       "strategyUpdateFailed": "Strategy update failed: {{message}}",
       "status": "Status:",
       "enabled": "enabled",
@@ -8040,15 +8029,17 @@
       "dryRunPlan_one": "Dry-Run Plan — {{count}} machine, ~{{duration}}",
       "dryRunPlan_other": "Dry-Run Plan — {{count}} machines, ~{{duration}}",
       "bootOrderTitle": "Boot Order — drag to reorder (top boots first)",
-      "applyOrder": "Apply Order",
       "default": "default",
       "bootPriorityFor": "Boot priority for {{name}}",
-      "save": "Save",
-      "bootOrderHelp": "Drag to reorder and Apply (top = highest, spaced by 5), or type an exact number on a row and Save — every write is immediate, no restart.",
+      "bootOrderHelp": "Drag to reorder and Preview (top = highest, spaced by 5), or type an exact number on a row and Apply — every write is immediate, no restart.",
       "priorityFootnote": "Higher priority boots first at agent start (autostart machines only); shutdown at agent exit runs lowest first. Priority changes apply immediately — no task, no restart.",
       "enableOrchestrationTitle": "Enable Orchestration",
       "enableOrchestrationMessage": "Enable host-level boot orchestration? The setting persists to the agent's config and fully applies at the next agent start — autostart machines will then boot in priority order.",
-      "enable": "Enable"
+      "enable": "Enable",
+      "apply": "Apply",
+      "applied": "Orchestration applied: {{strategy}}, {{count}} boot priorities written.",
+      "machineColumn": "Machine",
+      "priorityColumn": "Boot priority"
     },
     "recipeEditModal": {
       "variableName": "Variable name",
@@ -8152,49 +8143,11 @@
       "statusUnhashedTitle": "Never hashed — run a scan",
       "statusHashed": "Hashed",
       "statusHashedTitle": "Hashed; no expectation on record",
-      "locationNamePathRequired": "A location needs a name and a path.",
-      "locationUpdated": "Location \"{{name}}\" updated.",
-      "locationAdded": "Location \"{{name}}\" added.",
-      "locationSaveFailed": "Location save failed: {{message}}",
-      "locationEnabled": "Location \"{{name}}\" enabled.",
-      "locationDisabled": "Location \"{{name}}\" disabled.",
-      "locationUpdateFailed": "Location update failed: {{message}}",
       "messageWithTask": "{{message}} (task {{taskId}})",
-      "locationDeleteQueued": "Location \"{{name}}\" delete queued",
-      "locationDeleteFailed": "Location delete failed: {{message}}",
       "scanOfQueued": "Scan of \"{{name}}\" queued",
       "scanFailed": "Scan failed: {{message}}",
-      "storageLocations": "Storage Locations",
-      "addLocation": "Add Location",
-      "builtIn": "built-in",
-      "disabled": "disabled",
-      "filesSize_one": "{{count}} file · {{size}}",
-      "filesSize_other": "{{count}} files · {{size}}",
-      "scanErrorsCount_one": "{{count}} scan error",
-      "scanErrorsCount_other": "{{count}} scan errors",
       "scanThisLocation": "Scan this location",
-      "enable": "Enable",
-      "disable": "Disable",
-      "edit": "Edit",
-      "deleteThisLocation": "Delete this location",
-      "noLocationsYet": "none yet — the agent seeds its built-ins",
-      "editLocationTitle": "Edit Location: {{name}}",
-      "addStorageLocation": "Add Storage Location",
-      "save": "Save",
-      "name": "Name",
-      "typeFixed": "Type (fixed at creation)",
-      "type": "Type",
-      "pathAgentHostFixed": "Path (agent host — fixed at creation)",
-      "pathAgentHost": "Path (agent host)",
       "pickStorageRoot": "Pick the storage root",
-      "enabled": "Enabled",
-      "deleteLocationTitle": "Delete Location: {{name}}",
-      "queueDelete": "Queue Delete",
-      "removeLocationBefore": "Remove",
-      "removeLocationAfter": "from the storage locations?",
-      "deleteOptRecursive": "Also delete the files under it (recursive)",
-      "deleteOptRemoveRecords": "Remove its registry records",
-      "deleteOptForce": "Force",
       "loadArtifactsFailed": "Failed to load artifacts: {{message}}",
       "scanQueuedFull": "{{message}} (task {{taskId}}) — refresh once it completes",
       "scanQueuedDefault": "Scan queued",
@@ -8659,7 +8612,6 @@
         "toggleFailed": "Failed to {{action}} IP address \"{{name}}\"",
         "toggleError": "Error {{action}}ing IP address \"{{name}}\": {{message}}"
       },
-      "title": "IP Address Management",
       "managePrefix": "Manage IP address assignments on",
       "filterByInterface": "Filter by Interface",
       "ipVersion": "IP Version",
@@ -8677,7 +8629,6 @@
       "stateDuplicate": "Duplicate",
       "refresh": "Refresh",
       "clear": "Clear",
-      "ipAddresses": "IP Addresses ({{total}})",
       "createIpAddress": "Create IP Address",
       "deleteTitle": "Delete IP Address",
       "delete": "Delete",
@@ -10684,12 +10635,6 @@
       "utmStoppedOnly": "utm snapshots require a stopped machine — stop it first."
     },
     "machineListPanel": {
-      "runningSentence": "This {{noun}} is running.",
-      "stoppedSentence": "This {{noun}} is stopped.",
-      "pausedSentence": "Paused — frozen in RAM; resume to continue.",
-      "suspendedSentence": "Suspended to disk — start to resume where it left off.",
-      "configuredSentence": "Configured but never started.",
-      "transitioningSentence": "The {{noun}} is {{status}}…",
       "loadFailed": "Failed to load {{plural}}: {{message}}",
       "actionQueued": "{{action}} queued for {{name}}",
       "actionFailed": "{{action}} failed for {{name}}: {{message}}",
@@ -11216,16 +11161,22 @@
       "unchanged": "unchanged",
       "simpleVcpus": "simple — vcpus is the count",
       "complexTopo": "complex — sockets / cores / threads",
-      "credentialsHint": "The SSH console, SFTP, and the provisioning pipeline log into the guest with these. Applies immediately, even while running. Only fields you edit are saved — clearing an edited field DELETES that credential; untouched fields keep their stored value.",
-      "pickPrivateKeyFile": "Pick the private key file",
-      "unchangedPlaceholder": "unchanged",
+      "credentialsHint": "Each credential is a password, SSH key or key pair row of this host's store; the default of a use is the one its console signs in with.",
+      "credentialUse": "Use",
+      "credentialUseOption": {
+        "ssh": "SSH",
+        "rdp": "RDP",
+        "console": "Console",
+        "vagrant": "Vagrant"
+      },
+      "credentialSecret": "Store row",
+      "credentialDefault": "Default",
+      "credentialRemove": "Remove",
+      "addCredential": "Add credential",
+      "noCredentials": "No credential is set; the host's default credentials apply.",
+      "pickCredentialTitle": "Pick a credential",
       "hidePassword": "Hide the password",
       "showPassword": "Show the password",
-      "credField": {
-        "vagrant_user": "SSH user",
-        "vagrant_user_pass": "SSH password",
-        "vagrant_user_private_key_path": "Private key path (agent host)"
-      },
       "serialPorts": "Serial Ports (COM)",
       "parallelPorts": "Parallel Ports (LPT)",
       "hypervisorPassthroughPrefix": "Hypervisor passthrough (",
@@ -11652,7 +11603,8 @@
       "intro3": "sits among this document's provisioning methods. Document",
       "intro4": "reach scripts as environment variables under their exact names.",
       "enabledLabel": "Enabled",
-      "addScript": "Add Script"
+      "addScript": "Add Script",
+      "runScriptTitle": "Run this script"
     },
     "provisioningTransportTab": {
       "intro1": "How the agent reaches the guest.",
@@ -11779,7 +11731,8 @@
       "addFile": "+ {{kind}}…",
       "pickRow": "Pick",
       "pickFileTitle": "{{role}} · {{kind}}",
-      "searchFilesPlaceholder": "Search files"
+      "searchFilesPlaceholder": "Search files",
+      "runRoleTitle": "Run this role"
     },
     "provisioningVarRows": {
       "notSetOption": "not set",
@@ -11860,7 +11813,8 @@
       "localHeading": "Local — ansible-local, inside the guest",
       "addPlaybook": "Add Playbook",
       "remoteHeading": "Remote — host ansible over the guest transport",
-      "addRemotePlaybook": "Add Remote Playbook"
+      "addRemotePlaybook": "Add Remote Playbook",
+      "runPlaybookTitle": "Run this playbook"
     },
     "hostsYmlModal": {
       "failedToLoad": "Failed to load the document: {{message}}",
@@ -12417,7 +12371,8 @@
       "drop": "Drop a certificate, key or bundle here",
       "reading": "Reading…",
       "pasteLabel": "Or paste PEM, OpenSSH, PPK or JWK text",
-      "placeholder": "-----BEGIN CERTIFICATE-----",
+      "browse": "Browse files",
+      "binary": "{{name}} · binary",
       "password": "Password",
       "locked": "The material is locked; enter its password and read it again.",
       "read": "Read",

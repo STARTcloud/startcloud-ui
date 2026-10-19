@@ -9,6 +9,8 @@ import {
   buildUtmSection,
   buildZoneChanges,
   cpuChangesOf,
+  newCredentialRow,
+  patchedCredentialRows,
   seededUtmArgs,
 } from './machineSettings';
 
@@ -42,8 +44,7 @@ export const initialForm = () => ({
   serialRows: [],
   parallelRows: [],
   nicRows: [],
-  creds: {},
-  credsTouched: [],
+  credentials: [],
   addFilesystems: [],
   removeFilesystems: [],
   addZoneDisks: [],
@@ -58,14 +59,16 @@ export const initialForm = () => ({
 
 /**
  * The Settings form seeded from a machine's detail, `knob_current` over
- * the configuration, with the seed it is diffed against.
+ * the configuration and the detail's `credentials`, with the seed it is
+ * diffed against.
  *
  * @param {Object|null} configuration - The detail's `configuration`
  * @param {Object|null} knobCurrent - The detail's `knob_current`
+ * @param {Array<Object>|null} [credentials] - The detail's `credentials`
  * @returns {{ form: Object, seed: Object }} The form and its seed
  */
-export const seededForm = (configuration, knobCurrent) => {
-  const seed = buildSeed(configuration, knobCurrent);
+export const seededForm = (configuration, knobCurrent, credentials = null) => {
+  const seed = buildSeed(configuration, knobCurrent, credentials);
   return {
     seed,
     form: {
@@ -83,7 +86,7 @@ export const seededForm = (configuration, knobCurrent) => {
       serialRows: seed.serialRows,
       parallelRows: seed.parallelRows,
       nicRows: seed.nicRows,
-      creds: seed.creds,
+      credentials: seed.credentials,
       utmNotes: asFormString(knobCurrent?.utm?.notes ?? configuration?.utm?.notes),
       utmQemuArgs: seededUtmArgs(knobCurrent, configuration),
     },
@@ -110,8 +113,8 @@ export const isMarkedAttachment = (form, entry) =>
  * The writers of the Settings form over one `setForm`, each a functional
  * update so a writer never closes over a stale form: `update` of one key
  * by value or by function, `set` and `toggleIn` curried by key, the
- * attachment mark, a hardware section's value, a credential with its
- * touched mark, and a zone NIC's edit and net property.
+ * attachment mark, a hardware section's value, the credential rows'
+ * add, patch and remove, and a zone NIC's edit and net property.
  *
  * @param {Function} setForm - The state setter
  * @returns {Object} The writers
@@ -147,14 +150,10 @@ export const formTools = setForm => {
         ...hardware,
         [sectionId]: { ...(hardware[sectionId] || {}), [key]: value },
       })),
-    setCred: (key, value) =>
-      setForm(prev => ({
-        ...prev,
-        creds: { ...prev.creds, [key]: value },
-        credsTouched: prev.credsTouched.includes(key)
-          ? prev.credsTouched
-          : [...prev.credsTouched, key],
-      })),
+    addCredential: () => update('credentials', rows => [...rows, newCredentialRow(rows)]),
+    patchCredential: (key, patch) =>
+      update('credentials', rows => patchedCredentialRows(rows, key, patch)),
+    removeCredential: key => update('credentials', rows => rows.filter(row => row.key !== key)),
     editZoneNic: (physical, key, value) => updateZoneNic(physical, () => ({ [key]: value })),
     editZoneNicProp: (physical, propKey, value) =>
       updateZoneNic(physical, current => ({

@@ -54,7 +54,8 @@ const percentOf = event => Math.round((event.loaded * 100) / (event.total || eve
  * locations and the artifacts, each over the one table the page's
  * binding narrows, the request filters of the artifacts in the navbar's
  * panel and their page under the table; Create storage location on the
- * first tab, and on the second Upload files, Download from URL and Scan
+ * first tab, each location's row with its Scan, Enable or Disable, Edit
+ * and Delete, and on the second Upload files, Download from URL and Scan
  * storage with the transfers in flight above the rows. Every write is
  * one request and one notice through `useManageSend`; a delete waits
  * behind the typed confirmation; an upload prepares each file and puts
@@ -280,11 +281,24 @@ const ArtifactStorageSection = ({ id, server, ctx, data, search, filtering }) =>
     );
   };
 
+  const scanPath = row =>
+    sent(
+      {
+        call: () => scanArtifacts(status, id, row.id),
+        doneKey: 'host.installerFiles.scanOfQueued',
+        values: { name: row.name },
+        failKey: 'hosts.manage.artifacts.failed',
+      },
+      follow
+    );
+
   const onPathAction = (action, row) => {
     if (action === 'edit') {
       setOpen({ kind: 'storage-path-edit', storagePath: row });
     } else if (action === 'toggle') {
       togglePath(row);
+    } else if (action === 'scan') {
+      scanPath(row);
     } else {
       setConfirm({ kind: 'storage-path', row });
     }

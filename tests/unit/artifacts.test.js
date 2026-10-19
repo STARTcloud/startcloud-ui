@@ -26,6 +26,7 @@ import {
   storagePathEditBody,
   storagePathEditProblem,
   storagePathProblem,
+  storagePathsWithCounts,
   transferOf,
   transferStatusKey,
   transferTone,
@@ -258,6 +259,24 @@ describe('the locations and the query', () => {
         { limit: 25, offset: 0 }
       )
     ).toMatchObject({ type: 'iso', storage_location_id: 'a', sort_by: 'size' });
+  });
+
+  it('lays the registry file count and size over each location matched by path', () => {
+    const merged = storagePathsWithCounts(
+      [
+        { ...paths[0], file_count: 0, total_size: 0 },
+        { ...paths[1], file_count: 1, total_size: 9 },
+        paths[2],
+      ],
+      [
+        { id: 'x', path: '/iso', file_count: 2, total_size: 40 },
+        { id: 'y', path: '/img', file_count: 3 },
+      ]
+    );
+    expect(merged[0]).toMatchObject({ id: 'a', file_count: 2, total_size: 40 });
+    expect(merged[1]).toMatchObject({ id: 'b', file_count: 3, total_size: 9 });
+    expect(merged[2]).toBe(paths[2]);
+    expect(storagePathsWithCounts(paths, [])).toEqual(paths);
   });
 
   it('matches a row by its words', () => {

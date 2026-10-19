@@ -4,6 +4,7 @@ import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 
+import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MarkdownArticle from '../../../components/common/MarkdownArticle';
@@ -167,20 +168,24 @@ SelectField.propTypes = {
  * The document's Create and Edit dialog: name (fixed while editing),
  * display name, the icon picked from the estate's glyph set, type and
  * public, the fields decision 157 keeps at the document's own level and
- * writes to every copy through `POST` or `PATCH /api/admin/terms/{name}`.
+ * writes to every copy through `POST` or `PATCH /api/admin/terms/{name}`;
+ * while a field differs from the one it opened on, a backdrop click,
+ * Escape, the close button and Cancel ask the discard prompt.
  */
 export const TermDocumentDialog = ({ document = null, onClose, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const editing = document !== null;
-  const [form, setForm] = useState(() => ({
+  const [opened] = useState(() => ({
     name: document?.name || '',
     friendly_name: document?.friendly_name || '',
     icon: TERM_ICON_NAMES.includes(document?.icon) ? document.icon : 'file-text',
     type: TERM_TYPES.includes(document?.type) ? document.type : 'SITE',
     is_public: Boolean(document?.is_public),
   }));
+  const [form, setForm] = useState(opened);
   const [busy, setBusy] = useState(false);
+  const guard = useDiscardGuard(JSON.stringify(form) !== JSON.stringify(opened), onClose);
   const rules = useFormRules({
     formKey: 'terms',
     schema: docSchema({ editing }),
@@ -220,85 +225,93 @@ export const TermDocumentDialog = ({ document = null, onClose, onSaved }) => {
   };
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={save} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">
-            {editing
-              ? t('admin.terms.editTitle', { name: document.name })
-              : t('admin.terms.createTitle')}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
-          <div className="row">
-            <div className="col-md-6">
-              <TextField
-                name="name"
-                form={form}
-                rules={rules}
-                onChange={onChange}
-                labels={DOC_LABELS}
-                readOnly={editing}
-              />
-            </div>
-            <div className="col-md-6">
-              <TextField
-                name="friendly_name"
-                form={form}
-                rules={rules}
-                onChange={onChange}
-                labels={DOC_LABELS}
-              />
-            </div>
-            <div className="col-md-4">
-              <SelectField
-                name="icon"
-                form={form}
-                rules={rules}
-                onChange={onChange}
-                labels={DOC_LABELS}
-                options={TERM_ICON_NAMES}
-                labelOf={name => name}
-              />
-            </div>
-            <div className="col-md-4">
-              <SelectField
-                name="type"
-                form={form}
-                rules={rules}
-                onChange={onChange}
-                labels={DOC_LABELS}
-                options={TERM_TYPES}
-                labelOf={type => t(`admin.terms.type.${type.toLowerCase()}`)}
-              />
-            </div>
-            <div className="col-md-4 d-flex align-items-center">
-              <div className="form-check">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id={rules.idFor('is_public')}
-                  checked={form.is_public}
-                  onChange={event => onChange('is_public', event.target.checked)}
+    <>
+      <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
+        <form onSubmit={save} noValidate data-dialog="term-document">
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">
+              {editing
+                ? t('admin.terms.editTitle', { name: document.name })
+                : t('admin.terms.createTitle')}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormErrorSummary errors={rules.summary} />
+            <div className="row">
+              <div className="col-md-6">
+                <TextField
+                  name="name"
+                  form={form}
+                  rules={rules}
+                  onChange={onChange}
+                  labels={DOC_LABELS}
+                  readOnly={editing}
                 />
-                <label className="form-check-label" htmlFor={rules.idFor('is_public')}>
-                  {t('admin.terms.field.publicAt', { name: form.name || '…' })}
-                </label>
+              </div>
+              <div className="col-md-6">
+                <TextField
+                  name="friendly_name"
+                  form={form}
+                  rules={rules}
+                  onChange={onChange}
+                  labels={DOC_LABELS}
+                />
+              </div>
+              <div className="col-md-4">
+                <SelectField
+                  name="icon"
+                  form={form}
+                  rules={rules}
+                  onChange={onChange}
+                  labels={DOC_LABELS}
+                  options={TERM_ICON_NAMES}
+                  labelOf={name => name}
+                />
+              </div>
+              <div className="col-md-4">
+                <SelectField
+                  name="type"
+                  form={form}
+                  rules={rules}
+                  onChange={onChange}
+                  labels={DOC_LABELS}
+                  options={TERM_TYPES}
+                  labelOf={type => t(`admin.terms.type.${type.toLowerCase()}`)}
+                />
+              </div>
+              <div className="col-md-4 d-flex align-items-center">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id={rules.idFor('is_public')}
+                    checked={form.is_public}
+                    onChange={event => onChange('is_public', event.target.checked)}
+                  />
+                  <label className="form-check-label" htmlFor={rules.idFor('is_public')}>
+                    {t('admin.terms.field.publicAt', { name: form.name || '…' })}
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            {t('admin.buttons.cancel')}
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {t('admin.buttons.save')}
-          </button>
-        </Modal.Footer>
-      </form>
-    </Modal>
+          </Modal.Body>
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={guard.close}
+              disabled={busy}
+            >
+              {t('admin.buttons.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {t('admin.buttons.save')}
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 
@@ -384,6 +397,7 @@ const PublishDialog = ({ document, source, content, onClose, onPublished }) => {
   const notify = useNotify();
   const [form, setForm] = useState({ version: '' });
   const [busy, setBusy] = useState(false);
+  const guard = useDiscardGuard(form.version !== '', onClose);
   const rules = useFormRules({
     formKey: 'terms',
     schema: PUBLISH_SCHEMA,
@@ -413,40 +427,48 @@ const PublishDialog = ({ document, source, content, onClose, onPublished }) => {
   };
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={publish} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">{t('admin.terms.publishTitle')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
-          <Field
-            id={rules.idFor('version')}
-            label={t('admin.terms.publishVersion')}
-            error={rules.errors.version || ''}
-          >
-            {aria => (
-              <input
-                {...aria}
-                type="text"
-                className="form-control"
-                value={form.version}
-                onChange={event => setForm({ version: event.target.value })}
-                onBlur={() => rules.onBlur('version')}
-              />
-            )}
-          </Field>
-        </Modal.Body>
-        <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            {t('admin.buttons.cancel')}
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {t('admin.terms.publish')}
-          </button>
-        </Modal.Footer>
-      </form>
-    </Modal>
+    <>
+      <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
+        <form onSubmit={publish} noValidate>
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">{t('admin.terms.publishTitle')}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormErrorSummary errors={rules.summary} />
+            <Field
+              id={rules.idFor('version')}
+              label={t('admin.terms.publishVersion')}
+              error={rules.errors.version || ''}
+            >
+              {aria => (
+                <input
+                  {...aria}
+                  type="text"
+                  className="form-control"
+                  value={form.version}
+                  onChange={event => setForm({ version: event.target.value })}
+                  onBlur={() => rules.onBlur('version')}
+                />
+              )}
+            </Field>
+          </Modal.Body>
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={guard.close}
+              disabled={busy}
+            >
+              {t('admin.buttons.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {t('admin.terms.publish')}
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 
@@ -480,13 +502,15 @@ export const TermCopyDialog = ({
 }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const [form, setForm] = useState(() => ({
+  const [opened] = useState(() => ({
     regions: source ? regionsOf(source) : [],
     version: source?.version || '',
     content: source?.content || '',
   }));
+  const [form, setForm] = useState(opened);
   const [busy, setBusy] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const guard = useDiscardGuard(JSON.stringify(form) !== JSON.stringify(opened), onClose);
   const schema = editing ? SAVE_SCHEMA : COPY_SCHEMA;
   const rules = useFormRules({
     formKey: 'terms',
@@ -533,123 +557,133 @@ export const TermCopyDialog = ({
   };
 
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <form onSubmit={save} noValidate>
-        <Modal.Header closeButton>
-          <Modal.Title as="h5">
-            {editing
-              ? t('admin.terms.editTitle', { name: document.friendly_name || document.name })
-              : t('admin.terms.copies.addTitle', { name: document.friendly_name || document.name })}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <FormErrorSummary errors={rules.summary} />
-          <div className="row">
-            <div className="col-md-6">
-              {editing ? (
-                <Field id="term-copy-version-readonly" label={t(COPY_LABELS.version)}>
-                  {aria => (
-                    <input
-                      {...aria}
-                      type="text"
-                      className="form-control"
-                      value={source.version}
-                      readOnly
-                    />
-                  )}
-                </Field>
-              ) : (
-                <Field
-                  id={rules.idFor('version')}
-                  label={t(COPY_LABELS.version)}
-                  error={rules.errors.version || ''}
-                >
-                  {aria => (
-                    <input
-                      {...aria}
-                      type="text"
-                      className="form-control"
-                      value={form.version}
-                      onChange={event => onChange('version', event.target.value)}
-                      onBlur={() => rules.onBlur('version')}
-                    />
-                  )}
-                </Field>
-              )}
-            </div>
-            <div className="col-md-6">
-              <RegionsField form={form} rules={rules} onChange={onChange} />
-            </div>
-          </div>
-          <div className="small text-muted mb-2">
-            {t('admin.terms.placeholders')}{' '}
-            {placeholders.map(entry => (
-              <code key={entry.name} className="me-1" title={entry.description || ''}>
-                {`{{${entry.name}}}`}
-              </code>
-            ))}
-          </div>
-          <div className="row">
-            <div className="col-md-6">
-              <Field
-                id={rules.idFor('content')}
-                label={t(COPY_LABELS.content)}
-                error={rules.errors.content || ''}
-              >
-                {aria => (
-                  <textarea
-                    {...aria}
-                    className="form-control font-monospace"
-                    rows="14"
-                    value={form.content}
-                    onChange={event => onChange('content', event.target.value)}
-                    onBlur={() => rules.onBlur('content')}
-                  />
+    <>
+      <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
+        <form onSubmit={save} noValidate>
+          <Modal.Header closeButton>
+            <Modal.Title as="h5">
+              {editing
+                ? t('admin.terms.editTitle', { name: document.friendly_name || document.name })
+                : t('admin.terms.copies.addTitle', {
+                    name: document.friendly_name || document.name,
+                  })}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormErrorSummary errors={rules.summary} />
+            <div className="row">
+              <div className="col-md-6">
+                {editing ? (
+                  <Field id="term-copy-version-readonly" label={t(COPY_LABELS.version)}>
+                    {aria => (
+                      <input
+                        {...aria}
+                        type="text"
+                        className="form-control"
+                        value={source.version}
+                        readOnly
+                      />
+                    )}
+                  </Field>
+                ) : (
+                  <Field
+                    id={rules.idFor('version')}
+                    label={t(COPY_LABELS.version)}
+                    error={rules.errors.version || ''}
+                  >
+                    {aria => (
+                      <input
+                        {...aria}
+                        type="text"
+                        className="form-control"
+                        value={form.version}
+                        onChange={event => onChange('version', event.target.value)}
+                        onBlur={() => rules.onBlur('version')}
+                      />
+                    )}
+                  </Field>
                 )}
-              </Field>
-            </div>
-            <div className="col-md-6">
-              <div className="form-label">{t('admin.terms.preview')}</div>
-              <div className="border rounded p-3 term-preview">
-                <ReactMarkdown>{form.content}</ReactMarkdown>
+              </div>
+              <div className="col-md-6">
+                <RegionsField form={form} rules={rules} onChange={onChange} />
               </div>
             </div>
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            {t('admin.buttons.cancel')}
-          </button>
-          {editing ? (
+            <div className="small text-muted mb-2">
+              {t('admin.terms.placeholders')}{' '}
+              {placeholders.map(entry => (
+                <code key={entry.name} className="me-1" title={entry.description || ''}>
+                  {`{{${entry.name}}}`}
+                </code>
+              ))}
+            </div>
+            <div className="row">
+              <div className="col-md-6">
+                <Field
+                  id={rules.idFor('content')}
+                  label={t(COPY_LABELS.content)}
+                  error={rules.errors.content || ''}
+                >
+                  {aria => (
+                    <textarea
+                      {...aria}
+                      className="form-control font-monospace"
+                      rows="14"
+                      value={form.content}
+                      onChange={event => onChange('content', event.target.value)}
+                      onBlur={() => rules.onBlur('content')}
+                    />
+                  )}
+                </Field>
+              </div>
+              <div className="col-md-6">
+                <div className="form-label">{t('admin.terms.preview')}</div>
+                <div className="border rounded p-3 term-preview">
+                  <ReactMarkdown>{form.content}</ReactMarkdown>
+                </div>
+              </div>
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
             <button
               type="button"
-              className="btn btn-outline-secondary"
+              className="btn btn-secondary"
+              onClick={guard.close}
               disabled={busy}
-              onClick={() => setPublishing(true)}
             >
-              {t('admin.terms.publish')}
+              {t('admin.buttons.cancel')}
             </button>
-          ) : null}
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {editing
-              ? t('admin.terms.saveAsRevision', { version: source.version })
-              : t('admin.terms.save')}
-          </button>
-        </Modal.Footer>
-      </form>
-      {publishing ? (
-        <PublishDialog
-          document={document}
-          source={source}
-          content={form.content}
-          onClose={() => setPublishing(false)}
-          onPublished={() => {
-            onSaved();
-            onClose();
-          }}
-        />
-      ) : null}
-    </Modal>
+            {editing ? (
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                disabled={busy}
+                onClick={() => setPublishing(true)}
+              >
+                {t('admin.terms.publish')}
+              </button>
+            ) : null}
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {editing
+                ? t('admin.terms.saveAsRevision', { version: source.version })
+                : t('admin.terms.save')}
+            </button>
+          </Modal.Footer>
+        </form>
+        {publishing ? (
+          <PublishDialog
+            document={document}
+            source={source}
+            content={form.content}
+            onClose={() => setPublishing(false)}
+            onPublished={() => {
+              onSaved();
+              onClose();
+            }}
+          />
+        ) : null}
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 

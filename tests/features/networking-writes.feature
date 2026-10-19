@@ -49,8 +49,8 @@ Feature: networking writes
     And the networking page draws the "dns" section
     And the networking page draws no "hosts-file" section
     When I follow the host row "addresses"
-    Then the networking page draws the "managed-addresses" section
-    And the "managed-addresses" section of the networking page lists 3 rows
+    Then the networking page draws the "addresses" section
+    And the "addresses" section of the networking page lists 5 rows
     And the host was sent GET to "/api/agents/3/network/addresses"
 
   Scenario: Network pages: a hyperweaver-agent host draws the Interfaces, Topology, Addresses, Bandwidth and Spaces rows alone, the addresses on Addresses, the spaces on Spaces, and asks for no link family
@@ -60,8 +60,8 @@ Feature: networking writes
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/network/addresses"
-    Then the networking page draws the "managed-addresses" section
-    And the "managed-addresses" section of the networking page lists 4 rows
+    Then the networking page draws the "addresses" section
+    And the "addresses" section of the networking page lists 4 rows
     And the host column draws the "interfaces" row to "/hosts/1/network/interfaces"
     And the host column draws the "topology" row to "/hosts/1/network/topology"
     And the host column draws the "addresses" row to "/hosts/1/network/addresses"
@@ -94,10 +94,10 @@ Feature: networking writes
     Then the "vnics" section of the networking page lists 1 rows
     And the "vlans" section of the networking page says "filtered"
     When I open "/hosts/3/network/addresses"
-    Then the "managed-addresses" section of the networking page lists 3 rows
+    Then the "addresses" section of the networking page lists 5 rows
     When I press "/"
     And I search the networking page for "vnic1"
-    Then the "managed-addresses" section of the networking page lists 1 rows
+    Then the "addresses" section of the networking page lists 1 rows
 
   Scenario: Links: a VNIC is created over POST network/vnics from the form dialog, the name suggested on the link, and deleted behind the typed confirmation
     Given the host answers the hosts fixture
@@ -228,10 +228,10 @@ Feature: networking writes
     And the host answers the hosts-networking-writes fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/addresses"
-    Then the "managed-addresses" section row "vnic1/v4static" offers "enable"
-    And the "managed-addresses" section row "vnic1/v4static" offers no "disable"
-    And the "managed-addresses" section row "igb0/v4static" offers "disable"
-    When I press the "managed-addresses" section's "create-address" tool
+    Then the "addresses" section row "vnic1/v4static" offers "enable"
+    And the "addresses" section row "vnic1/v4static" offers no "disable"
+    And the "addresses" section row "igb0/v4static" offers "disable"
+    When I press the "addresses" section's "create-address" tool
     Then the "address-create" dialog is open
     When I choose "vnic0" in the field "interface-select"
     Then the field "addrobj-input" reads "vnic0/v4static"
@@ -243,12 +243,31 @@ Feature: networking writes
     And the host was sent POST to "/api/agents/3/network/addresses" carrying "interface" as "vnic0"
     And the host was sent POST to "/api/agents/3/network/addresses" carrying "type" as "static"
     And the page raised 1 success notice
-    When I press "enable" on the "managed-addresses" section row "vnic1/v4static"
+    When I press "enable" on the "addresses" section row "vnic1/v4static"
     Then the host was sent PUT to "/api/agents/3/network/addresses/vnic1%2Fv4static/enable"
-    When I press "delete" on the "managed-addresses" section row "vnic1/v4static"
+    When I press "delete" on the "addresses" section row "vnic1/v4static"
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/3/network/addresses/vnic1%2Fv4static"
     And the page raised 3 success notices
+
+  Scenario: Addresses: one table, every address of the monitoring read and the managed read once, a managed row badged and carrying its actions, a row of the monitoring read alone carrying neither
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the host answers the hosts-networking-writes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/network/addresses"
+    Then the "addresses" section of the networking page lists 5 rows
+    And the networking page draws no "managed-addresses" section
+    And the "addresses" table of the networking page draws the "managed" column
+    And the "addresses" section row "10.0.0.31" is marked managed
+    And the "addresses" section row "10.0.0.31" offers "disable"
+    And the "addresses" section row "127.0.0.1" is not marked managed
+    And the "addresses" section row "127.0.0.1" offers no "delete"
+    And the "addresses" section offers the "create-address" tool
+    And the heading of the networking page counts 5
+    And the host was sent GET to "/api/agents/3/monitoring/network/ipaddresses" 1 times
+    And the host was sent GET to "/api/agents/3/network/addresses" 1 times
 
   Scenario: Addresses: on a VirtualBox host the disable of an address is behind its own confirmation and the delete of one of several under one object names the bare address
     Given the host answers the hosts fixture
@@ -258,14 +277,14 @@ Feature: networking writes
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     And the browser records its requests
     When I open "/hosts/1/network/addresses"
-    Then the "managed-addresses" section of the networking page lists 4 rows
-    When I press "disable" on the "managed-addresses" section row "10.0.0.11"
+    Then the "addresses" section of the networking page lists 4 rows
+    When I press "disable" on the "addresses" section row "10.0.0.11"
     Then the host was not sent PUT to "/api/agents/1/network/addresses/Ethernet%2Fv4/disable"
     When I confirm the open warning dialog
     Then the host was sent PUT to "/api/agents/1/network/addresses/Ethernet%2Fv4/disable"
     And the page raised 1 success notice
     And I see "taken down with it"
-    When I press "delete" on the "managed-addresses" section row "10.0.0.12"
+    When I press "delete" on the "addresses" section row "10.0.0.12"
     And I confirm the open dialog
     Then the host was sent DELETE to "/api/agents/1/network/addresses/Ethernet%2Fv4"
     And the host was asked "/api/agents/1/network/addresses/Ethernet%2Fv4" with "address" as "10.0.0.12"
@@ -384,9 +403,9 @@ Feature: networking writes
     And the "spaces" section offers no "create-hostonly" tool
     And the "spaces" section row "NatNetwork" offers no "edit"
     When I open "/hosts/1/network/addresses"
-    Then the "managed-addresses" section of the networking page lists 4 rows
-    And the "managed-addresses" section offers no "create-address" tool
-    And the "managed-addresses" section row "10.0.0.11" offers no "disable"
+    Then the "addresses" section of the networking page lists 4 rows
+    And the "addresses" section offers no "create-address" tool
+    And the "addresses" section row "10.0.0.11" offers no "disable"
 
   Scenario: Network pages: the sections of Links fold under manage- and the fold is kept over a reload
     Given the host answers the hosts fixture

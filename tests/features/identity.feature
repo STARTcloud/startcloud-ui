@@ -135,6 +135,25 @@ Feature: identity contract
     And I do not see "not-a-reference"
     And I do not see "/admin/users"
 
+  Scenario: admin, terms: the create dialog with a typed name asks before a backdrop click closes it, Keep editing keeps the name and Discard closes it, and an untouched one closes at once
+    Given the host answers the identity-admin fixture
+    When I open "/admin/terms"
+    And I press the page's "term-create" action
+    Then the "term-document" dialog is open
+    When I press "Escape"
+    Then no dialog is open
+    When I press the page's "term-create" action
+    And I type "privacy" into the field "term-doc/name"
+    And I click the backdrop of the open dialog
+    Then the "discard-changes" dialog is open
+    When I press the open dialog's "keep-editing" action
+    Then the "discard-changes" dialog is closed
+    And the "term-document" dialog is open
+    And the field "term-doc/name" reads "privacy"
+    When I click the backdrop of the open dialog
+    And I press the open dialog's "discard" action
+    Then no dialog is open
+
   Scenario: admin, health and errors: a path the router does not know draws the ErrorPage with `404` client-side
     When I open "/no-such-page"
     Then I see "Page not found"

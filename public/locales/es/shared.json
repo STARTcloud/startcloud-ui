@@ -1381,13 +1381,15 @@
       "confirmMessage": "¿Actualizar {{app}} de {{currentVersion}} a {{latestVersion}}? La actualización se descarga y se aplica, luego {{app}} se reinicia con la nueva versión."
     }
   },
+  "config": {
+    "defaultMark": "predeterminado"
+  },
   "configManager": {
     "updateSuccess": "Configuración actualizada exitosamente.",
     "restartBadge": "reinicio",
     "deprecated": "Obsoleto",
     "search": "Buscar configuraciones",
     "noFiles": "Este servidor no tiene archivos de configuración que editar.",
-    "defaultHint": "Predeterminado: {{value}}",
     "restarting": "Reiniciando.",
     "schemaVersion": "Versión del esquema {{version}}",
     "settingsCount_one": "{{count}} configuración",
@@ -2611,7 +2613,6 @@
         "zone": "Zonas"
       },
       "column": {
-        "sentence": "Resumen",
         "id": "ID de servidor",
         "provisioner": "Provisioner",
         "roles": "Roles",
@@ -2739,6 +2740,9 @@
       },
       "hostsFile": {
         "empty": "Sin entradas"
+      },
+      "addresses": {
+        "managed": "Gestionada"
       }
     },
     "manage": {
@@ -3241,6 +3245,12 @@
         "keyword": "reiniciar",
         "confirm": "Reiniciar"
       }
+    },
+    "discard": {
+      "title": "¿Descartar los cambios?",
+      "message": "Los cambios hechos en este cuadro de diálogo se pierden.",
+      "keep": "Seguir editando",
+      "discard": "Descartar"
     },
     "card": {
       "updated": "actualizado {{time}}"
@@ -5520,7 +5530,9 @@
       "liveScreenshotHint": "Captura de pantalla en vivo — inicia una consola arriba para interactuar",
       "startConsoleAlt": "Iniciar consola",
       "noActiveConsoleSession": "Sin sesión de consola activa",
-      "clickButtonsToStart": "Haz clic en los botones de arriba para iniciar una sesión de consola"
+      "clickButtonsToStart": "Haz clic en los botones de arriba para iniciar una sesión de consola",
+      "connectAs": "Conectar como",
+      "connectAsDefault": "predeterminada"
     },
     "standaloneConsole": {
       "invalidAddress": "Dirección de consola inválida.",
@@ -6261,7 +6273,6 @@
       "interface": "Interfaz",
       "ipAddress": "Dirección IP",
       "netmaskPrefix": "Máscara de Red/Prefijo",
-      "type": "Tipo",
       "status": "Estado",
       "na": "N/D",
       "ipv4": "IPv4",
@@ -6270,32 +6281,14 @@
     },
     "ipAddressTableManagement": {
       "auto": "automático",
-      "unknown": "Desconocido",
-      "ipv4": "IPv4",
-      "ipv6": "IPv6",
-      "na": "N/D",
       "loading": "Cargando direcciones IP...",
-      "noData": "No se encontraron direcciones IP",
-      "interface": "Interfaz",
       "addressObject": "Objeto de Dirección",
-      "ipAddress": "Dirección IP",
       "type": "Tipo",
       "version": "Versión",
-      "state": "Estado",
       "actions": "Acciones",
       "enableAddress": "Habilitar Dirección",
       "disableAddress": "Deshabilitar Dirección",
       "deleteAddress": "Eliminar Dirección"
-    },
-    "networkSummary": {
-      "title": "Resumen de Red",
-      "expand": "Expandir sección",
-      "collapse": "Contraer sección",
-      "totalInterfaces": "Total de Interfaces",
-      "physical": "Física",
-      "virtual": "Virtual",
-      "up": "Activa",
-      "down": "Inactiva"
     },
     "ntpConfirmActionModal": {
       "syncTitle": "Forzar Sincronización de Hora",
@@ -8019,14 +8012,10 @@
       "enabledMessage": "Orquestación habilitada — persistida en la configuración, se aplica por completo en el próximo arranque del agente.",
       "toggleFailed": "Error al alternar: {{message}}",
       "priorityRange": "La prioridad debe estar entre 1 y 100.",
-      "prioritySet": "Prioridad de {{name}} establecida en {{value}} (inmediata).",
       "priorityUpdateFailed": "Error al actualizar la prioridad de {{name}}: {{message}}",
       "priorityWritesFailed": "{{failed}} de {{total}} escrituras de prioridad fallaron: {{message}}",
-      "bootOrderApplied_one": "Orden de arranque aplicado — {{count}} prioridad actualizada (inmediata).",
-      "bootOrderApplied_other": "Orden de arranque aplicado — {{count}} prioridades actualizadas (inmediatas).",
       "dryRunFailed": "Error en la ejecución de prueba: {{message}}",
       "readSettingsFailed": "No se pudieron leer los ajustes: {{message}}",
-      "strategySet": "Estrategia establecida en {{strategy}} — se aplica por completo en el próximo arranque del agente.",
       "strategyUpdateFailed": "Error al actualizar la estrategia: {{message}}",
       "status": "Estado:",
       "enabled": "habilitada",
@@ -8040,15 +8029,17 @@
       "dryRunPlan_one": "Plan de ejecución de prueba — {{count}} máquina, ~{{duration}}",
       "dryRunPlan_other": "Plan de ejecución de prueba — {{count}} máquinas, ~{{duration}}",
       "bootOrderTitle": "Orden de arranque — arrastra para reordenar (arriba arranca primero)",
-      "applyOrder": "Aplicar orden",
       "default": "predeterminado",
       "bootPriorityFor": "Prioridad de arranque de {{name}}",
-      "save": "Guardar",
-      "bootOrderHelp": "Arrastra para reordenar y pulsa Aplicar (arriba = mayor, con separación de 5), o escribe un número exacto en una fila y pulsa Guardar — cada escritura es inmediata, sin reinicio.",
+      "bootOrderHelp": "Arrastra para reordenar y pulsa Previsualizar (arriba = mayor, con separación de 5), o escribe un número exacto en una fila y pulsa Aplicar — cada escritura es inmediata, sin reinicio.",
       "priorityFootnote": "La mayor prioridad arranca primero al iniciar el agente (solo máquinas de autoarranque); el apagado al salir del agente ejecuta primero la menor. Los cambios de prioridad se aplican de inmediato — sin tarea, sin reinicio.",
       "enableOrchestrationTitle": "Habilitar orquestación",
       "enableOrchestrationMessage": "¿Habilitar la orquestación de arranque a nivel de host? El ajuste persiste en la configuración del agente y se aplica por completo en el próximo arranque del agente — las máquinas de autoarranque arrancarán entonces por orden de prioridad.",
-      "enable": "Habilitar"
+      "enable": "Habilitar",
+      "apply": "Aplicar",
+      "applied": "Orquestación aplicada: {{strategy}}, {{count}} prioridades de arranque escritas.",
+      "machineColumn": "Máquina",
+      "priorityColumn": "Prioridad de arranque"
     },
     "recipeEditModal": {
       "variableName": "Nombre de la variable",
@@ -8152,49 +8143,11 @@
       "statusUnhashedTitle": "Nunca se le calculó el hash — ejecuta un escaneo",
       "statusHashed": "Con hash",
       "statusHashedTitle": "Con hash; sin expectativa registrada",
-      "locationNamePathRequired": "Una ubicación necesita un nombre y una ruta.",
-      "locationUpdated": "Ubicación \"{{name}}\" actualizada.",
-      "locationAdded": "Ubicación \"{{name}}\" agregada.",
-      "locationSaveFailed": "Error al guardar la ubicación: {{message}}",
-      "locationEnabled": "Ubicación \"{{name}}\" habilitada.",
-      "locationDisabled": "Ubicación \"{{name}}\" deshabilitada.",
-      "locationUpdateFailed": "Error al actualizar la ubicación: {{message}}",
       "messageWithTask": "{{message}} (tarea {{taskId}})",
-      "locationDeleteQueued": "Eliminación de la ubicación \"{{name}}\" en cola",
-      "locationDeleteFailed": "Error al eliminar la ubicación: {{message}}",
       "scanOfQueued": "Escaneo de \"{{name}}\" en cola",
       "scanFailed": "Error en el escaneo: {{message}}",
-      "storageLocations": "Ubicaciones de almacenamiento",
-      "addLocation": "Agregar ubicación",
-      "builtIn": "integrada",
-      "disabled": "deshabilitada",
-      "filesSize_one": "{{count}} archivo · {{size}}",
-      "filesSize_other": "{{count}} archivos · {{size}}",
-      "scanErrorsCount_one": "{{count}} error de escaneo",
-      "scanErrorsCount_other": "{{count}} errores de escaneo",
       "scanThisLocation": "Escanear esta ubicación",
-      "enable": "Habilitar",
-      "disable": "Deshabilitar",
-      "edit": "Editar",
-      "deleteThisLocation": "Eliminar esta ubicación",
-      "noLocationsYet": "ninguna todavía — el agente siembra sus integradas",
-      "editLocationTitle": "Editar ubicación: {{name}}",
-      "addStorageLocation": "Agregar ubicación de almacenamiento",
-      "save": "Guardar",
-      "name": "Nombre",
-      "typeFixed": "Tipo (fijo al crear)",
-      "type": "Tipo",
-      "pathAgentHostFixed": "Ruta (host del agente — fija al crear)",
-      "pathAgentHost": "Ruta (host del agente)",
       "pickStorageRoot": "Elige la raíz de almacenamiento",
-      "enabled": "Habilitada",
-      "deleteLocationTitle": "Eliminar ubicación: {{name}}",
-      "queueDelete": "Poner eliminación en cola",
-      "removeLocationBefore": "¿Quitar",
-      "removeLocationAfter": "de las ubicaciones de almacenamiento?",
-      "deleteOptRecursive": "Eliminar también los archivos que contiene (recursivo)",
-      "deleteOptRemoveRecords": "Quitar sus registros del registro",
-      "deleteOptForce": "Forzar",
       "loadArtifactsFailed": "No se pudieron cargar los artefactos: {{message}}",
       "scanQueuedFull": "{{message}} (tarea {{taskId}}) — actualiza cuando termine",
       "scanQueuedDefault": "Escaneo en cola",
@@ -8659,7 +8612,6 @@
         "toggleFailed": "No se pudo {{action}} la dirección IP \"{{name}}\"",
         "toggleError": "Error al {{action}} la dirección IP \"{{name}}\": {{message}}"
       },
-      "title": "Gestión de direcciones IP",
       "managePrefix": "Gestiona las asignaciones de direcciones IP en",
       "filterByInterface": "Filtrar por interfaz",
       "ipVersion": "Versión de IP",
@@ -8677,7 +8629,6 @@
       "stateDuplicate": "Duplicada",
       "refresh": "Actualizar",
       "clear": "Limpiar",
-      "ipAddresses": "Direcciones IP ({{total}})",
       "createIpAddress": "Crear dirección IP",
       "deleteTitle": "Eliminar dirección IP",
       "delete": "Eliminar",
@@ -10684,12 +10635,6 @@
       "utmStoppedOnly": "Las instantáneas utm requieren que la máquina esté detenida — deténla primero."
     },
     "machineListPanel": {
-      "runningSentence": "Esta {{noun}} está en ejecución.",
-      "stoppedSentence": "Esta {{noun}} está detenida.",
-      "pausedSentence": "Pausada — congelada en RAM; reanuda para continuar.",
-      "suspendedSentence": "Suspendida a disco — inicia para reanudar donde quedó.",
-      "configuredSentence": "Configurada pero nunca iniciada.",
-      "transitioningSentence": "La {{noun}} está {{status}}…",
       "loadFailed": "Falló la carga de {{plural}}: {{message}}",
       "actionQueued": "{{action}} en cola para {{name}}",
       "actionFailed": "Falló {{action}} para {{name}}: {{message}}",
@@ -11216,16 +11161,22 @@
       "unchanged": "sin cambios",
       "simpleVcpus": "simple — vcpus es el recuento",
       "complexTopo": "compleja — zócalos / núcleos / hilos",
-      "credentialsHint": "La consola SSH, SFTP y el pipeline de aprovisionamiento inician sesión en el invitado con estas credenciales. Se aplica de inmediato, incluso en ejecución. Solo se guardan los campos que edites — borrar un campo editado ELIMINA esa credencial; los campos sin tocar conservan su valor guardado.",
-      "pickPrivateKeyFile": "Elegir el archivo de clave privada",
-      "unchangedPlaceholder": "sin cambios",
+      "credentialsHint": "Cada credencial es una fila de contraseña, clave SSH o par de claves del almacén de este host; la predeterminada de un uso es con la que inicia sesión su consola.",
+      "credentialUse": "Uso",
+      "credentialUseOption": {
+        "ssh": "SSH",
+        "rdp": "RDP",
+        "console": "Consola",
+        "vagrant": "Vagrant"
+      },
+      "credentialSecret": "Fila del almacén",
+      "credentialDefault": "Predeterminada",
+      "credentialRemove": "Quitar",
+      "addCredential": "Agregar credencial",
+      "noCredentials": "No hay ninguna credencial establecida; se aplican las credenciales predeterminadas del host.",
+      "pickCredentialTitle": "Elegir una credencial",
       "hidePassword": "Ocultar la contraseña",
       "showPassword": "Mostrar la contraseña",
-      "credField": {
-        "vagrant_user": "Usuario SSH",
-        "vagrant_user_pass": "Contraseña SSH",
-        "vagrant_user_private_key_path": "Ruta de la clave privada (host del agente)"
-      },
       "serialPorts": "Puertos seriales (COM)",
       "parallelPorts": "Puertos paralelos (LPT)",
       "hypervisorPassthroughPrefix": "Passthrough del hipervisor (",
@@ -11652,7 +11603,8 @@
       "intro3": "se ubica entre los métodos de aprovisionamiento de este documento. Las",
       "intro4": "variables del documento llegan a los scripts como variables de entorno con sus nombres exactos.",
       "enabledLabel": "Habilitado",
-      "addScript": "Agregar script"
+      "addScript": "Agregar script",
+      "runScriptTitle": "Ejecutar este script"
     },
     "provisioningTransportTab": {
       "intro1": "Cómo llega el agente al huésped.",
@@ -11779,7 +11731,8 @@
       "addFile": "+ {{kind}}…",
       "pickRow": "Elegir",
       "pickFileTitle": "{{role}} · {{kind}}",
-      "searchFilesPlaceholder": "Buscar archivos"
+      "searchFilesPlaceholder": "Buscar archivos",
+      "runRoleTitle": "Ejecutar este rol"
     },
     "provisioningVarRows": {
       "notSetOption": "sin definir",
@@ -11860,7 +11813,8 @@
       "localHeading": "Local — ansible-local, dentro del huésped",
       "addPlaybook": "Agregar playbook",
       "remoteHeading": "Remoto — ansible del host sobre el transporte del huésped",
-      "addRemotePlaybook": "Agregar playbook remoto"
+      "addRemotePlaybook": "Agregar playbook remoto",
+      "runPlaybookTitle": "Ejecutar este playbook"
     },
     "hostsYmlModal": {
       "failedToLoad": "Error al cargar el documento: {{message}}",
@@ -12417,7 +12371,8 @@
       "drop": "Suelta un certificado, una clave o un paquete aquí",
       "reading": "Leyendo…",
       "pasteLabel": "O pega texto PEM, OpenSSH, PPK o JWK",
-      "placeholder": "-----BEGIN CERTIFICATE-----",
+      "browse": "Explorar archivos",
+      "binary": "{{name}} · binario",
       "password": "Contraseña",
       "locked": "El material está bloqueado; introduce su contraseña y léelo de nuevo.",
       "read": "Leer",

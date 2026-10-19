@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { memo, useState } from 'react';
+import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import {
   FaDesktop,
@@ -17,9 +18,10 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { useChosenTheme } from '../../../hooks/useTheme';
 import { useConsoleScreenshot } from '../hooks/useConsoleScreenshot';
 import { hostHasConsole, hostHasFeature } from '../utils/capabilities';
-import { guestIpsOf, sshReady } from '../utils/consoles';
+import { credentialsFor, doorCredentialOf, guestIpsOf, sshReady } from '../utils/consoles';
 import { isServerRole } from '../utils/hosts';
 
+import { ConnectAsLabel } from './ConnectAsDialog';
 import {
   launchDirectoryOrFtp,
   launchRdp,
@@ -29,12 +31,87 @@ import {
   startZloginPreview,
 } from './consoleActions';
 
+/**
+ * One start button of a console that signs in with a machine's
+ * credential: a plain button that starts with no credential while the
+ * machine holds one credential of the use or none, and a menu of them,
+ * Connect as, the default first, while it holds more, the pick starting
+ * the console with that credential's id.
+ */
+const ConnectAsDoor = ({
+  credentials,
+  variant,
+  action,
+  title,
+  disabled,
+  onStart,
+  onContextMenu = undefined,
+  children,
+}) => {
+  const { t } = useTranslation();
+  if (credentials.length < 2) {
+    return (
+      <button
+        type="button"
+        className={`btn btn-sm btn-${variant}`}
+        onClick={() => onStart('')}
+        onContextMenu={onContextMenu}
+        disabled={disabled}
+        title={title}
+        data-action={action}
+      >
+        {children}
+      </button>
+    );
+  }
+  return (
+    <Dropdown>
+      <Dropdown.Toggle
+        variant={variant}
+        size="sm"
+        onContextMenu={onContextMenu}
+        disabled={disabled}
+        title={title}
+        data-action={action}
+      >
+        {children}
+      </Dropdown.Toggle>
+      <Dropdown.Menu data-menu="connect-as">
+        <Dropdown.Header>{t('console.inactiveConsoleDisplay.connectAs')}</Dropdown.Header>
+        {credentials.map(row => (
+          <Dropdown.Item
+            key={row.id}
+            as="button"
+            type="button"
+            data-credential={row.id}
+            onClick={() => onStart(String(row.id))}
+          >
+            <ConnectAsLabel credential={row} />
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
+  );
+};
+
+ConnectAsDoor.propTypes = {
+  credentials: PropTypes.arrayOf(PropTypes.object).isRequired,
+  variant: PropTypes.string.isRequired,
+  action: PropTypes.string.isRequired,
+  title: PropTypes.string,
+  disabled: PropTypes.bool,
+  onStart: PropTypes.func.isRequired,
+  onContextMenu: PropTypes.func,
+  children: PropTypes.node.isRequired,
+};
+
 const RdpStartButtons = ({
   rdpAvailable,
   launchersAvailable,
   guestRdpIp,
   running,
   loading,
+  credentials,
   onStartVrdp,
   onStartGuestRdp,
   onNativeRdp,
@@ -43,14 +120,17 @@ const RdpStartButtons = ({
   return (
     <>
       {rdpAvailable || launchersAvailable ? (
-        <button
-          type="button"
-          className="btn btn-sm btn-info"
-          onClick={rdpAvailable ? onStartVrdp : onNativeRdp}
+        <ConnectAsDoor
+          credentials={credentials}
+          variant="info"
+          action="console-start-rdp"
+          onStart={credentialId =>
+            rdpAvailable ? onStartVrdp(credentialId) : onNativeRdp(credentialId)
+          }
           onContextMenu={event => {
             event.preventDefault();
             if (launchersAvailable && running) {
-              onNativeRdp();
+              onNativeRdp('');
             }
           }}
           disabled={loading || !running}
@@ -59,34 +139,33 @@ const RdpStartButtons = ({
               ? t('console.rdpStartButtons.vrdpHint')
               : t('console.rdpStartButtons.machineMustBeRunning')
           }
-          data-action="console-start-rdp"
         >
           <FaDisplay className="me-2" aria-hidden="true" />
           <span>
             {loading ? t('console.rdpStartButtons.starting') : t('console.rdpStartButtons.vrdp')}
           </span>
-        </button>
+        </ConnectAsDoor>
       ) : null}
       {rdpAvailable && guestRdpIp ? (
-        <button
-          type="button"
-          className="btn btn-sm btn-info"
-          onClick={onStartGuestRdp}
+        <ConnectAsDoor
+          credentials={credentials}
+          variant="info"
+          action="console-start-guest-rdp"
+          onStart={onStartGuestRdp}
           onContextMenu={event => {
             event.preventDefault();
             if (launchersAvailable) {
-              onNativeRdp();
+              onNativeRdp('');
             }
           }}
           disabled={loading}
           title={t('console.rdpStartButtons.rdpHint', { address: guestRdpIp })}
-          data-action="console-start-guest-rdp"
         >
           <FaWindows className="me-2" aria-hidden="true" />
           <span>
             {loading ? t('console.rdpStartButtons.starting') : t('console.rdpStartButtons.rdp')}
           </span>
-        </button>
+        </ConnectAsDoor>
       ) : null}
     </>
   );
@@ -98,6 +177,7 @@ RdpStartButtons.propTypes = {
   guestRdpIp: PropTypes.string,
   running: PropTypes.bool.isRequired,
   loading: PropTypes.bool.isRequired,
+  credentials: PropTypes.arrayOf(PropTypes.object).isRequired,
   onStartVrdp: PropTypes.func.isRequired,
   onStartGuestRdp: PropTypes.func.isRequired,
   onNativeRdp: PropTypes.func.isRequired,
@@ -122,7 +202,9 @@ const sshTitle = ({ running, ready, address, t }) => {
  * guest's own desktop beside it while the guest reports an address, a
  * right-click on either opening the native client on a host that lists
  * `host-launchers`, whose working directory and SFTP buttons draw too;
- * under them one frame of the screen on a host that lists
+ * the SSH and RDP buttons of a machine whose detail names more than one
+ * credential of their use open Connect as, the pick starting the console
+ * with that credential; under them one frame of the screen on a host that lists
  * `machine-screenshot` while the machine runs, Refresh screenshot beside
  * the buttons reading a new one, and the placeholder otherwise.
  */
@@ -238,13 +320,13 @@ const InactiveConsoleDisplay = ({
             </button>
           ) : null}
           {sshAvailable ? (
-            <button
-              type="button"
-              className="btn btn-sm btn-success"
-              onClick={() => startSshPreview(starters)}
+            <ConnectAsDoor
+              credentials={credentialsFor(machineDetails, 'ssh')}
+              variant="success"
+              action="console-start-ssh"
+              onStart={credentialId => startSshPreview({ ...starters, credentialId })}
               disabled={loading || !ready}
               title={sshTitle({ running, ready, address: guestRdpIp, t })}
-              data-action="console-start-ssh"
             >
               <FaTerminal className="me-2" aria-hidden="true" />
               <span>
@@ -252,7 +334,7 @@ const InactiveConsoleDisplay = ({
                   ? t('console.inactiveConsoleDisplay.starting')
                   : t('console.inactiveConsoleDisplay.ssh')}
               </span>
-            </button>
+            </ConnectAsDoor>
           ) : null}
           <RdpStartButtons
             rdpAvailable={rdpAvailable}
@@ -260,9 +342,17 @@ const InactiveConsoleDisplay = ({
             guestRdpIp={guestRdpIp}
             running={running}
             loading={loading}
-            onStartVrdp={() => startRdpPreview(starters)}
-            onStartGuestRdp={() => startRdpPreview({ ...starters, target: 'guest' })}
-            onNativeRdp={() => launchRdp(launchers)}
+            credentials={credentialsFor(machineDetails, 'rdp')}
+            onStartVrdp={credentialId => startRdpPreview({ ...starters, credentialId })}
+            onStartGuestRdp={credentialId =>
+              startRdpPreview({ ...starters, target: 'guest', credentialId })
+            }
+            onNativeRdp={credentialId =>
+              launchRdp({
+                ...launchers,
+                credentialId: credentialId || doorCredentialOf(machineDetails, 'rdp'),
+              })
+            }
           />
           {screenshotAvailable ? (
             <button

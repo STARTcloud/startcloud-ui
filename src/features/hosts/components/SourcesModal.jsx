@@ -12,6 +12,7 @@ import {
   FaTrash,
 } from 'react-icons/fa6';
 
+import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import SubTable, { hasAny } from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
 import { nextSort, sortItems } from '../../../utils/sort';
@@ -530,7 +531,9 @@ SourceForm.propTypes = {
  * default, Enable or Disable, Edit and Remove as `offers` says, and under
  * the table the `form` the page gives while Add or Edit is pressed, so
  * no dialog opens over the modal. `kind` names the modal's `data-dialog`,
- * `<kind>-sources`, and `addAction` the Add press's `data-action`.
+ * `<kind>-sources`, and `addAction` the Add press's `data-action`; while
+ * `form` is drawn, a backdrop click, Escape and the close button ask the
+ * discard prompt before `onClose`.
  */
 const SourcesModal = ({
   kind,
@@ -551,43 +554,47 @@ const SourcesModal = ({
   const [sort, setSort] = useState([]);
   const ctx = { t };
   const acts = Object.values(offers).some(Boolean);
+  const guard = useDiscardGuard(Boolean(form), onClose);
   return (
-    <Modal show onHide={onClose} dialogClassName="form-modal" scrollable>
-      <Modal.Header closeButton>
-        <Modal.Title as="h5">{title}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body data-dialog={`${kind}-sources`}>
-        <div className="d-flex align-items-center gap-2">
-          <span className="fw-semibold">{label}</span>
-          <span className="ms-auto">
-            <button
-              type="button"
-              className="btn btn-sm btn-primary"
-              data-action={addAction}
-              onClick={onAdd}
-              disabled={busy}
-            >
-              <FaPlus className="me-1" aria-hidden="true" />
-              {t(addLabelKey)}
-            </button>
-          </span>
-        </div>
-        <SubTable
-          columns={COLUMNS}
-          rows={sortItems(rows, sort, COLUMNS, ctx)}
-          rowKey={row => row.key}
-          rowId={row => `source-${row.key}`}
-          RowActions={acts ? SourceActions : null}
-          actionsProps={{ offers, busy, onAction }}
-          sort={sort}
-          onSort={(column, options) => setSort(current => nextSort(current, column, options))}
-          hiddenColumns={NO_HIDDEN}
-          ctx={ctx}
-          emptyText={t(emptyKey)}
-        />
-        {form}
-      </Modal.Body>
-    </Modal>
+    <>
+      <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
+        <Modal.Header closeButton>
+          <Modal.Title as="h5">{title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body data-dialog={`${kind}-sources`}>
+          <div className="d-flex align-items-center gap-2">
+            <span className="fw-semibold">{label}</span>
+            <span className="ms-auto">
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                data-action={addAction}
+                onClick={onAdd}
+                disabled={busy}
+              >
+                <FaPlus className="me-1" aria-hidden="true" />
+                {t(addLabelKey)}
+              </button>
+            </span>
+          </div>
+          <SubTable
+            columns={COLUMNS}
+            rows={sortItems(rows, sort, COLUMNS, ctx)}
+            rowKey={row => row.key}
+            rowId={row => `source-${row.key}`}
+            RowActions={acts ? SourceActions : null}
+            actionsProps={{ offers, busy, onAction }}
+            sort={sort}
+            onSort={(column, options) => setSort(current => nextSort(current, column, options))}
+            hiddenColumns={NO_HIDDEN}
+            ctx={ctx}
+            emptyText={t(emptyKey)}
+          />
+          {form}
+        </Modal.Body>
+      </Modal>
+      <DiscardPrompt {...guard.prompt} />
+    </>
   );
 };
 

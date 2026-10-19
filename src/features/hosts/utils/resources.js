@@ -207,22 +207,6 @@ export const latestPer = (rows, nameOf) => {
 };
 
 /**
- * The counts hyperweaver-ui's network summary drew of a host's
- * interfaces: all of them, the physical ones, class `phys`, the virtual
- * ones, class `vnic`, and the ones up and down.
- *
- * @param {Array<Object>} interfaces - One row an interface
- * @returns {{ total: number, physical: number, virtual: number, up: number, down: number }} The counts
- */
-export const interfaceCounts = interfaces => ({
-  total: interfaces.length,
-  physical: interfaces.filter(row => row.class === 'phys').length,
-  virtual: interfaces.filter(row => row.class === 'vnic').length,
-  up: interfaces.filter(row => row.state === 'up').length,
-  down: interfaces.filter(row => row.state === 'down').length,
-});
-
-/**
  * The tone a monitoring health word is drawn in, hyperweaver-ui's:
  * success for `healthy`, warning for `warning`, danger for every other
  * word, a service that is degraded or stopped or a host that faulted.

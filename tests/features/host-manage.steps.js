@@ -147,6 +147,12 @@ Then("the section page's {string} action is held", async ({ page }, action) => {
   await expect(frameOf(page).locator(`[data-action="${action}"]`).first()).toBeDisabled();
 });
 
+Then('the boot order draws its header row', async ({ page }) => {
+  const order = frameOf(page).locator('[data-panel="boot-order"]');
+  await expect(order.locator('[data-row="boot-order-header"]')).toBeVisible();
+  await expect(order.locator('[data-row="boot-order-header"] span')).toHaveCount(2);
+});
+
 Then('the section page notes {string}', async ({ page }, note) => {
   await expect(frameOf(page).locator(`[data-note="${note}"]`).first()).toBeVisible();
 });

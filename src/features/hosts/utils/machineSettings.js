@@ -56,20 +56,86 @@ export const TABS = [
   { id: 'advanced', vboxOnly: true },
 ];
 
-export const CRED_FIELDS = [
-  { key: 'vagrant_user' },
-  { key: 'vagrant_user_pass', isSecret: true },
-  { key: 'vagrant_user_private_key_path', isPath: true },
-];
+export const CREDENTIAL_USES = ['ssh', 'rdp', 'console', 'vagrant'];
 
-export const IMMEDIATE_KEYS = [
-  'boot_priority',
-  'consoleport',
-  'consolehost',
-  'vagrant_user',
-  'vagrant_user_pass',
-  'vagrant_user_private_key_path',
-];
+export const IMMEDIATE_KEYS = ['boot_priority', 'consoleport', 'consolehost', 'credentials'];
+
+let credentialKeySeq = 0;
+
+const credentialKey = () => {
+  credentialKeySeq += 1;
+  return `credential-${credentialKeySeq}`;
+};
+
+/**
+ * The credential rows of the Settings form from the detail's
+ * `credentials`, each `{ key, id, use, default, kind, name }`, `key`
+ * the form's own identity.
+ *
+ * @param {Array<Object>|null} credentials - The detail's `credentials`
+ * @returns {Array<Object>} The rows
+ */
+export const seedCredentialRows = credentials =>
+  (Array.isArray(credentials) ? credentials : [])
+    .filter(row => row && row.id)
+    .map(row => ({
+      key: credentialKey(),
+      id: String(row.id),
+      use: CREDENTIAL_USES.includes(row.use) ? row.use : 'ssh',
+      default: row.default === true,
+      kind: row.kind || '',
+      name: row.name || '',
+    }));
+
+/**
+ * A fresh credential row of one use, nothing picked, the default of its
+ * use while no other row of the use is.
+ *
+ * @param {Array<Object>} rows - The form's credential rows
+ * @param {string} [use] - The use
+ * @returns {Object} The row
+ */
+export const newCredentialRow = (rows, use = 'ssh') => ({
+  key: credentialKey(),
+  id: '',
+  use,
+  default: !rows.some(row => row.use === use && row.default),
+  kind: '',
+  name: '',
+});
+
+/**
+ * The credential rows with one row patched, a row made the default of
+ * its use taking the default from every other row of that use.
+ *
+ * @param {Array<Object>} rows - The form's credential rows
+ * @param {string} key - The patched row's key
+ * @param {Object} patch - The members that change
+ * @returns {Array<Object>} The rows
+ */
+export const patchedCredentialRows = (rows, key, patch) => {
+  const next = rows.map(row => (row.key === key ? { ...row, ...patch } : row));
+  const patched = next.find(row => row.key === key);
+  if (!patched?.default) {
+    return next;
+  }
+  return next.map(row =>
+    row.key !== key && row.use === patched.use && row.default ? { ...row, default: false } : row
+  );
+};
+
+/**
+ * The `credentials` member of the modify body, the picked rows as
+ * `{ id, use, default }` in the form's order, a row with nothing picked
+ * left out.
+ *
+ * @param {Array<Object>} rows - The form's credential rows
+ * @returns {Array<{ id: string, use: string, default: boolean }>} The member
+ */
+export const credentialsWire = rows =>
+  rows
+    .filter(row => row.id)
+    .map(row => ({ id: row.id, use: row.use, default: row.default === true }));
 
 const NIC_TUNING_KEYS = [
   'cable_connected',
@@ -175,32 +241,21 @@ const seedNicRows = entries =>
       entry.remove_on_completion === undefined ? '' : String(entry.remove_on_completion),
   }));
 
-const seedCreds = (configuration, knobCurrent) => ({
-  vagrant_user: asFormString(
-    knobCurrent?.credentials?.vagrant_user ?? configuration?.settings?.vagrant_user
-  ),
-  vagrant_user_pass: asFormString(
-    knobCurrent?.credentials?.vagrant_user_pass ?? configuration?.settings?.vagrant_user_pass
-  ),
-  vagrant_user_private_key_path: asFormString(
-    knobCurrent?.credentials?.vagrant_user_private_key_path ??
-      configuration?.settings?.vagrant_user_private_key_path
-  ),
-});
-
 /**
  * Everything the Settings form seeds from, the base every submit diffs
  * against: the scalar knobs from `knob_current` over the configuration,
  * the autoboot, the guest agent knob (null while the agent reports
  * none), the boot priority, the console port and host, the boot order,
  * the CPU topology, the VirtualBox hardware sections, the serial,
- * parallel and NIC rows and the credentials.
+ * parallel and NIC rows and the credential rows of the detail's
+ * `credentials`.
  *
  * @param {Object|undefined} configuration - The detail's `configuration`
  * @param {Object|undefined} knobCurrent - The detail's `knob_current`
+ * @param {Array<Object>|null} [credentials] - The detail's `credentials`
  * @returns {Object} The seed
  */
-export const buildSeed = (configuration, knobCurrent) => ({
+export const buildSeed = (configuration, knobCurrent, credentials = null) => ({
   values: prefillFrom(configuration, knobCurrent),
   autoboot: asFormString(knobCurrent?.autoboot ?? configuration?.autoboot),
   guestAgent: typeof knobCurrent?.guest_agent === 'boolean' ? knobCurrent.guest_agent : null,
@@ -213,7 +268,7 @@ export const buildSeed = (configuration, knobCurrent) => ({
   serialRows: seedSerialRows(knobCurrent?.vbox?.serial),
   parallelRows: seedParallelRows(knobCurrent?.vbox?.parallel),
   nicRows: seedNicRows(knobCurrent?.nics),
-  creds: seedCreds(configuration, knobCurrent),
+  credentials: seedCredentialRows(credentials),
 });
 
 const rowsChanged = (rows, seededRows) => JSON.stringify(rows) !== JSON.stringify(seededRows);
@@ -488,8 +543,9 @@ export const buildZoneChanges = state => {
  * The scalar members of the modify body: the knobs that differ from the
  * seed, the utm section, the autoboot as a boolean, the guest agent
  * switch, the boot order, the boot priority as a number, the console
- * port (`dynamic` clearing the pin as null) and host, and every touched
- * credential as typed, an emptied one deleting the key.
+ * port (`dynamic` clearing the pin as null) and host, and the whole
+ * `credentials` list of `credentialsWire` while it differs from the
+ * seed's.
  *
  * @param {Object} state - The form's values and the seed
  * @returns {Object} The members
@@ -530,9 +586,10 @@ export const buildScalarChanges = state => {
   if (state.consoleHost !== '' && state.consoleHost !== seed.consoleHost) {
     changes.consolehost = state.consoleHost.trim();
   }
-  state.credsTouched.forEach(key => {
-    changes[key] = state.creds[key] ?? '';
-  });
+  const credentials = credentialsWire(state.credentials);
+  if (JSON.stringify(credentials) !== JSON.stringify(credentialsWire(seed.credentials))) {
+    changes.credentials = credentials;
+  }
   return changes;
 };
 

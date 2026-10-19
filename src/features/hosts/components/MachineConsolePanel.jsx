@@ -8,15 +8,23 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { startVncSession as startVncSessionCall } from '../api/consoleAPI';
 import { useHostRow } from '../hooks/useHostRow';
+import { useMachineDetail } from '../hooks/useMachineDetail';
 import { useConsoleActions } from '../hooks/useOpenConsole';
 import { consolesHeld, dropConsole, useConsoles, usePageConsoles } from '../hooks/useTerminal';
 import { useVncSession } from '../hooks/useVncSession';
 import { useZloginSession } from '../hooks/useZloginSession';
 import { useZoneTerminal } from '../hooks/useZoneTerminal';
 import { hostHasConsole } from '../utils/capabilities';
-import { consoleParamOf, hostHasConsoles } from '../utils/consoles';
+import {
+  asksConnectAs,
+  consoleCredentialParamOf,
+  consoleParamOf,
+  credentialsFor,
+  hostHasConsoles,
+} from '../utils/consoles';
 import { consoleKeyOf, isHeldKind } from '../utils/terminals';
 
+import ConnectAsDialog from './ConnectAsDialog';
 import { startRdpPreview, startSshPreview, startVncPreview } from './consoleActions';
 import ConsoleDisplay from './ConsoleDisplay';
 import FooterConsoleNotes from './FooterConsoleNotes';
@@ -114,8 +122,12 @@ export const consoleTypeAfter = (details, current) => {
  * alone and the detail is never written; the VNC dialog and the zlogin
  * dialog over the page; and the doors, a `console` query on the
  * machine's route, `vnc`, `zlogin`, `ssh` or `rdp`, read once as the
- * panel draws and dropped from the route, opening the VNC or zlogin
- * dialog or starting the SSH or RDP console. The sessions the agent
+ * panel draws and dropped from the route with its `credential` query,
+ * opening the VNC or zlogin dialog or starting the SSH or RDP console
+ * once the detail answered: with the credential the `credential` query
+ * names, after the Connect as dialog where the query names none and the
+ * detail names more than one credential of the use, the default first,
+ * and with none otherwise. The sessions the agent
  * already holds are read as the panel draws and again when `turn`
  * moves, the page's Refresh and the stream's fresh opening, a VNC
  * session from `GET machines/{name}/vnc/info` on a host that lists `vnc`
@@ -147,6 +159,8 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
   const [previewVncViewOnly, setPreviewVncViewOnly] = useState(true);
   const [modalVncViewOnly, setModalVncViewOnly] = useState(false);
   const [modalReadOnly, setModalReadOnly] = useState(false);
+  const [asking, setAsking] = useState('');
+  const held = useMachineDetail(id, name, { ask: false });
   const modalVncRef = useRef(null);
   const previewVncRef = useRef(null);
   const machineDetails = { ...(detail || {}), ...sessions };
@@ -179,6 +193,7 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
     setSeen({ scope, sessions: NO_SESSIONS });
     setSessions(NO_SESSIONS);
     setActiveConsoleType('vnc');
+    setAsking('');
   } else if (seen.sessions !== sessions) {
     setSeen({ scope, sessions });
     setActiveConsoleType(current => consoleTypeAfter(sessions, current));
@@ -192,9 +207,11 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
   );
   const drawn = useRef(new Set());
   const consolesRef = useRef(consoles);
+  const detailRef = useRef(detail);
 
   useEffect(() => {
     consolesRef.current = consoles;
+    detailRef.current = detail;
   });
 
   useEffect(() => {
@@ -276,15 +293,36 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
     shownZlogin.current = zlogin.showZloginConsole;
   }, [zlogin.showZloginConsole]);
 
+  const startDoor = useCallback(
+    (kind, credentialId) => {
+      const starters = {
+        status,
+        id,
+        name,
+        setLoading,
+        setError,
+        setMachineDetails,
+        setActiveConsoleType,
+        credentialId,
+      };
+      return kind === 'ssh' ? startSshPreview(starters) : startRdpPreview(starters);
+    },
+    [status, id, name, setError, setMachineDetails]
+  );
+
   const wanted = consoleParamOf(searchParams);
+  const picked = consoleCredentialParamOf(searchParams);
+  const settled = !held.offered || held.loaded || held.failed;
+  const waits = (wanted === 'ssh' || wanted === 'rdp') && !settled;
   useEffect(() => {
-    if (!wanted || !offered) {
+    if (!wanted || !offered || waits) {
       return;
     }
     setSearchParams(
       params => {
         const next = new URLSearchParams(params);
         next.delete('console');
+        next.delete('credential');
         return next;
       },
       { replace: true }
@@ -311,14 +349,16 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
           setError(result.message);
         }
       });
-    } else if (wanted === 'ssh') {
-      startSshPreview(starters);
-    } else if (wanted === 'rdp') {
-      startRdpPreview(starters);
+    } else if (!picked && asksConnectAs(detailRef.current, wanted)) {
+      setAsking(wanted);
+    } else {
+      startDoor(wanted, picked);
     }
   }, [
     wanted,
+    picked,
     offered,
+    waits,
     status,
     id,
     name,
@@ -329,6 +369,7 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
     waitForVncSessionReady,
     setShowVncConsole,
     handleZloginConsole,
+    startDoor,
   ]);
 
   return (
@@ -388,6 +429,16 @@ const MachineConsolePanel = ({ id, name, detail = null, running, turn, user = nu
           </div>
         )}
       </SectionCard>
+      {asking ? (
+        <ConnectAsDialog
+          credentials={credentialsFor(detail, asking)}
+          onPick={credentialId => {
+            setAsking('');
+            startDoor(asking, credentialId);
+          }}
+          onClose={() => setAsking('')}
+        />
+      ) : null}
       <ZloginModal
         showZloginConsole={showZloginConsole}
         setShowZloginConsole={setShowZloginConsole}

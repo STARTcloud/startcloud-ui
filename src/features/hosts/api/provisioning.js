@@ -306,8 +306,10 @@ export const modifyInfrastructure = (status, id, name, changes) =>
 
 /**
  * Start the provisioning pipeline against the stored document,
- * `POST machines/{name}/provision`, `options` carrying `skip_boot` and
- * `confirm_host_hooks` where given; answered `{ success, message,
+ * `POST machines/{name}/provision`, `options` carrying `skip_boot`,
+ * `confirm_host_hooks` and the narrowing of one run, `roles`, a list of
+ * role names, `scripts`, a list of script paths, or `playbook`, one
+ * playbook path, where given; answered `{ success, message,
  * machine_name, parent_task_id, steps, task_chain }`, or refused 409
  * with `needs_confirmation` and `reason` while the document carries
  * host hooks not yet confirmed.
@@ -315,7 +317,7 @@ export const modifyInfrastructure = (status, id, name, changes) =>
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {string} name - The machine name
- * @param {Object} [options] - `skip_boot` and `confirm_host_hooks`
+ * @param {Object} [options] - `skip_boot`, `confirm_host_hooks`, `roles`, `scripts` and `playbook`
  * @returns {Promise<Object>} The queued chain
  */
 export const provisionMachine = (status, id, name, options = {}) =>
@@ -438,46 +440,6 @@ export const fetchRemoteTemplates = (status, id, source) =>
  */
 export const fetchArtifactStoragePaths = (status, id) =>
   client.get(agentPath(status, id, 'artifacts/storage/paths'));
-
-/**
- * Create a storage location, `POST artifacts/storage/paths`.
- *
- * @param {Object} status - The payload from `probeStatus`
- * @param {string} id - The registry id, or `self` on an agent role
- * @param {Object} body - The location
- * @returns {Promise<Object>} The agent's answer
- */
-export const createArtifactStoragePath = (status, id, body) =>
-  client.post(agentPath(status, id, 'artifacts/storage/paths'), body);
-
-/**
- * Change a storage location, `PUT artifacts/storage/paths/{id}`.
- *
- * @param {Object} status - The payload from `probeStatus`
- * @param {string} id - The registry id, or `self` on an agent role
- * @param {string} pathId - The location's id
- * @param {Object} body - The changed members
- * @returns {Promise<Object>} The agent's answer
- */
-export const updateArtifactStoragePath = (status, id, pathId, body) =>
-  client.put(agentPath(status, id, `artifacts/storage/paths/${encodeURIComponent(pathId)}`), body);
-
-/**
- * Delete a storage location, `DELETE artifacts/storage/paths/{id}` with
- * the body the agent reads.
- *
- * @param {Object} status - The payload from `probeStatus`
- * @param {string} id - The registry id, or `self` on an agent role
- * @param {string} pathId - The location's id
- * @param {Object} body - The options of the delete
- * @returns {Promise<Object>} The agent's answer
- */
-export const deleteArtifactStoragePath = (status, id, pathId, body) =>
-  client.request({
-    method: 'DELETE',
-    path: agentPath(status, id, `artifacts/storage/paths/${encodeURIComponent(pathId)}`),
-    body,
-  });
 
 /**
  * The artifact registry, `GET artifacts`, narrowed by `filters`, asked

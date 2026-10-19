@@ -115,6 +115,7 @@ const RdpTab = ({ entry, turn }) => {
         machineName={entry.name}
         settings={RDP_SETTINGS}
         target={entry.target === 'guest' ? 'guest' : 'console'}
+        credentialId={entry.session?.credential_id || ''}
         uiRef={NOOP_REF}
         connectKey={turn}
       />
@@ -178,7 +179,8 @@ ConsoleBody.propTypes = {
 /**
  * The Consoles view of the footer's pane: one tab a console placed in
  * the footer, the host shell, an SSH shell, a zlogin terminal, a VNC
- * display or an RDP display, every body mounted and the active one
+ * display or an RDP display, the RDP bridge signing in with the
+ * credential its session carries, every body mounted and the active one
  * drawn on top, so a tab switched away keeps running; the tab strip on
  * top while two or more are open, the Commands bar under it; the
  * placeholder while none is open, carrying Open host shell for the host

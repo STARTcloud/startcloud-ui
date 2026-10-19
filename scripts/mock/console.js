@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { ROLE_STATUS, featuresOf, machineOf, rowOf } from './fleet.js';
 import { AGENT_MODE, now, ok, problem, refusal } from './kit.js';
+import { machineCredentialsOf } from './machine-settings.js';
 import { openSocket } from './socket.js';
 import { announceSession, openShell } from './terminal.js';
 
@@ -167,6 +168,17 @@ const sshStart = ({ host, row, body, person }) => {
   if (ipIndex < 0 || ipIndex >= candidates.length) {
     return refusal(400, `ip_index out of range`, { ip_candidates: candidates });
   }
+  const credential = body.credential_id
+    ? machineCredentialsOf(host, row).find(
+        entry => entry.use === 'ssh' && entry.id === String(body.credential_id)
+      )
+    : null;
+  if (body.credential_id && !credential) {
+    return refusal(
+      400,
+      `credential_id ${body.credential_id} names no ssh credential of ${row.name}`
+    );
+  }
   const session = shellSession({ id: randomUUID(), machine: row.name, by: person.username });
   session.ssh_host = candidates[ipIndex];
   storeOf(host).ssh.set(session.id, session);
@@ -278,12 +290,13 @@ export const consoleSocketMachine = (host, params) => {
  * nested under `session`, and `DELETE zlogin/sessions/{id}/stop`. SSH
  * behind the `ssh` feature: `POST machines/{name}/ssh/start` answers the
  * session row, `created_by` the calling person, with the guest's
- * candidate addresses, an `ip_index` out of range refused with them,
+ * candidate addresses, an `ip_index` out of range refused with them, a
+ * `credential_id` that names no `ssh` credential of the machine refused 400,
  * `GET ssh/sessions` lists the rows and `DELETE ssh/sessions/{id}/stop`
  * ends it, each start and stop sent on the `sessions` topic. RDP behind
  * `rdp`: `GET machines/{name}/rdp` answers the console
  * and guest targets of a running machine. The launchers behind
- * `host-launchers`: `open-rdp`, `open-directory`, `open-ftp` and
+ * `host-launchers`: `open-rdp` with its `target` and `credential_id`, `open-directory`, `open-ftp` and
  * `GET machines/{name}/ftp`. The sockets: `zlogin/{id}` and `ssh/{id}`
  * are the terminal's line shell on the session, and
  * `machines/{name}/vnc/websockify` and `machines/{name}/rdp-bridge` are
