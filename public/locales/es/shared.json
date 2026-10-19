@@ -12231,14 +12231,10 @@
       "compare": "Comparar",
       "chain": "Cadena",
       "generate": "Generar",
-      "byKind": "Por tipo",
       "certificates": "Certificados",
       "authorities": "Autoridades",
       "requests": "Solicitudes",
-      "keys": "Claves",
-      "open": "Abrir",
-      "download": "Descargar",
-      "delete": "Eliminar"
+      "keys": "Claves"
     },
     "kind": {
       "certificate": "Certificado",
@@ -12269,7 +12265,7 @@
     "vault": {
       "title": "Certificados",
       "generate": "Generar",
-      "dropBundle": "Suelta un paquete de la bóveda (.certs.json) aquí"
+      "dropBundle": "Restaurar una copia de seguridad de la bóveda (*.certs.json)"
     },
     "table": {
       "kind": "Tipo",
@@ -12413,6 +12409,7 @@
       "combined": "PEM de clave y cadena"
     },
     "convert": {
+      "about": "Convierte certificados y claves a otro formato, o guárdalos en la bóveda.",
       "input": "Entrada",
       "components": "Componentes",
       "output": "Salida",
@@ -12436,6 +12433,7 @@
       "fromVault": "Convirtiendo {{name}} desde la bóveda."
     },
     "decode": {
+      "about": "Lee un certificado, una solicitud o una clave y muestra lo que contiene.",
       "input": "Entrada",
       "pickComponent": "Componente",
       "download": {
@@ -12486,6 +12484,7 @@
       "selfSigned": "Este certificado es autofirmado."
     },
     "chain": {
+      "about": "Ordena los certificados de la hoja a la raíz y comprueba que cada uno firmó al siguiente.",
       "input": "Entrada",
       "loaded": "Certificados cargados",
       "none": "No hay certificados cargados",
@@ -12501,6 +12500,7 @@
       "ignored_other": "{{count}} componentes ignorados, duplicados o claves"
     },
     "match": {
+      "about": "Comprueba que una clave pertenece a un certificado o a una solicitud.",
       "subject": "Certificado o solicitud",
       "subjectLabel": "Pega el certificado o la solicitud",
       "key": "Clave",
@@ -12514,6 +12514,7 @@
       "noKey": "No se leyó ninguna clave"
     },
     "compare": {
+      "about": "Lista los campos en los que dos certificados difieren.",
       "left": "Primer certificado",
       "right": "Segundo certificado",
       "differences": "Diferencias",
@@ -12566,24 +12567,34 @@
       "rsa4096": "RSA 4096",
       "p256": "ECDSA P-256",
       "p384": "ECDSA P-384",
+      "p521": "P-521",
+      "secp256k1": "secp256k1",
       "ed25519": "Ed25519"
     },
     "generate": {
+      "about": "Crea claves, CSR y certificados en el navegador y guárdalos en la bóveda.",
       "tabKey": "Clave",
-      "tabRequest": "Solicitud",
+      "tabRequest": "CSR",
       "tabCertificate": "Certificado",
-      "tabSign": "Firmar solicitud",
+      "tabSign": "Firmar CSR",
       "keyTitle": "Generar una clave",
+      "aboutKey": "Una clave privada del algoritmo elegido; nada sale del navegador.",
       "algorithm": "Algoritmo",
       "generateKey": "Generar clave",
       "keyMade": "Clave",
-      "requestTitle": "Crear una solicitud",
-      "makeRequest": "Crear solicitud",
-      "requestMade": "Solicitud",
+      "requestTitle": "Crear un CSR",
+      "aboutRequest": "Un CSR para que lo firme una autoridad, a partir de una clave nueva o de una de la bóveda.",
+      "makeRequest": "Crear CSR",
+      "requestMade": "CSR creado",
       "certificateTitle": "Certificado autofirmado",
+      "aboutCertificate": "Un certificado autofirmado, o una autoridad raíz con el interruptor Autoridad activado.",
       "selfSign": "Autofirmar",
       "certificateMade": "Certificado",
       "signTitle": "Firmar una solicitud",
+      "aboutSign": "Emite un certificado a partir de un CSR con una autoridad cuya clave guarda la bóveda.",
+      "pending_one": "{{count}} CSR pendiente",
+      "pending_other": "{{count}} CSR pendientes",
+      "noPending": "Ningún CSR espera una firma.",
       "sign": "Firmar",
       "saved": "guardado",
       "keySource": "Clave",
@@ -12599,6 +12610,7 @@
       "templates": "Plantillas",
       "saveTemplate": "Guardar",
       "deleteTemplate": "Eliminar plantilla",
+      "templatesOptional": "Las plantillas son opcionales: carga una en el formulario, o guarda el formulario como plantilla.",
       "days": "Válido durante (días)",
       "authority": "Autoridad",
       "pathLen": "Longitud de ruta",

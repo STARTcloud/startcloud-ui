@@ -12231,14 +12231,10 @@
       "compare": "Compare",
       "chain": "Chain",
       "generate": "Generate",
-      "byKind": "By kind",
       "certificates": "Certificates",
       "authorities": "Authorities",
       "requests": "Requests",
-      "keys": "Keys",
-      "open": "Open",
-      "download": "Download",
-      "delete": "Delete"
+      "keys": "Keys"
     },
     "kind": {
       "certificate": "Certificate",
@@ -12269,7 +12265,7 @@
     "vault": {
       "title": "Certificates",
       "generate": "Generate",
-      "dropBundle": "Drop a vault bundle (.certs.json) here"
+      "dropBundle": "Restore a vault backup (*.certs.json)"
     },
     "table": {
       "kind": "Kind",
@@ -12413,6 +12409,7 @@
       "combined": "Key and chain PEM"
     },
     "convert": {
+      "about": "Turn certificates and keys into another format, or save them to the vault.",
       "input": "Input",
       "components": "Components",
       "output": "Output",
@@ -12436,6 +12433,7 @@
       "fromVault": "Converting {{name}} from the vault."
     },
     "decode": {
+      "about": "Read a certificate, request or key and show what it holds.",
       "input": "Input",
       "pickComponent": "Component",
       "download": {
@@ -12486,6 +12484,7 @@
       "selfSigned": "This certificate is self-signed."
     },
     "chain": {
+      "about": "Order certificates leaf to root and check each one signed the next.",
       "input": "Input",
       "loaded": "Loaded certificates",
       "none": "No certificates loaded",
@@ -12501,6 +12500,7 @@
       "ignored_other": "{{count}} components ignored, duplicates or keys"
     },
     "match": {
+      "about": "Check that a key belongs to a certificate or request.",
       "subject": "Certificate or request",
       "subjectLabel": "Paste the certificate or request",
       "key": "Key",
@@ -12514,6 +12514,7 @@
       "noKey": "No key was read"
     },
     "compare": {
+      "about": "List the fields two certificates differ in.",
       "left": "First certificate",
       "right": "Second certificate",
       "differences": "Differences",
@@ -12566,24 +12567,34 @@
       "rsa4096": "RSA 4096",
       "p256": "ECDSA P-256",
       "p384": "ECDSA P-384",
+      "p521": "P-521",
+      "secp256k1": "secp256k1",
       "ed25519": "Ed25519"
     },
     "generate": {
+      "about": "Make keys, CSRs and certificates in the browser and keep them in the vault.",
       "tabKey": "Key",
-      "tabRequest": "Request",
+      "tabRequest": "CSR",
       "tabCertificate": "Certificate",
-      "tabSign": "Sign request",
+      "tabSign": "Sign CSR",
       "keyTitle": "Generate a key",
+      "aboutKey": "A private key of the algorithm picked, nothing leaves the browser.",
       "algorithm": "Algorithm",
       "generateKey": "Generate key",
       "keyMade": "Key",
-      "requestTitle": "Make a request",
-      "makeRequest": "Make request",
-      "requestMade": "Request",
+      "requestTitle": "Make a CSR",
+      "aboutRequest": "A CSR for an authority to sign, from a new key or one in the vault.",
+      "makeRequest": "Make CSR",
+      "requestMade": "CSR made",
       "certificateTitle": "Self-signed certificate",
+      "aboutCertificate": "A self-signed certificate, or a root authority with the Authority switch on.",
       "selfSign": "Self-sign",
       "certificateMade": "Certificate",
       "signTitle": "Sign a request",
+      "aboutSign": "Issue a certificate from a CSR with an authority whose key the vault holds.",
+      "pending_one": "{{count}} pending CSR",
+      "pending_other": "{{count}} pending CSRs",
+      "noPending": "No CSR is waiting for a signature.",
       "sign": "Sign",
       "saved": "saved",
       "keySource": "Key",
@@ -12599,6 +12610,7 @@
       "templates": "Templates",
       "saveTemplate": "Save",
       "deleteTemplate": "Delete template",
+      "templatesOptional": "Templates are optional: load one into the form, or save the form as one.",
       "days": "Valid for (days)",
       "authority": "Authority",
       "pathLen": "Path length",
