@@ -114,7 +114,7 @@ const DEFAULTS = {
   },
   networks: [{ type: 'external', dhcp4: true }],
   tags: ['domino'],
-  vbox: { guest_agent: true },
+  guest_agent: true,
 };
 const ROLE_SPECS = {
   domino: {

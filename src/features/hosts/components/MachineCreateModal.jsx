@@ -484,8 +484,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
  * `typed` the member paths the person edited, `settings.<key>`,
  * `disks.boot.<member>`, `disks.additional`, `networks`, `tags` and
  * `sourceFilter`, which a package's prefill and the registry default
- * never overwrite, `fromPackage` the member paths the package filled and
- * `vboxDefaults` the `vbox` section the package defaults.
+ * never overwrite, and `fromPackage` the member paths the package filled.
  */
 const useCreateForm = () => {
   const [form, setForm] = useState(() => ({
@@ -517,7 +516,6 @@ const useCreateForm = () => {
     removeTransport: '',
     sourceFilter: '',
     boxPickCustom: false,
-    vboxDefaults: {},
     typed: new Set(),
     fromPackage: new Set(),
   }));
@@ -1081,7 +1079,7 @@ StepBody.propTypes = {
  * as the dialog opens, the ones a step consumes read again as it is
  * entered. A provisioner version picked on General prefills the steps
  * from its manifest's `metadata.defaults`, its `settings`, `disks`,
- * `networks`, `tags` and `vbox`, a value the person typed
+ * `networks`, `tags` and `guest_agent`, a value the person typed
  * never overwritten and every filled value marked from package until
  * typed over, seeds each file-taking role's installer to the row the
  * configuration's default names through `seedRolePicks`, and preselects

@@ -1184,9 +1184,10 @@ server role, `/api/…` on an agent role).
   closing the dialog and picking the version once the families answer
   it. A version picked prefills General, OS & Disks, System, CPU, Memory
   and Network from the manifest's `metadata.defaults`, its `settings`,
-  `disks`, `networks`, `tags`, joined into the Tags field, and `vbox`,
-  merged under the body's `vbox` section beneath the person's hardware
-  payload and passthrough on a VirtualBox host, a value the person typed
+  `disks`, `networks`, `tags`, joined into the Tags field, and
+  `guest_agent`, the System step's guest agent switch, sent under the
+  section of the machine's hypervisor, `vbox`, `utm` or `zones`, because
+  a package's default is hypervisor-neutral, a value the person typed
   never overwritten and every filled value marked from package until
   typed over, because a package's defaults are its intent and a person's
   typing is theirs; each role that declares an installer opens on the row

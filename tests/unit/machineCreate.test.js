@@ -88,7 +88,6 @@ const formOf = (more = {}) => ({
   startAfterCreate: false,
   provisionAfterCreate: false,
   useProvisioner: false,
-  vboxDefaults: {},
   typed: new Set(),
   fromPackage: new Set(),
   bhyve: false,
@@ -124,7 +123,7 @@ const PACKAGE_DEFAULTS = {
   },
   networks: [{ type: 'external', dhcp4: true }],
   tags: ['domino', 'lab'],
-  vbox: { guest_agent: true },
+  guest_agent: true,
 };
 
 describe('hostCreates', () => {
@@ -860,26 +859,23 @@ describe('buildSpec', () => {
     expect(spec).not.toHaveProperty('vbox');
   });
 
-  it('merges the package vbox defaults under the hardware payload and the passthrough on a VirtualBox host alone', () => {
-    const spec = buildSpec(
+  it('sends the guest agent switch under the section of the hypervisor, vbox, utm or zones', () => {
+    expect(buildSpec(formOf({ zones: { guest_agent: true } })).vbox).toEqual({ guest_agent: true });
+    const utm = buildSpec(formOf({ machineHypervisor: 'utm', zones: { guest_agent: true } }));
+    expect(utm.utm).toEqual({ guest_agent: true });
+    expect(utm).not.toHaveProperty('vbox');
+    const bhyveSpec = buildSpec(
       formOf({
-        vboxDefaults: { guest_agent: true, audio: { controller: 'ac97' }, extra: 1 },
-        hardwarePayload: { audio: { controller: 'hda' } },
-        vboxJson: '{"extra":2}',
+        bhyve: true,
+        vbox: false,
+        zones: { guest_agent: true },
+        settings: { ...emptySettings(), hostname: 'z', domain: 'd' },
       })
     );
-    expect(spec.vbox).toEqual({ guest_agent: true, audio: { controller: 'hda' }, extra: 2 });
-    expect(
-      buildSpec(
-        formOf({
-          bhyve: true,
-          vbox: false,
-          vboxDefaults: { guest_agent: true },
-          settings: { ...emptySettings(), hostname: 'z', domain: 'd' },
-        })
-      )
-    ).not.toHaveProperty('vbox');
-    expect(buildSpec(formOf({ vboxDefaults: undefined }))).not.toHaveProperty('vbox');
+    expect(bhyveSpec.zones).toEqual({ guest_agent: true });
+    expect(bhyveSpec).not.toHaveProperty('vbox');
+    expect(bhyveSpec).not.toHaveProperty('utm');
+    expect(buildSpec(formOf())).not.toHaveProperty('utm');
   });
 
   it('names the provisioner, the transport signal and the organization only where chosen, the secret answers riding properties', () => {
@@ -1165,18 +1161,20 @@ describe('the package defaults', () => {
       disks: {},
       networks: [],
       tags: [],
-      vbox: {},
+      guest_agent: false,
     });
     expect(
       packageDefaultsOf({
-        metadata: { defaults: { networks: 'x', disks: [], tags: ['a', 7, ''], vbox: [] } },
+        metadata: {
+          defaults: { networks: 'x', disks: [], tags: ['a', 7, ''], guest_agent: 'yes' },
+        },
       })
     ).toEqual({
       settings: {},
       disks: {},
       networks: [],
       tags: ['a'],
-      vbox: {},
+      guest_agent: false,
     });
     expect(packageDefaultsOf({ metadata: { configuration: {} } })).toBeNull();
     expect(packageDefaultsOf({ metadata: { defaults: 'nope' } })).toBeNull();
@@ -1224,7 +1222,7 @@ describe('the package defaults', () => {
       { ...defaultExternalNetwork(), type: 'external', dhcp4: true },
     ]);
     expect(filled.tagsInput).toBe('domino, lab');
-    expect(filled.vboxDefaults).toEqual({ guest_agent: true });
+    expect(filled.zones).toEqual({ guest_agent: true });
     expect([...filled.fromPackage].sort()).toEqual(
       [
         'settings.box',
@@ -1242,20 +1240,22 @@ describe('the package defaults', () => {
         'disks.additional.0',
         'networks.0',
         'tags',
+        'zones.guest_agent',
       ].sort()
     );
   });
 
-  it('keeps typed tags and fills no tags or vbox the package leaves out', () => {
+  it('keeps typed tags and a set guest agent switch and fills neither when the package leaves them out', () => {
     const kept = prefilledFrom(
       PACKAGE_DEFAULTS,
-      formOf({ typed: new Set(['tags']), tagsInput: 'mine' })
+      formOf({ typed: new Set(['tags']), tagsInput: 'mine', zones: { guest_agent: false } })
     );
     expect(kept).not.toHaveProperty('tagsInput');
     expect(kept.fromPackage.has('tags')).toBe(false);
-    const plain = prefilledFrom({ ...PACKAGE_DEFAULTS, tags: [], vbox: {} }, formOf());
+    expect(kept).not.toHaveProperty('zones');
+    const plain = prefilledFrom({ ...PACKAGE_DEFAULTS, tags: [], guest_agent: false }, formOf());
     expect(plain).not.toHaveProperty('tagsInput');
-    expect(plain).not.toHaveProperty('vboxDefaults');
+    expect(plain).not.toHaveProperty('zones');
   });
 
   it('never overwrites a typed value and leaves the untyped members alone when the package says nothing', () => {
@@ -1285,7 +1285,7 @@ describe('the package defaults', () => {
     expect(filled.fromPackage.has('networks.0')).toBe(false);
     expect(filled.fromPackage.has('settings.vcpus')).toBe(true);
     const sparse = prefilledFrom(
-      { settings: {}, disks: {}, networks: [], tags: [], vbox: {} },
+      { settings: {}, disks: {}, networks: [], tags: [], guest_agent: false },
       formOf()
     );
     expect(sparse.settings).toEqual(formOf().settings);

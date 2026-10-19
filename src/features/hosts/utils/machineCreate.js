@@ -312,11 +312,11 @@ export const stepOpen = (form, stepId, problemOf) => {
 
 /**
  * The `metadata.defaults` of a provisioner manifest, shape-checked: the
- * `settings`, `disks`, `networks`, `tags` and `vbox` the package defaults
- * a machine to, null while the manifest carries none.
+ * `settings`, `disks`, `networks`, `tags` and `guest_agent` the package
+ * defaults a machine to, null while the manifest carries none.
  *
  * @param {Object|null} version - The version's manifest
- * @returns {{ settings: Object, disks: Object, networks: Array<Object>, tags: Array<string>, vbox: Object }|null} The defaults
+ * @returns {{ settings: Object, disks: Object, networks: Array<Object>, tags: Array<string>, guest_agent: boolean }|null} The defaults
  */
 export const packageDefaultsOf = version => {
   const defaults = version?.metadata?.defaults;
@@ -330,7 +330,7 @@ export const packageDefaultsOf = version => {
     tags: Array.isArray(defaults.tags)
       ? defaults.tags.filter(tag => typeof tag === 'string' && tag).map(String)
       : [],
-    vbox: isObject(defaults.vbox) ? defaults.vbox : {},
+    guest_agent: defaults.guest_agent === true,
   };
 };
 
@@ -362,12 +362,13 @@ const packageDiskRow = (disk, index) => ({
  * `template` while the package names a box, the boot disk's size, volume
  * name, clone strategy and mount and the additional disks as new blank
  * rows under `diskConfig`, the `networks` as rows over the external
- * default, `tagsInput` as the `tags` joined by a comma, `vboxDefaults` as
- * the `vbox` section, and `fromPackage`, the set of member paths the
- * package filled, `settings.box`, `disks.boot.size`, `disks.additional.0`,
- * `networks.0`, `tags` among them.
+ * default, `tagsInput` as the `tags` joined by a comma, `zones.guest_agent`
+ * as the package's `guest_agent` while the switch is unset, and
+ * `fromPackage`, the set of member paths the package filled,
+ * `settings.box`, `disks.boot.size`, `disks.additional.0`, `networks.0`,
+ * `tags`, `zones.guest_agent` among them.
  *
- * @param {{ settings: Object, disks: Object, networks: Array<Object>, tags: Array<string>, vbox: Object }} defaults - The defaults of `packageDefaultsOf`
+ * @param {{ settings: Object, disks: Object, networks: Array<Object>, tags: Array<string>, guest_agent: boolean }} defaults - The defaults of `packageDefaultsOf`
  * @param {Object} form - The wizard's state
  * @returns {Object} The members to set
  */
@@ -415,8 +416,9 @@ export const prefilledFrom = (defaults, form) => {
     filled.tagsInput = tags.join(', ');
     fromPackage.add('tags');
   }
-  if (isObject(defaults.vbox) && Object.keys(defaults.vbox).length > 0) {
-    filled.vboxDefaults = defaults.vbox;
+  if (defaults.guest_agent === true && blank(form.zones?.guest_agent)) {
+    filled.zones = { ...(form.zones || {}), guest_agent: true };
+    fromPackage.add('zones.guest_agent');
   }
   return filled;
 };
@@ -1046,18 +1048,20 @@ const mergedSettingsOf = ({ settings, bootSource, bootOrder }) => {
   return merged;
 };
 
-const vboxSectionOf = ({ vbox, vboxDefaults, hardwarePayload, zones, vboxJson }) => {
+const vboxSectionOf = ({ vbox, hardwarePayload, zones, vboxJson, machineHypervisor }) => {
   const passthrough = parseVboxPassthrough(vboxJson);
-  if (!vbox) {
+  if (!vbox || machineHypervisor === 'utm') {
     return passthrough || {};
   }
   return {
-    ...(isObject(vboxDefaults) ? vboxDefaults : {}),
     ...hardwarePayload,
     ...(zones.guest_agent === true && { guest_agent: true }),
     ...(passthrough || {}),
   };
 };
+
+const utmSectionOf = ({ machineHypervisor, zones }) =>
+  machineHypervisor === 'utm' && zones.guest_agent === true ? { guest_agent: true } : {};
 
 const tagsOf = tagsInput =>
   tagsInput
@@ -1102,8 +1106,9 @@ export const roleRowsOf = (rows, manifestRoles) =>
  * given, the `hypervisor` where chosen, the `provisioner` while a family
  * is picked, the `settings` the wizard edited with the box fields on a
  * template boot alone, the `disks`, the `filesystems` and `zones` of a
- * bhyve host, the `vbox` section of a VirtualBox host, the package's
- * `vboxDefaults` under the hardware payload and the passthrough, `cloud_init`,
+ * bhyve host, the `vbox` section of a VirtualBox host, the `utm` section
+ * of a machine on UTM, the guest agent switch riding each under
+ * `guest_agent`, `cloud_init`,
  * `tags`, `notes`, `networks`, `roles` in their drawn order through
  * `roleRowsOf`, `properties` with the hidden fields pruned, `sync_method`,
  * `remove_transport_on_completion` where chosen, `wait_for` with
@@ -1125,6 +1130,7 @@ export const buildSpec = form => {
       )
     : {};
   const vboxSection = vboxSectionOf(form);
+  const utmSection = utmSectionOf(form);
   const tags = tagsOf(form.tagsInput);
   const waitFor = waitForOf(form.downloads);
   return {
@@ -1138,6 +1144,7 @@ export const buildSpec = form => {
     ...(filesystems.length > 0 && { filesystems }),
     ...(Object.keys(zoneFields).length > 0 && { zones: zoneFields }),
     ...(Object.keys(vboxSection).length > 0 && { vbox: vboxSection }),
+    ...(Object.keys(utmSection).length > 0 && { utm: utmSection }),
     ...(cloudInit && { cloud_init: cloudInit }),
     ...(tags.length > 0 && { tags }),
     ...(trimmed(form.notes) && { notes: trimmed(form.notes) }),
