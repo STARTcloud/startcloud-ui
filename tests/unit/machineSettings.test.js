@@ -19,6 +19,7 @@ import {
   messageBase,
   patchedCredentialRows,
   pendingCount,
+  pendingRowsOf,
   seedCredentialRows,
   visibleTabs,
   warningsSuffix,
@@ -431,5 +432,29 @@ describe('the notice words', () => {
     );
     expect(pendingCount({ pending_changes: { a: 1, b: 2 } })).toBe(2);
     expect(pendingCount({})).toBe(0);
+  });
+});
+
+describe('pendingRowsOf', () => {
+  it('draws one row a leaf member, the path dotted from the group and lists by index', () => {
+    expect(
+      pendingRowsOf({
+        vbox: { serial: [{ port: 2, io_base: '0x2F8', irq: 3, mode: 'disconnected' }] },
+        vcpus: '8',
+        autoboot: false,
+        consoleport: null,
+        boot_order: [],
+      })
+    ).toEqual([
+      { path: 'vbox.serial[0].port', value: '2' },
+      { path: 'vbox.serial[0].io_base', value: '0x2F8' },
+      { path: 'vbox.serial[0].irq', value: '3' },
+      { path: 'vbox.serial[0].mode', value: 'disconnected' },
+      { path: 'vcpus', value: '8' },
+      { path: 'autoboot', value: 'false' },
+      { path: 'consoleport', value: 'null' },
+      { path: 'boot_order', value: '[]' },
+    ]);
+    expect(pendingRowsOf(null)).toEqual([]);
   });
 });

@@ -6,7 +6,8 @@ import { useSearchParams } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import RecordRows from '../../../components/common/RecordRows';
-import SectionCard, { foldsShape } from '../../../components/common/SectionCard';
+import { foldsShape } from '../../../components/common/SectionCard';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useEventStream } from '../../../hooks/useEventStream';
@@ -136,14 +137,14 @@ const useProvisionStatus = ({ status, id, name, offered }) => {
 
 /**
  * The Provisioning page of one machine, hyperweaver-ui's Provisioning
- * tab: the status card, the provisioner the document names, the
- * pipeline's state with when it last provisioned, read by
- * `GET machines/{name}/provision/status` while the host lists
+ * tab on glass, no card around any of it: the status section, one
+ * heading that folds over the record rows of the provisioner the
+ * document names, the pipeline's state with when it last provisioned,
+ * read by `GET machines/{name}/provision/status` while the host lists
  * `provisioning` and the machine's detail carries a document, and the
  * welcome page where the agent answers one; under it, for a person who
  * may create machines on a host that lists `machine-create`, the
- * document editor on glass, its tabs with no card around them, Hosts.yml
- * among them. A pipeline action handed in `run`
+ * document editor, its tabs, Hosts.yml among them. A pipeline action handed in `run`
  * by the Controls menu, the tree or a row is sent once as the page
  * opens, `POST machines/{name}/provision`, `/sync`, `/sync` with
  * `syncback` or `/run-provisioners`, one notice reporting the queued
@@ -286,10 +287,12 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
         }
       : null;
 
+  const folded = folds.folded(STATUS_FOLD);
+
   return (
-    <div className="row g-3 mb-3">
-      <div className="col-12" data-panel="machine-provisioning">
-        <SectionCard
+    <div className="list row">
+      <div className="mb-3" data-panel="machine-provisioning" data-folded={folded}>
+        <SectionHeading
           title={t('provisioning.machineProvisioning.heading')}
           badge={
             busy ? (
@@ -300,38 +303,41 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
               </span>
             ) : null
           }
-          className="mb-0"
-          folded={folds.folded(STATUS_FOLD)}
+          folded={folded}
           onFold={() => folds.toggle(STATUS_FOLD)}
-        >
-          {document ? (
-            <>
-              <RecordRows
-                className="mb-2"
-                rows={statusRows({ document, state, webAddress: detail?.web_address, t })}
-              />
-              <p className="form-text text-muted mb-0">
-                {t('provisioning.machineProvisioning.pipelineHint')}
+        />
+        {folded ? null : (
+          <>
+            {document ? (
+              <>
+                <RecordRows
+                  className="mb-2"
+                  rows={statusRows({ document, state, webAddress: detail?.web_address, t })}
+                />
+                <p className="form-text text-muted mb-0">
+                  {t('provisioning.machineProvisioning.pipelineHint')}
+                </p>
+              </>
+            ) : (
+              <p className="text-muted mb-0" data-note="no-document">
+                {t('provisioning.machineProvisioning.noDocumentYet')}
+                {gates.reshape
+                  ? t('provisioning.machineProvisioning.noDocumentReshapeSuffix')
+                  : ''}
+                .
               </p>
-            </>
-          ) : (
-            <p className="text-muted mb-0" data-note="no-document">
-              {t('provisioning.machineProvisioning.noDocumentYet')}
-              {gates.reshape ? t('provisioning.machineProvisioning.noDocumentReshapeSuffix') : ''}.
-            </p>
-          )}
-        </SectionCard>
+            )}
+          </>
+        )}
       </div>
       {gates.reshape ? (
-        <div className="col-12">
-          <ProvisioningEditor
-            id={id}
-            name={name}
-            document={document}
-            onSaved={saved}
-            onRun={runOne}
-          />
-        </div>
+        <ProvisioningEditor
+          id={id}
+          name={name}
+          document={document}
+          onSaved={saved}
+          onRun={runOne}
+        />
       ) : null}
       <ConfirmModal
         show={hookReason !== ''}

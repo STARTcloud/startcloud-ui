@@ -819,3 +819,26 @@ export const messageBase = (answer, machineName, t) =>
   );
 
 export const pendingCount = answer => Object.keys(answer.pending_changes || {}).length;
+
+const pendingLeavesOf = (value, path) => {
+  if (Array.isArray(value) && value.length > 0) {
+    return value.flatMap((entry, index) => pendingLeavesOf(entry, `${path}[${index}]`));
+  }
+  if (value && typeof value === 'object' && Object.keys(value).length > 0) {
+    return Object.entries(value).flatMap(([key, entry]) =>
+      pendingLeavesOf(entry, `${path}.${key}`)
+    );
+  }
+  return [{ path, value: typeof value === 'string' ? value : (JSON.stringify(value) ?? '') }];
+};
+
+/**
+ * The accrued set of a machine as one row a leaf member, the path dotted
+ * from the group with a list's entries by index (`vbox.serial[0].mode`),
+ * the value a string as it is and any other leaf as its JSON.
+ *
+ * @param {Object|null} pendingChanges - The detail's `pending_changes`
+ * @returns {Array<{ path: string, value: string }>} The rows
+ */
+export const pendingRowsOf = pendingChanges =>
+  Object.entries(pendingChanges || {}).flatMap(([group, value]) => pendingLeavesOf(value, group));

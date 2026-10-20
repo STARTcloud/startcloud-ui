@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCheck, FaHourglassHalf, FaPlus, FaTrash } from 'react-icons/fa6';
 
+import RecordRows from '../../../components/common/RecordRows';
 import TabStrip from '../../../components/common/TabStrip';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { fetchMachineDefaults, fetchOsTypes } from '../api/machines';
@@ -18,6 +19,7 @@ import {
   editableFields,
   filesystemsOf,
   knobValuesOf,
+  pendingRowsOf,
   sectionForTab,
   visibleTabs,
   zoneBootDevicesOf,
@@ -93,8 +95,19 @@ const PendingChangesPanel = ({ pendingChanges, running, busy, onApplyNow, onCanc
         </div>
       </div>
       <details className="mt-1">
-        <summary className="small">{t('machineEdit.machineSettings.showPendingValues')}</summary>
-        <pre className="small mb-0">{JSON.stringify(pendingChanges, null, 2)}</pre>
+        <summary className="small" data-action="show-pending">
+          {t('machineEdit.machineSettings.showPendingValues')}
+        </summary>
+        <div className="small mt-2" data-list="pending-values">
+          <RecordRows
+            className="mb-0"
+            rows={pendingRowsOf(pendingChanges).map(row => ({
+              key: row.path,
+              label: row.path,
+              value: <code>{row.value}</code>,
+            }))}
+          />
+        </div>
       </details>
     </div>
   );
@@ -699,7 +712,10 @@ const useSettingsFeeds = ({ status, hostId, server }) => {
  * sending the changed members alone as one
  * `PUT machines/{name}`, the modify wire of both agents, through
  * `useSettingsApply`. The form seeds itself again from the detail the
- * held copies answer after a write, and Reset seeds it again by hand.
+ * held copies answer after a write, and Reset seeds it again by hand;
+ * Apply and Reset are held while no member differs from the seed. The
+ * accrued set of `pending_changes` draws its group count, and behind
+ * Show pending values one record row a leaf member.
  */
 const MachineSettings = ({
   status,
@@ -766,24 +782,26 @@ const MachineSettings = ({
   const formDisabled = apply.busy || apply.phase !== 'form';
   const host = { status, hostId, server };
 
+  const draft = changesOf({
+    form,
+    seed: seeded.seed,
+    isUtm,
+    server,
+    knobCurrent,
+    configuration,
+    resourceChanges,
+  });
+  const unchanged = !draft.problemKey && Object.keys(draft.changes).length === 0;
+
   const submit = () => {
     if (apply.phase !== 'form') {
       return;
     }
-    const { changes, problemKey } = changesOf({
-      form,
-      seed: seeded.seed,
-      isUtm,
-      server,
-      knobCurrent,
-      configuration,
-      resourceChanges,
-    });
-    if (problemKey) {
-      notify('warning', t(problemKey));
+    if (draft.problemKey) {
+      notify('warning', t(draft.problemKey));
       return;
     }
-    apply.submit(changes);
+    apply.submit(draft.changes);
   };
 
   const page = {
@@ -856,7 +874,7 @@ const MachineSettings = ({
           className="btn btn-primary"
           data-action="apply-settings"
           onClick={submit}
-          disabled={formDisabled}
+          disabled={formDisabled || unchanged}
         >
           <FaCheck className="me-2" aria-hidden="true" />
           {t('machineEdit.machineSettings.apply')}
@@ -866,7 +884,7 @@ const MachineSettings = ({
           className="btn btn-outline-secondary"
           data-action="reset-settings"
           onClick={resetForm}
-          disabled={formDisabled}
+          disabled={formDisabled || unchanged}
         >
           {t('machineEdit.machineSettings.reset')}
         </button>

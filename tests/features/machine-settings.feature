@@ -38,10 +38,7 @@ Feature: machine settings
     And the host answers the hosts-settings fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-1/settings"
-    And I press the settings page's "apply-settings" action
-    Then the page raised 1 warning notice
-    And the host was not sent PUT to "/api/agents/1/machines/dev-1"
-    When I type "8" into the settings field "machine-edit-vcpus"
+    And I type "8" into the settings field "machine-edit-vcpus"
     And I press the settings page's "apply-settings" action
     Then the settings page notes "running-choice"
     And the host was not sent PUT to "/api/agents/1/machines/dev-1"
@@ -50,9 +47,38 @@ Feature: machine settings
     And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying nothing at "/ram"
     And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying nothing at "/snapshots"
     And the host was sent PUT to "/api/agents/1/machines/dev-1" 1 times
-    And the page raised 2 warning notices
+    And the page raised 1 warning notice
     And the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
     And the host was sent GET to "/api/agents/1/machines" 2 times
+
+  Scenario: Machine page: Apply and Reset are held on an untouched Settings form and a change releases them
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-tools fixture
+    And the host answers the hosts-settings fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/settings"
+    Then the settings page's "apply-settings" action is held
+    And the settings page's "reset-settings" action is held
+    And the page raised 0 warning notices
+    When I type "8" into the settings field "machine-edit-vcpus"
+    And I press the settings page's "apply-settings" action
+    Then the settings page notes "running-choice"
+    And the host was not sent PUT to "/api/agents/1/machines/dev-1"
+
+  Scenario: Machine page: the accrued set draws its group count and Show pending values draws one record row a leaf member by its dotted path
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-tools fixture
+    And the host answers the hosts-settings fixture
+    And the host answers the hosts-settings-pending fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/settings"
+    Then the settings page notes "pending-changes"
+    When I press the settings page's "show-pending" action
+    Then the pending values draw the row "vbox.serial[0].mode" reading "disconnected"
+    And the pending values draw the row "vbox.serial[0].io_base" reading "0x2F8"
+    And the pending values draw 4 rows
 
   Scenario: Machine page: the Credentials tab lists the machine's credentials as store rows, Add credential opens the secret pick dialog over the password, SSH key and key pair rows of the host's store with the machine login preset, a pick lands one row with its kind and the use its kind suggests, and Apply sends credentials whole at once, one default a use
     Given the host answers the hosts fixture

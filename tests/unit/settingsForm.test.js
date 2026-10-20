@@ -92,11 +92,11 @@ describe('formTools', () => {
 describe('changesOf', () => {
   const opened = () => seededForm({ zonename: 'web-1' }, knobCurrent);
 
-  it('says nothing changed while the form equals its seed', () => {
+  it('answers an empty body and no problem while the form equals its seed', () => {
     const { form, seed } = opened();
     expect(changesOf({ form, seed, isUtm: false, server: bhyve, knobCurrent })).toEqual({
-      changes: null,
-      problemKey: 'machineEdit.machineSettings.nothingChanged',
+      changes: {},
+      problemKey: '',
     });
   });
 
@@ -143,7 +143,7 @@ describe('changesOf', () => {
       knobCurrent
     );
     expect(form.snapshotPolicy.keep).toBe('12');
-    expect(changesOf({ form, seed, isUtm: false, server: bhyve, knobCurrent }).changes).toBeNull();
+    expect(changesOf({ form, seed, isUtm: false, server: bhyve, knobCurrent }).changes).toEqual({});
     const cleared = { ...form, snapshotPolicy: { ...form.snapshotPolicy, type: '' } };
     expect(
       changesOf({ form: cleared, seed, isUtm: false, server: bhyve, knobCurrent }).changes

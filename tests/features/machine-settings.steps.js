@@ -103,6 +103,21 @@ Then('the settings page notes no {string}', async ({ page }, note) => {
   await expect(settingsOf(page).locator(`[data-note="${note}"]`)).toHaveCount(0);
 });
 
+Then("the settings page's {string} action is held", async ({ page }, action) => {
+  await expect(settingsOf(page).locator(`[data-action="${action}"]`)).toBeDisabled();
+});
+
+const pendingRowsOf = page => settingsOf(page).locator('[data-list="pending-values"] dl > div');
+
+Then('the pending values draw the row {string} reading {string}', async ({ page }, path, value) => {
+  const row = pendingRowsOf(page).filter({ has: page.getByText(path, { exact: true }) });
+  await expect(row.locator('dd code')).toHaveText(value);
+});
+
+Then('the pending values draw {int} rows', async ({ page }, count) => {
+  await expect(pendingRowsOf(page)).toHaveCount(count);
+});
+
 Then('the settings page lists {int} resource issue(s)', async ({ page }, count) => {
   await expect(settingsOf(page).locator('[data-list="resource-issues"] li')).toHaveCount(count);
 });

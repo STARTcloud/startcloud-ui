@@ -181,72 +181,74 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
           </Suspense>
         ) : null}
         {page === 'overview' ? (
-          <div className="row g-3 mb-3">
-            <MachineInfoCard
-              id={id}
-              name={name}
-              host={host}
-              machine={machine}
-              detail={detail}
-              running={running}
-              organizations={organizations}
-              folds={folds}
-            />
-            <MachineConsolePanel
-              id={id}
-              name={name}
-              detail={detail}
-              running={running}
-              turn={turn}
-              user={context.user}
-              folds={folds}
-            />
-            {detail ? (
-              <>
-                <MachineTagsNotesCard
-                  id={id}
-                  name={name}
-                  detail={detail}
-                  onSaved={reread}
-                  folds={folds}
-                />
-                <MachineHardwareCard id={id} name={name} detail={detail} folds={folds} />
-                <MachineGuestAgentCard
-                  id={id}
-                  name={name}
-                  detail={detail}
-                  turn={turn}
-                  onChanged={answer.refresh}
-                  folds={folds}
-                />
-                <MachineGuestInfoCard
-                  id={id}
-                  name={name}
-                  detail={detail}
-                  turn={turn}
-                  folds={folds}
-                />
-                <MachineTopologySlice
-                  id={id}
-                  name={name}
-                  host={host}
-                  detail={detail}
-                  running={running}
-                  folded={folds.folded(TOPOLOGY_FOLD)}
-                  onFold={() => folds.toggle(TOPOLOGY_FOLD)}
-                />
-                <ChartControlsContext.Provider value={controls}>
-                  <MachineCharts
+          <div data-view="machine-overview">
+            <div className="row g-3 mb-3">
+              <MachineInfoCard
+                id={id}
+                name={name}
+                host={host}
+                machine={machine}
+                detail={detail}
+                running={running}
+                organizations={organizations}
+                folds={folds}
+              />
+              <MachineConsolePanel
+                id={id}
+                name={name}
+                detail={detail}
+                running={running}
+                turn={turn}
+                user={context.user}
+                folds={folds}
+              />
+              {detail ? (
+                <>
+                  <MachineTagsNotesCard
+                    id={id}
+                    name={name}
+                    detail={detail}
+                    onSaved={reread}
+                    folds={folds}
+                  />
+                  <MachineHardwareCard id={id} name={name} detail={detail} folds={folds} />
+                  <MachineGuestAgentCard
+                    id={id}
+                    name={name}
+                    detail={detail}
+                    turn={turn}
+                    onChanged={answer.refresh}
+                    folds={folds}
+                  />
+                  <MachineGuestInfoCard
+                    id={id}
+                    name={name}
+                    detail={detail}
+                    turn={turn}
+                    folds={folds}
+                  />
+                  <MachineTopologySlice
                     id={id}
                     name={name}
                     host={host}
                     detail={detail}
                     running={running}
-                    folds={folds}
+                    folded={folds.folded(TOPOLOGY_FOLD)}
+                    onFold={() => folds.toggle(TOPOLOGY_FOLD)}
                   />
-                </ChartControlsContext.Provider>
-              </>
-            ) : null}
+                  <ChartControlsContext.Provider value={controls}>
+                    <MachineCharts
+                      id={id}
+                      name={name}
+                      host={host}
+                      detail={detail}
+                      running={running}
+                      folds={folds}
+                    />
+                  </ChartControlsContext.Provider>
+                </>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </div>

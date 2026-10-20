@@ -173,10 +173,10 @@ export const formTools = setForm => {
 
 /**
  * The body of `PUT machines/{name}` a Settings form sends, the changed
- * members alone, the retention policy as `snapshots` while it changed,
- * or the key of the sentence that says why none can be
- * sent: a complex CPU topology with a field blank, a `vbox` passthrough
- * that is no JSON, or nothing changed.
+ * members alone, empty while nothing differs from the seed, the
+ * retention policy as `snapshots` while it changed, or the key of the
+ * sentence that says why none can be sent: a complex CPU topology with a
+ * field blank or a `vbox` passthrough that is no JSON.
  *
  * @param {Object} options - The form, its seed and what it is for
  * @returns {{ changes: Object|null, problemKey: string }} The body or the problem
@@ -234,9 +234,6 @@ export const changesOf = ({
   const snapshots = policyChangeOf(form.snapshotPolicy, seed.snapshotPolicy);
   if (snapshots !== undefined) {
     changes.snapshots = snapshots;
-  }
-  if (Object.keys(changes).length === 0) {
-    return { changes: null, problemKey: 'machineEdit.machineSettings.nothingChanged' };
   }
   return { changes, problemKey: '' };
 };
