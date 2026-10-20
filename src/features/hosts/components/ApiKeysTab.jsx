@@ -12,6 +12,7 @@ import SubTable from '../../../components/common/SubTable';
 import { useStatus } from '../../../contexts/StatusContext';
 import { dayOf } from '../../../hooks/useClientFilters';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
+import { useSelection } from '../../../hooks/useSelection';
 import { bootstrapApiKey, deleteApiKey, generateApiKey, getApiKeys } from '../api/apiKeyAPI';
 import { useManageRead, useManageSend } from '../hooks/useHostManage';
 import { apiKeysOf } from '../utils/agentSettings';
@@ -22,6 +23,10 @@ import ToolFormDialog from './ToolFormDialog';
 const PREFS_KEY = 'table_prefs_api_keys';
 
 const DEFAULT_SORT = [{ column: 'created_at', direction: 'desc' }];
+
+const keyIdOf = row => String(row.id);
+
+const keyNameOf = row => row.name;
 
 const matches = (row, needle) =>
   [row.name || '', row.description || ''].some(text => text.toLowerCase().includes(needle));
@@ -116,6 +121,41 @@ const KeyActions = ({ apiKey, busy, onDelete }) => {
 KeyActions.propTypes = {
   apiKey: PropTypes.shape({ id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]) })
     .isRequired,
+  busy: PropTypes.bool.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
+const PickedKeys = ({ selection, busy, onDelete }) => {
+  const { t } = useTranslation();
+  if (!selection.someSelected) {
+    return null;
+  }
+  return (
+    <>
+      <strong>{t('pages.bulk.selected', { count: selection.selected.size })}</strong>
+      <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
+        {t('pages.bulk.clearSelection')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        data-action="bulk-delete"
+        onClick={onDelete}
+        disabled={busy}
+      >
+        <FaTrash className="me-1" aria-hidden="true" />
+        {t('accounts.apiKeysTab.deleteSelected')}
+      </button>
+    </>
+  );
+};
+
+PickedKeys.propTypes = {
+  selection: PropTypes.shape({
+    someSelected: PropTypes.bool.isRequired,
+    selected: PropTypes.instanceOf(Set).isRequired,
+    clear: PropTypes.func.isRequired,
+  }).isRequired,
   busy: PropTypes.bool.isRequired,
   onDelete: PropTypes.func.isRequired,
 };
@@ -220,8 +260,11 @@ GenerateKeyDialog.propTypes = {
  * `POST api-keys/generate`, with Generate bootstrap key in its menu,
  * `POST api-keys/bootstrap`, then `actions`; the one-time key drawn in a
  * list dialog with Copy; under the heading the keys of `GET api-keys` in
- * the one table, each with Delete behind the typed confirmation,
- * `DELETE api-keys/{id}`. Every write is one request and one notice, the
+ * the one table with its select column, each with Delete behind the typed
+ * confirmation, `DELETE api-keys/{id}`, and while rows are picked the
+ * pane draws "N selected", Clear selection and Delete selected first,
+ * behind the typed confirmation, one `DELETE api-keys/{id}` a picked key
+ * and one notice naming the count. Every write is one notice, the
  * keys read again once after a success; the list reads once as the page
  * draws, again when the stream opens fresh or answers `reset` and on the
  * page's Refresh. The navbar search is bound over the key's name and
@@ -253,6 +296,8 @@ const ApiKeysTab = ({ id, title, actions = null }) => {
     filterGroups: FILTER_GROUPS,
     defaultSort: DEFAULT_SORT,
   });
+  const selection = useSelection(search.rows, { keyOf: keyIdOf, labelOf: keyNameOf });
+  const [deletingMany, setDeletingMany] = useState(false);
 
   const generate = async form => {
     const { answer, error } = await send({
@@ -289,8 +334,22 @@ const ApiKeysTab = ({ id, title, actions = null }) => {
     }
   };
 
+  const removeMany = async () => {
+    const ids = search.rows.filter(row => selection.selected.has(keyIdOf(row))).map(row => row.id);
+    const { error } = await send({
+      call: () => Promise.all(ids.map(keyId => deleteApiKey(status, id, keyId))),
+      doneKey: 'accounts.apiKeysTab.deletedMany',
+      values: { count: ids.length },
+    });
+    if (!error) {
+      selection.clear();
+    }
+    keys.refresh();
+  };
+
   const pane = (
     <>
+      <PickedKeys selection={selection} busy={busy} onDelete={() => setDeletingMany(true)} />
       <SplitButton
         action="api-key-generate"
         labelKey="accounts.apiKeysTab.generateKeyButton"
@@ -322,7 +381,7 @@ const ApiKeysTab = ({ id, title, actions = null }) => {
       <SubTable
         columns={COLUMNS}
         rows={search.rows}
-        rowKey={row => String(row.id)}
+        rowKey={keyIdOf}
         rowProp="apiKey"
         RowActions={KeyActions}
         actionsProps={{ busy, onDelete: setDeleting }}
@@ -333,6 +392,7 @@ const ApiKeysTab = ({ id, title, actions = null }) => {
         onResize={search.setColumnWidth}
         ctx={ctx}
         emptyText={t(emptyKeyOf(keys.loaded, search.filtering))}
+        selection={selection.subtable}
       />
       {generating ? (
         <GenerateKeyDialog busy={busy} onClose={() => setGenerating(false)} onSubmit={generate} />
@@ -345,6 +405,15 @@ const ApiKeysTab = ({ id, title, actions = null }) => {
         title={t('accounts.apiKeysTab.deleteKeyTitle')}
         message={t('accounts.apiKeysTab.deleteKeyMessage')}
         confirmText={t('accounts.apiKeysTab.deleteKeyButton')}
+        variant="delete"
+      />
+      <ConfirmModal
+        show={deletingMany}
+        handleClose={() => setDeletingMany(false)}
+        handleConfirm={removeMany}
+        title={t('accounts.apiKeysTab.deleteSelected')}
+        message={t('accounts.apiKeysTab.deleteManyMessage', { count: selection.selected.size })}
+        confirmText={t('accounts.apiKeysTab.deleteSelected')}
         variant="delete"
       />
     </div>

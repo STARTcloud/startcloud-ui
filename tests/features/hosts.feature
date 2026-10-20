@@ -326,8 +326,8 @@ Feature: hosts
     And I do not see "Restart required."
     And the host was sent GET to "/api/agents/1/config/restart-status" 1 times
     When I click "Restart"
-    And I fill the field placeholdered "Type 'restart' to confirm" with "restart"
-    And I confirm the dialog with "Restart"
+    Then the open dialog asks for no typed word
+    When I confirm the dialog with "Restart"
     Then I see "Restarting."
     And the host was sent POST to "/api/agents/1/config/restart" 1 times
     And the host was sent GET to "/api/agents/1/config/restart-status" 2 times
@@ -520,14 +520,14 @@ Feature: hosts
     And the task dialog's header carries the progress "62%" and Cancel task as a glyph
     And the task dialog draws its details as one table above the output
 
-  Scenario: Cancel task sends DELETE /api/tasks/{id} behind a confirmation
+  Scenario: Cancel task sends DELETE /api/tasks/{id} behind a plain confirmation
     Given the host answers the hosts fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1"
     And I press the footer's "tasks" toggle
     And I open the task of "dev-2"
     And I click "Cancel task"
-    And I confirm the open dialog
+    And I confirm the open plain dialog
     Then the host was sent DELETE to "/api/agents/1/tasks/7f3a1c02-5b90-4e4d-8c21-d7a660e55b9f"
 
   Scenario: With no host in the route the server role draws every host's tasks under a Host column and no Consoles toggle

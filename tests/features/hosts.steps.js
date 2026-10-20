@@ -147,6 +147,19 @@ When('I confirm the open dialog', async ({ page }) => {
   await dialog.locator('.modal-footer .btn-danger').click();
 });
 
+Then('the open dialog asks for no typed word', async ({ page }) => {
+  const dialog = page.getByRole('dialog').last();
+  await expect(dialog.locator('.modal-footer .btn').last()).toBeVisible();
+  await expect(dialog.getByRole('textbox')).toHaveCount(0);
+});
+
+When('I confirm the open plain dialog', async ({ page }) => {
+  const dialog = page.getByRole('dialog').last();
+  await expect(dialog.locator('.modal-footer .btn').last()).toBeVisible();
+  await expect(dialog.getByRole('textbox')).toHaveCount(0);
+  await dialog.locator('.modal-footer .btn').last().click();
+});
+
 When("I double-click the open dialog's header", async ({ page }) => {
   await page.getByRole('dialog').last().locator('.modal-header').dblclick();
 });

@@ -17,7 +17,7 @@ import { CERTIFICATE_LABELS, CERTIFICATE_SCHEMA } from '../../utils/schemas';
 import SubjectForm, { EMPTY_SUBJECT, sansOf, subjectOf } from '../SubjectForm';
 
 import IssueFields, { EMPTY_ISSUE, issueOf } from './IssueFields';
-import KeySource, { EMPTY_KEY_SOURCE, resolveKey } from './KeySource';
+import KeySource, { EMPTY_KEY_SOURCE, keyFileNameOf, resolveKey, shownKeyOf } from './KeySource';
 import Outcome from './Outcome';
 import { draftOfTemplate, templateOf } from './RequestTab';
 import TemplatePicker from './TemplatePicker';
@@ -62,13 +62,15 @@ export const issuedFileName = issued =>
 
 /**
  * The Certificate tab of the Generate page: one line saying what it
- * makes, the subject form, the validity, the Authority switch with its
- * path length and the key source, Self-sign issuing the certificate
+ * makes, the subject form, the validity, the Certificate authority
+ * switch with its signing depth and the key source, generated, picked
+ * from the vault or read from a file, Self-sign issuing the certificate
  * through the engine once the rules pass, its glyph a spinner while it
  * runs, then the optional templates under the form, then Save to vault
  * keeping it as an authority while it is a CA and a certificate
  * otherwise, linked to its key, and Download handing the browser the
- * PEM.
+ * PEM; while the form made the key the outcome shows the key's PEM too
+ * and Download hands it after the certificate as `<stem>.key.pem`.
  */
 const CertificateTab = ({ fold }) => {
   const { t } = useTranslation();
@@ -103,7 +105,7 @@ const CertificateTab = ({ fold }) => {
         ext_key_usage: draft.ext_key_usage,
         ...issueOf(draft),
       });
-      setMade({ ...issued, key });
+      setMade({ ...issued, key, shownKey: shownKeyOf(held, key) });
       setSaved(false);
     });
   };
@@ -170,9 +172,15 @@ const CertificateTab = ({ fold }) => {
           title={t('certs.generate.certificateMade')}
           facts={made.facts}
           pem={made.pem}
+          shownKey={made.shownKey}
           saved={saved}
           onSave={save}
-          onDownload={() => downloadText(made.pem, PEM, issuedFileName(made))}
+          onDownload={() => {
+            downloadText(made.pem, PEM, issuedFileName(made));
+            if (made.shownKey) {
+              downloadText(made.shownKey.pem, PEM, keyFileNameOf(made.facts.subject?.CN));
+            }
+          }}
         />
       ) : null}
     </SectionCard>

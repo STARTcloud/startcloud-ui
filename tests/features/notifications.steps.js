@@ -55,6 +55,48 @@ Then('the inbox page draws {int} unread rows', async ({ page }, count) => {
   ).toHaveCount(count);
 });
 
+const cardOf = (page, kind) => page.locator(`.notice-card-${kind}`);
+
+Then('the {word} notice card carries the countdown ring', async ({ page }, kind) => {
+  await expect(
+    cardOf(page, kind).locator('.notice-countdown circle.notice-countdown-fill')
+  ).toHaveCount(1);
+  await expect(cardOf(page, kind).locator('.notice-countdown button.btn-close')).toBeVisible();
+});
+
+Then('the {word} notice card goes away without a click', async ({ page }, kind) => {
+  await page.mouse.move(0, 0);
+  await expect(cardOf(page, kind)).toBeHidden({ timeout: 20000 });
+});
+
+Given('the browser may use the clipboard', async ({ page }) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+});
+
+When('I press the copy glyph of the {word} notice card', async ({ page }, kind) => {
+  await cardOf(page, kind).locator('[data-tool="copy"]').click();
+});
+
+Then('the clipboard holds the text of the {word} notice card', async ({ page }, kind) => {
+  const text = await cardOf(page, kind)
+    .locator('.notice-text')
+    .evaluate(node => node.textContent);
+  expect(text).not.toBe('');
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(text);
+});
+
+When('I rest the pointer on the {word} notice card and move it away', async ({ page }, kind) => {
+  await cardOf(page, kind).hover();
+  await page.mouse.move(0, 0);
+});
+
+Then('the {word} notice card started its ring {int} times', async ({ page }, kind, rounds) => {
+  await expect(cardOf(page, kind)).toHaveAttribute('data-round', String(rounds));
+  await expect(
+    cardOf(page, kind).locator('.notice-countdown:not(.paused) circle.notice-countdown-fill')
+  ).toHaveCount(1);
+});
+
 When("I press the account menu's Rebuild row", async ({ page }) => {
   await menuOf(page).locator('button.dropdown-item', { hasText: 'Rebuild catalog data' }).click();
 });

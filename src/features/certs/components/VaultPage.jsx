@@ -22,13 +22,12 @@ import SectionHeading from '../../../components/common/SectionHeading';
 import StatCard from '../../../components/common/StatCard';
 import SubTable from '../../../components/common/SubTable';
 import UploadZone from '../../../components/common/UploadZone';
-import { StatusMenu, VisibilityMenu, pickedOf } from '../../../components/common/VisibilityPicker';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useArrival } from '../../../hooks/useArrival';
 import { useSelection } from '../../../hooks/useSelection';
 import { pageContextShape } from '../../../utils/itemShape';
 import { canManageRecord } from '../../../utils/permissions';
-import { ROW_BULK, STATUS_VERBS, VISIBILITY_VERBS } from '../../collections/bulkActions';
+import { ROW_BULK } from '../../collections/bulkActions';
 import { useRecordActions } from '../hooks/useRecordActions';
 import { useStoreWrites } from '../hooks/useStoreWrites';
 import { useVault } from '../hooks/useVault';
@@ -36,8 +35,8 @@ import { useVaultSearch } from '../hooks/useVaultSearch';
 import { SECRETS_ROUTE } from '../sidebar';
 import { focusOn } from '../utils/focus';
 import { DER_KINDS, SECRET_KINDS, isSecretKind, nameOf, nowOf } from '../utils/records';
-import { patchOfVerbs } from '../utils/sync';
 
+import AccessPicker from './AccessPicker';
 import SecretRecordModal from './SecretRecordModal';
 import { vaultColumns } from './vaultColumns';
 import VaultTreeDialogs from './VaultTreeDialogs';
@@ -158,37 +157,6 @@ KindTiles.propTypes = {
   records: PropTypes.array.isRequired,
 };
 
-const Picker = ({ action, count, onAccess }) => {
-  const className = `btn btn-sm ${action.variant}`;
-  if (action.picker === 'visibility') {
-    return (
-      <VisibilityMenu
-        count={count}
-        className={className}
-        onPick={body => onAccess(patchOfVerbs(VISIBILITY_VERBS[pickedOf(body)]))}
-      />
-    );
-  }
-  return (
-    <StatusMenu
-      count={count}
-      className={className}
-      onPick={body =>
-        onAccess(patchOfVerbs(STATUS_VERBS[body.published ? 'publish' : 'unpublish']))
-      }
-    />
-  );
-};
-
-Picker.propTypes = {
-  action: PropTypes.shape({
-    picker: PropTypes.string.isRequired,
-    variant: PropTypes.string.isRequired,
-  }).isRequired,
-  count: PropTypes.number.isRequired,
-  onAccess: PropTypes.func.isRequired,
-};
-
 const PickedActions = ({ selection, managed, onAccess, onDelete, onExport }) => {
   const { t } = useTranslation();
   if (!selection.someSelected) {
@@ -203,7 +171,7 @@ const PickedActions = ({ selection, managed, onAccess, onDelete, onExport }) => 
       {ROW_BULK.map(action => {
         if (action.picker) {
           return managed > 0 ? (
-            <Picker key={action.key} action={action} count={managed} onAccess={onAccess} />
+            <AccessPicker key={action.key} action={action} count={managed} onAccess={onAccess} />
           ) : null;
         }
         return (

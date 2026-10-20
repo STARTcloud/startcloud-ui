@@ -26,8 +26,8 @@ export const issueOf = draft => ({
 /**
  * The fields an issue shares between a self-signed certificate and a
  * signed request, over the form's rules: the validity in days, the
- * Authority switch and the path length while it is an authority, each
- * checked on blur and on submit.
+ * Certificate authority switch with its hint, and the signing depth with
+ * its hint while it is an authority, each checked on blur and on submit.
  */
 const IssueFields = ({ draft, rules, onChange }) => {
   const { t } = useTranslation();
@@ -50,6 +50,7 @@ const IssueFields = ({ draft, rules, onChange }) => {
           draft={draft}
           rules={rules}
           onChange={onChange}
+          hint={t('certs.generate.authorityHint')}
           className="mb-0"
         />
       </div>
@@ -62,6 +63,7 @@ const IssueFields = ({ draft, rules, onChange }) => {
             draft={draft}
             rules={rules}
             onChange={onChange}
+            hint={t('certs.generate.pathLenHint')}
             placeholder={t('certs.generate.pathLenAny')}
             className="mb-0"
           />

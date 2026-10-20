@@ -19,6 +19,7 @@ import { useMachineDetail } from '../hooks/useMachineDetail';
 import { useMachineSeriesRefresh } from '../hooks/useMachineSeries';
 import { useMachineSnapshotsRefresh } from '../hooks/useMachineSnapshots';
 import { useMachineRefreshPublish, useServers } from '../hooks/useServers';
+import { MACHINE_PAGES } from '../machinePages';
 import { hostLabel, isRunning, isServerRole } from '../utils/hosts';
 import { isUnknownMachine, nounKeyOf } from '../utils/machines';
 
@@ -51,14 +52,19 @@ const labelOf = ({ status, held, id, stats }) => {
 /**
  * One machine at `/hosts/{id}/machines/{name}`, the body of the
  * machine's column, `HostNav` over `MACHINE_PAGES`, naming the host's
- * label and its noun for the crumbs through `usePageName`: no heading
- * row over the body, the page `page` names starting under the crumbs,
- * the power verbs, the console doors and Refresh being rows of the
- * machine's Controls menu, which runs the page's Refresh through the
- * hosts feature's context. The Overview draws the machine information,
- * the console, the tags and notes, the hardware, the guest agent, the
- * guest information, the network path and the charts under the page's
- * chart controls, each a card folding under `table_prefs_machine`;
+ * label and its noun for the crumbs through `usePageName`, the power
+ * verbs, the console doors and Refresh being rows of the machine's
+ * Controls menu, which runs the page's Refresh through the hosts
+ * feature's context. The Overview draws no heading row and starts under
+ * the crumbs; Settings, Snapshots and Provisioning each draw one heading,
+ * the page's label in `MACHINE_PAGES` as its title and the page's own
+ * controls then Refresh in its pane. The Overview draws a left column,
+ * `data-column="machine-left"`, of the machine information as tall as
+ * its rows with the tags and notes and the guest agent filling the rest,
+ * the console beside it at the column's height, and under both the
+ * hardware, the guest information, the network path and the charts under
+ * the page's chart controls, each a card folding under
+ * `table_prefs_machine`;
  * Settings, Snapshots and Provisioning draw `MachineSettingsView`,
  * `MachineSnapshotsView` and `MachineProvisioningView`. A surface draws
  * only while the host's row lists its token and the agent answers what
@@ -137,6 +143,9 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
   });
 
   const role = context.user?.role;
+  const entry = MACHINE_PAGES.find(candidate => candidate.key === page);
+  const title = entry ? t(entry.labelKey, { noun: resource }) : name;
+  const refreshButton = <RefreshButton onRefresh={refresh} />;
 
   if (unknown) {
     return (
@@ -169,30 +178,70 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
         ) : null}
         {page === 'settings' ? (
           <Suspense fallback={null}>
-            <MachineSettingsView key={name} id={id} name={name} context={context} />
+            <MachineSettingsView
+              key={name}
+              id={id}
+              name={name}
+              context={context}
+              title={title}
+              actions={refreshButton}
+            />
           </Suspense>
         ) : null}
         {page === 'snapshots' ? (
-          <MachineSnapshotsView id={id} name={name} context={context} />
+          <MachineSnapshotsView
+            id={id}
+            name={name}
+            context={context}
+            title={title}
+            actions={refreshButton}
+          />
         ) : null}
         {page === 'provisioning' ? (
           <Suspense fallback={null}>
-            <MachineProvisioningView id={id} name={name} context={context} />
+            <MachineProvisioningView
+              id={id}
+              name={name}
+              context={context}
+              title={title}
+              actions={refreshButton}
+            />
           </Suspense>
         ) : null}
         {page === 'overview' ? (
           <div data-view="machine-overview">
             <div className="row g-3 mb-3">
-              <MachineInfoCard
-                id={id}
-                name={name}
-                host={host}
-                machine={machine}
-                detail={detail}
-                running={running}
-                organizations={organizations}
-                folds={folds}
-              />
+              <div className="col-12 col-lg-6 d-flex flex-column gap-3" data-column="machine-left">
+                <MachineInfoCard
+                  id={id}
+                  name={name}
+                  host={host}
+                  machine={machine}
+                  detail={detail}
+                  running={running}
+                  organizations={organizations}
+                  folds={folds}
+                />
+                {detail ? (
+                  <>
+                    <MachineTagsNotesCard
+                      id={id}
+                      name={name}
+                      detail={detail}
+                      onSaved={reread}
+                      folds={folds}
+                    />
+                    <MachineGuestAgentCard
+                      id={id}
+                      name={name}
+                      detail={detail}
+                      turn={turn}
+                      onChanged={answer.refresh}
+                      folds={folds}
+                    />
+                  </>
+                ) : null}
+              </div>
               <MachineConsolePanel
                 id={id}
                 name={name}
@@ -204,22 +253,7 @@ const MachinePage = ({ id, name, context, organizations, page = 'overview' }) =>
               />
               {detail ? (
                 <>
-                  <MachineTagsNotesCard
-                    id={id}
-                    name={name}
-                    detail={detail}
-                    onSaved={reread}
-                    folds={folds}
-                  />
                   <MachineHardwareCard id={id} name={name} detail={detail} folds={folds} />
-                  <MachineGuestAgentCard
-                    id={id}
-                    name={name}
-                    detail={detail}
-                    turn={turn}
-                    onChanged={answer.refresh}
-                    folds={folds}
-                  />
                   <MachineGuestInfoCard
                     id={id}
                     name={name}

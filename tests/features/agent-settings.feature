@@ -69,7 +69,17 @@ Feature: agent-settings
     Then the host was sent POST to "/api/agents/1/app/updates/apply" 1 times
     And I see "Update to 1.3.0 queued"
 
-  Scenario: Agent pages: the Update page draws the release notes as rendered markdown beside the versions, the assets under a fold folded until opened and kept over a reload
+  Scenario: Agent pages: the Update page draws the Overview card with the Assets card under it in the left column and the Changelog card in the right column
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/update"
+    Then the Update page draws the cards "Overview,Assets,Changelog" in order
+    And the Update page draws the panels "update-overview,update-assets" in the "side" column
+    And the Update page draws the panels "update-release" in the "main" column
+
+  Scenario: Agent pages: the Update page draws the release notes as rendered markdown in the Changelog card, the assets in their own card open until folded and the fold kept over a reload
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
@@ -81,20 +91,20 @@ Feature: agent-settings
     And I see "Hosts.yml Editor"
     And I do not see "###"
     And the agent page draws the "update-assets" panel
-    And the "update-assets" section of the agent page is folded
-    And the agent page lists no asset
-    When I fold the "update-assets" section of the agent page
-    Then the "update-assets" section of the agent page is open
+    And the "update-assets" section of the agent page is open
     And the agent page lists the asset "hyperweaver-agent-1.3.0-linux-amd64.deb"
     And the agent page lists the asset "checksums.txt"
     And the agent page links to "https://github.com/Makr91/hyperweaver-agent/releases/download/v1.3.0/hyperweaver-agent-1.3.0-linux-amd64.deb"
     And I see "36.9 MB"
     And I see "486 Bytes"
+    When I fold the "update-assets" section of the agent page
+    Then the "update-assets" section of the agent page is folded
+    And the agent page lists no asset
     When I load the page again
-    Then the "update-assets" section of the agent page is open
-    And the agent page lists the asset "checksums.txt"
+    Then the "update-assets" section of the agent page is folded
+    And the agent page lists no asset
 
-  Scenario: Agent pages: a check without notes and assets draws the versions, the links and the one release's card alone, no notes and no Assets fold
+  Scenario: Agent pages: a check without notes and assets draws the versions, the links and the one release's card alone, no notes and no Assets card
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
@@ -139,10 +149,8 @@ Feature: agent-settings
     And the release "v1.3.0" draws the notes with 2 headings and 2 items
     And I do not see "###"
     And I do not see "utm support"
-    And the assets of the release "v1.3.0" draw under the versions
-    And the assets of the release "v1.3.0" are folded
-    When I fold the assets of the release "v1.3.0"
-    Then the assets of the release "v1.3.0" are open
+    And the assets of the release "v1.3.0" draw in their own card after the Overview card
+    And the assets of the release "v1.3.0" are open
     And the release "v1.3.0" lists the asset "hyperweaver-agent-1.3.0-linux-amd64.deb"
     And the release "v1.3.0" lists the asset "SHA256SUMS.txt"
     And the agent page links to "https://github.com/Makr91/hyperweaver-agent/releases/download/v1.3.0/SHA256SUMS.txt"
@@ -179,8 +187,7 @@ Feature: agent-settings
     And the release "v1.4.0-beta.1" is released by "Makr91"
     And the release "v1.4.0-beta.1" draws the notes with 1 headings and 1 items
     And I see "utm support"
-    When I fold the assets of the release "v1.4.0-beta.1"
-    Then the release "v1.4.0-beta.1" lists the asset "hyperweaver-agent-1.4.0-beta.1-linux-amd64.deb"
+    And the release "v1.4.0-beta.1" lists the asset "hyperweaver-agent-1.4.0-beta.1-linux-amd64.deb"
     And the release "v1.4.0-beta.1" shows the checksum "3f0c9a1b7e4d2c8f5a6b1d0e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a"
     And I see "37.3 MB"
 

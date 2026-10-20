@@ -12,6 +12,10 @@ When('I press {string} on the api key row {string}', async ({ page }, action, na
   await rowOf(page, name).locator(`[data-action="${action}"]`).click();
 });
 
+When('I tick the api key row {string}', async ({ page }, name) => {
+  await tableOf(page).getByRole('checkbox', { name, exact: true }).check();
+});
+
 Then('the api keys table lists {int} rows', async ({ page }, count) => {
   await expect(tableOf(page)).toBeVisible();
   await expect(tableOf(page).locator('tbody tr')).toHaveCount(count);

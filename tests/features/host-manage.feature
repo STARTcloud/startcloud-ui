@@ -353,7 +353,7 @@ Feature: host-manage
     Then the "history" table of the section page lists 2 rows
     And the "history" table of the section page draws the "status" column
 
-  Scenario: Provisioning: the orchestration, its status, the enable behind the typed confirmation, the dry run and a typed priority written on Apply
+  Scenario: Provisioning: the orchestration, its status, the enable behind a plain confirmation, the dry run and a typed priority written on Apply
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -368,7 +368,7 @@ Feature: host-manage
     Then the host was sent POST to "/api/agents/3/machines/orchestration/test" 1 times
     And the section page draws the "orchestration-plan" panel
     When I press the section page's "orchestration-toggle" action
-    And I confirm the open dialog with "enable"
+    And I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/3/machines/orchestration/enable" 1 times
     And the host was sent GET to "/api/agents/3/machines/orchestration/status" 2 times
     When I type "90" into the section field "boot-priority-db-1"

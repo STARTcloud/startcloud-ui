@@ -78,7 +78,7 @@ Validation.propTypes = {
  * `ArcConfiguration` as the body of the Manage page's ARC configuration
  * section: the current status, the memory and the performance
  * parameters as sliders, the validation's answer, Validate, Apply and
- * Reset to defaults behind the typed confirmation, and the help. Every
+ * Reset to defaults behind a plain confirmation, and the help. Every
  * write is one request and one notice, the configuration read again on
  * a success. Nothing polls.
  */
@@ -160,7 +160,7 @@ const ArcConfigurationSection = ({ id }) => {
         message={resetMessage}
         confirmText={t('hostCharts.arcConfiguration.resetConfirmButtonLabel')}
         variant="restart"
-        keyword="reset"
+        typed={false}
       />
       {arc.task ? (
         <TaskDialog status={status} id={id} task={arc.task.row} onHide={arc.closeTask} />

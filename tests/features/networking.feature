@@ -94,6 +94,19 @@ Feature: networking
     And the "addresses" table of the networking page draws "/64" in its "prefix" column
     And the host was sent GET to "/api/agents/1/monitoring/network/ipaddresses" 1 times
 
+  Scenario: Addresses: the table draws no row until both reads answered, then lays out once, its rows, their order and its columns held
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the host answers the hosts-networking-writes fixture
+    And the host holds its answer to "/api/agents/3/network/addresses" for 1500 ms
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/network/addresses"
+    Then the "addresses" table of the networking page says "loading"
+    And the "addresses" table of the networking page lists 5 rows
+    And the "addresses" table of the networking page draws the "managed" column
+    And the "addresses" table of the networking page holds its rows, their order and its columns
+
   Scenario: Addresses: the one search finds an address on a hyperweaver-agent host, whose rows carry `addr` alone
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
@@ -230,75 +243,45 @@ Feature: networking
     When I reset the sort of the "interfaces" table of the networking page
     Then the first row of the "interfaces" table of the networking page reads "igb0"
 
-  Scenario: Bandwidth: the bandwidth opens on the busiest interface and its heading's button drops a sort a person chose
+  Scenario: Bandwidth: the page draws no table, its heading counts the interfaces with a sample and the charts stand under it
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/bandwidth"
-    Then the "bandwidth" table is the first section of the networking page
-    And the heading of the networking page counts 2
-    And the first row of the "bandwidth" table of the networking page reads "vnic0"
-    When I sort the "bandwidth" table of the networking page by "link"
-    Then the first row of the "bandwidth" table of the networking page reads "igb0"
-    When I reset the sort of the "bandwidth" table of the networking page
-    Then the first row of the "bandwidth" table of the networking page reads "vnic0"
-
-  Scenario: Bandwidth: the bandwidth, the newest sample held of each interface from the one read of the usage, the packets drawn where a sample carries the deltas
-    Given the host answers the hosts fixture
-    And the host answers the hosts-overview fixture
-    And the host answers the hosts-networking fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/network/bandwidth"
-    Then the "bandwidth" table of the networking page lists 2 rows
-    And the "bandwidth" table of the networking page draws the "rxPackets" column
-    And the "bandwidth" table of the networking page draws the "txPackets" column
-    And I see "18.00 Mbps"
-    And I see "32.40 Mbps"
+    Then the heading of the networking page counts 2
+    And the "charts" section is the first section of the networking page
+    And the networking page draws no table
+    And the networking page draws 2 interface charts
     And the host was sent GET to "/api/agents/3/monitoring/network/usage" 1 times
 
-  Scenario: Bandwidth: the bandwidth on hyperweaver-agent, no packets column while no sample carries the deltas
-    Given the host answers the hosts fixture
-    And the host answers the hosts-overview fixture
-    And the host answers the hosts-networking fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/1/network/bandwidth"
-    Then the "bandwidth" table of the networking page lists 2 rows
-    And the "bandwidth" table of the networking page draws the "total" column
-    And the "bandwidth" table of the networking page draws no "rxPackets" column
-    And the "bandwidth" table of the networking page draws no "txPackets" column
-    And I see "5.75 Mbps"
-    And I see "0 bps"
-
-  Scenario: Network pages: every section of each page folds and the fold is kept over a reload
+  Scenario: Network pages: a page of one section draws its heading with no fold, the routes fold and the fold is kept over a reload
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/network/interfaces"
-    Then the "interfaces" section of the networking page is open
-    When I fold the "interfaces" section of the networking page
-    Then the "interfaces" section of the networking page is folded
-    When I load the page again
-    Then the "interfaces" section of the networking page is folded
+    Then the "interfaces" table of the networking page lists 3 rows
+    And the networking page draws no fold
     When I open "/hosts/3/network/addresses"
     Then the "addresses" table of the networking page lists 4 rows
-    When I fold the "addresses" section of the networking page
-    Then the "addresses" section of the networking page is folded
-    When I load the page again
-    Then the "addresses" section of the networking page is folded
-    When I fold the "addresses" section of the networking page
-    Then the "addresses" table of the networking page lists 4 rows
+    And the networking page draws no fold
     When I open "/hosts/3/network/routes"
     And I fold the "routes" section of the networking page
     Then the "routes" section of the networking page is folded
-    When I open "/hosts/3/network/bandwidth"
-    And I fold the "bandwidth" section of the networking page
-    And I fold the "charts" section of the networking page
-    Then the "bandwidth" section of the networking page is folded
-    And the "charts" section of the networking page is folded
     When I load the page again
-    Then the "charts" section of the networking page is folded
+    Then the "routes" section of the networking page is folded
+
+  Scenario: Bandwidth: the page draws exactly one heading, the chart order then the window in its pane and no chevron, the chart cards straight under it
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/network/bandwidth"
+    Then the host page draws the "network-rx" chart
+    And the section page draws one heading
+    And the heading of the networking page carries the selects "chart-sort,window" and no chevron
+    And the networking page draws 5 chart cards under its heading
 
   Scenario: Bandwidth: the charts, the three that draw every interface together and one an interface, all from the one read of the usage
     Given the host answers the hosts fixture
@@ -315,8 +298,6 @@ Feature: networking
     And the "network-rx" chart says nothing of one sample
     And the "interface:igb0" chart carries the pills "read, write, total"
     And the "network-rx" chart carries the pills ""
-    And the "bandwidth" table of the networking page draws the "trend" column
-    And the "bandwidth" table of the networking page draws a trend line in every row
     And the host was sent GET to "/api/agents/3/monitoring/network/usage" 1 times
 
   Scenario: Bandwidth: the order of the interface charts, the busiest first until a person picks another, and nothing is read for it
@@ -371,7 +352,7 @@ Feature: networking
     Then the host page draws the "network-rx" chart
     And the "network-rx" chart says it draws one sample
 
-  Scenario: Bandwidth: nothing reads on a clock, a network-sample event of the `monitoring` topic adds to the charts and to the bandwidth
+  Scenario: Bandwidth: nothing reads on a clock, a network-sample event of the `monitoring` topic adds to the charts
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -381,7 +362,6 @@ Feature: networking
     When I open "/hosts/1/network/bandwidth"
     Then the host page draws the "network-rx" chart
     And the "network-rx" chart says nothing of one sample
-    And I see "7.60 Mbps"
 
   Scenario: Interfaces: one copy per host, the overview reads no interfaces, its View all opens the page which reads them once, and the usage the overview read is not read again
     Given the host answers the hosts fixture
@@ -399,7 +379,7 @@ Feature: networking
     And the "interfaces" table of the networking page lists 3 rows
     And the host was sent GET to "/api/agents/3/monitoring/network/interfaces" 1 times
     When I follow the host row "bandwidth"
-    Then the "bandwidth" table of the networking page lists 2 rows
+    Then the networking page draws 2 interface charts
     And the host was sent GET to "/api/agents/3/monitoring/network/usage" 1 times
 
   Scenario: Interfaces: the overview's View all leads to the page the row offers, the row the column draws too, on a host that lists `monitoring` alone
@@ -424,7 +404,7 @@ Feature: networking
     When I follow the host row "interfaces"
     Then the "interfaces" table of the networking page lists 3 rows
     When I follow the host row "bandwidth"
-    Then the "bandwidth" table of the networking page lists 2 rows
+    Then the networking page draws 2 interface charts
     And the host was sent GET to "/api/agents/3/monitoring/network/ipaddresses" 1 times
     And the host was sent GET to "/api/agents/3/monitoring/network/routes" 1 times
     And the host was sent GET to "/api/agents/3/monitoring/network/interfaces" 1 times
@@ -451,7 +431,7 @@ Feature: networking
     And I search the networking page for "vnic0"
     Then the "addresses" table of the networking page lists 1 rows
 
-  Scenario: Network pages: the one search narrows the routes and the bandwidth tables
+  Scenario: Network pages: the one search narrows the routes table
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -461,11 +441,6 @@ Feature: networking
     When I press "/"
     And I search the networking page for "vnic0"
     Then the "routes" table of the networking page lists 1 rows
-    When I open "/hosts/3/network/bandwidth"
-    Then the "bandwidth" table of the networking page lists 2 rows
-    When I press "/"
-    And I search the networking page for "vnic0"
-    Then the "bandwidth" table of the networking page lists 1 rows
 
   Scenario: Addresses: a filter group of one table narrows that table alone and a table it leaves no row of says so
     Given the host answers the hosts fixture
@@ -527,7 +502,7 @@ Feature: networking
     Then the "interfaces" table of the networking page lists 2 rows
     And I see "eth0"
     When I follow the host row "bandwidth"
-    Then the "bandwidth" table of the networking page lists 1 rows
+    Then the networking page draws 1 interface charts
     When I open "/hosts/self/network/routes"
     Then the networking page draws the not-available stub
     And the host was sent GET to "/api/monitoring/network/ipaddresses"
@@ -545,7 +520,7 @@ Feature: networking
     When I follow the host row "routes"
     Then the "routes" table of the networking page lists 3 rows
     When I follow the host row "bandwidth"
-    Then the "bandwidth" table of the networking page lists 2 rows
+    Then the networking page draws 2 interface charts
     When I follow the host row "interfaces"
     Then the "interfaces" table of the networking page lists 3 rows
     And the zone "web-1" of an interface opens "/hosts/self/machines/web-1"

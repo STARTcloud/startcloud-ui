@@ -124,7 +124,7 @@ Then(
 );
 
 Then('the agent page draws no release notes', async ({ page }) => {
-  await expect(frameOf(page).locator('[data-panel="update"] .upd-side-card')).toBeVisible();
+  await expect(frameOf(page).locator('[data-panel="update-overview"]')).toBeVisible();
   await expect(frameOf(page).locator('[data-panel="update"] .upd-label')).toHaveCount(0);
   await expect(frameOf(page).locator('[data-panel="update"] .upd-notes')).toHaveCount(0);
 });
@@ -164,7 +164,7 @@ Then('the agent page draws the release {string} alone', async ({ page }, tag) =>
 });
 
 Then('the agent page draws no release', async ({ page }) => {
-  await expect(frameOf(page).locator('[data-panel="update"] .upd-side-card')).toBeVisible();
+  await expect(frameOf(page).locator('[data-panel="update-overview"]')).toBeVisible();
   await expect(frameOf(page).locator('[data-panel="update-release"]')).toHaveCount(0);
 });
 
@@ -197,24 +197,40 @@ Then(
 const assetsOf = (page, tag) =>
   frameOf(page).locator(`[data-panel="update-assets"][data-assets-of="${tag}"]`);
 
-When('I fold the assets of the release {string}', async ({ page }, tag) => {
-  await assetsOf(page, tag).locator('.section-card-chevron').click();
-});
-
-Then('the assets of the release {string} are folded', async ({ page }, tag) => {
-  await expect(assetsOf(page, tag)).toHaveAttribute('data-folded', 'true');
-});
-
 Then('the assets of the release {string} are open', async ({ page }, tag) => {
   await expect(assetsOf(page, tag)).toHaveAttribute('data-folded', 'false');
 });
 
-Then('the assets of the release {string} draw under the versions', async ({ page }, tag) => {
-  const side = frameOf(page).locator('.upd-side-card');
-  await expect(side.locator(`[data-panel="update-assets"][data-assets-of="${tag}"]`)).toBeVisible();
-  await expect(side.locator('.upd-foot-links + [data-panel="update-assets"]')).toHaveCount(1);
-  await expect(releaseOf(page, tag).locator('[data-panel="update-assets"]')).toHaveCount(0);
+Then(
+  'the assets of the release {string} draw in their own card after the Overview card',
+  async ({ page }, tag) => {
+    await expect(assetsOf(page, tag)).toBeVisible();
+    const update = frameOf(page).locator('[data-panel="update"]');
+    await expect(
+      update.locator('[data-panel="update-overview"] ~ [data-panel="update-assets"]')
+    ).toHaveCount(1);
+    await expect(
+      update.locator('[data-panel="update-overview"] [data-panel="update-assets"]')
+    ).toHaveCount(0);
+    await expect(releaseOf(page, tag).locator('[data-panel="update-assets"]')).toHaveCount(0);
+  }
+);
+
+Then('the Update page draws the cards {string} in order', async ({ page }, titles) => {
+  const drawn = frameOf(page).locator('[data-panel="update"] .section-card-title');
+  await expect(drawn).toHaveCount(titles.split(',').length);
+  expect((await drawn.allInnerTexts()).map(text => text.trim()).join(',')).toBe(titles);
 });
+
+Then(
+  'the Update page draws the panels {string} in the {string} column',
+  async ({ page }, names, column) => {
+    const drawn = await frameOf(page)
+      .locator(`[data-panel="update"] [data-column="${column}"] > [data-panel]`)
+      .evaluateAll(nodes => nodes.map(node => node.getAttribute('data-panel')));
+    expect(drawn.join(',')).toBe(names);
+  }
+);
 
 Then('the release {string} lists the asset {string}', async ({ page }, tag, name) => {
   await expect(

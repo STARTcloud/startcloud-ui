@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "ready": true,
+  "components": {
+    "interface": { "name": "VirtualBox Host-Only Ethernet Adapter #2", "exists": true },
+    "ip_address": { "address": "192.168.56.1", "configured": true },
+    "dhcp": { "exists": true, "enabled": true }
+  },
+  "config": {
+    "enabled": true,
+    "subnet": "192.168.56.0/24",
+    "host_ip": "192.168.56.1",
+    "netmask": "255.255.255.0",
+    "dhcp_server_ip": "192.168.56.2",
+    "dhcp_range_start": "192.168.56.100",
+    "dhcp_range_end": "192.168.56.200"
+  }
+}

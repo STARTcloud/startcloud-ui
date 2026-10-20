@@ -68,10 +68,10 @@ HostnameInfo.propTypes = {
 };
 
 /**
- * The hostname section of the Hostname page, a folding glass section
- * whose heading is the page's: `title`, `count` after it, and in its
- * pane, for a role that controls hosts while the section is open, Change
- * hostname, the form's submit, and Reset, then the page's `actions`,
+ * The hostname section of the Hostname page, a glass section whose
+ * heading is the page's: `title`, `count` after it, and in its pane, for
+ * a role that controls hosts, Change hostname, the form's submit, and
+ * Reset, then the page's `actions`,
  * Refresh; under it, straight on the page's ground, the current hostname,
  * the nodename file, the system hostname and whether they match, the
  * warning when they do not, and, for a role that controls hosts, the
@@ -81,16 +81,7 @@ HostnameInfo.propTypes = {
  * through the page's one `useNetworkingTools`, which reads the held
  * hostname again.
  */
-const HostnameSettings = ({
-  id,
-  role,
-  reading,
-  fold,
-  tools,
-  title,
-  count = null,
-  actions = null,
-}) => {
+const HostnameSettings = ({ id, role, reading, tools, title, count = null, actions = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const formId = useId();
@@ -126,7 +117,7 @@ const HostnameSettings = ({
 
   const pane = (
     <>
-      {writable && !fold.folded ? (
+      {writable ? (
         <>
           <button
             type="submit"
@@ -153,76 +144,62 @@ const HostnameSettings = ({
   );
 
   return (
-    <div
-      data-section="networking-hostname"
-      data-state={stateOf(reading)}
-      data-folded={fold.folded}
-      className="mb-3"
-    >
-      <SectionHeading
-        title={title}
-        count={count}
-        folded={fold.folded}
-        onFold={fold.onFold}
-        foldTitle={fold.title}
-        actions={pane}
-      />
-      {fold.folded ? null : (
-        <div>
-          {reading.failed ? (
-            <div className="alert alert-danger" role="alert">
-              {t('hosts.overview.readError')}
-            </div>
-          ) : null}
-          {info ? <HostnameInfo info={info} /> : null}
-          {writable ? (
-            <>
-              <h6 className="fw-bold">{t('host.hostnameSettings.changeHostname')}</h6>
-              <form id={formId} onSubmit={submit} data-form="hostname">
-                <div className="mb-3">
-                  <label className="form-label" htmlFor="new-hostname-input">
-                    {t('host.hostnameSettings.newHostname')}
-                  </label>
+    <div data-section="networking-hostname" data-state={stateOf(reading)} className="mb-3">
+      <SectionHeading title={title} count={count} actions={pane} />
+      <div>
+        {reading.failed ? (
+          <div className="alert alert-danger" role="alert">
+            {t('hosts.overview.readError')}
+          </div>
+        ) : null}
+        {info ? <HostnameInfo info={info} /> : null}
+        {writable ? (
+          <>
+            <h6 className="fw-bold">{t('host.hostnameSettings.changeHostname')}</h6>
+            <form id={formId} onSubmit={submit} data-form="hostname">
+              <div className="mb-3">
+                <label className="form-label" htmlFor="new-hostname-input">
+                  {t('host.hostnameSettings.newHostname')}
+                </label>
+                <input
+                  id="new-hostname-input"
+                  className={`form-control${invalid ? ' is-invalid' : ''}`}
+                  type="text"
+                  placeholder={t('host.hostnameSettings.enterNewHostname')}
+                  value={next}
+                  onChange={event => setTyped(event.target.value)}
+                  disabled={tools.busy}
+                />
+                {invalid ? (
+                  <p className="form-text text-danger">
+                    {t('host.hostnameSettings.invalidHostname')}
+                  </p>
+                ) : null}
+              </div>
+              <div className="mb-3">
+                <div className="form-check">
                   <input
-                    id="new-hostname-input"
-                    className={`form-control${invalid ? ' is-invalid' : ''}`}
-                    type="text"
-                    placeholder={t('host.hostnameSettings.enterNewHostname')}
-                    value={next}
-                    onChange={event => setTyped(event.target.value)}
+                    id="apply-immediately"
+                    className="form-check-input"
+                    type="checkbox"
+                    checked={applyImmediately}
+                    onChange={event => setApplyImmediately(event.target.checked)}
                     disabled={tools.busy}
                   />
-                  {invalid ? (
-                    <p className="form-text text-danger">
-                      {t('host.hostnameSettings.invalidHostname')}
-                    </p>
-                  ) : null}
+                  <label className="form-check-label" htmlFor="apply-immediately">
+                    {t('host.hostnameSettings.applyImmediately')}
+                  </label>
                 </div>
-                <div className="mb-3">
-                  <div className="form-check">
-                    <input
-                      id="apply-immediately"
-                      className="form-check-input"
-                      type="checkbox"
-                      checked={applyImmediately}
-                      onChange={event => setApplyImmediately(event.target.checked)}
-                      disabled={tools.busy}
-                    />
-                    <label className="form-check-label" htmlFor="apply-immediately">
-                      {t('host.hostnameSettings.applyImmediately')}
-                    </label>
-                  </div>
-                  <p className="form-text text-muted">
-                    {applyImmediately
-                      ? t('host.hostnameSettings.applyImmediatelyHelp')
-                      : t('host.hostnameSettings.applyLaterHelp')}
-                  </p>
-                </div>
-              </form>
-            </>
-          ) : null}
-        </div>
-      )}
+                <p className="form-text text-muted">
+                  {applyImmediately
+                    ? t('host.hostnameSettings.applyImmediatelyHelp')
+                    : t('host.hostnameSettings.applyLaterHelp')}
+                </p>
+              </div>
+            </form>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 };
@@ -231,7 +208,6 @@ HostnameSettings.propTypes = {
   id: PropTypes.string.isRequired,
   role: PropTypes.string,
   reading: PropTypes.object.isRequired,
-  fold: PropTypes.object.isRequired,
   tools: PropTypes.object.isRequired,
   title: PropTypes.string.isRequired,
   count: PropTypes.node,

@@ -62,11 +62,9 @@ describe('the health tones', () => {
 });
 
 describe('queuedMessage, humanSize and parseZfsSize', () => {
-  it('names the agent message and the task id where the answer carries them', () => {
-    expect(queuedMessage({ message: 'Queued', task_id: 'abc' }, 'Fallback')).toBe(
-      'Queued (task abc)'
-    );
-    expect(queuedMessage({ task_id: 'abc' }, 'Fallback')).toBe('Fallback (task abc)');
+  it('names the agent message or the fallback and never the task id', () => {
+    expect(queuedMessage({ message: 'Queued', task_id: 'abc' }, 'Fallback')).toBe('Queued');
+    expect(queuedMessage({ task_id: 'abc' }, 'Fallback')).toBe('Fallback');
     expect(queuedMessage(null, 'Fallback')).toBe('Fallback');
   });
 

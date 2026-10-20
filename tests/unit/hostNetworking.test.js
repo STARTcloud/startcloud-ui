@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { chartOf } from '../../src/features/hosts/charts/registry.js';
-import {
-  bandwidthColumnsFor,
-  interfaceColumnsFor,
-} from '../../src/features/hosts/components/NetworkingColumns.jsx';
+import { interfaceColumnsFor } from '../../src/features/hosts/components/NetworkingColumns.jsx';
 import { READS } from '../../src/features/hosts/utils/monitoring.js';
 import {
   ADDRESS_FILTERS,
@@ -30,7 +27,6 @@ import {
   matchesAddress,
   matchesInterface,
   matchesRoute,
-  matchesUsage,
   packetsOf,
   prefixOf,
   routeKey,
@@ -331,11 +327,6 @@ describe('the matches of the four tables', () => {
     expect(matchesInterface(row, 'web')).toBe(true);
     expect(matchesInterface({ link: 'igb0', zone: '--' }, '--')).toBe(false);
   });
-
-  it('finds a sample by its link', () => {
-    expect(matchesUsage({ link: 'igb0' }, 'igb')).toBe(true);
-    expect(matchesUsage({ link: 'igb0' }, 'vnic')).toBe(false);
-  });
 });
 
 describe('the filter groups', () => {
@@ -404,22 +395,7 @@ describe('the charts', () => {
     expect(spec.series[2].points[1]).toEqual([new Date(LATE).getTime(), 5]);
   });
 
-  it('draws the trend of each interface after its total, the total line in its summary tone', () => {
-    const columns = bandwidthColumnsFor({ entities });
-    expect(columns.map(column => column.key).slice(0, 3)).toEqual(['link', 'total', 'trend']);
-    const trend = columns.find(column => column.key === 'trend');
-    expect(trend.kind).toBe('spark');
-    expect(trend.labelKey).toBe('hosts.charts.trend');
-    expect(trend.value({ link: 'vnic0' })).toBe(8.5);
-    expect(trend.value({ link: 'gone' })).toBe(0);
-    const cell = trend.render({ link: 'vnic0' });
-    expect(cell.props.name).toBe('vnic0');
-    expect(cell.props.points).toBe(entities.vnic0.total);
-    expect(cell.props.tone).toBe(summarySpec('total', entities, t).series[1].tone);
-    expect(trend.render({ link: 'gone' }).props.points).toEqual([]);
-  });
-
-  it('draws the trend of each interface after its state in the interfaces table, the tone the bandwidth gives it', () => {
+  it('draws the trend of each interface after its state in the interfaces table, the tone the bandwidth charts give it', () => {
     const columns = interfaceColumnsFor({ id: '3', machines: true, entities });
     expect(columns.map(column => column.key).slice(0, 4)).toEqual([
       'link',
@@ -428,10 +404,13 @@ describe('the charts', () => {
       'trend',
     ]);
     const trend = columns.find(column => column.key === 'trend');
-    const fromBandwidth = bandwidthColumnsFor({ entities }).find(column => column.key === 'trend');
+    expect(trend.kind).toBe('spark');
+    expect(trend.labelKey).toBe('hosts.charts.trend');
+    expect(trend.value({ link: 'vnic0' })).toBe(8.5);
+    expect(trend.value({ link: 'gone' })).toBe(0);
     expect(trend.render({ link: 'igb0' }).props.points).toBe(entities.igb0.total);
     expect(trend.render({ link: 'igb0' }).props.tone).toBe(
-      fromBandwidth.render({ link: 'igb0' }).props.tone
+      summarySpec('total', entities, t).series[0].tone
     );
     expect(trend.render({ link: 'igb1' }).props.points).toEqual([]);
   });

@@ -16,6 +16,8 @@ const topologyOf = page => sectionOf(page, 'topology');
 
 const dialogOf = page => page.getByRole('dialog').last();
 
+const FILL_SLACK = 64;
+
 When(
   'I press {string} on the {string} section row {string}',
   async ({ page }, tool, name, text) => {
@@ -42,17 +44,8 @@ When('I fill the networking field {string} with {string}', async ({ page }, id, 
   await frameOf(page).locator(`[id="${id}"]`).fill(text);
 });
 
-When('I switch the networking field {string}', async ({ page }, id) => {
-  await frameOf(page).locator(`[id="${id}"]`).check();
-});
-
-When('I confirm the open warning dialog', async ({ page }) => {
-  const dialog = dialogOf(page);
-  const field = dialog.getByRole('textbox');
-  const placeholder = await field.getAttribute('placeholder');
-  const { keyword } = placeholder.match(/'(?<keyword>[^']+)'/u).groups;
-  await field.fill(keyword);
-  await dialog.locator('.modal-footer .btn-warning').click();
+When("I pick {string} from the {string} section's menu", async ({ page }, tool, name) => {
+  await sectionOf(page, name).locator(`.dropdown-menu [data-tool="${tool}"]`).click();
 });
 
 When("I press the open dialog's {string} tool", async ({ page }, tool) => {
@@ -138,6 +131,37 @@ Then('the {string} section of the networking management is folded', async ({ pag
 
 Then('the {string} section of the networking management is open', async ({ page }, name) => {
   await expect(sectionOf(page, name)).toHaveAttribute('data-folded', 'false');
+});
+
+Then("the {string} section's {string} tool reads {string}", async ({ page }, name, tool, text) => {
+  await expect(sectionOf(page, name).locator(`[data-tool="${tool}"]`)).toHaveText(
+    new RegExp(`^\\s*${text}\\s*$`, 'iu')
+  );
+});
+
+Then("the {string} section's menu offers {string}", async ({ page }, name, list) => {
+  const items = sectionOf(page, name).locator('.dropdown-menu.show [data-tool]');
+  await expect(items).toHaveCount(list.split(', ').length);
+  const tools = await items.evaluateAll(nodes => nodes.map(node => node.dataset.tool));
+  expect(tools.join(', ')).toBe(list);
+});
+
+Then('the networking page draws no field {string}', async ({ page }, id) => {
+  await expect(frameOf(page).locator('.section-heading').first()).toBeVisible();
+  await expect(frameOf(page).locator(`[id="${id}"]`)).toHaveCount(0);
+});
+
+Then("the networking field {string} fills the page region's height", async ({ page }, id) => {
+  const field = frameOf(page).locator(`[id="${id}"]`);
+  await expect(field).toBeVisible();
+  const gap = () =>
+    field.evaluate(node => {
+      const region = node.closest('.app-scroll').getBoundingClientRect();
+      const own = node.getBoundingClientRect();
+      return region.bottom - own.bottom;
+    });
+  await expect.poll(gap).toBeGreaterThanOrEqual(0);
+  await expect.poll(gap).toBeLessThan(FILL_SLACK);
 });
 
 Then('the networking field {string} reads {string}', async ({ page }, id, value) => {

@@ -1,18 +1,29 @@
 Feature: machines
 
-  Scenario: Machine page: the machines list by the host's tokens, the rows of GET machines drawn from one read with the counts of all, running and stopped
+  Scenario: Machine page: the machines list by the host's tokens, the rows of GET machines drawn from one read under one heading counting them
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines"
     Then the machines list draws 3 rows
-    And the machines list counts 3 total
-    And the machines list counts 2 running
-    And the machines list counts 1 stopped
+    And the machines heading counts 3
     And I see "dev-3"
     And the host was sent GET to "/api/agents/1/machines" 1 times
     And the host was sent GET to "/api/agents/1/stats" 1 times
     And the host controls toggle is "Host actions"
+
+  Scenario: Machine page: the machines list's heading pane carries New, Import, Refresh and the view toggle, and the cards draw one card a machine
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-tools fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines"
+    Then the machines list draws 3 rows
+    And the machines heading pane reads "new-machine,import,refresh,view-toggle"
+    When I pick the "cards" view of the machines list
+    Then the machines list draws 3 cards
+    And the machines list draws no table
+    And the machine card "dev-1" links to "/hosts/1/machines/dev-1"
 
   Scenario: Machine page: the machines list draws the state badge column and no column that says the state in words
     Given the host answers the hosts fixture
@@ -125,6 +136,21 @@ Feature: machines
     And the host was sent GET to "/api/agents/1/machines/dev-1/guest-properties" 1 times
     And the host was sent GET to "/api/agents/1/machines/dev-1/guest/osinfo" 1 times
 
+  Scenario: Machine page: the Overview stacks the machine information, the tags and notes and the guest agent in the left column beside the console, and the hardware card draws no SSH or RDP row
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-consoles fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1"
+    Then the "machine-info" panel sits in the "machine-left" column
+    And the "machine-tags-notes" panel sits in the "machine-left" column
+    And the "machine-guest-agent" panel sits in the "machine-left" column
+    And the "machine-console" panel sits outside the "machine-left" column
+    And the "machine-hardware" panel sits outside the "machine-left" column
+    And the hardware card offers "console-vnc"
+    And the hardware card offers no "console-ssh"
+    And the hardware card offers no "console-rdp"
+
   Scenario: Machine page: the read surfaces by what the agent answers, a zone draws its facts, specifications and devices and asks for no guest properties
     Given the host answers the zones fixture
     And the host answers the zones-machines fixture
@@ -166,7 +192,7 @@ Feature: machines
     And the machine page draws no "machine-hardware" panel
     And the machine page draws no "machine-tags-notes" panel
 
-  Scenario: Machine page: the body starts under the crumbs with no heading row, and the Controls menu carries the power verbs, the console doors and Refresh, which reads the machine again
+  Scenario: Machine page: the Overview starts under the crumbs with no heading row, and the Controls menu carries the power verbs, the console doors and Refresh, which reads the machine again
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-consoles fixture
@@ -394,6 +420,23 @@ Feature: machines
     And the snapshot "before-upgrade" holds "restore-start" back
     And the snapshots list offers no holds
     And the host was sent GET to "/api/agents/1/machines/dev-1/snapshots" 1 times
+
+  Scenario: Machine page: the Snapshots page draws one heading row titled Snapshots with the picked state, Take snapshot and Refresh in its pane and no chevron
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-tools fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/snapshots"
+    Then the snapshots list draws 2 rows
+    And the machine page draws one heading titled "Snapshots"
+    And the heading's pane offers "snapshot-take"
+    And the heading's pane offers no "bulk-delete"
+    And the heading's pane ends with Refresh
+    When I pick the snapshot "clean-install"
+    Then the heading's pane offers "bulk-delete"
+    And the heading's pane ends with Refresh
+    When I press the machine page's "refresh" action
+    Then the host was sent GET to "/api/agents/1/machines/dev-1/snapshots" 2 times
 
   Scenario: Machine page: the snapshots behind `machine-snapshots`, a zone draws the snapshots of its datasets as zoneweaver-agent answers them
     Given the host answers the zones fixture

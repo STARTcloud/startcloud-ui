@@ -284,10 +284,10 @@ const MachineInfoCard = ({
   const names = isServerRole(status) ? organizationsOf(machine, organizations) : null;
 
   return (
-    <div className="col-12 col-lg-6" data-panel="machine-info">
+    <div className="col-12" data-panel="machine-info">
       <SectionCard
         title={t('machine.machineInfo.heading')}
-        className="mb-0 h-100"
+        className="mb-0"
         folded={folds.folded(FOLD)}
         onFold={() => folds.toggle(FOLD)}
       >

@@ -117,6 +117,7 @@ const RestartCard = ({ restartStatus, restart, refresh = 0, guard = unguarded })
         handleClose={() => setConfirming(false)}
         handleConfirm={doRestart}
         variant="restart"
+        typed={false}
       />
     </div>
   );

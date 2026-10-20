@@ -25,10 +25,9 @@ import {
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import RowMenu from '../../../components/common/RowMenu';
 import SectionHeading from '../../../components/common/SectionHeading';
-import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useCssVar } from '../../../hooks/useCssVar';
-import { destroyZfsSnapshot, getZfsDatasets, getZfsPools, promoteZfsDataset } from '../api/zfsAPI';
+import { getZfsDatasets, getZfsPools, promoteZfsDataset } from '../api/zfsAPI';
 import {
   allNodeNames,
   buildTree,
@@ -247,19 +246,21 @@ DatasetRow.propTypes = {
   handlers: PropTypes.object.isRequired,
 };
 
-const SnapshotRow = ({ snap, depth, busy, isSelected, handlers }) => {
+const SnapshotRow = ({ snap, depth, busy, isSelected = null, handlers }) => {
   const { t } = useTranslation();
   return (
     <TreeLine depth={depth} name={snap.name}>
       <span className="zfs-caret" />
-      <input
-        type="checkbox"
-        className="form-check-input flex-shrink-0 mt-0"
-        checked={isSelected}
-        onChange={() => handlers.onSelect(snap.name)}
-        disabled={busy}
-        aria-label={t('host.snapshotRow.selectSnapshot', { name: snap.name })}
-      />
+      {isSelected === null ? null : (
+        <input
+          type="checkbox"
+          className="form-check-input flex-shrink-0 mt-0"
+          checked={isSelected}
+          onChange={() => handlers.onSelect(snap.name)}
+          disabled={busy}
+          aria-label={t('host.snapshotRow.selectSnapshot', { name: snap.name })}
+        />
+      )}
       <FaCamera className="text-muted" aria-hidden="true" />
       <code className="small" title={snap.name}>
         @{snap.name.split('@')[1] || snap.name}
@@ -318,7 +319,7 @@ SnapshotRow.propTypes = {
   snap: PropTypes.object.isRequired,
   depth: PropTypes.number.isRequired,
   busy: PropTypes.bool.isRequired,
-  isSelected: PropTypes.bool.isRequired,
+  isSelected: PropTypes.bool,
   handlers: PropTypes.object.isRequired,
 };
 
@@ -375,7 +376,7 @@ const TreeNode = ({ node, depth, view, busy, handlers }) => {
               snap={snap}
               depth={depth + 2}
               busy={busy}
-              isSelected={selected.has(snap.name)}
+              isSelected={selected ? selected.has(snap.name) : null}
               handlers={handlers}
             />
           ))
@@ -404,7 +405,7 @@ TreeNode.propTypes = {
     show: PropTypes.object.isRequired,
     collapsed: PropTypes.instanceOf(Set).isRequired,
     snapsOpen: PropTypes.instanceOf(Set).isRequired,
-    selected: PropTypes.instanceOf(Set).isRequired,
+    selected: PropTypes.instanceOf(Set),
   }).isRequired,
   busy: PropTypes.bool.isRequired,
   handlers: PropTypes.object.isRequired,
@@ -473,19 +474,27 @@ const listOf = answer => (Array.isArray(answer?.datasets) ? answer.datasets : []
  * real hierarchy as an expandable tree, filesystems and volumes nested
  * by name, each dataset's snapshots folded under it, usage as a bar, a
  * search over the names, a pool filter and the three type toggles;
- * Create dataset, Destroy selected snapshots, Expand all and Collapse
- * all in the heading. The datasets and the snapshots are read as two
- * sweeps as the panel opens and again when `turn` moves, the page's
- * Refresh and the end of a task this page queued. Every write is a
- * queued task through `tools`, one notice; Promote and the bulk destroy
- * confirm first behind the typed word. With `snapshotsOpen` every
- * dataset's snapshots are unfolded as the tree is read, the Snapshots
- * page's view of the same tree.
+ * Create dataset, Expand all and Collapse all in the heading. The
+ * datasets and the snapshots are read as two sweeps as the panel opens
+ * and again when `turn` moves, the page's Refresh and the end of a task
+ * this page queued. Every write is a queued task through `tools`, one
+ * notice; Promote confirms first behind the typed word. With
+ * `snapshotsOpen` every dataset's snapshots are unfolded as the tree is
+ * read, the Snapshots page's view of the same tree. `selection`, a
+ * `useSelection` keyed by the snapshot's name, draws a checkbox on every
+ * snapshot row, its select column; `busy` holds every control while the
+ * page's own write is in flight.
  */
-const ZfsDatasetsPanel = ({ id, turn, tools, snapshotsOpen = false }) => {
+const ZfsDatasetsPanel = ({
+  id,
+  turn,
+  tools,
+  snapshotsOpen = false,
+  selection = null,
+  busy: held = false,
+}) => {
   const { t } = useTranslation();
   const status = useStatus();
-  const notify = useNotify();
   const [tree, setTree] = useState([]);
   const [pools, setPools] = useState([]);
   const [poolFilter, setPoolFilter] = useState('');
@@ -496,9 +505,6 @@ const ZfsDatasetsPanel = ({ id, turn, tools, snapshotsOpen = false }) => {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState('');
   const [modal, setModal] = useState(null);
-  const [selected, setSelected] = useState(() => new Set());
-  const [bulkOpen, setBulkOpen] = useState(false);
-  const [bulkBusy, setBulkBusy] = useState(false);
 
   const take = useCallback(
     ([datasets, snapshots]) => {
@@ -524,7 +530,6 @@ const ZfsDatasetsPanel = ({ id, turn, tools, snapshotsOpen = false }) => {
       if (snapshotsOpen) {
         setSnapsOpen(new Set(allNodeNames(built)));
       }
-      setSelected(previous => new Set([...previous].filter(name => merged.has(name))));
       setLoaded(true);
     },
     [t, snapshotsOpen]
@@ -556,67 +561,21 @@ const ZfsDatasetsPanel = ({ id, turn, tools, snapshotsOpen = false }) => {
       values: { name },
     });
 
-  const bulkDestroy = async () => {
-    const targets = [...selected];
-    setBulkBusy(true);
-    const answers = await Promise.allSettled(
-      targets.map(name => destroyZfsSnapshot(status, id, name))
-    );
-    setBulkBusy(false);
-    setBulkOpen(false);
-    setSelected(new Set());
-    answers.forEach(answer => {
-      if (answer.status === 'fulfilled') {
-        tools.watch(answer.value);
-      }
-    });
-    const failures = answers
-      .map((answer, index) =>
-        answer.status === 'rejected' ? `${targets[index]}: ${answer.reason.message}` : ''
-      )
-      .filter(Boolean);
-    if (failures.length > 0) {
-      notify(
-        'danger',
-        t('host.zfsDatasetsPanel.bulkFailuresMessage', {
-          count: failures.length,
-          list: failures.join('; '),
-        })
-      );
-    } else {
-      notify(
-        'success',
-        t('host.zfsDatasetsPanel.bulkDestroyQueuedMessage', { count: targets.length })
-      );
-    }
-  };
-
   const handlers = {
     onModal: setModal,
     onToggle: name => setCollapsed(previous => toggleIn(previous, name)),
     onToggleSnaps: name => setSnapsOpen(previous => toggleIn(previous, name)),
-    onSelect: name => setSelected(previous => toggleIn(previous, name)),
+    onSelect: name => selection?.toggle(name),
   };
 
   const needle = nameFilter.trim().toLowerCase();
-  const view = { needle, show, collapsed, snapsOpen, selected };
+  const view = { needle, show, collapsed, snapsOpen, selected: selection?.selected || null };
   const roots = tree.filter(node => nodeMatches(node, needle, show));
-  const busy = tools.busy || bulkBusy;
+  const busy = tools.busy || held;
   const title = t('host.zfsDatasetsPanel.datasetsHeading');
 
   const actions = (
     <>
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-danger"
-        data-action="snapshots-destroy-selected"
-        title={t('host.zfsDatasetsPanel.destroySelectedTitle')}
-        onClick={() => setBulkOpen(true)}
-        disabled={busy || selected.size === 0}
-      >
-        <FaTrash className="me-2" aria-hidden="true" />
-        {t('host.zfsDatasetsPanel.destroySelectedCount', { count: selected.size })}
-      </button>
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary"
@@ -766,15 +725,6 @@ const ZfsDatasetsPanel = ({ id, turn, tools, snapshotsOpen = false }) => {
         keyword={t('host.promoteConfirmModal.confirmText').toLowerCase()}
         confirmText={t('host.promoteConfirmModal.confirmText')}
       />
-      <ConfirmModal
-        show={bulkOpen}
-        handleClose={() => setBulkOpen(false)}
-        handleConfirm={bulkDestroy}
-        title={t('host.zfsDatasetsPanel.bulkDestroyTitle', { count: selected.size })}
-        message={t('host.zfsDatasetsPanel.bulkDestroyMessage', { names: [...selected].join(', ') })}
-        keyword={t('hosts.storage.destroyWord')}
-        confirmText={t('host.zfsDatasetsPanel.bulkDestroyConfirm', { count: selected.size })}
-      />
     </div>
   );
 };
@@ -788,6 +738,11 @@ ZfsDatasetsPanel.propTypes = {
     busy: PropTypes.bool.isRequired,
   }).isRequired,
   snapshotsOpen: PropTypes.bool,
+  selection: PropTypes.shape({
+    selected: PropTypes.instanceOf(Set).isRequired,
+    toggle: PropTypes.func.isRequired,
+  }),
+  busy: PropTypes.bool,
 };
 
 export default ZfsDatasetsPanel;

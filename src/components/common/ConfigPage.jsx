@@ -89,7 +89,7 @@ ConfigHeading.propTypes = {
  * is validated through the schema on blur and on Update, the `PUT` sends
  * `patchOf(before, after)`, a refused write is painted by pointer, the
  * URL's hash opens the map item it names, Restart is offered at all times
- * behind the typed confirmation, the card naming what is pending, and the
+ * behind a plain confirmation, the card naming what is pending, and the
  * restart and every schema action run through the shell's `useGuard`, so
  * a `403 step_up_required` opens the step-up dialog and retries.
  *
@@ -259,6 +259,7 @@ const ConfigPage = ({ config: configApi = null, names = null, name = null }) => 
         handleClose={() => setRestarting(false)}
         handleConfirm={restartApp}
         variant="restart"
+        typed={false}
       />
       <div className="config-container">
         <RestartCard

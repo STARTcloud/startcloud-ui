@@ -74,7 +74,10 @@ const MachineTagsNotesCard = ({ id, name, detail, onSaved, folds }) => {
   };
 
   return (
-    <div className="col-12 col-lg-6 col-xxl-4" data-panel="machine-tags-notes">
+    <div
+      className={`col-12${folds.folded(FOLD) ? '' : ' flex-grow-1'}`}
+      data-panel="machine-tags-notes"
+    >
       <SectionCard
         title={t('machine.tagsNotesPanel.heading')}
         className="mb-0 h-100"

@@ -395,6 +395,44 @@ export const changedRolesOf = (rows, manifestRoles) =>
   });
 
 /**
+ * The identities of the rows from one row to another in their order, both
+ * ends included whichever comes first, the shift-click range of the roles
+ * editor; `to` alone while `from` is not among the rows.
+ *
+ * @param {Array<Object>} rows - The tagged rows in their drawn order
+ * @param {number|null} from - The identity of the row the range starts at
+ * @param {number} to - The identity of the row the range ends at
+ * @returns {Array<number>} The identities
+ */
+export const idRangeOf = (rows, from, to) => {
+  const ids = rows.map(row => row._ui_id);
+  const start = ids.indexOf(from);
+  const end = ids.indexOf(to);
+  if (end === -1) {
+    return [];
+  }
+  if (start === -1) {
+    return [to];
+  }
+  return ids.slice(Math.min(start, end), Math.max(start, end) + 1);
+};
+
+/**
+ * The rows with the picked ones moved as one block to the top or the
+ * bottom, the block and the rest each keeping their order.
+ *
+ * @param {Array<Object>} rows - The tagged rows
+ * @param {Set<number>} picked - The identities of the picked rows
+ * @param {string} edge - `top` or `bottom`
+ * @returns {Array<Object>} The rows
+ */
+export const pickedToEdge = (rows, picked, edge) => {
+  const block = rows.filter(row => picked.has(row._ui_id));
+  const rest = rows.filter(row => !picked.has(row._ui_id));
+  return edge === 'top' ? [...block, ...rest] : [...rest, ...block];
+};
+
+/**
  * The registry's ordering hints, a role's bare name to the roles it
  * depends on, from a version's `metadata.roles`; null while the version
  * carries none.
@@ -536,9 +574,9 @@ export const dependencyWarnings = (roles, hints, index) => {
  * What the Provisioning page says of a pipeline answer, hyperweaver-ui's
  * report: `nothing`, the skipped entries of a 200 no-op that queued no
  * task, joined; else the sentence in `parts`, the agent's own message or
- * the queued word, the task with its steps where the answer counts them
- * and the skipped suffix where it skips any; and `task`, the queued
- * parent as the task dialog opens on it, or null.
+ * the queued word, the steps where the answer counts them and the
+ * skipped suffix where it skips any, never the task's id; and `task`, the
+ * queued parent as the task dialog opens on it, or null.
  *
  * @param {Object|null} answer - The agent's answer
  * @param {string} name - The machine name
@@ -559,15 +597,8 @@ export const pipelineOutcome = (answer, name, t) => {
     };
   }
   const parts = [data.message || t('provisioning.machineProvisioning.queued')];
-  if (data.parent_task_id) {
-    parts.push(
-      data.steps
-        ? t('provisioning.machineProvisioning.taskWithSteps', {
-            id: data.parent_task_id,
-            steps: data.steps,
-          })
-        : t('provisioning.machineProvisioning.taskOnly', { id: data.parent_task_id })
-    );
+  if (data.parent_task_id && data.steps) {
+    parts.push(t('provisioning.machineProvisioning.taskWithSteps', { steps: data.steps }));
   }
   if (skipped.length > 0) {
     parts.push(t('provisioning.machineProvisioning.skippedSuffix', { skipped: skippedWords }));

@@ -33,8 +33,8 @@ const NONE = { kind: '', row: null };
 const CLOSED = { open: false, row: null };
 
 /**
- * The one addresses table of the Addresses page, a folding glass section
- * whose heading is the page's: the section's title, the count of the
+ * The one addresses table of the Addresses page, a glass section whose
+ * heading is the page's: the section's title, the count of the
  * addresses the search left, and in its pane, while the host offers the
  * managed read and the person controls hosts, Create, then the page's
  * `actions`, Refresh; under it every address of the monitoring read and
@@ -46,7 +46,7 @@ const CLOSED = { open: false, row: null };
  * delete, behind the typed confirmation, sends
  * `DELETE network/addresses/{addrobj}` with `addressDeleteParams` over
  * the managed rows; Enable and Disable send their `PUT`, the Disable of a
- * VirtualBox or UTM host behind a confirmation of its own,
+ * VirtualBox or UTM host behind a plain confirmation of its own,
  * hyperweaver-ui's, because that agent takes the whole interface down.
  * Every write goes through the page's one `useNetworkingTools`, which
  * raises the notice, follows the queued task and reads the held
@@ -62,7 +62,6 @@ const IpAddressManagement = ({
   table,
   ctx,
   filtering,
-  fold,
   tools,
   title,
   count = null,
@@ -198,7 +197,6 @@ const IpAddressManagement = ({
         emptyKey="host.ipAddressTable.noData"
         reading={reading}
         filtering={filtering}
-        fold={fold}
         actions={pane}
       />
       {form.open ? (
@@ -227,6 +225,7 @@ const IpAddressManagement = ({
         title={t('host.ipAddressManagement.goDisableTitle')}
         message={t('host.ipAddressManagement.goDisableBody', { iface: confirm.row?.interface })}
         variant="restart"
+        typed={false}
         confirmText={t('host.ipAddressManagement.goDisableConfirm')}
       />
     </>
@@ -246,7 +245,6 @@ IpAddressManagement.propTypes = {
   table: PropTypes.object.isRequired,
   ctx: PropTypes.object.isRequired,
   filtering: PropTypes.bool.isRequired,
-  fold: PropTypes.object.isRequired,
   tools: PropTypes.object.isRequired,
   title: PropTypes.string.isRequired,
   count: PropTypes.node,

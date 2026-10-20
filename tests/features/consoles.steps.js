@@ -253,10 +253,6 @@ Then('the stored {string} carries {string} as {string}', async ({ page }, key, m
 
 const connectAsOf = page => page.locator('[data-dialog="connect-as"]');
 
-When("I press the hardware card's {string} door", async ({ page }, action) => {
-  await page.locator(`[data-panel="machine-hardware"] [data-action="${action}"]`).click();
-});
-
 Then('the Connect as dialog lists {string}', async ({ page }, ids) => {
   const items = connectAsOf(page).locator('[data-menu="connect-as"] [data-credential]');
   await expect(items.first()).toBeVisible();

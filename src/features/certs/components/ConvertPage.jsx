@@ -15,7 +15,7 @@ import { useEngine } from '../hooks/useEngine';
 import { useVault } from '../hooks/useVault';
 import { componentsOf, recordsOf } from '../utils/components';
 import { foldOf } from '../utils/folds';
-import { carriedBy, fileStemOf } from '../utils/formats';
+import { carriedBy, fileStemOf, formatOf, slotsOf } from '../utils/formats';
 import { EMPTY_READ, describeComponent, idOf, pickable, withRead } from '../utils/reads';
 import {
   CERT_COMPONENT_KINDS,
@@ -76,18 +76,11 @@ const chosenOf = (components, picked) =>
     .filter(component => picked.includes(idOf(component)))
     .map(component => ({ kind: component.kind, der_b64: component.der_b64 }));
 
-const Components = ({ components, picked, rules, read, onToggle }) => {
+const ComponentRows = ({ components, picked, onToggle, id = undefined }) => {
   const { t, i18n } = useTranslation();
-  if (components.length === 0) {
-    return (
-      <p className="text-body-secondary mb-0">
-        {t(read ? 'certs.decode.nothing' : 'certs.convert.noComponents')}
-      </p>
-    );
-  }
   return (
     <ScopeList
-      id={rules.idFor('picked')}
+      id={id}
       scopes={scopesOf(components, t, i18n.language)}
       checked={picked}
       disabled={components.filter(component => !pickable(component)).map(idOf)}
@@ -97,8 +90,111 @@ const Components = ({ components, picked, rules, read, onToggle }) => {
   );
 };
 
+ComponentRows.propTypes = {
+  components: PropTypes.array.isRequired,
+  picked: PropTypes.arrayOf(PropTypes.string).isRequired,
+  onToggle: PropTypes.func.isRequired,
+  id: PropTypes.string,
+};
+
+const NeededSlot = ({ slot }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="scope-row">
+      <span>
+        <span className="scope-row-label">{t(`certs.convert.slot.${slot.id}`)}</span>
+        <span className="scope-row-help">{t('certs.convert.slotNeeded')}</span>
+      </span>
+    </div>
+  );
+};
+
+NeededSlot.propTypes = {
+  slot: PropTypes.shape({ id: PropTypes.string.isRequired }).isRequired,
+};
+
+const Slots = ({ slots, components, picked, rules, read, onToggle }) => {
+  const { t } = useTranslation();
+  const rest = components.filter(
+    component => !slots.some(slot => slot.kinds.includes(component.kind))
+  );
+  return (
+    <div
+      className="d-flex flex-column gap-2"
+      id={rules.idFor('picked')}
+      tabIndex={-1}
+      data-list="certs-slots"
+    >
+      {read && components.length === 0 ? (
+        <p className="text-body-secondary mb-0">{t('certs.decode.nothing')}</p>
+      ) : null}
+      {slots.map(slot => {
+        const fillers = components.filter(component => slot.kinds.includes(component.kind));
+        return (
+          <div
+            key={slot.id}
+            data-slot={slot.id}
+            data-slot-state={fillers.length > 0 ? 'loaded' : 'needed'}
+          >
+            {fillers.length > 0 ? (
+              <ComponentRows components={fillers} picked={picked} onToggle={onToggle} />
+            ) : (
+              <NeededSlot slot={slot} />
+            )}
+          </div>
+        );
+      })}
+      {rest.length > 0 ? (
+        <ComponentRows components={rest} picked={picked} onToggle={onToggle} />
+      ) : null}
+    </div>
+  );
+};
+
+Slots.propTypes = {
+  slots: PropTypes.array.isRequired,
+  components: PropTypes.array.isRequired,
+  picked: PropTypes.arrayOf(PropTypes.string).isRequired,
+  rules: PropTypes.object.isRequired,
+  read: PropTypes.bool.isRequired,
+  onToggle: PropTypes.func.isRequired,
+};
+
+const Components = ({ components, format, picked, rules, read, onToggle }) => {
+  const { t } = useTranslation();
+  const slots = slotsOf(format);
+  if (slots.length > 0) {
+    return (
+      <Slots
+        slots={slots}
+        components={components}
+        picked={picked}
+        rules={rules}
+        read={read}
+        onToggle={onToggle}
+      />
+    );
+  }
+  if (components.length === 0) {
+    return (
+      <p className="text-body-secondary mb-0">
+        {t(read ? 'certs.decode.nothing' : 'certs.convert.noComponents')}
+      </p>
+    );
+  }
+  return (
+    <ComponentRows
+      id={rules.idFor('picked')}
+      components={components}
+      picked={picked}
+      onToggle={onToggle}
+    />
+  );
+};
+
 Components.propTypes = {
   components: PropTypes.array.isRequired,
+  format: PropTypes.object,
   picked: PropTypes.arrayOf(PropTypes.string).isRequired,
   rules: PropTypes.object.isRequired,
   read: PropTypes.bool.isRequired,
@@ -248,9 +344,14 @@ const ConvertBody = ({ record, folds, onClear }) => {
         ) : null}
         <InputZone onDetected={detected} />
       </SectionCard>
-      <SectionCard title={t('certs.convert.components')} {...foldOf(folds, FOLDS[1])}>
+      <SectionCard
+        title={t('certs.convert.components')}
+        id="certs-convert-components"
+        {...foldOf(folds, FOLDS[1])}
+      >
         <Components
           components={held.components}
+          format={formatOf(draft.to)}
           picked={picked}
           rules={rules}
           read={held.read}
@@ -267,7 +368,6 @@ const ConvertBody = ({ record, folds, onClear }) => {
         <FormErrorSummary errors={rules.summary} />
         <FormatPicker
           kinds={[...new Set(chosen.map(component => component.kind))]}
-          components={held.components.filter(component => picked.includes(idOf(component)))}
           draft={draft}
           rules={rules}
           onChange={patch => setDraft(current => ({ ...current, ...patch }))}
@@ -295,11 +395,13 @@ ConvertBody.propTypes = {
  * it in this visit; the Components card
  * listing what the engine detected as one scope list, a locked key
  * drawn disabled, the line reading that nothing was understood when a
- * read found no component; and the Output card, drawn from the start
+ * read found no component, and once a format is picked one line a slot
+ * the format carries, the certificate, the key, the public key or the
+ * request, reading "needed · not loaded" until a read supplies it and its
+ * components' scope rows after, the components no slot of the format
+ * takes listed under them; and the Output card, drawn from the start
  * with Convert and Save to vault disabled while nothing is picked, picking a format that
- * carries every picked kind, any format while nothing is read, the slots
- * the picked format carries drawn under it as needed until a read fills
- * them, its password required where the format
+ * carries every picked kind, any format while nothing is read, its password required where the format
  * cannot be written without one and emptied on a change of format, the
  * legacy switch and the friendly name, Convert handing the browser the
  * file once the rules pass, Download fullchain and Download combined

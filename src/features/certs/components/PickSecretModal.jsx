@@ -35,6 +35,14 @@ const vaultRowOf = record => ({
   record,
 });
 
+const EVERY = () => true;
+
+const listsBackend = (host, vault) =>
+  Boolean(host) && !host.served && vault.stored && vault.signedIn;
+
+const hostStores = host =>
+  host ? [{ key: HOST, label: host.label, rows: host.rows, loaded: host.loaded }] : [];
+
 const PickActions = ({ row, busy, onPick }) => {
   const { t } = useTranslation();
   return (
@@ -72,13 +80,16 @@ PickActions.propTypes = {
  * `onPick`. `host` is `{ label, rows, loaded, failed, message, served }`,
  * `served` true while the host's store is the serving backend's;
  * `openers` draw before the toggle; `attributes` are the data attributes
- * the dialog carries beside `data-dialog="pick-secret"`.
+ * the dialog carries beside `data-dialog="pick-secret"`. With no `host`
+ * the Vault is the one store, its records narrowed by `accept` where
+ * given.
  */
 const PickSecretModal = ({
   kinds,
   profile = '',
   title,
-  host,
+  host = null,
+  accept = EVERY,
   busy = false,
   openers = null,
   attributes = {},
@@ -89,12 +100,12 @@ const PickSecretModal = ({
   const { t } = useTranslation();
   const status = useStatus();
   const vault = useVault();
-  const listed = !host.served && vault.stored && vault.signedIn;
+  const listed = listsBackend(host, vault);
   const shared = useSharedRows(vault.organizations, listed);
-  const [storeKey, setStoreKey] = useState(HOST);
+  const [storeKey, setStoreKey] = useState(host ? HOST : VAULT);
   const admit = admitted(kinds, profile);
   const stores = [
-    { key: HOST, label: host.label, rows: host.rows, loaded: host.loaded },
+    ...hostStores(host),
     ...(listed
       ? [
           {
@@ -110,7 +121,7 @@ const PickSecretModal = ({
           {
             key: VAULT,
             label: t('certs.sidebar.vault'),
-            rows: vault.records.filter(admit).map(vaultRowOf),
+            rows: vault.records.filter(admit).filter(accept).map(vaultRowOf),
             loaded: vault.loaded,
           },
         ]
@@ -154,7 +165,7 @@ const PickSecretModal = ({
               ))}
             </select>
           </div>
-          {store.key === HOST && host.failed ? (
+          {store.key === HOST && host?.failed ? (
             <div className="alert alert-danger py-2" role="alert" data-note="secrets-failed">
               {t('agentSettings.agentSecretsTab.failedLoadSecrets', { message: host.message })}
             </div>
@@ -190,7 +201,8 @@ PickSecretModal.propTypes = {
     failed: PropTypes.bool,
     message: PropTypes.string,
     served: PropTypes.bool.isRequired,
-  }).isRequired,
+  }),
+  accept: PropTypes.func,
   busy: PropTypes.bool,
   openers: PropTypes.node,
   attributes: PropTypes.object,

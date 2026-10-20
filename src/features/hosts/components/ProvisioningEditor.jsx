@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCheck } from 'react-icons/fa6';
 
+import SectionHeading from '../../../components/common/SectionHeading';
 import TabStrip from '../../../components/common/TabStrip';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -37,7 +38,7 @@ import {
   withPlaybookLists,
 } from '../utils/provisioning';
 
-import HostsYmlTab from './HostsYmlTab';
+import HostsYmlTab, { HostsYmlButtons, useHostsYml } from './HostsYmlTab';
 import ProvisioningFoldersTab from './ProvisioningFoldersTab';
 import ProvisioningHooksTab from './ProvisioningHooksTab';
 import ProvisioningPlaybooksTab from './ProvisioningPlaybooksTab';
@@ -430,10 +431,10 @@ JsonTab.propTypes = {
 const DocumentButtons = ({ busy, onStore, onDiscard }) => {
   const { t } = useTranslation();
   return (
-    <div className="d-flex gap-2 mt-3 border-top pt-3">
+    <>
       <button
         type="button"
-        className="btn btn-primary"
+        className="btn btn-sm btn-primary"
         data-action="document-store"
         onClick={onStore}
         disabled={busy}
@@ -447,14 +448,14 @@ const DocumentButtons = ({ busy, onStore, onDiscard }) => {
       </button>
       <button
         type="button"
-        className="btn btn-outline-secondary"
+        className="btn btn-sm btn-outline-secondary"
         data-action="document-discard"
         onClick={onDiscard}
         disabled={busy}
       >
         {t('provisioning.provisioningEditor.discardEdits')}
       </button>
-    </div>
+    </>
   );
 };
 
@@ -466,12 +467,15 @@ DocumentButtons.propTypes = {
 
 /**
  * The provisioner document editor of a machine, hyperweaver-ui's inline
- * editor: the stored document, a Hosts.yml host entry, edited structured
+ * editor, drawing the page's one heading from `heading`, its title, its
+ * muted text, its badge and its `actions`, with Save and Discard first in
+ * the pane, then `lead` under it and the tabs under that: the stored
+ * document, a Hosts.yml host entry, edited structured
  * across the Folders, Variables, Scripts, Playbooks, Roles, Hooks and
  * Transport tabs with Raw JSON the escape hatch, keys no tab covers
  * riding untouched, and the Hosts.yml tab, `HostsYmlTab`, the whole
- * stored document as YAML with its own Save in place of Store and
- * Discard, handing its notice to `onSaved`; the Roles tab is the one roles editor the create
+ * stored document as YAML whose own Save and Discard take the pane's
+ * slots while it is open, handing its notice to `onSaved`; the Roles tab is the one roles editor the create
  * wizard draws, its catalog, the manifest's roles, their defaults and
  * their argument specs read from the package registry while the host
  * lists `provisioner-registry`, the host's artifact rows read while it
@@ -481,7 +485,7 @@ DocumentButtons.propTypes = {
  * artifact pick dialog, a `secret` field through the secret pick dialog
  * and preselected into `vars` as the package's detail answers, through
  * `seedSecretAnswers` over one read of the host's store a kind, a var
- * the document holds never overwritten; Store sends the one request, `PUT machines/{name}` with
+ * the document holds never overwritten; Save sends the one request, `PUT machines/{name}` with
  * `provisioner`, refusing only unapplied JSON and names that would break
  * the run, and hands the agent's message to `onSaved`; Discard reseeds
  * from the stored document, which the editor takes again whenever the
@@ -491,7 +495,15 @@ DocumentButtons.propTypes = {
  * hands `onRun` the narrowing of one run, `{ roles: [name] }`,
  * `{ scripts: [path] }` or `{ playbook: path }`.
  */
-const ProvisioningEditor = ({ id, name, document = null, onSaved, onRun = null }) => {
+const ProvisioningEditor = ({
+  id,
+  name,
+  document = null,
+  heading,
+  lead = null,
+  onSaved,
+  onRun = null,
+}) => {
   const { t } = useTranslation();
   const status = useStatus();
   const server = useHostRow(id);
@@ -523,6 +535,7 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved, onRun = null }
     provVersion: typeof doc.provisioner_version === 'string' ? doc.provisioner_version : '',
   });
   const downloads = useDownloads({ status, id, onLanded: registry.loadArtifacts });
+  const yml = useHostsYml({ id, name, open: tab === HOSTS_YML, onSaved });
   const docRef = useRef(doc);
 
   useEffect(() => {
@@ -620,8 +633,26 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved, onRun = null }
     }
   };
 
+  const pane = (
+    <>
+      {tab === HOSTS_YML ? (
+        <HostsYmlButtons yml={yml} />
+      ) : (
+        <DocumentButtons busy={busy} onStore={store} onDiscard={discard} />
+      )}
+      {heading.actions}
+    </>
+  );
+
   return (
     <div data-panel="provisioning-editor">
+      <SectionHeading
+        title={heading.title}
+        count={heading.count ?? null}
+        badge={heading.badge ?? null}
+        actions={pane}
+      />
+      {lead}
       {error ? (
         <div className="alert alert-danger py-2" role="alert" data-note="editor-problem">
           {error}
@@ -638,7 +669,7 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved, onRun = null }
       {tab === 'json' ? (
         <JsonTab text={jsonText} busy={busy} onChange={setJsonText} onApply={applyJson} />
       ) : null}
-      {tab === HOSTS_YML ? <HostsYmlTab id={id} name={name} onSaved={onSaved} /> : null}
+      {tab === HOSTS_YML ? <HostsYmlTab yml={yml} /> : null}
       {tab === 'json' || tab === HOSTS_YML ? null : (
         <EditorTab
           tab={tab}
@@ -651,10 +682,6 @@ const ProvisioningEditor = ({ id, name, document = null, onSaved, onRun = null }
           onRun={onRun}
         />
       )}
-
-      {tab === HOSTS_YML ? null : (
-        <DocumentButtons busy={busy} onStore={store} onDiscard={discard} />
-      )}
     </div>
   );
 };
@@ -663,6 +690,13 @@ ProvisioningEditor.propTypes = {
   id: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   document: PropTypes.object,
+  heading: PropTypes.shape({
+    title: PropTypes.node.isRequired,
+    count: PropTypes.node,
+    badge: PropTypes.node,
+    actions: PropTypes.node,
+  }).isRequired,
+  lead: PropTypes.node,
   onSaved: PropTypes.func.isRequired,
   onRun: PropTypes.func,
 };

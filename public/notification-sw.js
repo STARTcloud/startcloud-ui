@@ -33,6 +33,9 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  if (event.data?.type === 'version') {
+    event.ports[0]?.postMessage({ version: VERSION });
+  }
 });
 
 const kept = url =>

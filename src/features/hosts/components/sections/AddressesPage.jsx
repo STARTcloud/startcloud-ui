@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useStatus } from '../../../../contexts/StatusContext';
-import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
@@ -40,29 +39,32 @@ const readingOf = reads => {
 /**
  * The IP addresses page of a host: one heading, the table's own, the
  * section's title counting the addresses with Create and Refresh in its
- * pane, and under it the one addresses table, a folding glass section
- * over the rows of the monitoring read, `ip-addresses`, and of the
- * managed read, `network-addresses`, each address once, narrowed by the
- * page's search, the management of the managed rows on it and every
- * write through the one `useNetworkingTools` and the task dialog it
- * opens drawn once; the fold kept under `table_prefs_addresses`. Refresh
- * reads every held answer of the host and every drawn series again.
+ * pane, and under it the one addresses table, a glass section over the
+ * rows of the monitoring read, `ip-addresses`, and of the managed read,
+ * `network-addresses`, each address once, narrowed by the page's search,
+ * the management of the managed rows on it and every write through the
+ * one `useNetworkingTools` and the task dialog it opens drawn once. The
+ * table draws its rows once every offered read has answered, so it lays
+ * out once and never shifts as the two reads land apart. Refresh reads
+ * every held answer of the host and every drawn series again.
  */
 const AddressesPage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
   const refreshReadings = useHostReadingsRefresh();
   const refreshSeries = useHostSeriesRefresh();
-  const folds = useFolds(`${context.prefsPrefix}_${section}`);
   const addresses = useHostReading(id, 'ip-addresses');
   const managed = useHostReading(id, 'network-addresses');
   const tools = useNetworkingTools();
+  const reading = readingOf([addresses, managed]);
   const managedList = useMemo(() => listOf(managed.data, 'addresses'), [managed.data]);
   const rows = useMemo(
-    () => joinedAddressRows({ addresses: addressRows(addresses.data), managed: managedList }),
-    [addresses.data, managedList]
+    () =>
+      reading.loaded
+        ? joinedAddressRows({ addresses: addressRows(addresses.data), managed: managedList })
+        : NO_ROWS,
+    [reading.loaded, addresses.data, managedList]
   );
-  const reading = readingOf([addresses, managed]);
   const ctx = { ...context, t, language: i18n.language };
   const search = useHostManageSearch({
     section,
@@ -82,7 +84,6 @@ const AddressesPage = ({ id, server, context, section, onRefresh }) => {
     prefsPrefix: context.prefsPrefix,
     placeholderKey: 'hosts.networking.search',
   });
-  const folded = folds.folded('addresses');
 
   const refresh = () => {
     onRefresh();
@@ -103,11 +104,6 @@ const AddressesPage = ({ id, server, context, section, onRefresh }) => {
           table={search.tables.addresses}
           ctx={ctx}
           filtering={search.filtering}
-          fold={{
-            folded,
-            onFold: () => folds.toggle('addresses'),
-            title: t(folded ? 'host.ipAddressTable.expand' : 'host.ipAddressTable.collapse'),
-          }}
           tools={tools}
           title={sectionTitle(section, server, '', t)}
           count={reading.loaded ? search.tables.addresses.rows.length : null}

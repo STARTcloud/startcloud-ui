@@ -80,7 +80,7 @@ NoticeProvider.propTypes = {
  * options)` with kind `success`, `info`, `warning` or `danger`, a card unless
  * `options.tier` is `banner`; `options.key` replaces an earlier notice with
  * the same key and, with an empty `text`, dismisses it; `options.sticky`
- * keeps a success or info card until it is dismissed; `options.action` is
+ * keeps a card until it is dismissed; `options.action` is
  * `{ label, onClick | to | href, action }`, `action` the control's
  * `data-action` while given. Returns the notice id.
  *

@@ -17,12 +17,15 @@ const RAW_KEY = /\b(?:host|navbar|chrome)\.[a-z][A-Za-z]+\.[a-z][A-Za-z]+/u;
 
 const frameOf = page => page.locator('[data-page="host-section"]');
 
-const MONITORING_PANELS = [
-  'networking-routes',
-  'networking-interfaces',
-  'networking-bandwidth',
-  'networking-charts',
-];
+const MONITORING_PANELS = ['networking-routes', 'networking-interfaces', 'networking-charts'];
+
+const HOLD_MS = 1500;
+
+const layoutOf = table =>
+  table.evaluate(node => ({
+    columns: [...node.querySelectorAll('thead th')].map(th => th.className),
+    rows: [...node.querySelectorAll('tbody tr')].map(tr => tr.textContent),
+  }));
 
 const tableOf = (page, name) => frameOf(page).locator(`[data-panel="networking-${name}"]`);
 
@@ -48,6 +51,15 @@ Given('the stream answers the networking {word} frames', async ({ page }, name) 
       body: fs.readFileSync(path.join(STREAM_DIR, `${name}.sse`), 'utf8'),
     })
   );
+});
+
+Given('the host holds its answer to {string} for {int} ms', async ({ page }, pathname, ms) => {
+  await page.route(`**${pathname}`, async route => {
+    await new Promise(resolve => {
+      setTimeout(resolve, ms);
+    });
+    await route.fallback();
+  });
 });
 
 When("I follow the overview's networking link", async ({ page }) => {
@@ -268,6 +280,35 @@ Then('the {string} table is the first section of the networking page', async ({ 
   );
 });
 
+Then('the {string} section is the first section of the networking page', async ({ page }, name) => {
+  await expect(tableOf(page, name)).toBeVisible();
+  await expect(frameOf(page).locator('[data-panel]').first()).toHaveAttribute(
+    'data-panel',
+    `networking-${name}`
+  );
+});
+
+Then('the networking page draws no table', async ({ page }) => {
+  await expect(frameOf(page).locator('.section-heading').first()).toBeVisible();
+  await expect(frameOf(page).locator('table')).toHaveCount(0);
+});
+
+Then('the networking page draws no fold', async ({ page }) => {
+  await expect(frameOf(page).locator('.section-heading').first()).toBeVisible();
+  await expect(frameOf(page).locator('[data-tool="fold"]')).toHaveCount(0);
+  await expect(frameOf(page).locator('[data-folded]')).toHaveCount(0);
+});
+
+Then(
+  'the {string} table of the networking page holds its rows, their order and its columns',
+  async ({ page }, name) => {
+    const table = tableOf(page, name).locator('table');
+    const before = await layoutOf(table);
+    await page.waitForTimeout(HOLD_MS);
+    expect(await layoutOf(table)).toEqual(before);
+  }
+);
+
 Then('the heading of the networking page counts {int}', async ({ page }, count) => {
   await expect(frameOf(page).locator('.section-heading').first()).toContainText(`· ${count}`);
 });
@@ -297,6 +338,25 @@ Then('the first interface chart is {string}', async ({ page }, name) => {
 
 Then('the networking page draws {int} interface charts', async ({ page }, count) => {
   await expect(interfaceCharts(page)).toHaveCount(count);
+});
+
+Then(
+  'the heading of the networking page carries the selects {string} and no chevron',
+  async ({ page }, names) => {
+    const heading = frameOf(page).locator('.section-heading');
+    await expect(heading.locator('select').first()).toBeVisible();
+    const drawn = await heading
+      .locator('select')
+      .evaluateAll(nodes => nodes.map(node => node.getAttribute('name')));
+    expect(drawn.join(',')).toBe(names);
+    await expect(heading.locator('[data-tool="fold"]')).toHaveCount(0);
+  }
+);
+
+Then('the networking page draws {int} chart cards under its heading', async ({ page }, count) => {
+  const charts = frameOf(page).locator('.section-heading ~ [data-panel="networking-charts"]');
+  await expect(charts).toHaveCount(1);
+  await expect(charts.locator('[data-chart] .card')).toHaveCount(count);
 });
 
 Then("the overview's networking link opens {string}", async ({ page }, href) => {

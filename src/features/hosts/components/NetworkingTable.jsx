@@ -66,10 +66,10 @@ TableTitle.propTypes = {
 };
 
 /**
- * One table of the networking page, a glass section that folds: the
- * heading with the table's title, the count where the section
- * gives one, its actions, the management sections' Create, in the
- * action-pane slot, and the chevron that folds it, the fold kept in the
+ * One table of the networking page, a glass section: the heading with
+ * the table's title, the count where the section gives one, its actions,
+ * the management sections' Create, in the action-pane slot, and, where
+ * the page hands `fold`, the chevron that folds it, the fold kept in the
  * page's preferences, and under it, while it is not folded, the one
  * `SubTable` over the rows the page's one search binding left, in the
  * table's own sort, hidden columns and widths, `RowActions` drawn on
@@ -91,7 +91,7 @@ const NetworkingTable = ({
   emptyKey,
   reading,
   filtering,
-  fold,
+  fold = null,
   resetTitle = '',
   count = null,
   actions = null,
@@ -110,17 +110,18 @@ const NetworkingTable = ({
     />
   );
   const mark = section ? { 'data-section': panel } : { 'data-panel': panel };
+  const folded = Boolean(fold?.folded);
   return (
-    <div {...mark} data-state={state} data-folded={fold.folded} className="mb-3">
+    <div {...mark} data-state={state} data-folded={fold ? folded : undefined} className="mb-3">
       <SectionHeading
         title={heading}
         count={count}
         actions={actions}
-        folded={fold.folded}
-        onFold={fold.onFold}
-        foldTitle={fold.title}
+        folded={folded}
+        onFold={fold ? fold.onFold : null}
+        foldTitle={fold ? fold.title : ''}
       />
-      {fold.folded ? null : (
+      {folded ? null : (
         <SubTable
           columns={columns}
           rows={table.rows}
@@ -165,7 +166,7 @@ NetworkingTable.propTypes = {
     folded: PropTypes.bool.isRequired,
     onFold: PropTypes.func.isRequired,
     title: PropTypes.string.isRequired,
-  }).isRequired,
+  }),
   resetTitle: PropTypes.string,
   count: PropTypes.node,
   actions: PropTypes.node,

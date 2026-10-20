@@ -89,6 +89,10 @@ When('I press the action {string} of the dataset row {string}', async ({ page },
   await treeRowOf(page, name).locator(`[data-action="${action}"]`).click();
 });
 
+When('I tick the dataset row {string}', async ({ page }, name) => {
+  await treeRowOf(page, name).locator('input[type="checkbox"]').check();
+});
+
 When('I pick {string} in the storage dialog select {string}', async ({ page }, value, id) => {
   await fieldOf(page, id).selectOption(value);
 });

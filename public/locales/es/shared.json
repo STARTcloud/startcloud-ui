@@ -283,9 +283,14 @@
   },
   "pwa": {
     "newVersion": "Hay una nueva versión de {{app}} disponible.",
+    "newVersionWith": "Hay disponible una nueva versión de {{app}}, {{version}}",
     "reload": "Recargar",
     "offline": "{{app}} no responde. Esta es la copia guardada en este dispositivo: no se puede cambiar nada y lo que ves puede estar desactualizado.",
     "launchAgent": "Iniciar el Agente de Hyperweaver"
+  },
+  "update": {
+    "overview": "Resumen",
+    "changelog": "Registro de cambios"
   },
   "status": {
     "unreachable": "No se pudo contactar con el servidor detrás de esta página. Comprueba que está en marcha y reintenta.",
@@ -3226,6 +3231,7 @@
     "confirm": {
       "title": "Confirmar Acción",
       "message": "Por favor escribe \"{{keyword}}\" para confirmar.",
+      "plainMessage": "¿Seguro que quieres continuar?",
       "placeholder": "Escribe '{{keyword}}' para confirmar",
       "typeToConfirm": "Por favor escribe '{{keyword}}' para confirmar.",
       "keyword": "eliminar",
@@ -3234,6 +3240,7 @@
       "restart": {
         "title": "Reiniciar el servidor",
         "message": "Las peticiones fallan mientras el servidor se reinicia. Escribe \"{{keyword}}\" para confirmar el reinicio.",
+        "plainMessage": "¿Reiniciar ahora? No estará disponible un momento mientras se reinicia.",
         "keyword": "reiniciar",
         "confirm": "Reiniciar"
       }
@@ -3493,9 +3500,7 @@
       "noServersHeading": "Sin servidores",
       "noServersBody": "Aún no has agregado ningún servidor. Agrega un servidor para comenzar a monitorear las interfaces de red.",
       "addServer": "Agregar servidor",
-      "topologyHeading": "Topología de red",
-      "show": "Mostrar",
-      "hide": "Ocultar"
+      "topologyHeading": "Topología de red"
     },
     "hostStorage": {
       "titlePage": "Monitoreo de almacenamiento - Hyperweaver",
@@ -3527,9 +3532,6 @@
       "addServer": "Agregar servidor",
       "noMachinesCapabilityPre": "La administración de {{resource}} aún no está disponible en este host — el agente no anuncia la",
       "noMachinesCapabilityPost": "capacidad.",
-      "total": "Total",
-      "running": "En ejecución",
-      "stopped": "Detenida",
       "consoleHeading": "Consola",
       "noConsoleAvailable": "Aún no hay consola disponible en este host — el agente no anuncia ni consola VNC ni zlogin.",
       "detailsUnavailable": "Los detalles de {{resource}} aparecerán aquí cuando estén disponibles.",
@@ -4507,6 +4509,11 @@
       "statusNo": "No",
       "never": "Nunca",
       "deleteKeyTableButton": "Eliminar",
+      "deleteSelected": "Eliminar seleccionadas",
+      "deletedMany_one": "1 clave eliminada.",
+      "deletedMany_other": "{{count}} claves eliminadas.",
+      "deleteManyMessage_one": "¿Eliminar la clave de API seleccionada? Todo lo que inicie sesión con ella será rechazado.",
+      "deleteManyMessage_other": "¿Eliminar las {{count}} claves de API seleccionadas? Todo lo que inicie sesión con ellas será rechazado.",
       "search": "Buscar claves de API"
     },
     "applicationsTab": {
@@ -4555,7 +4562,7 @@
       "updateAgentMessage": "¿Actualizar el agente de {{currentVersion}} a {{latestVersion}}? El instalador se descarga y se verifica con hash, luego el agente EXITS para que pueda tomar el control.",
       "updateNowButton": "Actualizar ahora",
       "updateQueuedFallback": "Actualización en cola",
-      "updateQueuedDetail": "{{message}} (tarea {{taskId}}, destino {{targetVersion}})",
+      "updateQueuedDetail": "{{message}} Versión objetivo {{targetVersion}}.",
       "failedQueueUpdate": "Fallo al poner en cola la actualización: {{message}}",
       "restoreBackupTitle": "Restaurar respaldo",
       "restoreBackupMessage": "¿Seguro que deseas restaurar la configuración desde {{filename}}? Esto sobrescribirá la configuración actual.",
@@ -5936,44 +5943,20 @@
       "noData": "No hay estadísticas de ARC de ZFS disponibles. Es posible que el backend aún esté recopilando datos."
     },
     "bandwidthCharts": {
-      "title": "Gráficos de Ancho de Banda en Tiempo Real",
       "sortTooltip": "Ordenar gráficos individuales por",
       "sortBandwidth": "Mayor Ancho de Banda",
       "sortName": "Nombre de Interfaz",
       "sortRx": "Ancho de Banda RX",
       "sortTx": "Ancho de Banda TX",
-      "expand": "Expandir sección",
-      "collapse": "Contraer sección",
-      "allInterfacesSummary": "Resumen de Todas las Interfaces",
       "expandChart": "Expandir gráfico a tamaño completo",
       "rxBandwidth": "Ancho de Banda RX (Descarga)",
       "bandwidthMbps": "Ancho de Banda (Mbps)",
       "txBandwidth": "Ancho de Banda TX (Subida)",
       "totalBandwidth": "Ancho de Banda Total (Combinado)",
-      "individualCharts": "Gráficos de Interfaces Individuales",
       "noData": "Aún no hay datos de gráfico disponibles. Los datos aparecerán a medida que el sistema recopile mediciones de ancho de banda."
     },
     "bandwidthTable": {
-      "title": "Ancho de Banda de Red en Tiempo Real",
-      "resetSort": "Clic para restablecer el orden predeterminado",
-      "expand": "Expandir sección",
-      "collapse": "Contraer sección",
-      "sortByInterface": "Clic para ordenar por nombre de interfaz",
-      "interface": "Interfaz",
-      "sortByTotal": "Clic para ordenar por ancho de banda total",
-      "totalBandwidth": "Ancho de Banda Total",
-      "sortByRx": "Clic para ordenar por tasa RX",
-      "rxRate": "Tasa RX",
-      "sortByTx": "Clic para ordenar por tasa TX",
-      "txRate": "Tasa TX",
-      "sortByInterval": "Clic para ordenar por intervalo de medición",
-      "interval": "Intervalo",
-      "sortByRxPackets": "Clic para ordenar por cantidad de paquetes RX",
-      "rxPackets": "Paquetes RX",
-      "sortByTxPackets": "Clic para ordenar por cantidad de paquetes TX",
-      "txPackets": "Paquetes TX",
-      "notAvailable": "N/D",
-      "noData": "No hay datos de ancho de banda en tiempo real disponibles. Es posible que el backend aún esté recopilando mediciones delta."
+      "title": "Ancho de Banda de Red en Tiempo Real"
     },
     "etherstubDetailsModal": {
       "title": "Detalles del Etherstub",
@@ -6104,8 +6087,6 @@
     },
     "ipAddressTable": {
       "title": "Direcciones IP",
-      "expand": "Expandir sección",
-      "collapse": "Contraer sección",
       "interface": "Interfaz",
       "ipAddress": "Dirección IP",
       "netmaskPrefix": "Máscara de Red/Prefijo",
@@ -7250,7 +7231,7 @@
     "zfsDatasetsPanel": {
       "datasetsHeading": "Datasets",
       "destroySelectedLabel": "Destruir snapshots seleccionados",
-      "destroySelectedCount": "Destruir snapshots seleccionados ({{count}})",
+      "destroySelected": "Destruir seleccionadas",
       "expandAllTitle": "Expandir todos los datasets",
       "expandAll": "Expandir",
       "collapseAllTitle": "Contraer hasta los pools",
@@ -7271,7 +7252,6 @@
       "bulkDestroyConfirm": "Destruir {{count}}",
       "refresh": "Actualizar",
       "createDataset": "Crear dataset…",
-      "destroySelectedTitle": "Destruir cada snapshot marcado",
       "hideTypeTitle": "Ocultar {{label}}",
       "showTypeTitle": "Mostrar {{label}}",
       "errorLoadDatasets": "Error al cargar datasets: {{message}}",
@@ -8480,8 +8460,6 @@
     },
     "interfacesTable": {
       "resetSortTitle": "Haz clic para restablecer el orden predeterminado",
-      "expandSection": "Expandir sección",
-      "collapseSection": "Contraer sección",
       "sortByLink": "Haz clic para ordenar por nombre de interfaz",
       "link": "Enlace",
       "sortByClass": "Haz clic para ordenar por clase de interfaz",
@@ -8562,6 +8540,7 @@
       "saved": "Guardado.",
       "dnsResolver": "Resolvedor de DNS",
       "editRawFile": "Editar archivo sin procesar",
+      "editFields": "Editar campos",
       "refresh": "Actualizar",
       "save": "Guardar",
       "backupNote": "Antes de cada guardado se escribe un respaldo con marca de tiempo del archivo actual.",
@@ -8613,6 +8592,7 @@
       "saved": "Guardado.",
       "hostsFile": "Archivo hosts",
       "editRawFile": "Editar archivo sin procesar",
+      "editFields": "Editar campos",
       "refresh": "Actualizar",
       "save": "Guardar",
       "backupNote": "Antes de cada guardado se escribe un respaldo con marca de tiempo del archivo actual.",
@@ -9139,6 +9119,8 @@
       "newHostonlyIf": "Nueva interfaz solo-host",
       "newHostonlyNet": "Nueva red solo-host",
       "newNat": "Nueva red NAT",
+      "newSpace": "Nuevo espacio",
+      "newSpaceOptions": "Más tipos de espacio",
       "createBtn": "Crear",
       "save": "Guardar",
       "edit": "Editar",
@@ -10420,7 +10402,6 @@
       "tierKeepLabel": "Conservar {{tier}}",
       "quiesceLabel": "Quiesce (fsfreeze de qga)",
       "loadFailed": "Falló la carga de instantáneas: {{message}}",
-      "snapshotsHeading": "Instantáneas ({{count}})",
       "noSnapshotsYet": "Aún no hay instantáneas.",
       "currentStateTooltip": "El estado actual de la máquina deriva de esta instantánea",
       "currentBadge": "Actual",
@@ -10689,7 +10670,10 @@
         "nic_type": "Tipo de NIC"
       },
       "addNetwork": "Agregar red",
-      "removeNetwork": "Quitar red"
+      "removeNetwork": "Quitar red",
+      "reorder": "Arrastra para reordenar",
+      "provisioning": "Aprovisionamiento",
+      "provisioningInterface": "Red de aprovisionamiento"
     },
     "vnicLinkPropsEditor": {
       "antiSpoofGuards": "— protecciones antisuplantación",
@@ -10698,7 +10682,6 @@
       "loadFailed": "GET network/vnics/{{vnic}}/properties falló ({{status}}): {{message}}",
       "nothingChanged": "Nada cambió — edita una propiedad primero.",
       "linkPropertiesQueued": "Propiedades de enlace en cola",
-      "taskSuffix": " (tarea {{taskId}})",
       "summary": "Propiedades de enlace (dladm) — suplantación, ancho de banda, MTU",
       "readingLink": "Leyendo el enlace…",
       "applyLinkProperties": "Aplicar propiedades de enlace",
@@ -10915,6 +10898,8 @@
       "pendingNoticeText_plural": "{{base}} — {{count}} grupos de cambios esperan el próximo ciclo de encendido.",
       "pendingChangeGroups": "grupo de cambios en espera del próximo ciclo de encendido: {{list}}",
       "pendingChangeGroups_plural": "grupos de cambios en espera del próximo ciclo de encendido: {{list}}",
+      "pendingCount_one": "{{count}} grupo de cambios pendiente",
+      "pendingCount_other": "{{count}} grupos de cambios pendientes",
       "applyPendingNowTitle": "Aplicar el conjunto pendiente ahora — la máquina está apagada",
       "applyNow": "Aplicar ahora",
       "discardPendingTitle": "Descartar todos los cambios pendientes",
@@ -10934,7 +10919,6 @@
       "takeEffectOnStart": " — entran en vigor cuando inicie",
       "vboxJsonInvalid": "La sección de passthrough de VBox no es JSON válido.",
       "complexCpuTopologyRequired": "La topología de CPU compleja necesita zócalos, núcleos e hilos.",
-      "nothingChanged": "Nada cambió.",
       "pendingChangesCleared": "Cambios pendientes de {{machineName}} descartados.",
       "applyPendingFailed": "Falló la aplicación de los cambios pendientes.",
       "pendingChangesApplied": "Cambios pendientes aplicados a {{machineName}}",
@@ -11239,9 +11223,6 @@
       "hypervisorPassthroughVbox": "Passthrough del hipervisor (VirtualBox)",
       "vboxSectionRawJsonHint": "sección, JSON crudo — pasado tal cual, para casos exóticos que las secciones de arriba no cubren (teleporter, cpuid-set, tracing, guest-debug, pci-attach)",
       "provisioner": "Provisionador",
-      "noProvisioning": "Ninguno — sin aprovisionamiento",
-      "invalidSuffix": " (inválido)",
-      "version": "Versión",
       "syncMethod": "Método de sincronización",
       "removeProvisioningNetwork": "Quitar red de aprovisionamiento después de completar",
       "removeTransportOption": "quitar — elimina la NIC de transporte después del aprovisionamiento",
@@ -11326,7 +11307,16 @@
       "editParts": "Editar partes",
       "noDefaultDomain": "Este host no tiene un dominio predeterminado. Escribe uno, o define el dominio predeterminado del host en su configuración.",
       "setDefaultDomain": "Definir el dominio predeterminado del host",
-      "useProvisioner": "Usar un aprovisionador",
+      "domainSource": {
+        "preference": "Navegador",
+        "user": "Tu predeterminado",
+        "organization": "Organización",
+        "agent": "Agente",
+        "provisioner": "Aprovisionador"
+      },
+      "pickProvisioner": "Elegir aprovisionador",
+      "changeProvisioner": "Cambiar aprovisionador",
+      "clearProvisioner": "Quitar aprovisionador",
       "useProvisionerHint": "Sin un aprovisionador no se dibuja el paso Aprovisionamiento.",
       "mount": "Montaje",
       "filesystem": "Sistema de archivos",
@@ -11342,6 +11332,12 @@
       "catalogVersionsTitle": "Versiones de {{family}} en el catálogo",
       "catalogVersionsNone": "Ningún catálogo de este host lista {{family}}",
       "pickFamilyOnGeneral": "Elige un aprovisionador en el paso General."
+    },
+    "provisionerPick": {
+      "title": "Elegir aprovisionador",
+      "pick": "Elegir",
+      "pickVersion": "Elegir {{version}}",
+      "none": "Este host no tiene ningún aprovisionador."
     },
     "resources": {
       "hint": "Controles de recursos de zonecfg — «Establecer» reemplaza el recurso completo, «Eliminar» lo borra, «Sin cambios» no toca nada. Se aplica en el próximo arranque / ciclo de energía como el resto de cambios de infraestructura.",
@@ -11567,7 +11563,13 @@
       "pickRow": "Elegir",
       "pickFileTitle": "{{role}} · {{kind}}",
       "searchFilesPlaceholder": "Buscar archivos",
-      "runRoleTitle": "Ejecutar este rol"
+      "runRoleTitle": "Ejecutar este rol",
+      "enableSelected": "Activar seleccionados",
+      "disableSelected": "Desactivar seleccionados",
+      "removeSelected": "Quitar seleccionados",
+      "moveTop": "Mover al principio",
+      "moveBottom": "Mover al final",
+      "requiredRefused": "{{roles}} son obligatorios para el aprovisionador y se conservan."
     },
     "provisioningVarRows": {
       "notSetOption": "sin definir",
@@ -11612,7 +11614,7 @@
       "addVariable": "Agregar variable",
       "rawJsonAriaLabel": "JSON del documento de aprovisionamiento",
       "applyJsonToForm": "Aplicar JSON al formulario",
-      "storeDocument": "Guardar documento",
+      "storeDocument": "Guardar",
       "discardEdits": "Descartar cambios",
       "documentStored": "Documento de aprovisionamiento guardado"
     },
@@ -11664,10 +11666,8 @@
       "managerOnly": "El documento de la máquina es solo para gestores: contiene variables de aprovisionamiento y secretos que tu rol de organización no puede leer."
     },
     "machineProvisioning": {
-      "heading": "Aprovisionamiento",
       "working": "Procesando…",
       "provisionerLabel": "Aprovisionador",
-      "statusLabel": "Estado",
       "unknown": "desconocido",
       "lastProvisioned": "último: {{date}}",
       "welcomePageLabel": "Página de bienvenida",
@@ -11680,8 +11680,7 @@
       "confirmAndProvision": "Confirmar y aprovisionar",
       "nothingToRun": "Nada para ejecutar — omitido por la directiva run: {{skipped}}",
       "queued": "En cola",
-      "taskWithSteps": "(tarea {{id}}, {{steps}} pasos)",
-      "taskOnly": "(tarea {{id}})",
+      "taskWithSteps": "Su cadena ejecuta {{steps}} pasos.",
       "skippedSuffix": "— omitido: {{skipped}}"
     },
     "provisionerFieldDsl": {
@@ -12166,7 +12165,6 @@
       "history": "Historial",
       "export": "Exportar",
       "convertDownload": "Convertir y descargar",
-      "expires": "Expira el {{date}}",
       "template": "Plantilla",
       "related": "Relacionados",
       "issuer": "Emisor",
@@ -12188,7 +12186,15 @@
       "count_one": "{{count}} registro",
       "count_other": "{{count}} registros",
       "pull": "Traer a la bóveda",
-      "pullAgain": "Traer de nuevo"
+      "pullAgain": "Traer de nuevo",
+      "pullSelected": "Traer seleccionadas a la bóveda",
+      "pulledMany_one": "1 fila traída a la bóveda.",
+      "pulledMany_other": "{{count}} filas traídas a la bóveda.",
+      "removeSelected": "Quitar seleccionadas",
+      "removedMany_one": "1 fila quitada.",
+      "removedMany_other": "{{count}} filas quitadas.",
+      "removeManyMessage_one": "¿Quitar la fila seleccionada del almacén? Una copia traída a una bóveda se conserva.",
+      "removeManyMessage_other": "¿Quitar las {{count}} filas seleccionadas del almacén? Una copia traída a una bóveda se conserva."
     },
     "sync": {
       "destination": "Sincronizar con {{name}}",
@@ -12423,11 +12429,14 @@
       "sign": "Firmar",
       "saved": "guardado",
       "keySource": "Clave",
-      "keyMode": {
-        "vault": "Usar una clave de la bóveda"
-      },
+      "keyGenerate": "Generar una clave",
+      "keyFromVault": "Elegir una clave de la bóveda",
+      "keyFromFile": "Cargar un archivo de clave",
+      "keyChange": "Cambiar clave",
+      "keyFile": "Archivo de clave",
+      "withNewKey": "con una clave {{alg}} nueva",
+      "savedWithKey": "Guardada con su clave",
       "vaultKey": "Clave de la bóveda",
-      "pickKey": "Elige una clave",
       "noVaultKey": "La bóveda no contiene ninguna clave con su mitad privada.",
       "pasteInstead": "Pegar en su lugar",
       "template": "Plantilla",
@@ -12438,8 +12447,10 @@
       "loadTemplate": "Cargar",
       "saveAsTemplate": "Guardar como plantilla",
       "days": "Válido durante (días)",
-      "authority": "Autoridad",
-      "pathLen": "Longitud de ruta",
+      "authority": "Autoridad certificadora",
+      "authorityHint": "Permite que este certificado firme otros certificados. Apagado crea un certificado de entidad final para un servidor, un cliente o una persona.",
+      "pathLen": "Profundidad de firma",
+      "pathLenHint": "Cuántas autoridades pueden colgar de esta: 0 significa que solo firma certificados de entidad final, 1 una autoridad intermedia debajo, y así sucesivamente.",
       "pathLenAny": "cualquiera",
       "request": "Solicitud",
       "signingAuthority": "Autoridad firmante",

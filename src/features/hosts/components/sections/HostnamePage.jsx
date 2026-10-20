@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import { useStatus } from '../../../../contexts/StatusContext';
-import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
 import { useNetworkingTools } from '../../hooks/useNetworkingTools';
@@ -12,12 +11,6 @@ import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
 import TaskDialog from '../TaskDialog';
 
-const foldOf = (folds, key) => ({
-  folded: folds.folded(key),
-  onFold: () => folds.toggle(key),
-  title: '',
-});
-
 /**
  * The Hostname page of a host: one heading, the hostname section's own,
  * the section's title with the host's current hostname after it and
@@ -25,14 +18,12 @@ const foldOf = (folds, key) => ({
  * hostname straight on the page's ground, drawn while the host's own row
  * offers its read, every write through the one `useNetworkingTools` and
  * the task dialog it opens drawn once; the read the copy the hosts
- * feature's context holds and the fold kept under the page's
- * `table_prefs_hostname`.
+ * feature's context holds.
  */
 const HostnamePage = ({ id, server, context, section, onRefresh }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const refreshReadings = useHostReadingsRefresh();
-  const folds = useFolds(`${context.prefsPrefix}_${section}`);
   const hostname = useHostReading(id, 'hostname');
   const tools = useNetworkingTools();
   const role = context.user?.role;
@@ -50,7 +41,6 @@ const HostnamePage = ({ id, server, context, section, onRefresh }) => {
           id={id}
           role={role}
           reading={hostname}
-          fold={foldOf(folds, 'manage-hostname')}
           tools={tools}
           title={sectionTitle(section, server, '', t)}
           count={current ? <code>{current}</code> : null}

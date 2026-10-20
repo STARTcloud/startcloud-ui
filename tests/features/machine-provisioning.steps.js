@@ -28,6 +28,20 @@ When('I add the custom role {string}', async ({ page }, name) => {
   await editorOf(page).locator('[data-action="role-add-custom"]').click();
 });
 
+const pickOf = (page, name) => rolesListOf(page).locator(`[data-role-pick="${name}"]`);
+
+When('I tick the role {string}', async ({ page }, name) => {
+  await pickOf(page, name).click();
+});
+
+When('I shift-click the role {string}', async ({ page }, name) => {
+  await pickOf(page, name).click({ modifiers: ['Shift'] });
+});
+
+Then('{int} roles are picked', async ({ page }, count) => {
+  await expect(rolesListOf(page).locator('[data-role-pick]:checked')).toHaveCount(count);
+});
+
 When('I press the run glyph of the role {string}', async ({ page }, name) => {
   await runGlyphOf(page, name).click();
 });
@@ -112,7 +126,8 @@ Then('the Hosts.yml editor reads {string}', async ({ page }, text) => {
 });
 
 Then('the Hosts.yml tab draws no {string} action', async ({ page }, action) => {
-  await expect(hostsYmlOf(page).locator('[data-action="hosts-yml-save"]')).toBeVisible();
+  await expect(hostsYmlOf(page)).toBeVisible();
+  await expect(editorOf(page).locator('[data-action="hosts-yml-save"]')).toBeVisible();
   await expect(editorOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);
 });
 

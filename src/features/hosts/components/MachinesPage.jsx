@@ -5,8 +5,9 @@ import { FaFileImport, FaPlus } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
 import EmptyState from '../../../components/common/EmptyState';
-import PageHeader from '../../../components/common/PageHeader';
+import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable, { hasAny } from '../../../components/common/SubTable';
+import ViewToggle from '../../../components/common/ViewToggle';
 import { useStatus } from '../../../contexts/StatusContext';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { usePageName } from '../../../hooks/usePageName';
@@ -23,7 +24,6 @@ import { hostHasFeature } from '../utils/capabilities';
 import { hostLabel, isServerRole } from '../utils/hosts';
 import { createRouteOf, hostCreates } from '../utils/machineCreate';
 import {
-  machineCounts,
   machineRoute,
   matchesMachine,
   nounKeyOf,
@@ -37,6 +37,7 @@ import {
 import { hostImports } from '../utils/machineTools';
 
 import HostNav from './HostNav';
+import MachineCards from './MachineCards';
 import MachineImportDialog from './MachineImportDialog';
 import MachineRowActions from './MachineRowActions';
 import MachineToolDialogs from './MachineToolDialogs';
@@ -49,11 +50,7 @@ const NO_TOOL = { tool: '', name: '' };
 
 const IMPORT_NOTES = ['machine.importMachineModal.discoveryNote'];
 
-const COUNTS = [
-  { key: 'total', tone: 'info', labelKey: 'pages.machines.total' },
-  { key: 'running', tone: 'success', labelKey: 'pages.machines.running' },
-  { key: 'stopped', tone: 'danger', labelKey: 'pages.machines.stopped' },
-];
+const VIEWS = ['table', 'cards'];
 
 const FLAGS = [
   { member: 'is_orphaned', tone: 'warning', labelKey: 'machine.machineListPanel.orphanedBadge' },
@@ -253,24 +250,6 @@ const labelOf = ({ status, server, id, stats }) => {
   return stats?.hostname || String(id);
 };
 
-const Counts = ({ counts }) => {
-  const { t } = useTranslation();
-  return COUNTS.map(({ key, tone, labelKey }) => (
-    <span key={key} className="d-inline-flex" data-count={key} data-number={counts[key]}>
-      <span className="badge text-bg-secondary">{t(labelKey)}</span>
-      <span className={`badge text-bg-${tone}`}>{counts[key]}</span>
-    </span>
-  ));
-};
-
-Counts.propTypes = {
-  counts: PropTypes.shape({
-    total: PropTypes.number.isRequired,
-    running: PropTypes.number.isRequired,
-    stopped: PropTypes.number.isRequired,
-  }).isRequired,
-};
-
 const ImportButton = ({ onImport }) => {
   const { t } = useTranslation();
   return (
@@ -327,12 +306,14 @@ NotOffered.propTypes = {
 /**
  * The machines of one host at `/hosts/{id}/machines`, the body of the
  * host's column, `HostNav`, naming the host's label and its noun for the
- * crumbs through `usePageName`: the heading names the machines by the noun the
- * host's hypervisors fix, the host under it and the counts of all,
- * running and stopped as its chips; under it one `SubTable` over the
- * rows of `useHostMachines`, narrowed by the navbar binding of
- * `useDetailSearch` under `table_prefs_machines`, its Actions column
- * `MachineRowActions`. A row's action is one request and one notice,
+ * crumbs through `usePageName`: the one section heading names the
+ * machines by the noun the host's hypervisors fix, the count of the rows
+ * the search leaves as its muted text, New, Import, Refresh and the view
+ * toggle in its pane; under it one `SubTable` over the rows of
+ * `useHostMachines`, its Actions column `MachineRowActions`, or one
+ * `MachineCards` card a machine, narrowed by the navbar binding of
+ * `useDetailSearch` with the view kept under `table_prefs_machines`. A
+ * row's action is one request and one notice,
  * the host's stats, its machine rows and the machine's detail read again
  * after a success. Refresh reads the list of servers, the host's stats
  * and its machine rows again. New opens the create wizard while
@@ -378,6 +359,7 @@ const MachinesPage = ({ id, context }) => {
     ctx,
     prefsKey: `${context.prefsPrefix}_machines`,
     filterGroups: FILTER_GROUPS,
+    views: VIEWS,
     defaultSort: DEFAULT_SORT,
   });
   const label = labelOf({ status, server, id, stats });
@@ -440,16 +422,49 @@ const MachinesPage = ({ id, context }) => {
         <ImportButton onImport={() => setImporting(true)} />
       ) : null}
       <RefreshButton onRefresh={refresh} />
+      {offered ? <ViewToggle view={search.view} onChange={search.setView} /> : null}
     </>
   );
 
+  const emptyText = search.filtering
+    ? t('pages.noMatches')
+    : t('machine.machineListPanel.noneOnHost', { plural: plural.toLowerCase() });
+
+  const list =
+    search.view === 'cards' ? (
+      <MachineCards id={id} rows={search.rows} emptyText={emptyText} />
+    ) : (
+      <SubTable
+        columns={columns}
+        rows={search.rows}
+        rowKey={row => row.name}
+        rowProp="machine"
+        RowActions={MachineRowActions}
+        actionsProps={{
+          id,
+          server,
+          role: context.user?.role,
+          noun: ctx.noun,
+          busy,
+          onAction: act,
+          onTool: (machine, tool) => setOpen({ tool, name: machine.name }),
+        }}
+        sort={search.sort}
+        onSort={search.setSort}
+        hiddenColumns={search.hiddenColumns}
+        widths={search.widths}
+        onResize={search.setColumnWidth}
+        ctx={ctx}
+        emptyText={emptyText}
+      />
+    );
+
   return (
     <HostNav id={id}>
-      <div className="list row" data-page="machines">
-        <PageHeader
+      <div className="list row" data-page="machines" data-view={search.view}>
+        <SectionHeading
           title={plural}
-          subtitle={label}
-          chips={offered ? <Counts counts={machineCounts(machines)} /> : null}
+          count={offered ? search.rows.length : null}
           actions={actions}
         />
         {failed ? (
@@ -457,37 +472,7 @@ const MachinesPage = ({ id, context }) => {
             {t('machine.machineListPanel.loadFailed', { plural: plural.toLowerCase(), message })}
           </div>
         ) : null}
-        {offered ? (
-          <SubTable
-            columns={columns}
-            rows={search.rows}
-            rowKey={row => row.name}
-            rowProp="machine"
-            RowActions={MachineRowActions}
-            actionsProps={{
-              id,
-              server,
-              role: context.user?.role,
-              noun: ctx.noun,
-              busy,
-              onAction: act,
-              onTool: (machine, tool) => setOpen({ tool, name: machine.name }),
-            }}
-            sort={search.sort}
-            onSort={search.setSort}
-            hiddenColumns={search.hiddenColumns}
-            widths={search.widths}
-            onResize={search.setColumnWidth}
-            ctx={ctx}
-            emptyText={
-              search.filtering
-                ? t('pages.noMatches')
-                : t('machine.machineListPanel.noneOnHost', { plural: plural.toLowerCase() })
-            }
-          />
-        ) : (
-          <EmptyState title={<NotOffered resource={resource} />} />
-        )}
+        {offered ? list : <EmptyState title={<NotOffered resource={resource} />} />}
         <MachineToolDialogs
           status={status}
           tool={open.tool}

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaFloppyDisk, FaPlus, FaXmark } from 'react-icons/fa6';
+import { FaCode, FaFloppyDisk, FaPlus, FaTableList, FaXmark } from 'react-icons/fa6';
 
 import SectionHeading from '../../../components/common/SectionHeading';
 import SubTable from '../../../components/common/SubTable';
@@ -118,20 +118,22 @@ const draftOf = data => ({
 });
 
 /**
- * The hosts file section of the Hosts file page, a folding glass section
- * whose heading is the page's: `title`, the file's path as code after it,
- * and in its pane, for a role that controls hosts, the raw switch and
- * Save, then the page's `actions`, Refresh; under it, straight on the
- * page's ground, the file's entries as rows of the one `SubTable`, for a
- * role that controls hosts each an address and its hostnames typed in
- * place with a remove, and Add entry under them, or the raw file behind
- * the switch, the raw winning on the wire, Save sending `PUT system/hosts`
- * with `hostsBody` through the page's one `useNetworkingTools`, the
- * notice carrying the backup the agent wrote, and the held answer read
- * again; every other role reads the entries as plain rows. The rows
- * follow the held answer until a person types, and again after a save.
+ * The hosts file section of the Hosts file page, a glass section whose
+ * heading is the page's: `title`, the file's path as code after it, and
+ * in its pane, for a role that controls hosts, the raw-mode button, which
+ * reads Edit raw file while the entries are drawn and Edit fields while
+ * the raw file is, and Save, then the page's `actions`, Refresh; under
+ * it, straight on the page's ground, the file's entries as rows of the
+ * one `SubTable`, for a role that controls hosts each an address and its
+ * hostnames typed in place with a remove, and Add entry under them, or
+ * the raw file filling the height the page region leaves it, the raw
+ * winning on the wire, Save sending `PUT system/hosts` with `hostsBody`
+ * through the page's one `useNetworkingTools`, the notice carrying the
+ * backup the agent wrote, and the held answer read again; every other
+ * role reads the entries as plain rows. The rows follow the held answer
+ * until a person types, and again after a save.
  */
-const HostsFileEditor = ({ id, role, reading, ctx, fold, tools, title, actions = null }) => {
+const HostsFileEditor = ({ id, role, reading, ctx, tools, title, actions = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [draft, setDraft] = useState(null);
@@ -139,6 +141,7 @@ const HostsFileEditor = ({ id, role, reading, ctx, fold, tools, title, actions =
   const form = draft || draftOf(reading.data);
   const change = (field, value) => setDraft({ ...form, [field]: value });
   const path = reading.data?.path || '';
+  const raw = writable && form.rawMode;
 
   const setRow = (key, member, value) =>
     change(
@@ -173,22 +176,20 @@ const HostsFileEditor = ({ id, role, reading, ctx, fold, tools, title, actions =
     numberOf: key => form.rows.findIndex(row => row.key === key) + 1,
   };
 
+  const ModeGlyph = form.rawMode ? FaTableList : FaCode;
+
   const writes = (
     <>
-      <div className="form-check form-switch mb-0">
-        <input
-          id="hosts-raw-mode"
-          className="form-check-input"
-          type="checkbox"
-          role="switch"
-          checked={form.rawMode}
-          onChange={event => change('rawMode', event.target.checked)}
-          disabled={tools.busy}
-        />
-        <label className="form-check-label" htmlFor="hosts-raw-mode">
-          {t('host.hostsFileEditor.editRawFile')}
-        </label>
-      </div>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        onClick={() => change('rawMode', !form.rawMode)}
+        disabled={tools.busy}
+        data-tool="raw-mode"
+      >
+        <ModeGlyph className="me-2" aria-hidden="true" />
+        {t(form.rawMode ? 'host.hostsFileEditor.editFields' : 'host.hostsFileEditor.editRawFile')}
+      </button>
       <button
         type="button"
         className="btn btn-sm btn-primary"
@@ -210,93 +211,78 @@ const HostsFileEditor = ({ id, role, reading, ctx, fold, tools, title, actions =
   );
 
   return (
-    <div
-      data-section="networking-hosts-file"
-      data-state={stateOf(reading)}
-      data-folded={fold.folded}
-      className="mb-3"
-    >
-      <SectionHeading
-        title={title}
-        count={path ? <code>{path}</code> : null}
-        folded={fold.folded}
-        onFold={fold.onFold}
-        foldTitle={fold.title}
-        actions={pane}
-      />
-      {fold.folded ? null : (
-        <div>
-          {reading.failed ? (
-            <div className="alert alert-danger" role="alert">
-              {t('hosts.overview.readError')}
-            </div>
-          ) : null}
-          {writable ? null : (
+    <div data-section="networking-hosts-file" data-state={stateOf(reading)} className="mb-3">
+      <SectionHeading title={title} count={path ? <code>{path}</code> : null} actions={pane} />
+      <div className={raw ? 'd-flex flex-column flex-grow-1 page-fill' : undefined}>
+        {reading.failed ? (
+          <div className="alert alert-danger" role="alert">
+            {t('hosts.overview.readError')}
+          </div>
+        ) : null}
+        {writable ? null : (
+          <SubTable
+            columns={READ_COLUMNS}
+            rows={form.rows}
+            rowKey={row => row.key}
+            sort={NO_SORT}
+            onSort={() => {}}
+            hiddenColumns={NO_HIDDEN}
+            ctx={ctx}
+            emptyText={t('hosts.networking.hostsFile.empty')}
+          />
+        )}
+        {writable ? (
+          <p className="form-text text-muted mt-0">
+            {t('host.hostsFileEditor.backupNote')}
+            {form.rawMode
+              ? t('host.hostsFileEditor.rawModeNote')
+              : t('host.hostsFileEditor.tableModeNote')}
+          </p>
+        ) : null}
+        {raw ? (
+          <textarea
+            id="hosts-raw"
+            className="form-control font-monospace flex-grow-1 raw-fill"
+            value={form.raw}
+            onChange={event => change('raw', event.target.value)}
+            disabled={tools.busy}
+            aria-label={t('host.hostsFileEditor.rawAriaLabel')}
+          />
+        ) : null}
+        {writable && !form.rawMode ? (
+          <>
             <SubTable
-              columns={READ_COLUMNS}
+              columns={ENTRY_COLUMNS}
               rows={form.rows}
               rowKey={row => row.key}
+              RowActions={EntryActions}
+              actionsProps={{
+                busy: tools.busy,
+                onRemove: key =>
+                  change(
+                    'rows',
+                    form.rows.filter(row => row.key !== key)
+                  ),
+              }}
               sort={NO_SORT}
               onSort={() => {}}
               hiddenColumns={NO_HIDDEN}
-              ctx={ctx}
+              ctx={tableCtx}
               emptyText={t('hosts.networking.hostsFile.empty')}
             />
-          )}
-          {writable ? (
-            <p className="form-text text-muted mt-0">
-              {t('host.hostsFileEditor.backupNote')}
-              {form.rawMode
-                ? t('host.hostsFileEditor.rawModeNote')
-                : t('host.hostsFileEditor.tableModeNote')}
-            </p>
-          ) : null}
-          {writable && form.rawMode ? (
-            <textarea
-              id="hosts-raw"
-              className="form-control font-monospace"
-              rows={12}
-              value={form.raw}
-              onChange={event => change('raw', event.target.value)}
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary mt-2"
+              onClick={addRow}
               disabled={tools.busy}
-              aria-label={t('host.hostsFileEditor.rawAriaLabel')}
-            />
-          ) : null}
-          {writable && !form.rawMode ? (
-            <>
-              <SubTable
-                columns={ENTRY_COLUMNS}
-                rows={form.rows}
-                rowKey={row => row.key}
-                RowActions={EntryActions}
-                actionsProps={{
-                  busy: tools.busy,
-                  onRemove: key =>
-                    change(
-                      'rows',
-                      form.rows.filter(row => row.key !== key)
-                    ),
-                }}
-                sort={NO_SORT}
-                onSort={() => {}}
-                hiddenColumns={NO_HIDDEN}
-                ctx={tableCtx}
-                emptyText={t('hosts.networking.hostsFile.empty')}
-              />
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary mt-2"
-                onClick={addRow}
-                disabled={tools.busy}
-                data-tool="add-entry"
-              >
-                <FaPlus className="me-2" aria-hidden="true" />
-                {t('host.hostsFileEditor.addEntry')}
-              </button>
-            </>
-          ) : null}
-        </div>
-      )}
+              data-tool="add-entry"
+            >
+              <FaPlus className="me-2" aria-hidden="true" />
+              {t('host.hostsFileEditor.addEntry')}
+            </button>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 };
@@ -306,7 +292,6 @@ HostsFileEditor.propTypes = {
   role: PropTypes.string,
   reading: PropTypes.object.isRequired,
   ctx: PropTypes.object.isRequired,
-  fold: PropTypes.object.isRequired,
   tools: PropTypes.object.isRequired,
   title: PropTypes.string.isRequired,
   actions: PropTypes.node,

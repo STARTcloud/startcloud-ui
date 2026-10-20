@@ -440,7 +440,7 @@ const useTaskDetail = ({ status, id, task }) => {
  * The task dialog a row of the tasks table opens, a list dialog of the
  * pages contract. Its header holds the title, the task's progress bar
  * with its percent, and Cancel task as a glyph while the task is pending
- * or running, behind the typed confirmation, a failed cancel raised as a
+ * or running, behind a plain confirmation, a failed cancel raised as a
  * notice. Its body holds the task's details as one row of the one table,
  * a column a fact of the task, the transfer line and the guest's step
  * among them, the columns folding under the row where the dialog is
@@ -562,7 +562,9 @@ const TaskDialog = ({ status, id, task, onHide }) => {
               })
             : t('footer.task.confirmCancel', { status: row.status })
         }
+        confirmText={t('footer.task.cancelTask')}
         variant="delete"
+        typed={false}
       />
       {child ? (
         <TaskDialog status={status} id={id} task={child} onHide={() => setChild(null)} />

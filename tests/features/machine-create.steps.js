@@ -356,6 +356,99 @@ When("I press the page's {string} action", async ({ page }, action) => {
   await page.locator(`[data-action="${action}"]`).click();
 });
 
+Then('the field {string} lists the sources {string}', async ({ page }, id, sources) => {
+  const list = await dialogOf(page).locator(`[id="${id}"]`).getAttribute('list');
+  await expect
+    .poll(() =>
+      dialogOf(page)
+        .locator(`datalist[id="${list}"] option`)
+        .evaluateAll(nodes => nodes.map(node => node.dataset.source).join(','))
+    )
+    .toBe(sources);
+});
+
+Then(
+  'the preview names the refused member {string} as {string}',
+  async ({ page }, member, text) => {
+    await expect(
+      wizardOf(page).locator(`[data-list="preview-refused"] [data-member="${member}"]`)
+    ).toContainText(text);
+  }
+);
+
+When('I drag the network row {int} onto the network row {int}', async ({ page }, from, to) => {
+  const source = wizardOf(page).locator(`[data-network-row="${from}"]`);
+  const target = wizardOf(page).locator(`[data-network-row="${to}"]`);
+  const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+  await source.dispatchEvent('dragstart', { dataTransfer });
+  await target.dispatchEvent('dragover', { dataTransfer });
+  await target.dispatchEvent('drop', { dataTransfer });
+  await source.dispatchEvent('dragend', { dataTransfer });
+});
+
+const provisionerPickOf = page => wizardOf(page).locator('[data-field="provisioner"]');
+
+const pickerOf = page => page.locator('[data-dialog="provisioner-pick"]');
+
+const pickerCardOf = (page, family) =>
+  pickerOf(page).locator(`.catalog-card[data-action="pick-family"][data-item="${family}"]`);
+
+Then('the provisioner pick reads {string}', async ({ page }, text) => {
+  await expect(provisionerPickOf(page).locator('[data-pick-state="picked"] code')).toHaveText(text);
+});
+
+Then('the provisioner pick is empty', async ({ page }) => {
+  await expect(provisionerPickOf(page).locator('[data-pick-state="none"]')).toBeVisible();
+  await expect(provisionerPickOf(page).locator('[data-pick-state="picked"]')).toHaveCount(0);
+});
+
+Then('the pick dialog draws {int} provisioner cards', async ({ page }, count) => {
+  await expect(pickerOf(page).locator('[data-table="provisioner-pick"]')).toHaveAttribute(
+    'data-state',
+    'ready'
+  );
+  await expect(pickerOf(page).locator('.catalog-card')).toHaveCount(count);
+});
+
+Then('the pick dialog card {string} picks the family', async ({ page }, family) => {
+  await expect(pickerCardOf(page, family)).toHaveClass(/cursor-pointer/u);
+  await expect(pickerCardOf(page, family)).toHaveAttribute('role', 'link');
+});
+
+Then(
+  'the pick dialog card {string} offers the version {string}',
+  async ({ page }, family, version) => {
+    await expect(
+      pickerCardOf(page, family).locator(
+        `[data-action="provisioner-pick-version"][data-version="${version}"]`
+      )
+    ).toBeAttached();
+  }
+);
+
+When(
+  'I press the card of the provisioner {string} in the pick dialog',
+  async ({ page }, family) => {
+    await pickerCardOf(page, family).locator('.card-title').click();
+  }
+);
+
+When(
+  'I open the versions of the provisioner {string} in the pick dialog',
+  async ({ page }, family) => {
+    await pickerCardOf(page, family).locator('[data-fold="versions-fold"] > summary').click();
+  }
+);
+
+When(
+  'I pick the version {string} of the provisioner {string} in the pick dialog',
+  async ({ page }, version, family) => {
+    await pickerCardOf(page, family)
+      .locator(`[data-action="provisioner-pick-version"][data-version="${version}"]`)
+      .click();
+  }
+);
+
 When('I click the backdrop of the open dialog', async ({ page }) => {
   await page
     .locator('.modal.show')

@@ -107,6 +107,11 @@ const cardChevron = (page, id) => page.locator(`[id="${id}"] .section-card-chevr
 const ekuRows = page =>
   page.locator('[data-panel="certs-subject"] .scope-list .scope-row').filter({ visible: true });
 
+const keySource = page =>
+  certsPage(page).locator('[data-panel="key-source"]').filter({ visible: true });
+
+const recordHeading = page => page.locator('[data-page="certs-record"] > .section-heading');
+
 const sidebarRows = page => page.locator('.sidebar a[data-sidebar-row]');
 
 const sectionOf = (page, key) => page.locator(`.sidebar [data-section="${key}"]`);
@@ -148,16 +153,21 @@ Then(
   }
 );
 
-Then('the certs format slot {string} reads needed', async ({ page }, slot) => {
-  await expect(
-    certsPage(page).locator(`[data-list="certs-slots"] [data-slot="${slot}"]`)
-  ).toHaveAttribute('data-slot-state', 'needed');
+const componentsSlot = (page, slot) =>
+  certsPage(page).locator(
+    `[id="certs-convert-components"] [data-list="certs-slots"] [data-slot="${slot}"]`
+  );
+
+Then('the components card slot {string} reads needed', async ({ page }, slot) => {
+  await expect(componentsSlot(page, slot)).toHaveAttribute('data-slot-state', 'needed');
 });
 
-Then('the certs format slot {string} reads loaded', async ({ page }, slot) => {
-  await expect(
-    certsPage(page).locator(`[data-list="certs-slots"] [data-slot="${slot}"]`)
-  ).toHaveAttribute('data-slot-state', 'loaded');
+Then('the components card slot {string} reads loaded', async ({ page }, slot) => {
+  await expect(componentsSlot(page, slot)).toHaveAttribute('data-slot-state', 'loaded');
+});
+
+Then('the output card draws no slot', async ({ page }) => {
+  await expect(certsPage(page).locator('[id="certs-convert-output"] [data-slot]')).toHaveCount(0);
 });
 
 Given('the browser records its downloads', ({ page }) => {
@@ -250,6 +260,10 @@ When('I tick the vault row {string}', async ({ page }, name) => {
 When('I press {string} on the vault row {string}', async ({ page }, action, text) => {
   await vaultRow(page, text).locator('.dropdown-toggle').click();
   await openMenu(page).locator(`[data-action="${action}"]`).click();
+});
+
+When('I tick the shared row {string}', async ({ page }, name) => {
+  await sharedTable(page).getByRole('checkbox', { name, exact: true }).check();
 });
 
 When('I pull the shared row {string}', async ({ page }, text) => {
@@ -408,6 +422,54 @@ Then('the certs card {string} is folded', async ({ page }, id) => {
 
 Then('the certs card {string} is open', async ({ page }, id) => {
   await expect(cardChevron(page, id)).toHaveAttribute('aria-expanded', 'true');
+});
+
+When('I turn off the certs control {string}', async ({ page }, id) => {
+  await controlOf(page, id).uncheck();
+});
+
+Then('the key source presses {string}', async ({ page }, mode) => {
+  await expect(keySource(page).locator(`[data-action="key-${mode}"]`)).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+});
+
+Then('the key source names the picked key {string}', async ({ page }, name) => {
+  await expect(keySource(page).locator('[data-key-picked]')).toContainText(name);
+  await expect(
+    keySource(page).locator('[data-action^="key-"]:not([data-action="key-change"])')
+  ).toHaveCount(0);
+});
+
+Then('the record page draws one heading with Edit in its pane and no pill', async ({ page }) => {
+  await expect(recordHeading(page)).toHaveCount(1);
+  await expect(recordHeading(page).locator('[data-action="edit"]')).toBeVisible();
+  await expect(recordHeading(page).locator('.badge')).toHaveCount(0);
+  await expect(
+    page.locator('[data-page="certs-record"] [data-tool="fold"], [data-page="certs-record"] .card')
+  ).toHaveCount(0);
+});
+
+Then('the outcome shows the made key', async ({ page }) => {
+  await expect(outcomeOf(page).locator('[data-panel="outcome-key"] pre')).toContainText(
+    'PRIVATE KEY'
+  );
+});
+
+Then('the outcome shows no made key', async ({ page }) => {
+  await expect(outcomeOf(page)).toBeVisible();
+  await expect(outcomeOf(page).locator('[data-panel="outcome-key"]')).toHaveCount(0);
+});
+
+Then("the record's details read {string}", async ({ page }, text) => {
+  await expect(page.locator('[data-panel="record-details"]')).toContainText(text);
+});
+
+Then("the record heading's pane holds {string} and {string}", async ({ page }, first, second) => {
+  await expect(recordHeading(page).locator(`[data-action="${first}"]`)).toBeVisible();
+  await expect(recordHeading(page).locator(`[data-action="${second}"]`)).toBeVisible();
+  await expect(recordHeading(page).locator('[data-action="edit"]')).toHaveCount(0);
 });
 
 Then('the extended key usages draw in one row', async ({ page }) => {

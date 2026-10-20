@@ -21,7 +21,8 @@
           "vcpus": 2,
           "memory": "8G",
           "setup_wait": 420,
-          "vagrant_user": "startcloud"
+          "vagrant_user": "startcloud",
+          "domain": "pkg.startcloud.com"
         },
         "disks": {
           "boot": { "type": "template", "volume_name": "boot", "mount": "/" },

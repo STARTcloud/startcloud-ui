@@ -22,12 +22,17 @@ import ConfirmModal from './ConfirmModal';
 import { absoluteTime } from './InboxList';
 import MarkdownText from './MarkdownText';
 import { httpsUrl } from './MethodList';
+import RecordRows from './RecordRows';
 import SectionCard, { foldsShape } from './SectionCard';
 import SectionHeading from './SectionHeading';
 
 const EMPTY = { data: null, loaded: false, failed: false };
 
-const ASSETS_OPEN = 'update-assets-open';
+const OVERVIEW_FOLD = 'update-overview';
+
+const CHANGELOG_FOLD = 'update-changelog';
+
+const ASSETS_FOLD = 'update-assets';
 
 const ADMIN_CONFIRM = {
   titleKey: 'admin.update.confirmTitle',
@@ -221,20 +226,21 @@ AssetRow.propTypes = {
   asset: assetShape.isRequired,
 };
 
-const Assets = ({ assets, tag, foldId, folds }) => {
+const AssetsCard = ({ release, folds }) => {
   const { t } = useTranslation();
-  const folded = !folds.folded(foldId);
+  const folded = folds.folded(ASSETS_FOLD);
   return (
-    <div data-panel="update-assets" data-assets-of={tag} data-folded={folded}>
+    <div data-panel="update-assets" data-assets-of={release.tag} data-folded={folded}>
       <SectionCard
         title={t('hosts.nav.updateAssets')}
-        badge={<span className="badge text-bg-secondary rounded-pill">{assets.length}</span>}
-        className="mb-0"
+        badge={
+          <span className="badge text-bg-secondary rounded-pill">{release.assets.length}</span>
+        }
         folded={folded}
-        onFold={() => folds.toggle(foldId)}
+        onFold={() => folds.toggle(ASSETS_FOLD)}
       >
         <ul className="upd-asset-list">
-          {assets.map(asset => (
+          {release.assets.map(asset => (
             <AssetRow key={`${asset.name} ${asset.url}`} asset={asset} />
           ))}
         </ul>
@@ -243,42 +249,52 @@ const Assets = ({ assets, tag, foldId, folds }) => {
   );
 };
 
-Assets.propTypes = {
-  assets: PropTypes.arrayOf(assetShape).isRequired,
-  tag: PropTypes.string.isRequired,
-  foldId: PropTypes.string.isRequired,
+AssetsCard.propTypes = {
+  release: releaseShape.isRequired,
   folds: foldsShape.isRequired,
 };
 
-const SideCard = ({ data, release = null, folds, language }) => {
+const OverviewCard = ({ data, folds, language }) => {
   const { t } = useTranslation();
+  const folded = folds.folded(OVERVIEW_FOLD);
   const published = String(data.release_date ?? '');
   const releaseUrl = httpsUrl(data.release_url);
   const changelog = httpsUrl(data.changelog);
+  const links = Boolean(releaseUrl || changelog);
+  const rows = [
+    {
+      key: 'current',
+      label: t('hosts.nav.updateCurrentVersion'),
+      value: <code>{String(data.current_version ?? '')}</code>,
+    },
+    {
+      key: 'latest',
+      label: t('hosts.nav.updateLatestVersion'),
+      value: <code>{String(data.latest_version ?? '')}</code>,
+    },
+    ...(published
+      ? [
+          {
+            key: 'published',
+            label: t('hosts.nav.updatePublished'),
+            value: (
+              <span title={absoluteTime(published, language)}>
+                {formatRelativeTime(published, language)}
+              </span>
+            ),
+          },
+        ]
+      : []),
+  ];
   return (
-    <div className="card upd-side-card">
-      <div className="card-body">
-        <dl className="upd-side-rows">
-          <dt>{t('hosts.nav.updateCurrentVersion')}</dt>
-          <dd>
-            <code>{String(data.current_version ?? '')}</code>
-          </dd>
-          <dt>{t('hosts.nav.updateLatestVersion')}</dt>
-          <dd>
-            <code>{String(data.latest_version ?? '')}</code>
-          </dd>
-          {published ? (
-            <>
-              <dt>{t('hosts.nav.updatePublished')}</dt>
-              <dd>
-                <span title={absoluteTime(published, language)}>
-                  {formatRelativeTime(published, language)}
-                </span>
-              </dd>
-            </>
-          ) : null}
-        </dl>
-        {releaseUrl || changelog ? (
+    <div data-panel="update-overview" data-folded={folded}>
+      <SectionCard
+        title={t('update.overview')}
+        folded={folded}
+        onFold={() => folds.toggle(OVERVIEW_FOLD)}
+      >
+        <RecordRows rows={rows} className={links ? 'mb-2' : 'mb-0'} />
+        {links ? (
           <div className="upd-foot-links">
             {releaseUrl ? (
               <FootLink
@@ -296,41 +312,39 @@ const SideCard = ({ data, release = null, folds, language }) => {
             ) : null}
           </div>
         ) : null}
-        {release?.assets.length ? (
-          <Assets
-            assets={release.assets}
-            tag={release.tag}
-            foldId={`${ASSETS_OPEN}:${release.tag}`}
-            folds={folds}
-          />
-        ) : null}
-      </div>
+      </SectionCard>
     </div>
   );
 };
 
-SideCard.propTypes = {
+OverviewCard.propTypes = {
   data: PropTypes.object.isRequired,
-  release: releaseShape,
   folds: foldsShape.isRequired,
   language: PropTypes.string.isRequired,
 };
 
-const ReleaseCard = ({ release, language }) => {
+const ChangelogCard = ({ release, folds, language }) => {
   const { t } = useTranslation();
+  const folded = folds.folded(CHANGELOG_FOLD);
   const url = httpsUrl(release.url);
   const title = release.name || release.tag;
   return (
-    <article
-      className="card mb-3 upd-release"
+    <div
       data-panel="update-release"
       data-release={release.tag}
       data-latest={!release.prerelease}
       data-prerelease={release.prerelease}
+      data-folded={folded}
+      className="h-100"
     >
-      <div className="card-body">
+      <SectionCard
+        title={t('update.changelog')}
+        className="h-100 mb-0"
+        folded={folded}
+        onFold={() => folds.toggle(CHANGELOG_FOLD)}
+      >
         <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
-          <h5 className="mb-0 upd-release-title">
+          <h6 className="mb-0 upd-release-title">
             {url ? (
               <a href={url} target="_blank" rel="noopener noreferrer">
                 {title}
@@ -338,7 +352,7 @@ const ReleaseCard = ({ release, language }) => {
             ) : (
               title
             )}
-          </h5>
+          </h6>
           {release.name && release.name !== release.tag ? (
             <code className="upd-release-tag">{release.tag}</code>
           ) : null}
@@ -367,13 +381,14 @@ const ReleaseCard = ({ release, language }) => {
           </div>
         ) : null}
         {release.body ? <MarkdownText text={release.body} className="prose upd-notes" /> : null}
-      </div>
-    </article>
+      </SectionCard>
+    </div>
   );
 };
 
-ReleaseCard.propTypes = {
+ChangelogCard.propTypes = {
   release: releaseShape.isRequired,
+  folds: foldsShape.isRequired,
   language: PropTypes.string.isRequired,
 };
 
@@ -419,22 +434,24 @@ UpdateButton.propTypes = {
  * The shared Update page of one backend: the heading reading whether a
  * newer release is published, in the success or the warning tone, with
  * Update behind the typed confirmation while one is, then Refresh in its
- * pane; under it two columns, stacked under the large breakpoint: at the
- * side a card with the current and the latest version, the published
- * date as a relative time with the absolute time in its tooltip, the
+ * pane; under it two columns, stacked under the large breakpoint, the
+ * left holding Overview with Assets under it and the right Changelog at
+ * the column's full height, each card folding under its own key in the
+ * prefs under `prefsKey`, open until folded: Overview,
+ * the current and the latest version and the published date as record
+ * rows, the date relative with the absolute time in its tooltip, then the
  * release link and the changelog link as small text links, each drawn
- * only while the check carries its member, and under them the release's
- * Assets fold listing its assets, each a name link with its size and its
- * sha256 where one is carried, folded until opened, the fold kept per tag
- * under `prefsKey` like the page's other folds; beside it the one release
+ * only while the check carries its member; Changelog, the one release
  * whose tag is the check's `latest_version`, the entry of `releases`
  * with that tag where the check lists them and the release the check's
- * own members name otherwise, a card with its name or its tag as the
- * title linking to its page where it names one, the tag beside a name,
- * the Pre-release badge on a pre-release and the Latest badge otherwise,
- * who released it and when as a relative time with the absolute time in
- * its tooltip, and its body rendered as markdown with every link opening
- * its own tab; no other release draws. A pre-release draws, and offers
+ * own members name otherwise, its name or its tag linking to its page
+ * where it names one, the tag beside a name, the Pre-release badge on a
+ * pre-release and the Latest badge otherwise, who released it and when
+ * as a relative time with the absolute time in its tooltip, and its body
+ * rendered as markdown with every link opening its own tab, no other
+ * release drawn; Assets, drawn only while that release carries assets,
+ * one row an asset, its name a link with its size and its sha256 where
+ * one is carried. A pre-release draws, and offers
  * Update, only while the running version is itself a pre-release, one
  * carrying a `-` suffix; on a production version the page says the
  * host is current and draws no release.
@@ -521,7 +538,6 @@ const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefres
         'success',
         t('agentSettings.agentSettings.updateQueuedDetail', {
           message: answer?.message || t('agentSettings.agentSettings.updateQueuedFallback'),
-          taskId: answer?.task_id,
           targetVersion: answer?.target_version,
         })
       );
@@ -559,16 +575,14 @@ const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefres
       <div data-panel="update">
         {check.data ? (
           <div className="row g-3">
-            <div className="col-lg-4 col-xl-3">
-              <SideCard
-                data={check.data}
-                release={release}
-                folds={folds}
-                language={i18n.language}
-              />
+            <div className="col-12 col-lg-6" data-column="side">
+              <OverviewCard data={check.data} folds={folds} language={i18n.language} />
+              {release?.assets.length ? <AssetsCard release={release} folds={folds} /> : null}
             </div>
-            <div className="col-lg-8 col-xl-9">
-              {release ? <ReleaseCard release={release} language={i18n.language} /> : null}
+            <div className="col-12 col-lg-6" data-column="main">
+              {release ? (
+                <ChangelogCard release={release} folds={folds} language={i18n.language} />
+              ) : null}
             </div>
           </div>
         ) : null}

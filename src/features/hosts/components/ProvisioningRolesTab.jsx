@@ -2,20 +2,30 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  FaAnglesDown,
+  FaAnglesUp,
   FaChevronDown,
   FaClone,
   FaGripVertical,
   FaPlus,
+  FaToggleOff,
+  FaToggleOn,
   FaTrash,
   FaTriangleExclamation,
 } from 'react-icons/fa6';
 
+import ConfirmModal from '../../../components/common/ConfirmModal';
+import SectionHeading from '../../../components/common/SectionHeading';
+import { useNotify } from '../../../contexts/NoticeContext';
+import { useSelection } from '../../../hooks/useSelection';
 import { roleGroupsOf } from '../utils/provisionerFieldDsl';
 import {
   catalogRoleMatches,
   changedRolesOf,
   dependencyWarnings,
+  idRangeOf,
   manifestRoleOf,
+  pickedToEdge,
   roleSpecOf,
   runRoleMatches,
 } from '../utils/provisioning';
@@ -727,12 +737,14 @@ const RoleCard = ({
   expanded,
   dragging,
   dropTarget,
+  picked,
   disabled,
   onDragOver,
   onDragLeave,
   onDrop,
   onDragStart,
   onDragEnd,
+  onPick,
   onDuplicate,
   onToggle,
   onRemove,
@@ -744,17 +756,27 @@ const RoleCard = ({
 }) => {
   const { t } = useTranslation();
   const on = isOn(role);
+  const bare = bareRoleName(role.name);
   return (
     <div
       className={`hw-role-card ${dragging ? 'hw-dragging' : ''} ${dropTarget ? 'hw-drop-target' : ''}`}
       role="listitem"
-      data-role={bareRoleName(role.name)}
+      data-role={bare}
       data-enabled={on}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
       <div className="hw-rc-head">
+        <input
+          type="checkbox"
+          className="form-check-input mt-0 flex-shrink-0"
+          data-role-pick={bare}
+          checked={picked}
+          disabled={disabled}
+          aria-label={manifestRole?.label || bare}
+          onChange={event => onPick(event.nativeEvent.shiftKey === true)}
+        />
         <button
           type="button"
           className="btn btn-link p-0 text-muted hw-grip"
@@ -876,12 +898,14 @@ RoleCard.propTypes = {
   expanded: PropTypes.bool.isRequired,
   dragging: PropTypes.bool.isRequired,
   dropTarget: PropTypes.bool.isRequired,
+  picked: PropTypes.bool.isRequired,
   disabled: PropTypes.bool,
   onDragOver: PropTypes.func.isRequired,
   onDragLeave: PropTypes.func.isRequired,
   onDrop: PropTypes.func.isRequired,
   onDragStart: PropTypes.func.isRequired,
   onDragEnd: PropTypes.func.isRequired,
+  onPick: PropTypes.func.isRequired,
   onDuplicate: PropTypes.func.isRequired,
   onToggle: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
@@ -890,6 +914,145 @@ RoleCard.propTypes = {
   onPickFile: PropTypes.func.isRequired,
   onFetch: PropTypes.func,
   onRun: PropTypes.func,
+};
+
+const PickedRoles = ({ count, disabled, onClear, onSwitch, onRemove, onMove }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <strong>{t('pages.bulk.selected', { count })}</strong>
+      <button type="button" className="btn btn-sm btn-link" onClick={onClear}>
+        {t('pages.bulk.clearSelection')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        data-action="roles-enable-picked"
+        disabled={disabled}
+        onClick={() => onSwitch(true)}
+      >
+        <FaToggleOn className="me-1" aria-hidden="true" />
+        {t('provisioning.provisioningRolesTab.enableSelected')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        data-action="roles-disable-picked"
+        disabled={disabled}
+        onClick={() => onSwitch(false)}
+      >
+        <FaToggleOff className="me-1" aria-hidden="true" />
+        {t('provisioning.provisioningRolesTab.disableSelected')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        data-action="roles-remove-picked"
+        disabled={disabled}
+        onClick={onRemove}
+      >
+        <FaTrash className="me-1" aria-hidden="true" />
+        {t('provisioning.provisioningRolesTab.removeSelected')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        data-action="roles-move-top"
+        disabled={disabled}
+        onClick={() => onMove('top')}
+      >
+        <FaAnglesUp className="me-1" aria-hidden="true" />
+        {t('provisioning.provisioningRolesTab.moveTop')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        data-action="roles-move-bottom"
+        disabled={disabled}
+        onClick={() => onMove('bottom')}
+      >
+        <FaAnglesDown className="me-1" aria-hidden="true" />
+        {t('provisioning.provisioningRolesTab.moveBottom')}
+      </button>
+    </>
+  );
+};
+
+PickedRoles.propTypes = {
+  count: PropTypes.number.isRequired,
+  disabled: PropTypes.bool,
+  onClear: PropTypes.func.isRequired,
+  onSwitch: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
+  onMove: PropTypes.func.isRequired,
+};
+
+const RunHeading = ({
+  total,
+  switchedOn,
+  shown,
+  picked,
+  selection,
+  disabled,
+  onSwitch,
+  onRemove,
+  onMove,
+}) => {
+  const { t } = useTranslation();
+  const title = (
+    <span className="hw-prov-pane-title">
+      {t('provisioning.provisioningRolesTab.executionOrderHeading', { count: total })}
+    </span>
+  );
+  return (
+    <SectionHeading
+      className="mb-2"
+      title={title}
+      count={
+        switchedOn === null
+          ? null
+          : t('provisioning.provisioningRolesTab.onCount', { count: switchedOn })
+      }
+      selectAll={
+        shown > 0
+          ? {
+              allSelected: selection.allSelected,
+              someSelected: picked > 0,
+              onToggleAll: selection.toggleAll,
+              label: t('pages.selectColumn'),
+            }
+          : null
+      }
+      actions={
+        picked > 0 ? (
+          <PickedRoles
+            count={picked}
+            disabled={disabled}
+            onClear={selection.clear}
+            onSwitch={onSwitch}
+            onRemove={onRemove}
+            onMove={onMove}
+          />
+        ) : null
+      }
+    />
+  );
+};
+
+RunHeading.propTypes = {
+  total: PropTypes.number.isRequired,
+  switchedOn: PropTypes.number,
+  shown: PropTypes.number.isRequired,
+  picked: PropTypes.number.isRequired,
+  selection: PropTypes.shape({
+    allSelected: PropTypes.bool.isRequired,
+    toggleAll: PropTypes.func.isRequired,
+    clear: PropTypes.func.isRequired,
+  }).isRequired,
+  disabled: PropTypes.bool,
+  onSwitch: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
+  onMove: PropTypes.func.isRequired,
 };
 
 const manifestOrder = (roles, manifest) => {
@@ -992,7 +1155,13 @@ FilePickDialog.propTypes = {
  * box while `query` is null; a `query` string narrows the catalog and
  * the run by name and description in its place, each card keeping its
  * place in the run. Where `onRun` is given each card of a role that is
- * on draws the play glyph that hands `onRun` `{ roles: [name] }`.
+ * on draws the play glyph that hands `onRun` `{ roles: [name] }`. Each
+ * card's checkbox picks it, a shift-click picking the range from the card
+ * clicked last, the heading's checkbox every card the run draws; while
+ * cards are picked the heading's pane draws the count, Clear selection,
+ * Enable selected, Disable selected, Remove selected behind a plain
+ * confirmation with the manifest's required roles refused in one notice,
+ * Move to top and Move to bottom, each verb one `onChange`.
  */
 const ProvisioningRolesTab = ({
   roles,
@@ -1021,10 +1190,26 @@ const ProvisioningRolesTab = ({
   onRun,
 }) => {
   const { t } = useTranslation();
+  const notify = useNotify();
   const [drag, setDrag] = useState(null);
   const [dropTarget, setDropTarget] = useState(null);
   const [expanded, setExpanded] = useState(() => new Set());
   const [picking, setPicking] = useState(null);
+  const [anchor, setAnchor] = useState(null);
+  const [removing, setRemoving] = useState(null);
+  const needle = needleOf(query);
+  const shown = roles.filter(role =>
+    runRoleMatches(
+      role,
+      { manifestRole: manifestRoleOf(manifest, role.name), spec: roleSpecOf(specs, role.name) },
+      needle
+    )
+  );
+  const shownIds = new Set(shown.map(role => role._ui_id));
+  const selection = useSelection(shown, { keyOf: role => role._ui_id });
+  const picked = roles.filter(role => selection.selected.has(role._ui_id));
+  const pickedIds = new Set(picked.map(role => role._ui_id));
+  const labelOf = role => manifestRoleOf(manifest, role.name)?.label || bareRoleName(role.name);
 
   const withDefaults = (rows, uiId) => {
     const seeded = rows.map(row =>
@@ -1107,11 +1292,50 @@ const ProvisioningRolesTab = ({
       })
     );
 
+  const pickRole = (uiId, range) => {
+    if (range) {
+      idRangeOf(shown, anchor, uiId)
+        .filter(id => !selection.selected.has(id))
+        .forEach(selection.toggle);
+    } else {
+      selection.toggle(uiId);
+    }
+    setAnchor(uiId);
+  };
+
+  const switchPicked = on => {
+    const base = on ? picked.reduce((rows, row) => withDefaults(rows, row._ui_id), roles) : roles;
+    if (on) {
+      setExpanded(previous => new Set([...previous, ...pickedIds]));
+    }
+    onChange(base.map(row => (pickedIds.has(row._ui_id) ? applyPatch(row, { enabled: on }) : row)));
+  };
+
+  const askRemove = () => {
+    const required = picked.filter(row => manifestRoleOf(manifest, row.name)?.required === true);
+    if (required.length > 0) {
+      notify(
+        'warning',
+        t('provisioning.provisioningRolesTab.requiredRefused', {
+          roles: required.map(labelOf).join(', '),
+        })
+      );
+    }
+    const removable = picked.filter(row => !required.includes(row)).map(row => row._ui_id);
+    if (removable.length > 0) {
+      setRemoving(removable);
+    }
+  };
+
+  const removePicked = () => {
+    const gone = new Set(removing);
+    onChange(roles.filter(row => !gone.has(row._ui_id)));
+    selection.clear();
+  };
+
   const hasCatalog = specs && Object.keys(specs).length > 0;
   const changed = changedRolesOf(roles, manifest);
   const changedIds = new Set(changed.map(row => row._ui_id));
-  const onCount = roles.filter(isOn).length;
-  const needle = needleOf(query);
   const fields = fieldsOf({
     fieldConfig,
     roles,
@@ -1163,12 +1387,17 @@ const ProvisioningRolesTab = ({
       </div>
 
       <div>
-        <p className="hw-prov-pane-title">
-          {t('provisioning.provisioningRolesTab.executionOrderHeading', { count: roles.length })}
-          {manifest.length > 0
-            ? ` · ${t('provisioning.provisioningRolesTab.onCount', { count: onCount })}`
-            : ''}
-        </p>
+        <RunHeading
+          total={roles.length}
+          switchedOn={manifest.length > 0 ? roles.filter(isOn).length : null}
+          shown={shown.length}
+          picked={picked.length}
+          selection={selection}
+          disabled={disabled}
+          onSwitch={switchPicked}
+          onRemove={askRemove}
+          onMove={edge => onChange(pickedToEdge(roles, pickedIds, edge))}
+        />
         <p className="form-text text-muted mt-0 mb-2">
           {t('provisioning.provisioningRolesTab.executionOrderIntro1')}{' '}
           <code>allow_duplicates</code>{' '}
@@ -1202,11 +1431,11 @@ const ProvisioningRolesTab = ({
         ) : null}
         <div className="d-flex flex-column gap-2" role="list" data-list="roles">
           {roles.map((role, index) => {
-            const manifestRole = manifestRoleOf(manifest, role.name);
-            const spec = roleSpecOf(specs, role.name);
-            if (!runRoleMatches(role, { manifestRole, spec }, needle)) {
+            if (!shownIds.has(role._ui_id)) {
               return null;
             }
+            const manifestRole = manifestRoleOf(manifest, role.name);
+            const spec = roleSpecOf(specs, role.name);
             return (
               <RoleCard
                 key={role._ui_id}
@@ -1229,7 +1458,9 @@ const ProvisioningRolesTab = ({
                 expanded={expanded.has(role._ui_id)}
                 dragging={drag?.kind === 'move' && drag.id === role._ui_id}
                 dropTarget={dropTarget === role._ui_id}
+                picked={pickedIds.has(role._ui_id)}
                 disabled={disabled}
+                onPick={range => pickRole(role._ui_id, range)}
                 onDragOver={event => {
                   event.preventDefault();
                   if (drag?.kind === 'new') {
@@ -1296,6 +1527,13 @@ const ProvisioningRolesTab = ({
         onFetch={onFetch}
         onReload={onArtifactsReload}
         onClose={() => setPicking(null)}
+      />
+      <ConfirmModal
+        show={removing !== null}
+        handleClose={() => setRemoving(null)}
+        handleConfirm={removePicked}
+        typed={false}
+        confirmText={t('provisioning.provisioningRolesTab.removeSelected')}
       />
     </div>
   );

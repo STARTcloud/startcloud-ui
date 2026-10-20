@@ -181,11 +181,7 @@ const VnicLinkPropsEditor = ({ status, hostId, vnic, disabled = false }) => {
       });
       notify(
         'success',
-        `${answer?.message || t('machineEdit.vnicLinkPropsEditor.linkPropertiesQueued')}${
-          answer?.task_id
-            ? t('machineEdit.vnicLinkPropsEditor.taskSuffix', { taskId: answer.task_id })
-            : ''
-        }.`
+        `${answer?.message || t('machineEdit.vnicLinkPropsEditor.linkPropertiesQueued')}.`
       );
       setRead({ rows: null, failed: false });
       load();

@@ -60,15 +60,17 @@ const SUBJECT_LABELS = {
 const SIGNATURE_PROPERTY = { type: 'string', enum: SIGNATURES };
 
 const KEY_SOURCE_PROPERTIES = {
-  mode: { type: 'string', enum: ['generate', 'vault'] },
+  mode: { type: 'string', enum: ['generate', 'vault', 'file'] },
   keyId: { ...NON_BLANK, dependsOn: 'mode', showWhen: ['vault'] },
+  keyFile: { custom: (value, values) => required(value, values, from => from.mode === 'file') },
   alg: { type: 'string', enum: ALGORITHMS },
   signature: SIGNATURE_PROPERTY,
 };
 
 const KEY_SOURCE_LABELS = {
-  mode: 'certs.generate.keyMode.vault',
+  mode: 'certs.generate.keySource',
   keyId: 'certs.generate.vaultKey',
+  keyFile: 'certs.generate.keyFile',
   alg: 'certs.generate.algorithm',
   signature: 'certs.generate.signature',
 };
@@ -106,8 +108,10 @@ export const KEY_LABELS = {
 
 /**
  * The page schema and label keys of the Request tab: the subject, the
- * names, the usages and the key source, the vault key required while the
- * source is the vault, the signature scheme one of the engine's two words.
+ * names, the usages and the key source, generated, from the vault or
+ * from a file, the vault key required while the source is the vault and
+ * the read key while it is a file, the signature scheme one of the
+ * engine's two words.
  */
 export const REQUEST_SCHEMA = {
   required: ['CN', 'mode', 'keyId', 'alg'],
@@ -119,8 +123,8 @@ export const REQUEST_LABELS = { ...SUBJECT_LABELS, ...KEY_SOURCE_LABELS };
 /**
  * The page schema and label keys of the Certificate tab: the request
  * tab's members and the issue, the validity a whole number of days from
- * one and the path length a whole number from zero while it is an
- * authority.
+ * one and the signing depth a whole number from zero while it is a
+ * certificate authority.
  */
 export const CERTIFICATE_SCHEMA = {
   required: [...REQUEST_SCHEMA.required, 'days'],
@@ -286,7 +290,8 @@ const EXTRA_PROPERTY = {
  * The page schema of a secret record's form: the name required, the kind
  * one of the secret kinds, the profile one of the known ones or empty,
  * the kind's members with the first required, a `custom` row's map as
- * JSON text of one object, the notes, and the extra rows each named.
+ * JSON text of one object, the tags, the notes, and the extra rows each
+ * named.
  *
  * @param {string} kind - The secret kind
  * @returns {Object} The schema
@@ -304,6 +309,7 @@ export const secretSchemaOf = kind => {
         members.map(member => [member, member === first ? NON_BLANK : { type: 'string' }])
       ),
       ...(kind === 'custom' ? { custom: { ...NON_BLANK, custom: jsonMap } } : {}),
+      tags: { type: 'string' },
       notes: { type: 'string' },
       extra: EXTRA_PROPERTY,
     },
@@ -314,6 +320,7 @@ export const SECRET_LABELS = {
   name: 'certs.record.name',
   kind: 'certs.secret.kind',
   profile: 'certs.secret.profile',
+  tags: 'certs.record.tags',
   notes: 'certs.record.notes',
   extra: 'certs.secret.extra',
   custom: 'certs.secret.custom',

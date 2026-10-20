@@ -180,8 +180,8 @@ Extra.propTypes = {
  * zone's record, the sentence and the warning of the action, the peers
  * a sync will use, the note of a configuration file to be created, the
  * reboot recommended after a time zone change or the restart's note,
- * and the action's own word typed to confirm; `onConfirm` sends the
- * request.
+ * and the action's own word typed to confirm, the restart a plain
+ * confirmation with no word; `onConfirm` sends the request.
  */
 const NTPConfirmActionModal = ({ service = null, action, onClose, onConfirm }) => {
   const { t } = useTranslation();
@@ -230,6 +230,7 @@ const NTPConfirmActionModal = ({ service = null, action, onClose, onConfirm }) =
       title={title}
       confirmText={title}
       variant="restart"
+      typed={action !== 'restart'}
       keyword={keyword}
       message={message}
     />

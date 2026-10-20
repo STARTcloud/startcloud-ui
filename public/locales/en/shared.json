@@ -283,9 +283,14 @@
   },
   "pwa": {
     "newVersion": "A new version of {{app}} is available.",
+    "newVersionWith": "A new version of {{app}}, {{version}}, is available",
     "reload": "Reload",
     "offline": "{{app}} is not answering. This is the copy saved on this device: nothing can be changed and what you see may be out of date.",
     "launchAgent": "Launch Hyperweaver Agent"
+  },
+  "update": {
+    "overview": "Overview",
+    "changelog": "Changelog"
   },
   "status": {
     "unreachable": "The server behind this page could not be reached. Check that it is running and retry.",
@@ -3226,6 +3231,7 @@
     "confirm": {
       "title": "Confirm Action",
       "message": "Please type \"{{keyword}}\" to confirm.",
+      "plainMessage": "Are you sure you want to continue?",
       "placeholder": "Type '{{keyword}}' to confirm",
       "typeToConfirm": "Please type '{{keyword}}' to confirm.",
       "keyword": "delete",
@@ -3234,6 +3240,7 @@
       "restart": {
         "title": "Restart the server",
         "message": "Requests fail while the server restarts. Type \"{{keyword}}\" to confirm the restart.",
+        "plainMessage": "Restart now? It is unavailable for a moment while it restarts.",
         "keyword": "restart",
         "confirm": "Restart"
       }
@@ -3493,9 +3500,7 @@
       "noServersHeading": "No Servers",
       "noServersBody": "You haven't added any Servers yet. Add a server to start monitoring network interfaces.",
       "addServer": "Add Server",
-      "topologyHeading": "Network Topology",
-      "show": "Show",
-      "hide": "Hide"
+      "topologyHeading": "Network Topology"
     },
     "hostStorage": {
       "titlePage": "Storage Monitoring - Hyperweaver",
@@ -3527,9 +3532,6 @@
       "addServer": "Add Server",
       "noMachinesCapabilityPre": "{{resource}} management is not available on this host yet — the agent does not advertise the",
       "noMachinesCapabilityPost": "capability.",
-      "total": "Total",
-      "running": "Running",
-      "stopped": "Stopped",
       "consoleHeading": "Console",
       "noConsoleAvailable": "No console is available on this host yet — the agent advertises neither a VNC console nor zlogin.",
       "detailsUnavailable": "{{resource}} details will appear here when available.",
@@ -4507,6 +4509,11 @@
       "statusNo": "No",
       "never": "Never",
       "deleteKeyTableButton": "Delete",
+      "deleteSelected": "Delete selected",
+      "deletedMany_one": "1 key deleted.",
+      "deletedMany_other": "{{count}} keys deleted.",
+      "deleteManyMessage_one": "Delete the picked API key? Anything signing in with it is refused.",
+      "deleteManyMessage_other": "Delete the {{count}} picked API keys? Anything signing in with them is refused.",
       "search": "Search API keys"
     },
     "applicationsTab": {
@@ -4555,7 +4562,7 @@
       "updateAgentMessage": "Update the agent from {{currentVersion}} to {{latestVersion}}? The installer is downloaded and hash-verified, then the agent EXITS so it can take over.",
       "updateNowButton": "Update Now",
       "updateQueuedFallback": "Update queued",
-      "updateQueuedDetail": "{{message}} (task {{taskId}}, target {{targetVersion}})",
+      "updateQueuedDetail": "{{message}} Target version {{targetVersion}}.",
       "failedQueueUpdate": "Failed to queue update: {{message}}",
       "restoreBackupTitle": "Restore Backup",
       "restoreBackupMessage": "Are you sure you want to restore the configuration from {{filename}}? This will overwrite current settings.",
@@ -5936,44 +5943,20 @@
       "noData": "No ZFS ARC statistics available. The backend may still be collecting data."
     },
     "bandwidthCharts": {
-      "title": "Real-Time Bandwidth Charts",
       "sortTooltip": "Sort individual charts by",
       "sortBandwidth": "Most Bandwidth",
       "sortName": "Interface Name",
       "sortRx": "RX Bandwidth",
       "sortTx": "TX Bandwidth",
-      "expand": "Expand section",
-      "collapse": "Collapse section",
-      "allInterfacesSummary": "All Interfaces Summary",
       "expandChart": "Expand chart to full size",
       "rxBandwidth": "RX Bandwidth (Download)",
       "bandwidthMbps": "Bandwidth (Mbps)",
       "txBandwidth": "TX Bandwidth (Upload)",
       "totalBandwidth": "Total Bandwidth (Combined)",
-      "individualCharts": "Individual Interface Charts",
       "noData": "No chart data available yet. Data will appear as the system collects bandwidth measurements."
     },
     "bandwidthTable": {
-      "title": "Real-Time Network Bandwidth",
-      "resetSort": "Click to reset sorting to default",
-      "expand": "Expand section",
-      "collapse": "Collapse section",
-      "sortByInterface": "Click to sort by interface name",
-      "interface": "Interface",
-      "sortByTotal": "Click to sort by total bandwidth",
-      "totalBandwidth": "Total Bandwidth",
-      "sortByRx": "Click to sort by RX rate",
-      "rxRate": "RX Rate",
-      "sortByTx": "Click to sort by TX rate",
-      "txRate": "TX Rate",
-      "sortByInterval": "Click to sort by measurement interval",
-      "interval": "Interval",
-      "sortByRxPackets": "Click to sort by RX packet count",
-      "rxPackets": "RX Packets",
-      "sortByTxPackets": "Click to sort by TX packet count",
-      "txPackets": "TX Packets",
-      "notAvailable": "N/A",
-      "noData": "No real-time bandwidth data available. The backend may still be collecting delta measurements."
+      "title": "Real-Time Network Bandwidth"
     },
     "etherstubDetailsModal": {
       "title": "Etherstub Details",
@@ -6104,8 +6087,6 @@
     },
     "ipAddressTable": {
       "title": "IP Addresses",
-      "expand": "Expand section",
-      "collapse": "Collapse section",
       "interface": "Interface",
       "ipAddress": "IP Address",
       "netmaskPrefix": "Netmask/Prefix",
@@ -7250,7 +7231,7 @@
     "zfsDatasetsPanel": {
       "datasetsHeading": "Datasets",
       "destroySelectedLabel": "Destroy selected snapshots",
-      "destroySelectedCount": "Destroy selected snapshots ({{count}})",
+      "destroySelected": "Destroy selected",
       "expandAllTitle": "Expand every dataset",
       "expandAll": "Expand",
       "collapseAllTitle": "Collapse to the pools",
@@ -7271,7 +7252,6 @@
       "bulkDestroyConfirm": "Destroy {{count}}",
       "refresh": "Refresh",
       "createDataset": "Create dataset…",
-      "destroySelectedTitle": "Destroy every ticked snapshot",
       "hideTypeTitle": "Hide {{label}}",
       "showTypeTitle": "Show {{label}}",
       "errorLoadDatasets": "Failed to load datasets: {{message}}",
@@ -8480,8 +8460,6 @@
     },
     "interfacesTable": {
       "resetSortTitle": "Click to reset sorting to default",
-      "expandSection": "Expand section",
-      "collapseSection": "Collapse section",
       "sortByLink": "Click to sort by interface name",
       "link": "Link",
       "sortByClass": "Click to sort by interface class",
@@ -8562,6 +8540,7 @@
       "saved": "Saved.",
       "dnsResolver": "DNS Resolver",
       "editRawFile": "Edit raw file",
+      "editFields": "Edit fields",
       "refresh": "Refresh",
       "save": "Save",
       "backupNote": "A timestamped backup of the current file is written before every save.",
@@ -8613,6 +8592,7 @@
       "saved": "Saved.",
       "hostsFile": "Hosts File",
       "editRawFile": "Edit raw file",
+      "editFields": "Edit fields",
       "refresh": "Refresh",
       "save": "Save",
       "backupNote": "A timestamped backup of the current file is written before every save.",
@@ -9139,6 +9119,8 @@
       "newHostonlyIf": "New host-only interface",
       "newHostonlyNet": "New host-only network",
       "newNat": "New NAT network",
+      "newSpace": "New space",
+      "newSpaceOptions": "More space types",
       "createBtn": "Create",
       "save": "Save",
       "edit": "Edit",
@@ -10420,7 +10402,6 @@
       "tierKeepLabel": "{{tier}} keep",
       "quiesceLabel": "Quiesce (qga fsfreeze)",
       "loadFailed": "Failed to load snapshots: {{message}}",
-      "snapshotsHeading": "Snapshots ({{count}})",
       "noSnapshotsYet": "No snapshots yet.",
       "currentStateTooltip": "The machine's current state derives from this snapshot",
       "currentBadge": "Current",
@@ -10689,7 +10670,10 @@
         "nic_type": "NIC type"
       },
       "addNetwork": "Add Network",
-      "removeNetwork": "Remove network"
+      "removeNetwork": "Remove network",
+      "reorder": "Drag to reorder",
+      "provisioning": "Provisioning",
+      "provisioningInterface": "Provisioning network"
     },
     "vnicLinkPropsEditor": {
       "antiSpoofGuards": "— anti-spoof guards",
@@ -10698,7 +10682,6 @@
       "loadFailed": "GET network/vnics/{{vnic}}/properties failed ({{status}}): {{message}}",
       "nothingChanged": "Nothing changed — edit a property first.",
       "linkPropertiesQueued": "Link properties queued",
-      "taskSuffix": " (task {{taskId}})",
       "summary": "Link properties (dladm) — spoofing, bandwidth, MTU",
       "readingLink": "Reading the link…",
       "applyLinkProperties": "Apply link properties",
@@ -10915,6 +10898,8 @@
       "pendingNoticeText_plural": "{{base}} — {{count}} change groups wait for the next power cycle.",
       "pendingChangeGroups": "change group waiting for the next power cycle: {{list}}",
       "pendingChangeGroups_plural": "change groups waiting for the next power cycle: {{list}}",
+      "pendingCount_one": "{{count}} pending change group",
+      "pendingCount_other": "{{count}} pending change groups",
       "applyPendingNowTitle": "Apply the pending set now — the machine is powered off",
       "applyNow": "Apply now",
       "discardPendingTitle": "Discard every pending change",
@@ -10934,7 +10919,6 @@
       "takeEffectOnStart": " — they take effect when it starts",
       "vboxJsonInvalid": "The VBox passthrough section is not valid JSON.",
       "complexCpuTopologyRequired": "Complex CPU topology needs sockets, cores, and threads.",
-      "nothingChanged": "Nothing changed.",
       "pendingChangesCleared": "Pending changes for {{machineName}} cleared.",
       "applyPendingFailed": "Applying the pending changes failed.",
       "pendingChangesApplied": "Pending changes applied to {{machineName}}",
@@ -11239,9 +11223,6 @@
       "hypervisorPassthroughVbox": "Hypervisor Passthrough (VirtualBox)",
       "vboxSectionRawJsonHint": "section, raw JSON — passed through verbatim, for exotics the sections above do not carry (teleporter, cpuid-set, tracing, guest-debug, pci-attach)",
       "provisioner": "Provisioner",
-      "noProvisioning": "None — no provisioning",
-      "invalidSuffix": " (invalid)",
-      "version": "Version",
       "syncMethod": "Sync Method",
       "removeProvisioningNetwork": "Remove Provisioning Network After Completion",
       "removeTransportOption": "remove — drop the transport NIC after provisioning",
@@ -11326,7 +11307,16 @@
       "editParts": "Edit parts",
       "noDefaultDomain": "No default domain is set for this host. Type one, or set the host's default domain in its configuration.",
       "setDefaultDomain": "Set the host's default domain",
-      "useProvisioner": "Use a provisioner",
+      "domainSource": {
+        "preference": "Browser",
+        "user": "Your default",
+        "organization": "Organization",
+        "agent": "Agent",
+        "provisioner": "Provisioner"
+      },
+      "pickProvisioner": "Pick provisioner",
+      "changeProvisioner": "Change provisioner",
+      "clearProvisioner": "Clear provisioner",
       "useProvisionerHint": "Without a provisioner the Provisioning step is not drawn.",
       "mount": "Mount",
       "filesystem": "Filesystem",
@@ -11342,6 +11332,12 @@
       "catalogVersionsTitle": "Catalog versions of {{family}}",
       "catalogVersionsNone": "No catalog of this host lists {{family}}",
       "pickFamilyOnGeneral": "Pick a provisioner on the General step."
+    },
+    "provisionerPick": {
+      "title": "Pick provisioner",
+      "pick": "Pick",
+      "pickVersion": "Pick {{version}}",
+      "none": "This host holds no provisioner."
     },
     "resources": {
       "hint": "zonecfg resource controls — set replaces the whole resource, remove deletes it, unchanged touches nothing. Applies at the next boot / power cycle like other infrastructure changes.",
@@ -11567,7 +11563,13 @@
       "pickRow": "Pick",
       "pickFileTitle": "{{role}} · {{kind}}",
       "searchFilesPlaceholder": "Search files",
-      "runRoleTitle": "Run this role"
+      "runRoleTitle": "Run this role",
+      "enableSelected": "Enable selected",
+      "disableSelected": "Disable selected",
+      "removeSelected": "Remove selected",
+      "moveTop": "Move to top",
+      "moveBottom": "Move to bottom",
+      "requiredRefused": "{{roles}} are required by the provisioner and stay."
     },
     "provisioningVarRows": {
       "notSetOption": "not set",
@@ -11612,7 +11614,7 @@
       "addVariable": "Add Variable",
       "rawJsonAriaLabel": "Provisioner document JSON",
       "applyJsonToForm": "Apply JSON to the form",
-      "storeDocument": "Store Document",
+      "storeDocument": "Save",
       "discardEdits": "Discard Edits",
       "documentStored": "Provisioning document stored"
     },
@@ -11664,10 +11666,8 @@
       "managerOnly": "The machine document is manager-only — it carries provisioning variables and secrets your organization role cannot read."
     },
     "machineProvisioning": {
-      "heading": "Provisioning",
       "working": "Working…",
       "provisionerLabel": "Provisioner",
-      "statusLabel": "Status",
       "unknown": "unknown",
       "lastProvisioned": "last: {{date}}",
       "welcomePageLabel": "Welcome Page",
@@ -11680,8 +11680,7 @@
       "confirmAndProvision": "Confirm & Provision",
       "nothingToRun": "Nothing to run — skipped by run directive: {{skipped}}",
       "queued": "Queued",
-      "taskWithSteps": "(task {{id}}, {{steps}} steps)",
-      "taskOnly": "(task {{id}})",
+      "taskWithSteps": "Its chain runs {{steps}} steps.",
       "skippedSuffix": "— skipped: {{skipped}}"
     },
     "provisionerFieldDsl": {
@@ -12166,7 +12165,6 @@
       "history": "History",
       "export": "Export",
       "convertDownload": "Convert and download",
-      "expires": "Expires {{date}}",
       "template": "Template",
       "related": "Related",
       "issuer": "Issuer",
@@ -12188,7 +12186,15 @@
       "count_one": "{{count}} record",
       "count_other": "{{count}} records",
       "pull": "Pull to vault",
-      "pullAgain": "Pull again"
+      "pullAgain": "Pull again",
+      "pullSelected": "Pull selected to vault",
+      "pulledMany_one": "1 row pulled to the vault.",
+      "pulledMany_other": "{{count}} rows pulled to the vault.",
+      "removeSelected": "Remove selected",
+      "removedMany_one": "1 row removed.",
+      "removedMany_other": "{{count}} rows removed.",
+      "removeManyMessage_one": "Remove the picked row from the store? A copy pulled to a vault stays there.",
+      "removeManyMessage_other": "Remove the {{count}} picked rows from the store? A copy pulled to a vault stays there."
     },
     "sync": {
       "destination": "Sync to {{name}}",
@@ -12423,11 +12429,14 @@
       "sign": "Sign",
       "saved": "saved",
       "keySource": "Key",
-      "keyMode": {
-        "vault": "Use a key of the vault"
-      },
+      "keyGenerate": "Generate a key",
+      "keyFromVault": "Pick a key from the Vault",
+      "keyFromFile": "Load a key file",
+      "keyChange": "Change key",
+      "keyFile": "Key file",
+      "withNewKey": "with a new {{alg}} key",
+      "savedWithKey": "Saved with its key",
       "vaultKey": "Vault key",
-      "pickKey": "Pick a key",
       "noVaultKey": "The vault holds no key with its private half.",
       "pasteInstead": "Paste instead",
       "template": "Template",
@@ -12438,8 +12447,10 @@
       "loadTemplate": "Load",
       "saveAsTemplate": "Save as template",
       "days": "Valid for (days)",
-      "authority": "Authority",
-      "pathLen": "Path length",
+      "authority": "Certificate authority",
+      "authorityHint": "Lets this certificate sign other certificates. Off makes an end-entity certificate for a server, a client or a person.",
+      "pathLen": "Signing depth",
+      "pathLenHint": "How many authorities may sit under this one: 0 means it signs end-entity certificates only, 1 means one intermediate authority under it, and so on.",
       "pathLenAny": "any",
       "request": "Request",
       "signingAuthority": "Signing authority",

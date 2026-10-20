@@ -294,7 +294,7 @@ Feature: networking writes
     And the host was sent GET to "/api/agents/3/monitoring/network/ipaddresses" 1 times
     And the host was sent GET to "/api/agents/3/network/addresses" 1 times
 
-  Scenario: Addresses: on a VirtualBox host the disable of an address is behind its own confirmation and the delete of one of several under one object names the bare address
+  Scenario: Addresses: on a VirtualBox host the disable of an address is behind its own plain confirmation and the delete of one of several under one object names the bare address
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -305,7 +305,7 @@ Feature: networking writes
     Then the "addresses" section of the networking page lists 4 rows
     When I press "disable" on the "addresses" section row "10.0.0.11"
     Then the host was not sent PUT to "/api/agents/1/network/addresses/Ethernet%2Fv4/disable"
-    When I confirm the open warning dialog
+    When I confirm the open plain dialog
     Then the host was sent PUT to "/api/agents/1/network/addresses/Ethernet%2Fv4/disable"
     And the page raised 1 success notice
     And I see "taken down with it"
@@ -347,7 +347,7 @@ Feature: networking writes
     And the host was sent PUT to "/api/agents/3/system/dns" carrying "nameservers" as "10.0.0.1,1.1.1.1"
     And the page raised 1 success notice
     When I dismiss the success notice
-    And I switch the networking field "dns-raw-mode"
+    And I press the "dns" section's "raw-mode" tool
     And I fill the networking field "dns-raw" with "nameserver 9.9.9.9"
     And I press the "dns" section's "save-dns" tool
     Then the host was sent PUT to "/api/agents/3/system/dns" carrying "raw" as "nameserver 9.9.9.9"
@@ -372,11 +372,30 @@ Feature: networking writes
     And the host was sent PUT to "/api/agents/3/system/hosts" carrying "zone-1" at "/entries/1/hostnames/0"
     And the page raised 1 success notice
     When I dismiss the success notice
-    And I switch the networking field "hosts-raw-mode"
+    And I press the "hosts-file" section's "raw-mode" tool
     And I fill the networking field "hosts-raw" with "127.0.0.1 localhost"
     And I press the "hosts-file" section's "save-hosts" tool
     Then the host was sent PUT to "/api/agents/3/system/hosts" carrying "raw" as "127.0.0.1 localhost"
     And the page raised 1 success notice
+
+  Scenario: Hosts file: one button in the heading toggles between the entries and the raw file, its words naming the other mode, the raw file filling the page region's height
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the host answers the hosts-networking-writes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/network/hosts-file"
+    Then the "hosts-file" section of the networking page lists 2 rows
+    And the "hosts-file" section's "raw-mode" tool reads "Edit raw file"
+    And the networking page draws no field "hosts-raw"
+    When I press the "hosts-file" section's "raw-mode" tool
+    Then the "hosts-file" section's "raw-mode" tool reads "Edit fields"
+    And the networking field "hosts-raw" fills the page region's height
+    And the "hosts-file" section offers no "add-entry" tool
+    When I press the "hosts-file" section's "raw-mode" tool
+    Then the "hosts-file" section's "raw-mode" tool reads "Edit raw file"
+    And the "hosts-file" section of the networking page lists 2 rows
+    And the networking page draws no field "hosts-raw"
 
   Scenario: Spaces: the network spaces draw the families the platform carries, the NAT network is stopped, edited and the host-only interface deleted over their routes
     Given the host answers the hosts fixture
@@ -388,7 +407,6 @@ Feature: networking writes
     Then the "spaces" section of the networking page lists 3 rows
     And the networking page notes "intnets"
     And the "spaces" section offers the "create-hostonly" tool
-    And the "spaces" section offers the "create-natnetwork" tool
     And the "spaces" section offers no "create-hostonlynet" tool
     And the "spaces" section row "intnet" offers no "delete"
     And the section page draws one heading
@@ -423,6 +441,42 @@ Feature: networking writes
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/1/network/spaces" 2 times
 
+  Scenario: Spaces: New space is one split button, its press the host-only interface, its menu every family the host may create, the host-only interface opened from the menu
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the host answers the hosts-networking-writes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/network/spaces"
+    Then the "spaces" section of the networking page lists 3 rows
+    And the "spaces" section offers the "create-hostonly" tool
+    When I press the "spaces" section's "create-menu" tool
+    Then the "spaces" section's menu offers "create-hostonly, create-natnetwork"
+    When I pick "create-hostonly" from the "spaces" section's menu
+    Then the "space-hostonly" dialog is open
+
+  Scenario: Network pages: the Hostname, Hosts file, DNS, Spaces and Topology pages draw their one heading with no fold
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the host answers the hosts-networking-writes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/network/hostname"
+    Then the networking page draws the "hostname" section
+    And the networking page draws no fold
+    When I open "/hosts/3/network/hosts-file"
+    Then the "hosts-file" section of the networking page lists 2 rows
+    And the networking page draws no fold
+    When I open "/hosts/3/network/dns"
+    Then the networking page draws the "dns" section
+    And the networking page draws no fold
+    When I open "/hosts/3/network/topology"
+    Then the networking page draws the "topology" section
+    And the networking page draws no fold
+    When I open "/hosts/1/network/spaces"
+    Then the "spaces" section of the networking page lists 3 rows
+    And the networking page draws no fold
+
   Scenario: Spaces: a person who may not control hosts sees the spaces read only, the admin gate of every networking write
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
@@ -453,31 +507,6 @@ Feature: networking writes
     Then the "vnics" section of the networking management is folded
     When I fold the "vnics" section of the networking management
     Then the "vnics" section of the networking page lists 2 rows
-
-  Scenario: Network pages: the section of Hostname folds under manage- and the fold is kept over a reload
-    Given the host answers the hosts fixture
-    And the host answers the hosts-overview fixture
-    And the host answers the hosts-networking fixture
-    And the host answers the hosts-networking-writes fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/network/hostname"
-    Then the "hostname" section of the networking management is open
-    When I fold the "hostname" section of the networking management
-    Then the "hostname" section of the networking management is folded
-    When I load the page again
-    Then the "hostname" section of the networking management is folded
-
-  Scenario: Network pages: the topology of Topology folds and the fold is kept over a reload
-    Given the host answers the hosts fixture
-    And the host answers the hosts-overview fixture
-    And the host answers the hosts-networking fixture
-    And the host answers the hosts-networking-writes fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/3/network/topology"
-    Then the "topology" section of the networking management is open
-    When I fold the "topology" section of the networking management
-    And I load the page again
-    Then the "topology" section of the networking management is folded
 
   Scenario: Networking topology: a zoneweaver-agent host draws its machines, its carriers and its networks from the copies the page holds, the feed pulse live from the usage series
     Given the host answers the hosts fixture

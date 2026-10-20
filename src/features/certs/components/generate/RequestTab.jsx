@@ -16,7 +16,7 @@ import { newId, newRecord, stemOf } from '../../utils/records';
 import { REQUEST_LABELS, REQUEST_SCHEMA } from '../../utils/schemas';
 import SubjectForm, { EMPTY_SUBJECT, fieldsOfSubject, sansOf, subjectOf } from '../SubjectForm';
 
-import KeySource, { EMPTY_KEY_SOURCE, resolveKey } from './KeySource';
+import KeySource, { EMPTY_KEY_SOURCE, keyFileNameOf, resolveKey, shownKeyOf } from './KeySource';
 import Outcome from './Outcome';
 import TemplatePicker from './TemplatePicker';
 
@@ -63,12 +63,16 @@ const EMPTY_DRAFT = { ...EMPTY_SUBJECT, ...EMPTY_KEY_SOURCE };
 
 /**
  * The CSR tab of the Generate page: one line saying what it makes, the
- * subject form and the key source, Make CSR building the PKCS#10 through
+ * subject form and the key source, generated, picked from the vault or
+ * read from a file, Make CSR building the PKCS#10 through
  * the engine once the rules pass, its glyph a spinner while it runs,
  * then the optional templates of the vault under the form to load, save
  * and delete, then Save to vault keeping the request linked to its key,
- * the key kept beside it under the common name while it was generated,
- * and Download handing the browser the PEM.
+ * the key kept beside it under the common name while it was generated
+ * or read from a file,
+ * and Download handing the browser the PEM; while the form made the key
+ * the outcome shows the key's PEM too and Download hands it after the
+ * request as `<stem>.key.pem`.
  */
 const RequestTab = ({ fold }) => {
   const { t } = useTranslation();
@@ -103,7 +107,13 @@ const RequestTab = ({ fold }) => {
         ext_key_usage: draft.ext_key_usage,
       });
       const detected = held.detect(new TextEncoder().encode(csr.pem), 'request.csr', '');
-      setMade({ ...csr, key, facts: detected.components[0]?.facts || null, name: draft.CN.trim() });
+      setMade({
+        ...csr,
+        key,
+        shownKey: shownKeyOf(held, key),
+        facts: detected.components[0]?.facts || null,
+        name: draft.CN.trim(),
+      });
       setSaved(false);
     });
   };
@@ -167,11 +177,15 @@ const RequestTab = ({ fold }) => {
           title={t('certs.generate.requestMade')}
           facts={made.facts}
           pem={made.pem}
+          shownKey={made.shownKey}
           saved={saved}
           onSave={save}
-          onDownload={() =>
-            downloadText(made.pem, PEM, fileNameOf(stemOf({ name: made.name }), 'pem', 'csr'))
-          }
+          onDownload={() => {
+            downloadText(made.pem, PEM, fileNameOf(stemOf({ name: made.name }), 'pem', 'csr'));
+            if (made.shownKey) {
+              downloadText(made.shownKey.pem, PEM, keyFileNameOf(made.name));
+            }
+          }}
         />
       ) : null}
     </SectionCard>

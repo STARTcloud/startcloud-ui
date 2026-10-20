@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FaDownload,
@@ -11,19 +11,14 @@ import {
 } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { localeDate } from '../../../components/common/columns';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import CopyButton from '../../../components/common/CopyButton';
 import EmptyState from '../../../components/common/EmptyState';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
-import PageHeader from '../../../components/common/PageHeader';
 import RecordRows from '../../../components/common/RecordRows';
-import SectionCard from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
-import StatusChips from '../../../components/common/StatusChips';
-import { StatusMenu, VisibilityMenu, pickedOf } from '../../../components/common/VisibilityPicker';
+import { StatusMenu, VisibilityMenu } from '../../../components/common/VisibilityPicker';
 import { useNotify } from '../../../contexts/NoticeContext';
-import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { usePageName } from '../../../hooks/usePageName';
 import { pageContextShape } from '../../../utils/itemShape';
@@ -32,16 +27,13 @@ import { useBuiltChain } from '../hooks/useBuiltChain';
 import { useRecordActions } from '../hooks/useRecordActions';
 import { useStoreWrites } from '../hooks/useStoreWrites';
 import { useVault } from '../hooks/useVault';
-import { foldOf } from '../utils/folds';
 import {
   PRIVATE_MEMBERS,
   SECRET_MEMBERS,
-  algorithmOf,
   derOf,
   isSecretKind,
   kindOf,
   nameOf,
-  notAfterOf,
   nowOf,
   recordPath,
   recordStatus,
@@ -54,15 +46,14 @@ import ChainView from './ChainView';
 import { TextAreaField, TextField } from './fields';
 import FormatPicker, { EMPTY_OUTPUT } from './FormatPicker';
 import RecordHistory from './RecordHistory';
-import SecretRecordModal from './SecretRecordModal';
-import StatusBadge from './StatusBadge';
+import SecretRecordModal, { tagsOfText } from './SecretRecordModal';
 import VaultTreeDialogs from './VaultTreeDialogs';
 
 const MASK = '••••••••';
 
 const CHAINED = ['certificate', 'authority'];
 
-const FOLDS = { details: 'details', export: 'export' };
+const PANE_BUTTON = 'btn btn-sm btn-outline-secondary';
 
 const PRE_CLASS = 'font-monospace small border rounded p-3 flex-grow-1 mb-0';
 
@@ -76,8 +67,14 @@ const recordLinks = records =>
     </span>
   ));
 
-const DetailsCard = ({ record, fold, onSave }) => {
-  const { t } = useTranslation();
+const detailRows = (record, t) =>
+  [
+    { key: 'name', label: t('certs.record.name'), value: nameOf(record) },
+    { key: 'tags', label: t('certs.record.tags'), value: (record.tags || []).join(', ') },
+    { key: 'notes', label: t('certs.record.notes'), value: record.notes || '' },
+  ].filter(row => row.value);
+
+const DetailsForm = ({ record, formId, onSave }) => {
   const [draft, setDraft] = useState({
     name: record.name,
     tags: (record.tags || []).join(', '),
@@ -98,32 +95,45 @@ const DetailsCard = ({ record, fold, onSave }) => {
     }
     onSave({
       name: draft.name.trim(),
-      tags: draft.tags
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(Boolean),
+      tags: tagsOfText(draft.tags),
       notes: draft.notes,
     });
   };
 
   return (
-    <SectionCard title={t('certs.record.details')} folded={fold.folded} onFold={fold.onFold}>
-      <form onSubmit={submit} noValidate>
-        <FormErrorSummary errors={rules.summary} />
-        <TextField name="name" draft={draft} rules={rules} onChange={set} />
-        <TextField name="tags" draft={draft} rules={rules} onChange={set} />
-        <TextAreaField name="notes" draft={draft} rules={rules} onChange={set} />
-        <button type="submit" className="btn btn-primary" data-action="save">
-          {t('certs.record.save')}
-        </button>
-      </form>
-    </SectionCard>
+    <form id={formId} onSubmit={submit} noValidate>
+      <FormErrorSummary errors={rules.summary} />
+      <TextField name="name" draft={draft} rules={rules} onChange={set} />
+      <TextField name="tags" draft={draft} rules={rules} onChange={set} />
+      <TextAreaField name="notes" draft={draft} rules={rules} onChange={set} />
+    </form>
   );
 };
 
-DetailsCard.propTypes = {
+DetailsForm.propTypes = {
   record: PropTypes.object.isRequired,
-  fold: PropTypes.object.isRequired,
+  formId: PropTypes.string.isRequired,
+  onSave: PropTypes.func.isRequired,
+};
+
+const DetailsSection = ({ record, editing, formId, onSave }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="mb-4" data-panel="record-details">
+      <SectionHeading title={t('certs.record.details')} />
+      {editing ? (
+        <DetailsForm record={record} formId={formId} onSave={onSave} />
+      ) : (
+        <RecordRows rows={detailRows(record, t)} />
+      )}
+    </div>
+  );
+};
+
+DetailsSection.propTypes = {
+  record: PropTypes.object.isRequired,
+  editing: PropTypes.bool.isRequired,
+  formId: PropTypes.string.isRequired,
   onSave: PropTypes.func.isRequired,
 };
 
@@ -201,41 +211,18 @@ const secretRows = (record, t) => {
   ];
 };
 
-const SecretSection = ({ record, onSave }) => {
+const SecretSection = ({ record }) => {
   const { t } = useTranslation();
-  const [editing, setEditing] = useState(false);
-  const edit = (
-    <button
-      type="button"
-      className="btn btn-sm btn-outline-secondary"
-      data-action="edit-secret"
-      onClick={() => setEditing(true)}
-    >
-      <FaPenToSquare className="me-1" aria-hidden="true" />
-      {t('certs.actions.edit')}
-    </button>
-  );
   return (
     <div className="mb-4" data-panel="record-secret">
-      <SectionHeading title={t('certs.record.secret')} actions={edit} />
+      <SectionHeading title={t('certs.record.secret')} />
       <RecordRows rows={secretRows(record, t)} />
-      {editing ? (
-        <SecretRecordModal
-          record={record}
-          onSave={next => {
-            onSave(next);
-            setEditing(false);
-          }}
-          onClose={() => setEditing(false)}
-        />
-      ) : null}
     </div>
   );
 };
 
 SecretSection.propTypes = {
   record: PropTypes.object.isRequired,
-  onSave: PropTypes.func.isRequired,
 };
 
 const relatedRows = (related, t) =>
@@ -366,8 +353,9 @@ KeySection.propTypes = {
   actions: PropTypes.object.isRequired,
 };
 
-const ExportCard = ({ record, keyRecord, issuers, fold, actions }) => {
+const ExportSection = ({ record, keyRecord, issuers, actions }) => {
   const { t } = useTranslation();
+  const formId = useId();
   const [output, setOutput] = useState(EMPTY_OUTPUT);
   const rules = useFormRules({
     schema: OUTPUT_SCHEMA,
@@ -384,9 +372,22 @@ const ExportCard = ({ record, keyRecord, issuers, fold, actions }) => {
     }
   };
 
+  const convert = (
+    <button
+      type="submit"
+      form={formId}
+      className="btn btn-sm btn-primary"
+      data-action="convert-download"
+    >
+      <FaRightLeft className="me-1" aria-hidden="true" />
+      {t('certs.record.convertDownload')}
+    </button>
+  );
+
   return (
-    <SectionCard title={t('certs.record.export')} folded={fold.folded} onFold={fold.onFold}>
-      <form onSubmit={submit} noValidate>
+    <div className="mb-4" data-panel="record-export">
+      <SectionHeading title={t('certs.record.export')} actions={convert} />
+      <form id={formId} onSubmit={submit} noValidate>
         <FormErrorSummary errors={rules.summary} />
         <FormatPicker
           kinds={kinds}
@@ -394,50 +395,23 @@ const ExportCard = ({ record, keyRecord, issuers, fold, actions }) => {
           rules={rules}
           onChange={patch => setOutput(current => ({ ...current, ...patch }))}
         />
-        <button type="submit" className="btn btn-primary" data-action="convert-download">
-          <FaRightLeft className="me-1" aria-hidden="true" />
-          {t('certs.record.convertDownload')}
-        </button>
       </form>
-    </SectionCard>
+    </div>
   );
 };
 
-ExportCard.propTypes = {
+ExportSection.propTypes = {
   record: PropTypes.object.isRequired,
   keyRecord: PropTypes.object,
   issuers: PropTypes.array.isRequired,
-  fold: PropTypes.object.isRequired,
   actions: PropTypes.object.isRequired,
 };
 
-const Chips = ({ record, thresholdDays }) => {
-  const { t, i18n } = useTranslation();
-  const algorithm = algorithmOf(record);
-  const expires = notAfterOf(record);
-  return (
-    <>
-      <StatusBadge status={recordStatus(record, nowOf(), thresholdDays)} />
-      {record.remote_id ? (
-        <StatusChips
-          status={record.published ? 'published' : 'pending'}
-          visibility={pickedOf(record)}
-        />
-      ) : null}
-      <span className="badge bg-secondary">{t(`certs.kind.${record.kind}`)}</span>
-      {algorithm ? <span className="badge bg-secondary">{algorithm}</span> : null}
-      {expires ? (
-        <span className="badge bg-secondary">
-          {t('certs.record.expires', { date: localeDate(expires, i18n.language) })}
-        </span>
-      ) : null}
-    </>
-  );
-};
-
-Chips.propTypes = {
-  record: PropTypes.object.isRequired,
-  thresholdDays: PropTypes.number.isRequired,
+const headingCount = (record, thresholdDays, t) => {
+  const status = recordStatus(record, nowOf(), thresholdDays);
+  return [t(`certs.kind.${record.kind}`), status ? t(`certs.status.${status}`) : '']
+    .filter(Boolean)
+    .join(' · ');
 };
 
 const managesSynced = (record, user) =>
@@ -446,24 +420,60 @@ const managesSynced = (record, user) =>
 const accessOf = body =>
   Object.fromEntries(Object.entries(body).filter(([word]) => word !== 'recursive'));
 
-const HeaderActions = ({ record, actions, manage, onDelete, onRemove, onAccess }) => {
+const EditActions = ({ editing, formId, onEdit, onCancel }) => {
+  const { t } = useTranslation();
+  if (!editing) {
+    return (
+      <button key="edit" type="button" className={PANE_BUTTON} data-action="edit" onClick={onEdit}>
+        <FaPenToSquare className="me-1" aria-hidden="true" />
+        {t('certs.actions.edit')}
+      </button>
+    );
+  }
+  return (
+    <>
+      <button
+        key="save"
+        type="submit"
+        form={formId}
+        className="btn btn-sm btn-primary"
+        data-action="save"
+      >
+        {t('certs.record.save')}
+      </button>
+      <button type="button" className={PANE_BUTTON} data-action="cancel" onClick={onCancel}>
+        {t('pages.confirm.cancel')}
+      </button>
+    </>
+  );
+};
+
+EditActions.propTypes = {
+  editing: PropTypes.bool.isRequired,
+  formId: PropTypes.string.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+};
+
+const PaneActions = ({ record, actions, manage, edit, onDelete, onRemove, onAccess }) => {
   const { t } = useTranslation();
   return (
     <>
+      {edit}
       {manage ? (
         <VisibilityMenu
           current={{
             is_public: Boolean(record.is_public),
             guest_access: Boolean(record.guest_access),
           }}
-          className="btn btn-outline-secondary"
+          className={PANE_BUTTON}
           onPick={body => onAccess(accessOf(body))}
         />
       ) : null}
       {manage ? (
         <StatusMenu
           published={Boolean(record.published)}
-          className="btn btn-outline-secondary"
+          className={PANE_BUTTON}
           onPick={body => onAccess(accessOf(body))}
         />
       ) : null}
@@ -471,32 +481,37 @@ const HeaderActions = ({ record, actions, manage, onDelete, onRemove, onAccess }
         <>
           <button
             type="button"
-            className="btn btn-outline-secondary"
-            data-action="convert"
-            onClick={() => actions.convert(record)}
-          >
-            <FaRightLeft className="me-1" aria-hidden="true" />
-            {t('certs.actions.convert')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
+            className={PANE_BUTTON}
             data-action="download"
             onClick={() => actions.download(record)}
           >
             <FaDownload className="me-1" aria-hidden="true" />
             {t('certs.actions.download')}
           </button>
+          <button
+            type="button"
+            className={PANE_BUTTON}
+            data-action="convert"
+            onClick={() => actions.convert(record)}
+          >
+            <FaRightLeft className="me-1" aria-hidden="true" />
+            {t('certs.actions.convert')}
+          </button>
         </>
       )}
-      <button type="button" className="btn btn-danger" data-action="delete" onClick={onDelete}>
+      <button
+        type="button"
+        className="btn btn-sm btn-danger"
+        data-action="delete"
+        onClick={onDelete}
+      >
         <FaTrash className="me-1" aria-hidden="true" />
         {t('certs.actions.delete')}
       </button>
       {manage ? (
         <button
           type="button"
-          className="btn btn-outline-danger"
+          className="btn btn-sm btn-outline-danger"
           data-action="remove-from"
           onClick={onRemove}
         >
@@ -507,32 +522,44 @@ const HeaderActions = ({ record, actions, manage, onDelete, onRemove, onAccess }
   );
 };
 
-HeaderActions.propTypes = {
+PaneActions.propTypes = {
   record: PropTypes.object.isRequired,
   actions: PropTypes.object.isRequired,
   manage: PropTypes.bool.isRequired,
+  edit: PropTypes.node.isRequired,
   onDelete: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
   onAccess: PropTypes.func.isRequired,
 };
 
-const RecordSections = ({ record, context, related, authorities, built, actions, save }) => {
+const RecordSections = ({
+  record,
+  context,
+  related,
+  authorities,
+  built,
+  actions,
+  save,
+  saveDetails,
+  editing,
+  formId,
+}) => {
   const { t } = useTranslation();
   const vault = useVault();
   const prefsKey = `${context.prefsPrefix}_certs_record`;
-  const folds = useFolds(prefsKey);
   const thresholdDays = vault.preferences.threshold_days;
   const chained = CHAINED.includes(record.kind) && Boolean(derOf(record));
   const secret = isSecretKind(record.kind);
   return (
     <>
-      <DetailsCard
+      <DetailsSection
         key={record.updated_at}
         record={record}
-        fold={foldOf(folds, FOLDS.details)}
-        onSave={save}
+        editing={editing && !secret}
+        formId={formId}
+        onSave={saveDetails}
       />
-      {secret ? <SecretSection record={record} onSave={save} /> : null}
+      {secret ? <SecretSection record={record} /> : null}
       {record.kind === 'template' ? <TemplateSection record={record} /> : null}
       {record.facts ? (
         <div className="mb-4" data-panel="record-facts">
@@ -556,11 +583,10 @@ const RecordSections = ({ record, context, related, authorities, built, actions,
         />
       ) : null}
       {derOf(record) ? (
-        <ExportCard
+        <ExportSection
           record={record}
           keyRecord={related.key}
           issuers={built.issuers}
-          fold={foldOf(folds, FOLDS.export)}
           actions={actions}
         />
       ) : null}
@@ -576,6 +602,9 @@ RecordSections.propTypes = {
   built: PropTypes.object.isRequired,
   actions: PropTypes.object.isRequired,
   save: PropTypes.func.isRequired,
+  saveDetails: PropTypes.func.isRequired,
+  editing: PropTypes.bool.isRequired,
+  formId: PropTypes.string.isRequired,
 };
 
 const RecordBody = ({ record, context }) => {
@@ -585,9 +614,12 @@ const RecordBody = ({ record, context }) => {
   const vault = useVault();
   const actions = useRecordActions();
   const store = useStoreWrites();
+  const formId = useId();
+  const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [removing, setRemoving] = useState(false);
   const thresholdDays = vault.preferences.threshold_days;
+  const secret = isSecretKind(record.kind);
   const related = relationships(record, vault.records);
   const authorities = vault.records.filter(
     entry => entry.kind === 'authority' && entry.id !== record.id && derOf(entry)
@@ -602,11 +634,23 @@ const RecordBody = ({ record, context }) => {
   const save = patch =>
     vault.update(record, patch).then(() => notify('success', t('certs.notice.saved')));
 
-  const headerActions = (
-    <HeaderActions
+  const saveEdit = patch => save(patch).then(() => setEditing(false));
+
+  const edit = (
+    <EditActions
+      editing={editing && !secret}
+      formId={formId}
+      onEdit={() => setEditing(true)}
+      onCancel={() => setEditing(false)}
+    />
+  );
+
+  const pane = (
+    <PaneActions
       record={record}
       actions={actions}
       manage={managesSynced(record, context.user)}
+      edit={edit}
       onDelete={() => setDeleting(true)}
       onRemove={() => setRemoving(true)}
       onAccess={patch => store.setAccess(record, patch)}
@@ -615,11 +659,10 @@ const RecordBody = ({ record, context }) => {
 
   return (
     <div className="list row" data-page="certs-record">
-      <PageHeader
+      <SectionHeading
         title={nameOf(record)}
-        subtitle={record.facts?.subject_dn || ''}
-        chips={<Chips record={record} thresholdDays={thresholdDays} />}
-        actions={headerActions}
+        count={headingCount(record, thresholdDays, t)}
+        actions={pane}
       />
       <RecordSections
         record={record}
@@ -629,7 +672,13 @@ const RecordBody = ({ record, context }) => {
         built={built}
         actions={actions}
         save={save}
+        saveDetails={saveEdit}
+        editing={editing}
+        formId={formId}
       />
+      {editing && secret ? (
+        <SecretRecordModal record={record} onSave={saveEdit} onClose={() => setEditing(false)} />
+      ) : null}
       <VaultTreeDialogs
         target={deleting ? record : null}
         records={vault.records}
@@ -676,23 +725,24 @@ NotFound.propTypes = {
 };
 
 /**
- * One record at `/certs/{id}`: the name as the title over the subject
- * with the expiry status, the published and visibility chips while the
- * store holds the record, kind, algorithm and expiry chips, the header's
- * action pane carrying the visibility step and Publish / Unpublish while
- * the store holds the record and `canManageRecord` says the person may
- * change it, each one PUT, then Convert, Download, Delete behind the
- * typed confirmation (the browser's record alone, nothing sent, the
- * vault's heading focused on arrival) and
- * Remove from the organization behind its own typed confirmation under
- * the same predicate, that verb alone sending the DELETE and a refusal
- * keeping the record; then the details
- * card (name, tags, notes), a secret record's profile, members and extra
- * values with every private member masked and Edit opening the secret
- * record form, no Convert, Download or key section for it, a template's members, the facts, the related
- * records as links, the chain the engine builds over the vault's
+ * One record at `/certs/{id}`, every kind alike: one heading, the name
+ * as its title with the kind and the expiry status as the muted text
+ * after it, its pane carrying Edit, Save and Cancel while editing, the
+ * visibility step and Publish / Unpublish while the store holds the
+ * record and `canManageRecord` says the person may change it, each one
+ * PUT, then Download, Convert, Delete behind the typed confirmation (the
+ * browser's record alone, nothing sent, the vault's heading focused on
+ * arrival) and Remove from the organization behind its own typed
+ * confirmation under the same predicate, that verb alone sending the
+ * DELETE and a refusal keeping the record. Under it, glass sections that
+ * never fold at the page's width: the details (name, tags, notes) as
+ * record rows, Edit turning them into the fields Save writes, a secret
+ * record's profile, members and extra values with every private member
+ * masked, Edit opening the secret record form for it, no Convert,
+ * Download or key section for it, a template's members, the facts, the
+ * related records as links, the chain the engine builds over the vault's
  * authorities, the key held or missing with View, Copy and Download, the
- * versions held with Activate, Download and Delete, and the export card
+ * versions held with Activate, Download and Delete, and the export
  * converting the record, its key and its chain into any format the
  * engine writes; the name named as the page's crumb, and a missing
  * record titled Not found.

@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import NotAvailableStub from '../../../components/common/NotAvailableStub';
+import SectionHeading from '../../../components/common/SectionHeading';
 import { useStatus } from '../../../contexts/StatusContext';
 import { pageContextShape } from '../../../utils/itemShape';
 import { useMachineRow } from '../hooks/useHostMachines';
@@ -23,13 +24,14 @@ import MachineSettings from './MachineSettings';
  * machine's own row, its running state and its detail are the copies the
  * hosts feature's hooks hold, handed to `MachineSettings`, and after a
  * write the machine's row, its detail and the host's stats are read
- * again once. It draws behind `machine-modify` for a person who may
+ * again once, `title` and `actions` handed down to the page's one
+ * heading. It draws behind `machine-modify` for a person who may
  * create machines, the not-available stub naming that token for anyone
- * else, once the detail answered, the Snapshots tab offered by
+ * else, once the detail answered and the heading alone before, the Snapshots tab offered by
  * `machineToolGates`' `policy`: `machine-snapshots`, never of a machine
  * on UTM.
  */
-const MachineSettingsView = ({ id, name, context }) => {
+const MachineSettingsView = ({ id, name, context, title, actions = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const server = useHostRow(id);
@@ -47,7 +49,12 @@ const MachineSettingsView = ({ id, name, context }) => {
     );
   }
   if (!detail) {
-    return answer.loaded ? null : <div data-view="machine-settings">{t('pages.loading')}</div>;
+    return (
+      <>
+        <SectionHeading title={title} actions={actions} />
+        {answer.loaded ? null : <div data-view="machine-settings">{t('pages.loading')}</div>}
+      </>
+    );
   }
 
   const reread = () => {
@@ -72,6 +79,8 @@ const MachineSettingsView = ({ id, name, context }) => {
         snapshots={machineToolGates({ server, machine: row.machine, role }).policy}
         running={isRunning(stats, name)}
         onDone={reread}
+        title={title}
+        actions={actions}
       />
     </div>
   );
@@ -81,6 +90,8 @@ MachineSettingsView.propTypes = {
   id: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   context: pageContextShape.isRequired,
+  title: PropTypes.string.isRequired,
+  actions: PropTypes.node,
 };
 
 export default MachineSettingsView;

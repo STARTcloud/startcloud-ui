@@ -73,18 +73,14 @@ export const healthBadgeClass = health => `text-bg-${healthTone(health)}`;
 export const healthTextClass = health => `text-${healthTone(health)}`;
 
 /**
- * The sentence a queued answer names, hyperweaver-ui's: the agent's own
- * message or the fallback, the task's id after it where the answer
- * names one.
+ * The sentence a queued answer names: the agent's own message or the
+ * fallback, never the task's id.
  *
  * @param {Object|null} answer - The agent's answer
  * @param {string} fallback - The sentence when the answer names none
  * @returns {string} The sentence
  */
-export const queuedMessage = (answer, fallback) => {
-  const base = answer?.message || fallback;
-  return answer?.task_id ? `${base} (task ${answer.task_id})` : base;
-};
+export const queuedMessage = (answer, fallback) => answer?.message || fallback;
 
 /**
  * A raw byte count, a number or a bare digit string, in human units; a

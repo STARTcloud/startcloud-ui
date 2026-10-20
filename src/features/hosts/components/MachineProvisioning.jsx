@@ -6,7 +6,6 @@ import { useSearchParams } from 'react-router-dom';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import RecordRows from '../../../components/common/RecordRows';
-import { foldsShape } from '../../../components/common/SectionCard';
 import SectionHeading from '../../../components/common/SectionHeading';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
@@ -36,8 +35,6 @@ import { TERMINAL_TASK_STATUSES, formatTaskDate } from '../utils/tasks';
 import ProvisioningEditor from './ProvisioningEditor';
 import TaskDialog from './TaskDialog';
 
-const STATUS_FOLD = 'machine-provisioning';
-
 const HOOK_KEYWORD = 'provision';
 
 const provisionerRows = (document, t) =>
@@ -57,9 +54,6 @@ const provisionerRows = (document, t) =>
 
 const StatusValue = ({ state }) => {
   const { t } = useTranslation();
-  if (!state) {
-    return <span className="text-muted">-</span>;
-  }
   const word = state.provisioning_status || t('provisioning.machineProvisioning.unknown');
   return (
     <>
@@ -70,7 +64,7 @@ const StatusValue = ({ state }) => {
         {word}
       </span>
       {state.last_provisioned_at ? (
-        <span className="small text-muted ms-2">
+        <span className="ms-2">
           {t('provisioning.machineProvisioning.lastProvisioned', {
             date: formatTaskDate(state.last_provisioned_at),
           })}
@@ -81,16 +75,11 @@ const StatusValue = ({ state }) => {
 };
 
 StatusValue.propTypes = {
-  state: PropTypes.object,
+  state: PropTypes.object.isRequired,
 };
 
-const statusRows = ({ document, state, webAddress, t }) => [
+const statusRows = ({ document, webAddress, t }) => [
   ...provisionerRows(document, t),
-  {
-    key: 'status',
-    label: t('provisioning.machineProvisioning.statusLabel'),
-    value: <StatusValue state={state} />,
-  },
   ...(webAddress
     ? [
         {
@@ -137,14 +126,16 @@ const useProvisionStatus = ({ status, id, name, offered }) => {
 
 /**
  * The Provisioning page of one machine, hyperweaver-ui's Provisioning
- * tab on glass, no card around any of it: the status section, one
- * heading that folds over the record rows of the provisioner the
- * document names, the pipeline's state with when it last provisioned,
- * read by `GET machines/{name}/provision/status` while the host lists
- * `provisioning` and the machine's detail carries a document, and the
- * welcome page where the agent answers one; under it, for a person who
- * may create machines on a host that lists `machine-create`, the
- * document editor, its tabs, Hosts.yml among them. A pipeline action handed in `run`
+ * tab on glass, no card around any of it: one heading, `title`, the
+ * pipeline's state as its badge with when it last provisioned as the
+ * muted text after it, read by `GET machines/{name}/provision/status`
+ * while the host lists `provisioning` and the machine's detail carries a
+ * document, and in its pane the editor's Save and Discard, then
+ * `actions`; under it the record rows of the provisioner the document
+ * names and the welcome page where the agent answers one; under them,
+ * for a person who may create machines on a host that lists
+ * `machine-create`, the document editor, its tabs, Hosts.yml among them,
+ * which draws the heading. A pipeline action handed in `run`
  * by the Controls menu, the tree or a row is sent once as the page
  * opens, `POST machines/{name}/provision`, `/sync`, `/sync` with
  * `syncback` or `/run-provisioners`, one notice reporting the queued
@@ -160,7 +151,7 @@ const useProvisionStatus = ({ status, id, name, offered }) => {
  * the task dialog closes, on the stream's fresh opening and its `reset`,
  * and after a stored document with the detail; nothing polls.
  */
-const MachineProvisioning = ({ id, name, context, folds }) => {
+const MachineProvisioning = ({ id, name, context, title, actions = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
@@ -287,58 +278,61 @@ const MachineProvisioning = ({ id, name, context, folds }) => {
         }
       : null;
 
-  const folded = folds.folded(STATUS_FOLD);
+  const heading = {
+    title,
+    count: state ? <StatusValue state={state} /> : null,
+    badge: busy ? (
+      <span className="spinner-border spinner-border-sm" role="status">
+        <span className="visually-hidden">{t('provisioning.machineProvisioning.working')}</span>
+      </span>
+    ) : null,
+    actions,
+  };
+
+  const lead = (
+    <div className="mb-3" data-panel="machine-provisioning">
+      {document ? (
+        <>
+          <RecordRows
+            className="mb-2"
+            rows={statusRows({ document, webAddress: detail?.web_address, t })}
+          />
+          <p className="form-text text-muted mb-0">
+            {t('provisioning.machineProvisioning.pipelineHint')}
+          </p>
+        </>
+      ) : (
+        <p className="text-muted mb-0" data-note="no-document">
+          {t('provisioning.machineProvisioning.noDocumentYet')}
+          {gates.reshape ? t('provisioning.machineProvisioning.noDocumentReshapeSuffix') : ''}.
+        </p>
+      )}
+    </div>
+  );
 
   return (
-    <div className="list row">
-      <div className="mb-3" data-panel="machine-provisioning" data-folded={folded}>
-        <SectionHeading
-          title={t('provisioning.machineProvisioning.heading')}
-          badge={
-            busy ? (
-              <span className="spinner-border spinner-border-sm" role="status">
-                <span className="visually-hidden">
-                  {t('provisioning.machineProvisioning.working')}
-                </span>
-              </span>
-            ) : null
-          }
-          folded={folded}
-          onFold={() => folds.toggle(STATUS_FOLD)}
-        />
-        {folded ? null : (
-          <>
-            {document ? (
-              <>
-                <RecordRows
-                  className="mb-2"
-                  rows={statusRows({ document, state, webAddress: detail?.web_address, t })}
-                />
-                <p className="form-text text-muted mb-0">
-                  {t('provisioning.machineProvisioning.pipelineHint')}
-                </p>
-              </>
-            ) : (
-              <p className="text-muted mb-0" data-note="no-document">
-                {t('provisioning.machineProvisioning.noDocumentYet')}
-                {gates.reshape
-                  ? t('provisioning.machineProvisioning.noDocumentReshapeSuffix')
-                  : ''}
-                .
-              </p>
-            )}
-          </>
-        )}
-      </div>
+    <div>
       {gates.reshape ? (
         <ProvisioningEditor
           id={id}
           name={name}
           document={document}
+          heading={heading}
+          lead={lead}
           onSaved={saved}
           onRun={runOne}
         />
-      ) : null}
+      ) : (
+        <>
+          <SectionHeading
+            title={heading.title}
+            count={heading.count}
+            badge={heading.badge}
+            actions={actions}
+          />
+          {lead}
+        </>
+      )}
       <ConfirmModal
         show={hookReason !== ''}
         handleClose={closeHooks}
@@ -360,7 +354,8 @@ MachineProvisioning.propTypes = {
   context: PropTypes.shape({
     user: PropTypes.object,
   }).isRequired,
-  folds: foldsShape.isRequired,
+  title: PropTypes.string.isRequired,
+  actions: PropTypes.node,
 };
 
 export default MachineProvisioning;

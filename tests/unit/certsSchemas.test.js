@@ -33,6 +33,7 @@ const SUBJECT = {
   CN: 'a',
   mode: 'generate',
   keyId: '',
+  keyFile: null,
   alg: 'p256',
   signature: 'pkcs1',
   sans: [],
@@ -68,6 +69,14 @@ describe('the generate schemas', () => {
     expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, CN: '' })).toEqual(['/CN']);
     expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, mode: 'vault' })).toEqual(['/keyId']);
     expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, mode: 'vault', keyId: 'k' })).toEqual([]);
+  });
+
+  it('requires the read key only while the source is a file', () => {
+    expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, mode: 'file' })).toEqual(['/keyFile']);
+    expect(
+      pointersOf(REQUEST_SCHEMA, { ...SUBJECT, mode: 'file', keyFile: { der_b64: 'A' } })
+    ).toEqual([]);
+    expect(pointersOf(REQUEST_SCHEMA, { ...SUBJECT, mode: 'other' })).toEqual(['/mode']);
   });
 
   it('refuses a signature scheme outside the two words', () => {
@@ -203,6 +212,8 @@ describe('the secret schemas', () => {
     ).toEqual(['/extra/0/name']);
     expect(SECRET_LABELS.key).toBe('certs.secret.member.key');
     expect(SECRET_LABELS.name).toBe('certs.record.name');
+    expect(SECRET_LABELS.tags).toBe('certs.record.tags');
+    expect(secretSchemaOf('password').properties.tags).toEqual({ type: 'string' });
   });
 });
 

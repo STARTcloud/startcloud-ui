@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaPlus, FaTrash, FaTriangleExclamation } from 'react-icons/fa6';
+import { FaGripVertical, FaPlus, FaTrash, FaTriangleExclamation } from 'react-icons/fa6';
 
 import { VocabularySelect } from './HardwareEditor';
 import PickOrType from './PickOrType';
@@ -72,10 +73,12 @@ const NetworkRow = ({
   bridgeChoices,
   ipSuggestions,
   nicEnums,
+  drag,
   loading,
 }) => {
   const { t } = useTranslation();
   const rowKey = `network-${index}`;
+  const provisioning = network.type === 'host';
   const dns = Array.isArray(network.dns) ? network.dns : [];
   const ipOptions = Array.isArray(ipSuggestions?.suggestions) ? ipSuggestions.suggestions : [];
   const setDns = (dnsIndex, value) => {
@@ -90,12 +93,36 @@ const NetworkRow = ({
     choice => choice.provisioning && choice.value === network.bridge
   );
   return (
-    <div className="border rounded p-2" data-network-row={index}>
-      {index === 0 ? (
-        <p className="form-text text-muted mt-0 mb-2">
-          {t('machineEdit.networksEditor.firstNetworkHint')}
-        </p>
-      ) : null}
+    <div
+      className={`border rounded p-2 ${drag.dragging ? 'opacity-50 border-primary' : ''}`}
+      role="listitem"
+      data-network-row={index}
+      data-network-type={network.type || undefined}
+      draggable={!loading}
+      onDragStart={drag.onDragStart}
+      onDragEnd={drag.onDragEnd}
+      onDragOver={event => {
+        event.preventDefault();
+        drag.onDragOver();
+      }}
+    >
+      <div className="d-flex align-items-center gap-2 mb-2">
+        <FaGripVertical
+          className="text-muted"
+          data-action="network-grip"
+          aria-label={t('machineEdit.networksEditor.reorder')}
+        />
+        {provisioning ? (
+          <span className="badge text-bg-info" data-badge="provisioning">
+            {t('machineEdit.networksEditor.provisioning')}
+          </span>
+        ) : null}
+        {index === 0 ? (
+          <span className="form-text text-muted mt-0">
+            {t('machineEdit.networksEditor.firstNetworkHint')}
+          </span>
+        ) : null}
+      </div>
       <div className="row g-2 align-items-end">
         <div className="col-6 col-md-2">
           <label className="form-label small mb-1" htmlFor={`${rowKey}-type`}>
@@ -119,7 +146,17 @@ const NetworkRow = ({
           <label className="form-label small mb-1" htmlFor={`${rowKey}-bridge`}>
             {t('machineEdit.networksEditor.bridgeUplink')}
           </label>
-          {bridgeChoices.length > 0 ? (
+          {provisioning ? (
+            <input
+              id={`${rowKey}-bridge`}
+              className="form-control form-control-sm"
+              type="text"
+              value={t('machineEdit.networksEditor.provisioningInterface')}
+              readOnly
+              disabled
+            />
+          ) : null}
+          {!provisioning && bridgeChoices.length > 0 ? (
             <PickOrType
               id={`${rowKey}-bridge`}
               value={network.bridge ?? ''}
@@ -130,7 +167,8 @@ const NetworkRow = ({
               small
               disabled={loading}
             />
-          ) : (
+          ) : null}
+          {!provisioning && bridgeChoices.length === 0 ? (
             <input
               id={`${rowKey}-bridge`}
               className="form-control form-control-sm"
@@ -139,7 +177,7 @@ const NetworkRow = ({
               onChange={event => onPatch({ bridge: event.target.value })}
               disabled={loading}
             />
-          )}
+          ) : null}
           {onProvisioningLink ? (
             <span className="form-text text-warning small">
               <FaTriangleExclamation className="me-1" aria-hidden="true" />
@@ -294,6 +332,12 @@ NetworkRow.propTypes = {
   bridgeChoices: PropTypes.array.isRequired,
   ipSuggestions: PropTypes.object,
   nicEnums: PropTypes.object,
+  drag: PropTypes.shape({
+    dragging: PropTypes.bool.isRequired,
+    onDragStart: PropTypes.func.isRequired,
+    onDragEnd: PropTypes.func.isRequired,
+    onDragOver: PropTypes.func.isRequired,
+  }).isRequired,
   loading: PropTypes.bool,
 };
 
@@ -303,6 +347,10 @@ NetworkRow.propTypes = {
  * bridged interfaces, its MAC, DHCP or static addressing with two DNS
  * entries and a route, and the adapter tuning under a fold; an entry
  * passes to the agent as it is, so members beyond these fields survive.
+ * A row is dragged by its grip to reorder, the drawn order the order of
+ * `networks[]`; a `type: host` entry, the provisioning NIC on the host's
+ * provisioning network, is titled Provisioning and its uplink reads the
+ * provisioning interface the agent resolves.
  */
 const NetworksEditor = ({
   networks,
@@ -313,7 +361,24 @@ const NetworksEditor = ({
   loading = false,
 }) => {
   const { t } = useTranslation();
+  const [dragIndex, setDragIndex] = useState(null);
   const ipOptions = Array.isArray(ipSuggestions?.suggestions) ? ipSuggestions.suggestions : [];
+  const dragOver = index => {
+    if (dragIndex === null || dragIndex === index) {
+      return;
+    }
+    const next = [...networks];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(index, 0, moved);
+    setDragIndex(index);
+    onNetworksChange(next);
+  };
+  const dragOf = index => ({
+    dragging: dragIndex === index,
+    onDragStart: () => setDragIndex(index),
+    onDragEnd: () => setDragIndex(null),
+    onDragOver: () => dragOver(index),
+  });
   const setNetwork = (index, patch) =>
     onNetworksChange(
       networks.map((network, at) => (at === index ? { ...network, ...patch } : network))
@@ -342,6 +407,7 @@ const NetworksEditor = ({
           bridgeChoices={bridgeChoices}
           ipSuggestions={ipSuggestions}
           nicEnums={nicEnums}
+          drag={dragOf(index)}
           loading={loading}
         />
       ))}

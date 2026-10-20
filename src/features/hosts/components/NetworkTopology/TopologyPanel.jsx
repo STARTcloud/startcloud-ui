@@ -59,6 +59,13 @@ const writeEffect = value => {
   return undefined;
 };
 
+const UNFOLDED = { folded: false, mark: undefined, onFold: null, foldTitle: '' };
+
+const headingFold = fold =>
+  fold
+    ? { folded: fold.folded, mark: fold.folded, onFold: fold.onFold, foldTitle: fold.title }
+    : UNFOLDED;
+
 const hostKindOf = server => (hostHasFeature(server, 'network-spaces') ? 'vbox' : 'bhyve');
 
 const sameNet = (held, hostKey, netId) =>
@@ -206,11 +213,11 @@ const applyOne = async ({ status, hostKey, machineName, moves, t }) => {
 };
 
 /**
- * The network topology of the Topology page, a folding section under the
- * page's one heading: `title`, and in its pane the scope, the lenses, the
- * effect, the pulse and fullscreen, then the page's `actions`, the
- * chevron last; under it the shared-networks strip over more than one
- * host; the debug lens's issue
+ * The network topology under one heading: `title`, and in its pane the
+ * scope, the lenses, the effect, the pulse and fullscreen, then the
+ * page's `actions`, and, where the caller hands `fold`, the chevron last
+ * folding it; under it the shared-networks strip over more than one host; the
+ * debug lens's issue
  * strip; the armed banner and the remove drop of a drag; the staged
  * tray; then one host after another, its title where more than one is
  * drawn, its chip bar, its canvas and its drill panel; and the legend.
@@ -225,7 +232,7 @@ const applyOne = async ({ status, hostKey, machineName, moves, t }) => {
  * with `buildNicBody` per machine, then reads the host's machines and
  * each machine's detail again.
  */
-const TopologyPanel = ({ id, fold, title, actions = null }) => {
+const TopologyPanel = ({ id, title, fold = null, actions = null }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const navigate = useNavigate();
@@ -242,6 +249,8 @@ const TopologyPanel = ({ id, fold, title, actions = null }) => {
   const [effectStyle, setEffectStyle] = useState(readEffect);
   const [hostsById, setHostsById] = useState({});
   const rewire = useTopologyRewire();
+  const heading = headingFold(fold);
+  const { folded } = heading;
   const { dragging, setDragging, trashOver, setTrashOver, pendingMoves, setPendingMoves } = rewire;
 
   const networkingIds = useMemo(
@@ -411,7 +420,7 @@ const TopologyPanel = ({ id, fold, title, actions = null }) => {
     <div
       data-section="networking-topology"
       data-state={loading ? 'loading' : 'rows'}
-      data-folded={fold.folded}
+      data-folded={heading.mark}
       className={`mb-3 ${isFullscreen ? 'hw-topo-fullscreen' : ''}`}
     >
       {ids.map(hostId => (
@@ -420,11 +429,11 @@ const TopologyPanel = ({ id, fold, title, actions = null }) => {
       <SectionHeading
         title={title}
         actions={pane}
-        folded={fold.folded}
-        onFold={fold.onFold}
-        foldTitle={fold.title}
+        folded={folded}
+        onFold={heading.onFold}
+        foldTitle={heading.foldTitle}
       />
-      {fold.folded ? null : (
+      {folded ? null : (
         <>
           <TopologyStrips shared={shared} debug={lens === 'debug'} issueTotals={issueTotals} />
           {dragging?.drag?.pinnedCarrier ? (
@@ -548,7 +557,7 @@ TopologyPanel.propTypes = {
     folded: PropTypes.bool.isRequired,
     onFold: PropTypes.func.isRequired,
     title: PropTypes.string.isRequired,
-  }).isRequired,
+  }),
   title: PropTypes.string.isRequired,
   actions: PropTypes.node,
 };

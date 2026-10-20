@@ -417,6 +417,22 @@ Feature: host storage
     And the host was sent POST to "/api/agents/3/storage/snapshot/rollback" carrying nothing at "/recursive"
     And the storage dialog "zfs-rollback-snapshot" is gone
 
+  Scenario: Storage: two ticked snapshots on the Snapshots page read "2 selected" in the heading's pane, and Destroy selected sends one destroy a snapshot behind the typed confirmation and clears the pick
+    Given the host answers the hosts fixture
+    And the host answers the hosts-storage fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/storage/snapshots"
+    Then the dataset tree draws 9 rows
+    And the section page offers no "bulk-destroy"
+    When I tick the dataset row "tank/zones/web-1/boot@before-upgrade"
+    And I tick the dataset row "tank/zones/web-1/boot@daily-20260927"
+    Then I see "2 selected"
+    When I press the storage action "bulk-destroy"
+    Then the host was not sent DELETE to "/api/agents/3/storage/snapshot"
+    When I confirm the open dialog
+    Then the host was sent DELETE to "/api/agents/3/storage/snapshot" 2 times
+    And I do not see "2 selected"
+
   Scenario: Storage: Refresh reads again every answer and the series each page draws and the ZFS management's own reads
     Given the host answers the hosts fixture
     And the host answers the hosts-storage fixture

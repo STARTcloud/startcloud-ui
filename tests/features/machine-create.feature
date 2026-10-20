@@ -147,8 +147,7 @@ Feature: machine create
     And I send the open dialog
     Then the wizard is on the step "provisioning"
     When I follow the wizard step "general"
-    Then the field "machine-create-provisioner" reads "startcloud"
-    And the field "machine-create-version" reads "0.1.27"
+    Then the provisioner pick reads "startcloud/0.1.27"
     And the host was sent GET to "/api/provisioning/provisioners/startcloud/versions/0.1.27" 1 times
 
   Scenario: Create wizard: the deep link of BoxVault wins over the catalog's box_<provider> member when a query carries both
@@ -213,9 +212,7 @@ Feature: machine create
     Then the "machine-create" dialog is open
     And the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.27" 1 times
     And the host was sent GET to "/api/agents/1/provisioning/catalog/sources" 1 times
-    And the field "machine-create-use-provisioner" is checked
-    And the field "machine-create-provisioner" reads "startcloud"
-    And the field "machine-create-version" reads "0.1.27"
+    And the provisioner pick reads "startcloud/0.1.27"
     When I type "web-3.example.com" into the field "machine-create-name-input"
     And I send the open dialog
     And I send the open dialog
@@ -260,8 +257,7 @@ Feature: machine create
     Then the open dialog notes no "provisioner-install"
     And the field "prov-field-domino_server_name" reads "additional"
     When I follow the wizard step "general"
-    Then the field "machine-create-provisioner" reads "hcl_domino_additional_provisioner"
-    And the field "machine-create-version" reads "0.3.0"
+    Then the provisioner pick reads "hcl_domino_additional_provisioner/0.3.0"
     And the host was sent GET to "/api/agents/1/provisioning/provisioners/hcl_domino_additional_provisioner/versions/0.3.0" 1 times
     And the host was sent POST to "/api/agents/1/provisioning/catalog/install" 1 times
     And the host was not sent POST to "/api/agents/1/machines"
@@ -297,8 +293,7 @@ Feature: machine create
     Then the open dialog notes no "provisioner-install"
     And the field "prov-field-domino_server_name" reads "additional"
     When I follow the wizard step "general"
-    Then the field "machine-create-provisioner" reads "hcl_domino_additional_provisioner"
-    And the field "machine-create-version" reads "0.3.0"
+    Then the provisioner pick reads "hcl_domino_additional_provisioner/0.3.0"
     And the host was sent GET to "/api/agents/1/provisioning/provisioners/hcl_domino_additional_provisioner/versions/0.3.0" 1 times
     And the host was sent POST to "/api/agents/1/provisioning/catalog/install" 1 times
     And the host was not sent POST to "/api/agents/1/machines"
@@ -325,8 +320,7 @@ Feature: machine create
     And I send the open dialog
     Then the wizard is on the step "provisioning"
     When I follow the wizard step "general"
-    Then the field "machine-create-provisioner" reads "startcloud"
-    And the field "machine-create-version" reads "0.1.27"
+    Then the provisioner pick reads "startcloud/0.1.27"
     And the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.27" 1 times
 
   Scenario: Create wizard: the deep link of the catalog, a family no source of the host lists adds the handed catalog as a source on Add source and install, then installs from it
@@ -438,8 +432,7 @@ Feature: machine create
     Then the open dialog notes no "provisioner-install"
     And the field "prov-field-domino_server_name" reads "additional"
     When I follow the wizard step "general"
-    Then the field "machine-create-provisioner" reads "hcl_domino_additional_provisioner"
-    And the field "machine-create-version" reads "0.3.0"
+    Then the provisioner pick reads "hcl_domino_additional_provisioner/0.3.0"
     When I follow the wizard step "confirm"
     Then the wizard is on the step "confirm"
     And the wizard's confirm rows include "STARTcloud/debian13"
@@ -821,7 +814,7 @@ Feature: machine create
     And the host was sent POST to "/api/agents/1/machines" carrying "true" at "/roles/0/enabled"
     And the host was sent POST to "/api/agents/1/machines" carrying "startcloud.startcloud_roles" at "/roles/0/collection"
     And the host was sent POST to "/api/agents/1/machines" carrying "networking" at "/roles/1/name"
-    And the host was sent POST to "/api/agents/1/machines" carrying "always" at "/roles/1/tags"
+    And the host was sent POST to "/api/agents/1/machines" carrying "always" at "/roles/1/tags/0"
     And the host was sent POST to "/api/agents/1/machines" carrying "domino_leap" at "/roles/2/name"
     And the host was sent POST to "/api/agents/1/machines" carrying "false" at "/roles/2/enabled"
     And the host was sent POST to "/api/agents/1/machines" carrying "ssl" at "/roles/3/name"
@@ -1015,7 +1008,7 @@ Feature: machine create
     When I open "/hosts/1?create=machine"
     Then the "machine-create" dialog is open
     And the field "machine-setting-server_id" reads "1042"
-    And the field "machine-create-use-provisioner" is not checked
+    And the provisioner pick is empty
     And the wizard draws no step "provisioning"
     And the wizard step "os-disks" is held
     When I type "zeus-01" into the field "machine-create-name-input"
@@ -1066,6 +1059,21 @@ Feature: machine create
     Then the field "machine-setting-domain" lists the options "pref.example.com,lab.example.com,startcloud.com"
     And the wizard step "confirm" is open
 
+  Scenario: Create wizard: the domain input lists the browser preference, the user and agent rows and the picked provisioner's default domain, in the chain's order, each labelled by its source
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    And the browser holds "hosts_prefs" as "{\"defaultDomain\":\"pref.example.com\"}"
+    When I open "/hosts/1?create=machine"
+    And I type "zeus-01" into the field "machine-create-name-input"
+    And I press the open dialog's "pick-provisioner" action
+    And I press the card of the provisioner "startcloud" in the pick dialog
+    And I open the wizard fold "name-parts"
+    Then the field "machine-setting-domain" lists the options "pref.example.com,lab.example.com,startcloud.com,pkg.startcloud.com"
+    And the field "machine-setting-domain" lists the sources "preference,user,agent,provisioner"
+    And the field "machine-setting-domain" reads "pref.example.com"
+
   Scenario: Create wizard: no domain anywhere, a bare name opens Edit parts with the domain invalid and the link to the host's machines configuration, and Next is refused
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
@@ -1093,19 +1101,18 @@ Feature: machine create
     And the wizard step "os-disks" is open
 
 
-  Scenario: Create wizard: Use a provisioner on with 0.1.27 picked prefills OS & Disks, System, CPU, Memory and Network from the package, marks each value, opens every pill and keeps a typed memory over a re-pick
+  Scenario: Create wizard: startcloud 0.1.27 picked prefills OS & Disks, System, CPU, Memory and Network from the package, marks each value, opens every pill and keeps a typed memory over a re-pick
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-create fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1?create=machine"
     And I type "web-3.example.com" into the field "machine-create-name-input"
-    And I check the field "machine-create-use-provisioner"
+    And I press the open dialog's "pick-provisioner" action
+    And I press the card of the provisioner "startcloud" in the pick dialog
     Then the wizard draws the step "provisioning"
-    And the open dialog draws the field "machine-create-provisioner"
-    When I choose "startcloud" in the field "machine-create-provisioner"
-    And I choose "0.1.27" in the field "machine-create-version"
-    Then the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.27" 1 times
+    And the provisioner pick reads "startcloud/0.1.27"
+    And the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.27" 1 times
     And the field "machine-create-tags" reads "domino"
     And the wizard step "cpu" is open
     And the wizard step "memory" is open
@@ -1140,9 +1147,13 @@ Feature: machine create
     And the open dialog draws 1 network rows
     And the field "network-0-dhcp" is checked
     When I follow the wizard step "general"
-    And I choose "0.1.26" in the field "machine-create-version"
-    And I choose "0.1.27" in the field "machine-create-version"
-    Then the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.27" 2 times
+    And I press the open dialog's "pick-provisioner" action
+    And I pick the version "0.1.26" of the provisioner "startcloud" in the pick dialog
+    Then the provisioner pick reads "startcloud/0.1.26"
+    When I press the open dialog's "pick-provisioner" action
+    And I pick the version "0.1.27" of the provisioner "startcloud" in the pick dialog
+    Then the provisioner pick reads "startcloud/0.1.27"
+    And the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.27" 2 times
     When I follow the wizard step "memory"
     Then the field "machine-setting-memory" reads "4G"
     And the field "machine-setting-memory" is not marked from package
@@ -1150,16 +1161,16 @@ Feature: machine create
     Then the field "machine-setting-vcpus" reads "2"
     And the field "machine-setting-vcpus" is marked from package
 
-  Scenario: Create wizard: Confirm reads the Hosts.yml preview once as it is entered, draws it read-only with Copy, and Create and provision sends both flags true without a second preview
+  Scenario: Create wizard: Confirm reads the Hosts.yml preview once as it is entered, draws it read-only with Copy, and Create and provision sends both flags true without a second preview, the networks exactly the manifest's
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-create fixture
+    And the host answers the hosts-create-network fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1?create=machine"
     And I type "web-3.example.com" into the field "machine-create-name-input"
-    And I check the field "machine-create-use-provisioner"
-    And I choose "startcloud" in the field "machine-create-provisioner"
-    And I choose "0.1.27" in the field "machine-create-version"
+    And I press the open dialog's "pick-provisioner" action
+    And I press the card of the provisioner "startcloud" in the pick dialog
     Then the host was not sent POST to "/api/agents/1/machines/preview"
     When I send the open dialog
     And I send the open dialog
@@ -1173,6 +1184,11 @@ Feature: machine create
     Then the wizard is on the step "confirm"
     And the host was sent POST to "/api/agents/1/machines/preview" carrying "web-3" at "/settings/hostname"
     And the host was sent POST to "/api/agents/1/machines/preview" carrying "startcloud" at "/provisioner/name"
+    And the host was sent POST to "/api/agents/1/machines/preview" carrying "networking" at "/roles/1/name"
+    And the host was sent POST to "/api/agents/1/machines/preview" carrying "always" at "/roles/1/tags/0"
+    And the host was sent POST to "/api/agents/1/machines/preview" carrying "1042" at "/settings/server_id"
+    And the host was sent POST to "/api/agents/1/machines/preview" carrying "external" at "/networks/0/type"
+    And the host was sent POST to "/api/agents/1/machines/preview" carrying nothing at "/networks/1"
     And the host was sent POST to "/api/agents/1/machines/preview" 1 times
     And the preview fold reads "ready"
     And the preview contains "hostname: web-3"
@@ -1198,6 +1214,98 @@ Feature: machine create
     And the page raised 1 success notice
     And no dialog is open
 
+  Scenario: Create wizard: Pick provisioner opens the host's families as the Provisioners page's cards, a press on a card picks the family at its highest version, a version line's Pick picks that version and Clear drops the pick
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine"
+    And I type "web-3.example.com" into the field "machine-create-name-input"
+    Then the provisioner pick is empty
+    And the wizard draws no step "provisioning"
+    When I press the open dialog's "pick-provisioner" action
+    Then the "provisioner-pick" dialog is open
+    And the pick dialog draws 1 provisioner cards
+    And the pick dialog card "startcloud" picks the family
+    And the pick dialog card "startcloud" offers the version "0.1.26"
+    When I press the card of the provisioner "startcloud" in the pick dialog
+    Then the "provisioner-pick" dialog is closed
+    And the provisioner pick reads "startcloud/0.1.27"
+    And the wizard draws the step "provisioning"
+    And the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.27" 1 times
+    When I press the open dialog's "pick-provisioner" action
+    Then the "provisioner-pick" dialog is open
+    When I pick the version "0.1.26" of the provisioner "startcloud" in the pick dialog
+    Then the "provisioner-pick" dialog is closed
+    And the provisioner pick reads "startcloud/0.1.26"
+    And the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.26" 1 times
+    When I press the open dialog's "provisioner-clear" action
+    Then the provisioner pick is empty
+    And the wizard draws no step "provisioning"
+
+  Scenario: Create wizard: with no provisioner the Network step draws the external network on the host's default-route uplink and the Provisioning host network under it, filled from the host's provisioning network, editable, and Create sends both in that order
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the host answers the hosts-create-network fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine"
+    And I type "web-3.example.com" into the field "machine-create-name-input"
+    And I follow the wizard step "network"
+    Then the wizard is on the step "network"
+    And the host was sent GET to "/api/agents/1/provisioning/network/status" 2 times
+    And the open dialog draws 2 network rows
+    And the field "network-0-type" reads "external"
+    And the field "network-1-type" reads "host"
+    And the field "network-1-netmask" reads "255.255.255.0"
+    And the field "network-1-gateway" reads "192.168.56.1"
+    And the field "network-1-dhcp" is checked
+    When I uncheck the field "network-1-dhcp"
+    And I type "192.168.56.50" into the field "network-1-address"
+    And I follow the wizard step "confirm"
+    And I send the open dialog
+    Then the host was sent POST to "/api/agents/1/machines" carrying "external" at "/networks/0/type"
+    And the host was sent POST to "/api/agents/1/machines" carrying "eth0" at "/networks/0/bridge"
+    And the host was sent POST to "/api/agents/1/machines" carrying "host" at "/networks/1/type"
+    And the host was sent POST to "/api/agents/1/machines" carrying "192.168.56.50" at "/networks/1/address"
+    And the host was sent POST to "/api/agents/1/machines" carrying "255.255.255.0" at "/networks/1/netmask"
+    And the host was sent POST to "/api/agents/1/machines" carrying "192.168.56.1" at "/networks/1/gateway"
+    And the host was sent POST to "/api/agents/1/machines" carrying "false" at "/networks/1/dhcp4"
+    And the host was sent POST to "/api/agents/1/machines" carrying "true" at "/networks/1/provisional"
+    And the host was sent POST to "/api/agents/1/machines" carrying "true" at "/networks/1/is_control"
+    And the host was sent POST to "/api/agents/1/machines" 1 times
+
+  Scenario: Create wizard: dragging the Provisioning network above the external one sends it first
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the host answers the hosts-create-network fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine"
+    And I type "web-3.example.com" into the field "machine-create-name-input"
+    And I follow the wizard step "network"
+    Then the open dialog draws 2 network rows
+    When I drag the network row 1 onto the network row 0
+    Then the field "network-0-type" reads "host"
+    And the field "network-1-type" reads "external"
+    When I follow the wizard step "confirm"
+    And I send the open dialog
+    Then the host was sent POST to "/api/agents/1/machines" carrying "host" at "/networks/0/type"
+    And the host was sent POST to "/api/agents/1/machines" carrying "external" at "/networks/1/type"
+
+  Scenario: Create wizard: the Confirm step draws the preview's 422 map one line a member with the agent's message
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-create fixture
+    And the host refuses the next POST to "/api/agents/1/machines/preview"
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1?create=machine"
+    And I type "web-3.example.com" into the field "machine-create-name-input"
+    And I follow the wizard step "confirm"
+    Then the preview fold reads "failed"
+    And the preview names the refused member "roles.tags" as "takes a list"
+    And the open dialog notes no "preview-failed"
+
   Scenario: Create wizard: the update glyph on the Version label, the catalog listing startcloud 0.1.28 over the held 0.1.27 draws the glyph and the catalog link, the link opens the family's catalog versions, Install there installs from the host's catalog, and the task's end reads the families again and picks the new version
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
@@ -1210,10 +1318,9 @@ Feature: machine create
     And the host was sent GET to "/api/agents/1/provisioning/catalog/sources" 1 times
     And the host was sent GET to "/api/agents/1/provisioning/catalog" 1 times
     When I type "web-3.example.com" into the field "machine-create-name-input"
-    And I check the field "machine-create-use-provisioner"
     Then the open dialog notes no "update-available"
-    When I choose "startcloud" in the field "machine-create-provisioner"
-    And I choose "0.1.27" in the field "machine-create-version"
+    When I press the open dialog's "pick-provisioner" action
+    And I press the card of the provisioner "startcloud" in the pick dialog
     Then the open dialog notes "update-available"
     And the open dialog offers "version-catalog"
     And the host was not sent POST to "/api/agents/1/provisioning/catalog/install"
@@ -1227,7 +1334,7 @@ Feature: machine create
     And the host was sent POST to "/api/agents/1/provisioning/catalog/install" 1 times
     When the host answers the hosts-create-updated fixture
     And the stream releases its frames
-    Then the field "machine-create-version" reads "0.1.28"
+    Then the provisioner pick reads "startcloud/0.1.28"
     And the host was sent GET to "/api/agents/1/provisioning/provisioners/startcloud/versions/0.1.28" 1 times
     And the open dialog notes no "update-available"
     And the host was not sent POST to "/api/agents/1/machines"

@@ -9,7 +9,7 @@ import { ActionOptionsModal } from './HostActionOptions';
 
 /**
  * The dialogs of the two machine actions that destroy, shared by the
- * Controls menu and the sidebar tree's menu: `kill` opens the typed
+ * Controls menu and the sidebar tree's menu: `kill` opens a plain
  * confirmation at once; `destroy` first opens the list dialog that
  * collects whether the agent's disks go with the machine, then the typed
  * confirmation; a confirmation hands `onRun` the action and its options.
@@ -61,7 +61,9 @@ const MachineDangerDialogs = ({ action, name, onClose, onRun }) => {
         handleClose={close}
         handleConfirm={confirm}
         title={title}
+        confirmText={destroy ? '' : title}
         variant="delete"
+        typed={destroy}
       />
     </>
   );

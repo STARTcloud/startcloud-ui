@@ -32,23 +32,27 @@ const EditorLoading = () => {
 };
 
 /**
- * The Hosts.yml tab of the provisioning editor, the whole stored document
- * as YAML over CodeMirror: read by `GET machines/{name}/hosts-yml` each
- * time the tab opens and saved verbatim by `PUT machines/{name}/hosts-yml`
- * with the tab's own Save, Discard taking the text read back; the editor
- * is lazy so CodeMirror downloads when the tab opens and never with the
- * page. A refused save draws the agent's own error and lands the cursor on
- * the line it names, a save with advisories lists them, and a 403 says
- * the editor is the manager's alone. `onSaved` is handed the notice's
- * sentence after a save.
+ * The Hosts.yml document of one machine while its tab is `open`: read by
+ * `GET machines/{name}/hosts-yml` each time the tab opens, `save` sending
+ * the text verbatim by `PUT machines/{name}/hosts-yml` and handing the
+ * notice's sentence to `onSaved`, `discard` taking the text read back. A
+ * refused save holds the agent's own error and lands the cursor of
+ * `editorRef` on the line it names, a save with advisories holds them, and
+ * a 403 marks the editor the manager's alone.
+ *
+ * @param {Object} options - The host, the machine, whether the tab is open and the saved callback
+ * @returns {{ held: Object, dirty: boolean, edit: Function, save: Function, discard: Function, editorRef: Object }} The document and its writes
  */
-const HostsYmlTab = ({ id, name, onSaved }) => {
+export const useHostsYml = ({ id, name, open, onSaved }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [held, setHeld] = useState(OPENING);
   const editorRef = useRef(null);
 
   useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
     let live = true;
     setHeld(OPENING);
     fetchHostsYml(status, id, name)
@@ -74,9 +78,7 @@ const HostsYmlTab = ({ id, name, onSaved }) => {
     return () => {
       live = false;
     };
-  }, [status, id, name, t]);
-
-  const dirty = held.yaml !== held.original;
+  }, [status, id, name, t, open]);
 
   const save = async () => {
     if (held.forbidden || held.loading) {
@@ -105,6 +107,74 @@ const HostsYmlTab = ({ id, name, onSaved }) => {
 
   const discard = () =>
     setHeld(previous => ({ ...previous, yaml: previous.original, error: '', savedNote: '' }));
+
+  const edit = yaml => setHeld(previous => ({ ...previous, yaml }));
+
+  return { held, dirty: held.yaml !== held.original, edit, save, discard, editorRef };
+};
+
+const ymlShape = PropTypes.shape({
+  held: PropTypes.object.isRequired,
+  dirty: PropTypes.bool.isRequired,
+  edit: PropTypes.func.isRequired,
+  save: PropTypes.func.isRequired,
+  discard: PropTypes.func.isRequired,
+  editorRef: PropTypes.object.isRequired,
+});
+
+/**
+ * Save and Discard of the Hosts.yml tab, the controls the page's heading
+ * pane draws while the tab is open: Save held while the document reads
+ * or is forbidden, Discard held too while nothing differs from the text
+ * read back.
+ */
+export const HostsYmlButtons = ({ yml }) => {
+  const { t } = useTranslation();
+  const { held, dirty, save, discard } = yml;
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-sm btn-primary"
+        data-action="hosts-yml-save"
+        onClick={save}
+        disabled={held.loading || held.forbidden}
+      >
+        {held.loading ? (
+          <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />
+        ) : (
+          <FaCheck className="me-2" aria-hidden="true" />
+        )}
+        {t('provisioning.hostsYmlModal.saveButton')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        data-action="hosts-yml-discard"
+        onClick={discard}
+        disabled={held.loading || held.forbidden || !dirty}
+      >
+        {t('provisioning.provisioningEditor.discardEdits')}
+      </button>
+    </>
+  );
+};
+
+HostsYmlButtons.propTypes = {
+  yml: ymlShape.isRequired,
+};
+
+/**
+ * The Hosts.yml tab of the provisioning editor, the whole stored document
+ * of `useHostsYml` as YAML over CodeMirror, its Save and Discard in the
+ * page's heading pane; the editor is lazy so CodeMirror downloads when
+ * the tab opens and never with the page. A refused save draws the
+ * agent's own error, a save with advisories lists them, and a 403 says
+ * the editor is the manager's alone.
+ */
+const HostsYmlTab = ({ yml }) => {
+  const { t } = useTranslation();
+  const { held, dirty, edit, editorRef } = yml;
 
   return (
     <div data-tab-body="hosts-yml">
@@ -142,7 +212,7 @@ const HostsYmlTab = ({ id, name, onSaved }) => {
               <HostsYmlEditor
                 ref={editorRef}
                 value={held.yaml}
-                onChange={yaml => setHeld(previous => ({ ...previous, yaml }))}
+                onChange={edit}
                 disabled={held.loading}
               />
             </Suspense>
@@ -152,39 +222,12 @@ const HostsYmlTab = ({ id, name, onSaved }) => {
           </p>
         </>
       )}
-      <div className="d-flex gap-2 mt-3 border-top pt-3">
-        <button
-          type="button"
-          className="btn btn-primary"
-          data-action="hosts-yml-save"
-          onClick={save}
-          disabled={held.loading || held.forbidden}
-        >
-          {held.loading ? (
-            <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />
-          ) : (
-            <FaCheck className="me-2" aria-hidden="true" />
-          )}
-          {t('provisioning.hostsYmlModal.saveButton')}
-        </button>
-        <button
-          type="button"
-          className="btn btn-outline-secondary"
-          data-action="hosts-yml-discard"
-          onClick={discard}
-          disabled={held.loading || held.forbidden || !dirty}
-        >
-          {t('provisioning.provisioningEditor.discardEdits')}
-        </button>
-      </div>
     </div>
   );
 };
 
 HostsYmlTab.propTypes = {
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  onSaved: PropTypes.func.isRequired,
+  yml: ymlShape.isRequired,
 };
 
 export default HostsYmlTab;

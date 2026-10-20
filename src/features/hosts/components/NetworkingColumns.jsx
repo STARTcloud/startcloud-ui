@@ -1,28 +1,19 @@
-import { FaArrowDown, FaArrowUp, FaArrowUpRightFromSquare } from 'react-icons/fa6';
+import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import { hasAny } from '../../../components/common/SubTable';
 import {
   addressOf,
   addressTone,
-  bandwidthOf,
-  bandwidthTone,
   carries,
   classTone,
-  formatBandwidth,
   formatSpeed,
-  intervalOf,
-  packetsOf,
   prefixOf,
   zoneOf,
 } from '../utils/networking';
 import { addressTypeTone } from '../utils/networkingManagement';
 
 import { trendColumn } from './TrendCell';
-
-const INTERVAL_DIGITS = 1;
-
-const SECONDS_UNIT = 's';
 
 const machinePath = (id, name) => `/hosts/${id}/machines/${encodeURIComponent(name)}`;
 
@@ -336,105 +327,5 @@ export const interfaceColumnsFor = ({ id, machines, entities }) => [
     when: hasAny(zoneOf),
     value: zoneOf,
     render: (row, ctx) => zoneCell({ row, ctx, id, machines }),
-  },
-];
-
-const rateBadge = (tone, Glyph, rate) => (
-  <span className={`badge text-bg-${tone}`}>
-    <Glyph className="me-1" aria-hidden="true" />
-    {formatBandwidth(rate)}
-  </span>
-);
-
-const intervalText = (row, ctx) => {
-  const seconds = intervalOf(row);
-  return seconds > 0
-    ? `${seconds.toFixed(INTERVAL_DIGITS)}${SECONDS_UNIT}`
-    : ctx.t('host.bandwidthTable.notAvailable');
-};
-
-const packets = (row, member, ctx) => packetsOf(row, member).toLocaleString(ctx.language);
-
-/**
- * The columns of the bandwidth table, hyperweaver-ui's: the interface,
- * the rate both ways in the tone of its size, the trend, the sparkline
- * of the interface's total over the drawn range in the tone the summary
- * charts give the interface, the rate received and the rate sent, the
- * seconds the sample spans and the packets received and sent in them,
- * the packets drawn only while a sample carries the deltas.
- *
- * @param {Object} options - The page's side
- * @param {Object<string, Object>} options.entities - The points per interface of `networkSeries`
- * @returns {Array<Object>} The columns
- */
-export const bandwidthColumnsFor = ({ entities }) => [
-  {
-    key: 'link',
-    kind: 'name',
-    labelKey: 'host.bandwidthTable.interface',
-    titleKey: 'host.bandwidthTable.sortByInterface',
-    value: row => row.link,
-    render: row => <strong>{row.link}</strong>,
-  },
-  {
-    key: 'total',
-    kind: 'badge',
-    labelKey: 'host.bandwidthTable.totalBandwidth',
-    titleKey: 'host.bandwidthTable.sortByTotal',
-    value: row => bandwidthOf(row).total,
-    render: row => {
-      const { total } = bandwidthOf(row);
-      return badge(bandwidthTone(total), formatBandwidth(total));
-    },
-  },
-  trendColumn({ entities, nameOf: row => row.link }),
-  {
-    key: 'rx',
-    kind: 'badge',
-    labelKey: 'host.bandwidthTable.rxRate',
-    titleKey: 'host.bandwidthTable.sortByRx',
-    priority: 3,
-    value: row => bandwidthOf(row).rx,
-    render: row => rateBadge('info', FaArrowDown, bandwidthOf(row).rx),
-  },
-  {
-    key: 'tx',
-    kind: 'badge',
-    labelKey: 'host.bandwidthTable.txRate',
-    titleKey: 'host.bandwidthTable.sortByTx',
-    priority: 3,
-    value: row => bandwidthOf(row).tx,
-    render: row => rateBadge('warning', FaArrowUp, bandwidthOf(row).tx),
-  },
-  {
-    key: 'interval',
-    kind: 'text',
-    labelKey: 'host.bandwidthTable.interval',
-    titleKey: 'host.bandwidthTable.sortByInterval',
-    priority: 6,
-    value: intervalOf,
-    render: intervalText,
-  },
-  {
-    key: 'rxPackets',
-    kind: 'count',
-    labelKey: 'host.bandwidthTable.rxPackets',
-    titleKey: 'host.bandwidthTable.sortByRxPackets',
-    priority: 4,
-    when: carries('ipackets_delta'),
-    value: row => packetsOf(row, 'ipackets_delta'),
-    render: (row, ctx) => <span className="text-info">{packets(row, 'ipackets_delta', ctx)}</span>,
-  },
-  {
-    key: 'txPackets',
-    kind: 'count',
-    labelKey: 'host.bandwidthTable.txPackets',
-    titleKey: 'host.bandwidthTable.sortByTxPackets',
-    priority: 4,
-    when: carries('opackets_delta'),
-    value: row => packetsOf(row, 'opackets_delta'),
-    render: (row, ctx) => (
-      <span className="text-warning">{packets(row, 'opackets_delta', ctx)}</span>
-    ),
   },
 ];

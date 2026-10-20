@@ -15,9 +15,30 @@ import { useNotify } from '../contexts/NoticeContext';
 export const serviceWorkerUrl = app => `/notification-sw.js?app=${encodeURIComponent(app)}`;
 
 /**
+ * Asks one worker for the version the build stamped into it: posts
+ * `{ type: 'version' }` once over a `MessageChannel` and resolves with the
+ * `version` the worker answers on it, the empty string for an answer that
+ * carries none; a worker that never answers leaves it pending.
+ *
+ * @param {ServiceWorker} worker - The worker to ask
+ * @returns {Promise<string>} The version
+ */
+export const askWorkerVersion = worker =>
+  new Promise(resolve => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = event => {
+      channel.port1.close();
+      resolve(typeof event.data?.version === 'string' ? event.data.version : '');
+    };
+    worker.postMessage({ type: 'version' }, [channel.port2]);
+  });
+
+/**
  * Registers the build's service worker at scope `/` in production and, when
  * a new worker is installed while one already controls the page, raises the
- * sticky "A new version is available" banner with a Reload action; while
+ * sticky "A new version is available" banner with a Reload action, asks the
+ * new worker its version through `askWorkerVersion` and, once it answers,
+ * redraws the banner naming that version; while
  * the status the app booted with is the worker's saved copy, `offline`,
  * raises the same shape of banner saying the host is offline and what is
  * drawn is the copy this device holds, closed by its dismiss, with Launch
@@ -51,13 +72,23 @@ export const usePwa = ({ app, offline, launchHref }) => {
     }
     register(serviceWorkerUrl(app), {
       registrationOptions: { scope: '/' },
-      updated() {
-        notify('info', t('pwa.newVersion', { app }), {
-          tier: 'banner',
-          key: 'pwa-update',
-          sticky: true,
-          action: { label: t('pwa.reload'), onClick: () => window.location.reload() },
-        });
+      updated(registration) {
+        const banner = text =>
+          notify('info', text, {
+            tier: 'banner',
+            key: 'pwa-update',
+            sticky: true,
+            action: { label: t('pwa.reload'), onClick: () => window.location.reload() },
+          });
+        banner(t('pwa.newVersion', { app }));
+        const worker = registration.waiting || registration.installing || registration.active;
+        if (worker) {
+          askWorkerVersion(worker).then(version => {
+            if (version) {
+              banner(t('pwa.newVersionWith', { app, version }));
+            }
+          });
+        }
       },
     });
   }, [app, notify, t]);

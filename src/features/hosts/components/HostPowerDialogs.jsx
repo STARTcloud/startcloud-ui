@@ -19,7 +19,7 @@ const DEFAULT_OPTIONS = {
  * and the sidebar tree's menu: `host-restart` and `host-shutdown` each
  * open the list dialog of their options, the restart type with its boot
  * environment or the power type, the grace period and the message, then
- * the typed confirmation, which hands `onRun` the action and the options
+ * a plain confirmation, which hands `onRun` the action and the options
  * collected. `fast` says whether the host lists `host-fast-reboot`, the
  * restart offering the fast reboot only then. Nothing shows while
  * `action` is empty, and closing either dialog returns the options to
@@ -61,7 +61,9 @@ const HostPowerDialogs = ({ action, fast, onClose, onRun }) => {
         handleClose={close}
         handleConfirm={() => onRun(action, options)}
         title={title}
+        confirmText={restart ? '' : title}
         variant={restart ? 'restart' : 'delete'}
+        typed={false}
       />
     </>
   );

@@ -2,8 +2,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import { formRulesShape } from '../../../hooks/useFormRules';
-import { FORMATS, formatOf, formatsFor, slotsOf } from '../utils/formats';
-import { describeComponent } from '../utils/reads';
+import { FORMATS, formatOf, formatsFor } from '../utils/formats';
 
 import { SecretField, SelectField, SwitchField, TextField } from './fields';
 
@@ -45,51 +44,18 @@ const offeredOf = (kinds, format) => {
   return format && !offered.includes(format) ? [...offered, format] : offered;
 };
 
-const Slots = ({ format, components }) => {
-  const { t, i18n } = useTranslation();
-  const slots = slotsOf(format);
-  if (slots.length === 0) {
-    return null;
-  }
-  return (
-    <ul className="list-unstyled small mb-3" data-list="certs-slots">
-      {slots.map(slot => {
-        const filler = components.find(component => slot.kinds.includes(component.kind));
-        return (
-          <li key={slot.id} data-slot={slot.id} data-slot-state={filler ? 'loaded' : 'needed'}>
-            <span className="fw-semibold">{t(`certs.convert.slot.${slot.id}`)}</span>
-            {' · '}
-            <span className={filler ? '' : 'text-body-secondary'}>
-              {filler ? describeComponent(filler, t, i18n.language) : t('certs.convert.slotNeeded')}
-            </span>
-          </li>
-        );
-      })}
-    </ul>
-  );
-};
-
-Slots.propTypes = {
-  format: PropTypes.object,
-  components: PropTypes.array.isRequired,
-};
-
 /**
  * The picker of a conversion's output over the form's rules: a select
  * of the formats that carry every picked component kind, every format
  * while nothing is picked so a person may start from the format, a hint
- * reading what the format carries and whether it takes a password, under
- * it, while `components` are given, one line a slot the format carries,
- * the certificate, the key, the public key or the request, reading
- * "needed · not loaded" until a picked component fills it and that
- * component's description after, the password while the format takes
- * one, required while it must, emptied on a change of format, the legacy
- * switch for a PKCS#12 that older readers open, and the friendly name for
- * the formats that carry one; `kinds` are the picked component kinds,
- * `components` the picked components, and `onChange(patch)` answers the
- * members that changed.
+ * reading what the format carries and whether it takes a password, the
+ * password while the format takes one, required while it must, emptied on
+ * a change of format, the legacy switch for a PKCS#12 that older readers
+ * open, and the friendly name for the formats that carry one; `kinds` are
+ * the picked component kinds and `onChange(patch)` answers the members
+ * that changed.
  */
-const FormatPicker = ({ kinds, components = null, draft, rules, onChange }) => {
+const FormatPicker = ({ kinds, draft, rules, onChange }) => {
   const { t } = useTranslation();
   const format = formatOf(draft.to);
   const offered = offeredOf(kinds, format);
@@ -106,7 +72,6 @@ const FormatPicker = ({ kinds, components = null, draft, rules, onChange }) => {
         onChange={set}
         hint={hintOf(format, t)}
       />
-      {components ? <Slots format={format} components={components} /> : null}
       {format?.takesPassword ? (
         <SecretField name="password" draft={draft} rules={rules} onChange={set} />
       ) : null}
@@ -128,7 +93,6 @@ const FormatPicker = ({ kinds, components = null, draft, rules, onChange }) => {
 
 FormatPicker.propTypes = {
   kinds: PropTypes.arrayOf(PropTypes.string).isRequired,
-  components: PropTypes.array,
   draft: outputShape.isRequired,
   rules: formRulesShape.isRequired,
   onChange: PropTypes.func.isRequired,

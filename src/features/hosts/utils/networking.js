@@ -156,7 +156,7 @@ export const routeRows = answer => newestRows(answer?.routes, routeKey);
 
 /**
  * The newest usage sample of each interface among the samples held of a
- * host, the rows the bandwidth table draws.
+ * host, the samples the topology's motion reads.
  *
  * @param {Array<Object>} rows - The samples held, oldest first an interface
  * @returns {Array<Object>} One sample an interface
@@ -306,8 +306,6 @@ export const matchesRoute = matcher(row => [
 ]);
 
 export const matchesInterface = matcher(row => [row.link, row.class, row.macaddress, zoneOf(row)]);
-
-export const matchesUsage = matcher(row => [row.link]);
 
 const wordsOf = member => row => (row[member] ? [String(row[member])] : []);
 

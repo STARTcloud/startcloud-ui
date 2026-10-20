@@ -192,9 +192,10 @@ export const nameParts = (name, defaultDomain) => {
 /**
  * The sources a default domain comes from, in the order the first
  * non-empty one wins: the browser preference, the person's own row, the
- * organization's row and the agent's own default.
+ * organization's row, the agent's own default and the picked
+ * provisioner's `metadata.defaults.settings.domain`.
  */
-export const DOMAIN_SOURCES = ['preference', 'user', 'organization', 'agent'];
+export const DOMAIN_SOURCES = ['preference', 'user', 'organization', 'agent', 'provisioner'];
 
 const MACHINES_CONFIG = 'machines';
 
@@ -210,18 +211,22 @@ const listedChoicesOf = defaults =>
  * `DOMAIN_SOURCES`: the browser preference while one is set, then the
  * `user`, `organization` and `agent` rows of `settings.domain_choices`,
  * the agent's row standing in from `settings.domain` while the list
- * names none, a row with an empty domain and a second row of one source
- * dropped.
+ * names none, then the picked provisioner's default domain, a row with
+ * an empty domain and a second row of one source dropped.
  *
  * @param {Object|null} defaults - The answer of `GET machines/defaults`
  * @param {string} [preference] - The browser's default domain preference
+ * @param {string} [packageDomain] - The picked provisioner's default domain
  * @returns {Array<{ source: string, domain: string }>} The rows
  */
-export const domainChoicesOf = (defaults, preference = '') => {
-  const rows = listedChoicesOf(defaults);
+export const domainChoicesOf = (defaults, preference = '', packageDomain = '') => {
+  const rows = listedChoicesOf(defaults).filter(row => row.source !== 'provisioner');
   const agentDomain = trimmed(defaults?.settings?.domain);
   if (agentDomain && !rows.some(row => row.source === 'agent')) {
     rows.push({ source: 'agent', domain: agentDomain });
+  }
+  if (trimmed(packageDomain)) {
+    rows.push({ source: 'provisioner', domain: trimmed(packageDomain) });
   }
   const own = trimmed(preference);
   const all = own ? [{ source: 'preference', domain: own }, ...rows] : rows;
@@ -231,8 +236,8 @@ export const domainChoicesOf = (defaults, preference = '') => {
 /**
  * The default domain a bare name takes, the first non-empty of the
  * browser preference, the `user` row, the `organization` row, the
- * `agent` row and the agent's own `settings.domain`; empty while none
- * yields one.
+ * `agent` row, the `provisioner` row and the agent's own
+ * `settings.domain`; empty while none yields one.
  *
  * @param {Object} options - The sources
  * @param {string} [options.preference] - The browser's default domain preference
@@ -275,7 +280,8 @@ export const domainConfigRouteOf = ({ aggregated, status, server, id }) => {
 
 /**
  * The steps the wizard draws for a form, every step of `CREATE_STEPS`
- * with the Provisioning step left out while Use a provisioner is off.
+ * with the Provisioning step left out while no provisioner is picked or
+ * handed, `useProvisioner` false.
  *
  * @param {Object} form - The wizard's state
  * @returns {Array<string>} The step ids
@@ -345,13 +351,60 @@ const packageDiskRow = (disk, index) => ({
 });
 
 /**
+ * The networks with every `type: host` entry's empty members filled from
+ * the provisioning NIC's row, nothing added.
+ *
+ * @param {Array<Object>} networks - The rows
+ * @param {Object|null} row - The row of `provisioningNetworkOf`
+ * @returns {Array<Object>} The rows
+ */
+export const fillProvisioningNetwork = (networks, row) =>
+  row
+    ? networks.map(network =>
+        network?.type === 'host'
+          ? {
+              ...network,
+              ...Object.fromEntries(Object.entries(row).filter(([key]) => blank(network[key]))),
+            }
+          : network
+      )
+    : networks;
+
+const placePackageNetworks = (defaults, form, filled) => {
+  const typed = form.typed || new Set();
+  if (defaults.networks.length === 0 || typed.has('networks')) {
+    return;
+  }
+  filled.networks = fillProvisioningNetwork(
+    defaults.networks.map(network => ({ ...defaultExternalNetwork(), ...network })),
+    form.provisioningRow || null
+  );
+  [...defaults.networks.keys()].forEach(index => filled.fromPackage.add(`networks.${index}`));
+};
+
+const placePackageHostname = (defaults, typed, filled) => {
+  const hostname = trimmed(defaults.settings.hostname);
+  const { settings } = filled;
+  if (!hostname || typed.has('settings.hostname') || !blank(settings.hostname)) {
+    return;
+  }
+  settings.hostname = hostname;
+  filled.fromPackage.add('settings.hostname');
+  filled.nameText = settings.domain ? `${hostname}.${settings.domain}` : hostname;
+};
+
+/**
  * The members of the wizard's state a package's defaults fill, a member
  * the person typed never among them, `form.typed` the set of member paths
  * typed: the ten package settings under `settings`, `bootSource` as
  * `template` while the package names a box, the boot disk's size, volume
  * name, clone strategy and mount and the additional disks as new blank
  * rows under `diskConfig`, the `networks` as rows over the external
- * default, `tagsInput` as the `tags` joined by a comma, `zones.guest_agent`
+ * default, exactly the entries the package lists in its order, a
+ * `type: host` entry's empty members filled from `form.provisioningRow`
+ * through `fillProvisioningNetwork`, the `hostname` while the form
+ * holds none, `nameText` then naming it, `packageDomain` the package's
+ * default domain for the domain chain, `tagsInput` as the `tags` joined by a comma, `zones.guest_agent`
  * as the package's `guest_agent` while the switch is unset, and
  * `fromPackage`, the set of member paths the package filled,
  * `settings.box`, `disks.boot.size`, `disks.additional.0`, `networks.0`,
@@ -393,13 +446,9 @@ export const prefilledFrom = (defaults, form) => {
   if (fromPackage.has('settings.box')) {
     filled.bootSource = 'template';
   }
-  if (defaults.networks.length > 0 && !typed.has('networks')) {
-    filled.networks = defaults.networks.map(network => ({
-      ...defaultExternalNetwork(),
-      ...network,
-    }));
-    [...defaults.networks.keys()].forEach(index => fromPackage.add(`networks.${index}`));
-  }
+  placePackageNetworks(defaults, form, filled);
+  placePackageHostname(defaults, typed, filled);
+  filled.packageDomain = trimmed(defaults.settings.domain);
   const tags = Array.isArray(defaults.tags) ? defaults.tags : [];
   if (tags.length > 0 && !typed.has('tags')) {
     filled.tagsInput = tags.join(', ');
@@ -769,6 +818,89 @@ export const seedFamilyOf = provisioner =>
     .split('/')
     .pop();
 
+const NUMERIC = /^\d+$/u;
+
+const versionPartsOf = version => {
+  const [text] = String(version ?? '')
+    .trim()
+    .replace(/^v/iu, '')
+    .split('+');
+  const dash = text.indexOf('-');
+  return {
+    core: (dash < 0 ? text : text.slice(0, dash)).split('.'),
+    pre: dash < 0 ? [] : text.slice(dash + 1).split('.'),
+  };
+};
+
+const compareIdentifiers = (left, right) => {
+  const leftNumber = NUMERIC.test(left);
+  const rightNumber = NUMERIC.test(right);
+  if (leftNumber && rightNumber) {
+    return Math.sign(Number(left) - Number(right));
+  }
+  if (leftNumber !== rightNumber) {
+    return leftNumber ? -1 : 1;
+  }
+  if (left === right) {
+    return 0;
+  }
+  return left < right ? -1 : 1;
+};
+
+const compareCore = (left, right) => {
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const order = compareIdentifiers(left[index] || '0', right[index] || '0');
+    if (order !== 0) {
+      return order;
+    }
+  }
+  return 0;
+};
+
+const comparePre = (left, right) => {
+  if (left.length === 0 || right.length === 0) {
+    return Math.sign(right.length - left.length);
+  }
+  const length = Math.min(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const order = compareIdentifiers(left[index], right[index]);
+    if (order !== 0) {
+      return order;
+    }
+  }
+  return Math.sign(left.length - right.length);
+};
+
+/**
+ * The semantic version order of two versions: the dotted core compared
+ * segment by segment, numbers as numbers and a missing segment as 0, then
+ * a version with a prerelease below the same version without one and two
+ * prereleases compared identifier by identifier, a numeric identifier
+ * below a word; a leading `v` and the `+build` part are ignored.
+ *
+ * @param {string} left - A version
+ * @param {string} right - Another version
+ * @returns {number} -1, 0 or 1
+ */
+export const compareVersions = (left, right) => {
+  const a = versionPartsOf(left);
+  const b = versionPartsOf(right);
+  return compareCore(a.core, b.core) || comparePre(a.pre, b.pre);
+};
+
+/**
+ * The highest of a family's versions by `compareVersions`, the version a
+ * provisioner pick lands on; empty while it lists none.
+ *
+ * @param {Array<string>} versions - The versions
+ * @returns {string} The highest version
+ */
+export const highestVersionOf = versions =>
+  (Array.isArray(versions) ? versions : [])
+    .filter(Boolean)
+    .reduce((best, version) => (!best || compareVersions(version, best) > 0 ? version : best), '');
+
 /**
  * The version a catalog document lists for one family: the named version,
  * else the family's first, null while the document holds no such family
@@ -1008,6 +1140,92 @@ const cleanedNetwork = network => {
  */
 export const cleanNetworks = networks => networks.map(cleanedNetwork);
 
+/**
+ * The provisioning NIC's row of the Network step, the `type: host` entry
+ * the agent attaches to the host's provisioning network and pins its
+ * `address` on as a DHCP fixed lease: the netmask and, as the gateway,
+ * the host's own `host_ip` from the `config` of
+ * `GET provisioning/network/status`, the address the first suggestion of
+ * `GET network/ip-suggestions` while that answer's subnet is the
+ * provisioning subnet, DHCP on while no address is suggested,
+ * `provisional` and `is_control` true and the MAC automatic; null while
+ * the agent answers the network disabled.
+ *
+ * @param {Object|null} answer - The answer of `GET provisioning/network/status`
+ * @param {Object|null} suggestions - The answer of `GET network/ip-suggestions`
+ * @returns {Object|null} The row
+ */
+export const provisioningNetworkOf = (answer, suggestions) => {
+  const config = answer?.enabled === false ? null : answer?.config;
+  if (!isObject(config) || config.enabled === false) {
+    return null;
+  }
+  const subnet = trimmed(config.subnet);
+  const offered = Array.isArray(suggestions?.suggestions) ? suggestions.suggestions : [];
+  const address = subnet && trimmed(suggestions?.subnet) === subnet ? trimmed(offered[0]) : '';
+  return {
+    type: 'host',
+    address,
+    netmask: trimmed(config.netmask),
+    gateway: trimmed(config.host_ip),
+    dhcp4: !address,
+    dhcp6: false,
+    provisional: true,
+    is_control: true,
+    mac: 'auto',
+  };
+};
+
+/**
+ * The networks with the provisioning NIC's row in them: a `type: host`
+ * entry already among them filled through `fillProvisioningNetwork`,
+ * else the row after the others.
+ *
+ * @param {Array<Object>} networks - The rows
+ * @param {Object|null} row - The row of `provisioningNetworkOf`
+ * @returns {Array<Object>} The rows
+ */
+export const withProvisioningNetwork = (networks, row) => {
+  if (!row) {
+    return networks;
+  }
+  return networks.some(network => network?.type === 'host')
+    ? fillProvisioningNetwork(networks, row)
+    : [...networks, { ...row }];
+};
+
+/**
+ * The uplink an external network opens on, the host's default-route
+ * interface the bridged-interfaces answer names as `default` while it is
+ * among the rows, else the first row; empty while none answers.
+ *
+ * @param {Object|null} answer - The answer of `GET provisioning/bridged-interfaces`
+ * @param {Array<Object>} rows - The rows of `flattenBridgedInterfaces`
+ * @returns {string} The interface name
+ */
+export const defaultUplinkOf = (answer, rows) => {
+  const named = typeof answer?.default === 'string' ? answer.default : '';
+  if (named && rows.some(row => row.name === named)) {
+    return named;
+  }
+  return rows[0]?.name || '';
+};
+
+/**
+ * The networks with the default uplink on the first entry that is no
+ * `type: host` entry and names no bridge.
+ *
+ * @param {Array<Object>} networks - The rows
+ * @param {string} uplink - The interface of `defaultUplinkOf`
+ * @returns {Array<Object>} The rows
+ */
+export const withDefaultUplink = (networks, uplink) => {
+  const at = networks.findIndex(network => network?.type !== 'host' && !network?.bridge);
+  return at < 0
+    ? networks
+    : networks.map((network, index) => (index === at ? { ...network, bridge: uplink } : network));
+};
+
 const mergedSettingsOf = ({ settings, bootSource, bootOrder }) => {
   const merged = {};
   SETTING_KEYS.forEach(key => {
@@ -1064,10 +1282,27 @@ const withoutBlank = map =>
   );
 
 /**
+ * A role's tags as the list the agent's `roles[].tags` takes: a string
+ * one tag, a list its non-empty strings, anything else none.
+ *
+ * @param {*} value - The tags a manifest or a role row carries
+ * @returns {Array<string>} The tags
+ */
+export const tagListOf = value => {
+  if (typeof value === 'string') {
+    return value.trim() ? [value.trim()] : [];
+  }
+  return Array.isArray(value)
+    ? value.filter(tag => typeof tag === 'string' && tag.trim()).map(tag => tag.trim())
+    : [];
+};
+
+/**
  * The `roles` of the create spec, the editor's rows in their drawn
  * order, every role present with its `name`, its `enabled`, the
  * `collection` and `tags` the manifest declares where the row names
- * none, its `files` with the blank members dropped and its `vars`.
+ * none, `tags` always a list of strings, its `files` with the blank
+ * members dropped and its `vars`.
  *
  * @param {Array<Object>} rows - The editor's role rows
  * @param {Array<Object>} manifestRoles - The manifest's roles
@@ -1076,14 +1311,16 @@ const withoutBlank = map =>
 export const roleRowsOf = (rows, manifestRoles) =>
   (Array.isArray(rows) ? rows : []).map(row => {
     const declared = manifestRoleOf(manifestRoles || [], row.name);
-    const plain = stripTag(row);
+    const { tags: rowTags, ...plain } = stripTag(row);
+    const own = tagListOf(rowTags);
+    const tags = own.length > 0 ? own : tagListOf(declared?.tags);
     const files = withoutBlank(plain.files);
     const vars = withoutBlank(plain.vars);
     return {
       ...plain,
       enabled: plain.enabled !== false,
       ...(declared?.collection && !plain.collection && { collection: declared.collection }),
-      ...(declared?.tags && !plain.tags && { tags: declared.tags }),
+      ...(tags.length > 0 && { tags }),
       files,
       vars,
     };

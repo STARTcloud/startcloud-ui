@@ -11,7 +11,6 @@ import {
   hardwareOf,
   hasDevices,
   isUnknownMachine,
-  machineCounts,
   machineRoute,
   matchesMachine,
   natForwardsOf,
@@ -312,15 +311,6 @@ describe('matchesMachine', () => {
   it('matches nothing else', () => {
     expect(matchesMachine(goRow, 'bhyve')).toBe(false);
     expect(matchesMachine({}, 'dev')).toBe(false);
-  });
-});
-
-describe('machineCounts', () => {
-  it('counts every row, the running ones and the rest', () => {
-    expect(
-      machineCounts([{ status: 'running' }, { status: 'stopped' }, { status: 'installed' }])
-    ).toEqual({ total: 3, running: 1, stopped: 2 });
-    expect(machineCounts([])).toEqual({ total: 0, running: 0, stopped: 0 });
   });
 });
 

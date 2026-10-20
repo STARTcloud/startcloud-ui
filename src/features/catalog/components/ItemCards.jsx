@@ -245,6 +245,34 @@ DefaultCardBody.propTypes = {
   ctx: PropTypes.object.isRequired,
 };
 
+const CARD_CONTROLS = 'a, button, input, select, textarea, label, .card-above';
+
+const CARD_CLASS = 'h-100 shadow-sm catalog-card';
+
+const cardPropsOf = (pick, item) => {
+  const press = pick?.press ? pick : null;
+  return press
+    ? {
+        className: `${CARD_CLASS} cursor-pointer`,
+        'data-item': item.name,
+        role: 'link',
+        tabIndex: 0,
+        onClick: event => {
+          if (!event.target.closest(CARD_CONTROLS)) {
+            press.press();
+          }
+        },
+        onKeyDown: event => {
+          if (event.key === 'Enter' && event.target === event.currentTarget) {
+            press.press();
+          }
+        },
+        'data-pick': 'press',
+        ...(press.action ? { 'data-action': press.action } : {}),
+      }
+    : { className: CARD_CLASS };
+};
+
 /**
  * One card of the grid: the media, the title (a stretched link over the
  * whole card while the collection routes to an item page, so the card
@@ -253,15 +281,18 @@ DefaultCardBody.propTypes = {
  * the chips a manager sees, the description, then the foot line, the
  * links and the extras, or in their place the collection's `CardBody`,
  * and the actions, every control its own target above the card link so a
- * star, a link or a checkbox never opens the item.
+ * star, a link or a checkbox never opens the item. A card whose
+ * `rowPick` answers a `press` is the press itself, the way a row of the
+ * table is: a pointer over it, pressed by a click outside its own
+ * controls and by Enter, its `action` as `data-action`.
  */
-const ItemCard = ({ collection, item, watches, selection, ctx }) => {
+const ItemCard = ({ collection, item, watches, selection, pick = null, ctx }) => {
   const { ItemChips, CardGlyph, CardExtras, CardByline, CardBody, RowActions } = collection.slots;
   const title = item.label || item.name;
   const manage = managesItem(ctx.status, collection, item, ctx.user);
   const chips = manage || Boolean(item.os?.label) || Boolean(ItemChips);
   return (
-    <Card className="h-100 shadow-sm catalog-card">
+    <Card {...cardPropsOf(pick, item)}>
       <Card.Body className="d-flex flex-column">
         <div className="d-flex align-items-start gap-2 mb-2">
           {selection ? (
@@ -326,24 +357,33 @@ ItemCard.propTypes = {
   item: itemShape.isRequired,
   watches: watchesShape,
   selection: selectionShape,
+  pick: PropTypes.shape({
+    press: PropTypes.func,
+    held: PropTypes.bool,
+    action: PropTypes.string,
+  }),
   ctx: PropTypes.object.isRequired,
 };
 
-const heldOf = (rowPick, item) => Boolean(rowPick && rowPick(item)?.held);
+const pickOf = (rowPick, item) => (rowPick ? rowPick(item) : null);
 
 const CardGrid = ({ collection, items, watches, selection, rowPick, ctx }) => (
   <Row xs={1} md={2} xl={3} className="g-3 mb-3">
-    {items.map(item => (
-      <Col key={item.id} className={heldOf(rowPick, item) ? 'held' : undefined}>
-        <ItemCard
-          collection={collection}
-          item={item}
-          watches={watches}
-          selection={selection}
-          ctx={ctx}
-        />
-      </Col>
-    ))}
+    {items.map(item => {
+      const pick = pickOf(rowPick, item);
+      return (
+        <Col key={item.id} className={pick?.held ? 'held' : undefined}>
+          <ItemCard
+            collection={collection}
+            item={item}
+            watches={watches}
+            selection={selection}
+            pick={pick}
+            ctx={ctx}
+          />
+        </Col>
+      );
+    })}
   </Row>
 );
 
@@ -407,6 +447,7 @@ CardGroup.propTypes = {
 /**
  * The card grid of one collection, flat or one grid a group; a card whose
  * `rowPick` answers `held` is greyed, its controls live, the way a held
+ * row of the table is, and one that answers a `press` is pressed as a
  * row of the table is. The card's media is the item's artwork or icon,
  * else the organization's logo, else the context's mark, else the
  * organization's initial.

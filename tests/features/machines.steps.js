@@ -93,11 +93,47 @@ Then('the machines list draws {int} rows', async ({ page }, count) => {
   await expect(listOf(page).locator('[data-row-actions]')).toHaveCount(count);
 });
 
-Then('the machines list counts {int} {word}', async ({ page }, count, kind) => {
-  await expect(listOf(page).locator(`[data-count="${kind}"]`)).toHaveAttribute(
-    'data-number',
-    String(count)
-  );
+Then('the machines heading counts {int}', async ({ page }, count) => {
+  const heading = listOf(page).locator('.section-heading');
+  await expect(heading).toHaveCount(1);
+  await expect(heading.locator('h5 + .small')).toHaveText(`· ${count}`);
+  await expect(heading.locator('[data-count]')).toHaveCount(0);
+});
+
+Then('the machines heading pane reads {string}', async ({ page }, names) => {
+  const pane = listOf(page).locator('.section-heading > .ms-auto');
+  await expect(pane).toBeVisible();
+  const drawn = await pane
+    .locator(':scope > *')
+    .evaluateAll(nodes =>
+      nodes.map(node =>
+        node.getAttribute('role') === 'group' ? 'view-toggle' : node.getAttribute('data-action')
+      )
+    );
+  expect(drawn.join(',')).toBe(names);
+});
+
+When('I pick the {string} view of the machines list', async ({ page }, view) => {
+  await listOf(page)
+    .locator('.section-heading [role="group"] button')
+    .nth(view === 'cards' ? 1 : 0)
+    .click();
+  await expect(listOf(page)).toHaveAttribute('data-view', view);
+});
+
+Then('the machines list draws {int} cards', async ({ page }, count) => {
+  await expect(listOf(page).locator('[data-machine-card]')).toHaveCount(count);
+});
+
+Then('the machines list draws no table', async ({ page }) => {
+  await expect(listOf(page).locator('[data-machine-card]').first()).toBeVisible();
+  await expect(listOf(page).locator('table')).toHaveCount(0);
+});
+
+Then('the machine card {string} links to {string}', async ({ page }, name, href) => {
+  await expect(
+    listOf(page).locator(`[data-machine-card="${name}"] a.stretched-link`)
+  ).toHaveAttribute('href', href);
 });
 
 Then('the machines list draws the {string} column', async ({ page }, column) => {
@@ -130,6 +166,19 @@ Then('the machine page draws the {string} panel', async ({ page }, name) => {
 Then('the machine page draws no {string} panel', async ({ page }, name) => {
   await expect(panelOf(page, 'machine-info')).toBeVisible();
   await expect(panelOf(page, name)).toHaveCount(0);
+});
+
+Then('the {string} panel sits in the {string} column', async ({ page }, name, column) => {
+  await expect(
+    machineOf(page).locator(`[data-column="${column}"] [data-panel="${name}"]`)
+  ).toBeVisible();
+});
+
+Then('the {string} panel sits outside the {string} column', async ({ page }, name, column) => {
+  await expect(panelOf(page, name)).toBeVisible();
+  await expect(
+    machineOf(page).locator(`[data-column="${column}"] [data-panel="${name}"]`)
+  ).toHaveCount(0);
 });
 
 Then('the machine page says the details are not available', async ({ page }) => {
@@ -297,6 +346,30 @@ When('I pick the snapshot {string}', async ({ page }, name) => {
 Then('the machine page draws no heading row', async ({ page }) => {
   await expect(panelOf(page, 'machine-info')).toBeVisible();
   await expect(machineOf(page).locator('.section-heading')).toHaveCount(0);
+});
+
+const headingOf = page => machineOf(page).locator('.section-heading');
+
+Then('the machine page draws one heading titled {string}', async ({ page }, title) => {
+  await expect(headingOf(page)).toHaveCount(1);
+  await expect(headingOf(page).locator('h5')).toHaveText(title);
+  await expect(headingOf(page).locator('[data-tool="fold"]')).toHaveCount(0);
+});
+
+Then("the heading's pane offers {string}", async ({ page }, action) => {
+  await expect(headingOf(page).locator(`.ms-auto [data-action="${action}"]`)).toBeVisible();
+});
+
+Then("the heading's pane offers no {string}", async ({ page }, action) => {
+  await expect(headingOf(page).locator('.ms-auto [data-action="refresh"]')).toBeVisible();
+  await expect(headingOf(page).locator(`[data-action="${action}"]`)).toHaveCount(0);
+});
+
+Then("the heading's pane ends with Refresh", async ({ page }) => {
+  await expect(headingOf(page).locator('.ms-auto > :last-child')).toHaveAttribute(
+    'data-action',
+    'refresh'
+  );
 });
 
 When("I refresh the machine's {string} chart", async ({ page }, name) => {

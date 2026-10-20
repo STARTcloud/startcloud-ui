@@ -16,6 +16,24 @@ Feature: machine provisioning
     And the host was sent GET to "/api/agents/1/machines/dev-1" 1 times
     And the page draws no key of hyperweaver-ui in place of its text
 
+  Scenario: Provisioning page: one heading row titled Provisioning with the pipeline's state after it, Save, Discard and Refresh in its pane and no chevron, the Hosts.yml tab's own Save and Discard taking their slots while it is open
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-provisioning fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/provisioning"
+    Then the provisioning status reads "provisioned"
+    And the machine page draws one heading titled "Provisioning"
+    And the heading's pane offers "document-store"
+    And the heading's pane offers "document-discard"
+    And the heading's pane offers no "hosts-yml-save"
+    And the heading's pane ends with Refresh
+    When I pick the editor tab "hosts-yml"
+    Then the heading's pane offers "hosts-yml-save"
+    And the heading's pane offers "hosts-yml-discard"
+    And the heading's pane offers no "document-store"
+    And the heading's pane ends with Refresh
+
   Scenario: Provisioning page: the editor behind `machine-create` for an admin, its tabs, the registry behind `provisioner-registry` read once for the catalog and the version
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
@@ -40,7 +58,7 @@ Feature: machine provisioning
     When I pick the editor tab "transport"
     Then the provisioning page draws the field "prov-transport-communicator"
 
-  Scenario: Provisioning page: a write one request and one notice, Store sends the whole document under provisioner and the detail is read again once
+  Scenario: Provisioning page: a write one request and one notice, Save sends the whole document under provisioner and the detail is read again once
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-provisioning fixture
@@ -59,7 +77,7 @@ Feature: machine provisioning
     And the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
     And the host was sent GET to "/api/agents/1/machines/dev-1/provision/status" 2 times
 
-  Scenario: Provisioning page: the Roles tab is the wizard's roles editor, each card a switch and the manifest's label with the role name as its tooltip, a role on against the provisioner's default drawing the warning banner, the switch off clearing it and Store sending enabled
+  Scenario: Provisioning page: the Roles tab is the wizard's roles editor, each card a switch and the manifest's label with the role name as its tooltip, a role on against the provisioner's default drawing the warning banner, the switch off clearing it and Save sending enabled
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-provisioning fixture
@@ -79,6 +97,68 @@ Feature: machine provisioning
     Then the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "false" at "/provisioner/roles/1/enabled"
     And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying nothing at "/provisioner/roles/0/enabled"
     And the host was sent PUT to "/api/agents/1/machines/dev-1" 1 times
+
+  Scenario: Provisioning page: the Roles tab's select column, two roles ticked and Disable selected turning both switches off and Save sending them
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-provisioning fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/provisioning"
+    And I pick the editor tab "roles"
+    And I tick the role "domino"
+    And I tick the role "traveler"
+    Then 2 roles are picked
+    When I press the roles editor's "roles-disable-picked" action
+    Then the role "domino" is off
+    And the role "traveler" is off
+    When I press the machine page's "document-store" action
+    Then the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "false" at "/provisioner/roles/0/enabled"
+    And the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "false" at "/provisioner/roles/1/enabled"
+
+  Scenario: Provisioning page: the Roles tab's select column, a shift-click picking the range from the role clicked last
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-provisioning fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/provisioning"
+    And I pick the editor tab "roles"
+    And I add the catalog role "nomadweb"
+    Then the roles list reads "domino,traveler,nomadweb"
+    When I tick the role "domino"
+    And I shift-click the role "nomadweb"
+    Then 3 roles are picked
+
+  Scenario: Provisioning page: the Roles tab's Remove selected refuses the manifest's required roles with one notice and removes the rest behind a plain confirmation
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-provisioning fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/provisioning"
+    And I pick the editor tab "roles"
+    And I add the catalog role "networking"
+    Then the roles list reads "domino,traveler,networking"
+    When I tick the role "domino"
+    And I tick the role "networking"
+    And I press the roles editor's "roles-remove-picked" action
+    Then the page raised 1 warning notice
+    When I confirm the open plain dialog
+    Then the roles list reads "traveler,networking"
+    And 0 roles are picked
+
+  Scenario: Provisioning page: the Roles tab's Move to top moving the picked roles as one block in their order
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-provisioning fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/provisioning"
+    And I pick the editor tab "roles"
+    And I add the catalog role "nomadweb"
+    And I tick the role "nomadweb"
+    And I tick the role "traveler"
+    And I press the roles editor's "roles-move-top" action
+    Then the roles list reads "traveler,nomadweb,domino"
+    When I press the machine page's "document-store" action
+    Then the host was sent PUT to "/api/agents/1/machines/dev-1" carrying "startcloud.hcl_roles.nomadweb" at "/provisioner/roles/1/name"
 
   Scenario: Provisioning page: the navbar search narrows the Roles tab's catalog and run by name and description, the catalog drawing no search box of its own
     Given the host answers the hosts fixture
@@ -137,7 +217,7 @@ Feature: machine provisioning
     Then the editor lists 1 step cards
     And the editor offers no "run-playbook"
 
-  Scenario: Provisioning page: a write one request and one notice, Store refuses a role name that is no name and sends nothing
+  Scenario: Provisioning page: a write one request and one notice, Save refuses a role name that is no name and sends nothing
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-provisioning fixture

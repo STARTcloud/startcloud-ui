@@ -10,29 +10,19 @@ import { useNotify } from '../../../../contexts/NoticeContext';
 import { useFormRules } from '../../../../hooks/useFormRules';
 import { useEngine } from '../../hooks/useEngine';
 import { useVault } from '../../hooks/useVault';
-import { downloadText, textOf } from '../../utils/download';
+import { downloadText } from '../../utils/download';
 import { fileNameOf } from '../../utils/formats';
 import { newRecord, stemOf } from '../../utils/records';
 import { KEY_LABELS, KEY_SCHEMA } from '../../utils/schemas';
 import { TextField } from '../fields';
 import KeyTypeSelect from '../KeyTypeSelect';
 
+import { keyPemOf } from './KeySource';
 import Outcome from './Outcome';
 
 const EMPTY_DRAFT = { alg: 'rsa2048', name: '', notes: '' };
 
 const PEM = 'application/x-pem-file';
-
-const pemOf = (engine, der_b64) =>
-  textOf(
-    engine.convert({
-      components: [{ kind: 'key', der_b64 }],
-      to: 'pkcs8',
-      password: '',
-      legacy: false,
-      friendly_name: '',
-    }).bytes
-  );
 
 /**
  * The Key tab of the Generate page: one line saying what it makes, the
@@ -60,7 +50,7 @@ const KeyTab = ({ fold }) => {
   const generate = () =>
     engine.run(held => {
       const key = held.generate_key(draft.alg);
-      setMade({ ...key, pem: pemOf(held, key.der_b64) });
+      setMade({ ...key, pem: keyPemOf(held, key.der_b64) });
       set('name', `${draft.alg} key`);
       setSaved(false);
       rules.reset();

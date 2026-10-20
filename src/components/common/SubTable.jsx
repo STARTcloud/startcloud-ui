@@ -557,10 +557,11 @@ const pressedKey = press => event => {
 /**
  * The attributes a row carries from `rowPick`: a row that is a press is a
  * link by role, focusable, pressed by a click outside its own controls
- * and by Enter, and a held row says so with `aria-disabled`; a row
+ * and by Enter, carrying the pick's `action` as `data-action` where it
+ * names one, and a held row says so with `aria-disabled`; a row
  * `rowPick` answers nothing for carries none.
  *
- * @param {{ press: Function|null, held: boolean }|null} pick - What `rowPick` answered for the row
+ * @param {{ press: Function|null, held: boolean, action: string }|null} pick - What `rowPick` answered for the row
  * @param {Function|null} rowRef - The arrival ref the row takes focus for
  * @returns {Object} The attributes of the `tr`
  */
@@ -573,6 +574,7 @@ const pickProps = (pick, rowRef) => {
       onClick: pressedRow(press),
       onKeyDown: pressedKey(press),
       'data-pick': 'press',
+      ...(pick.action ? { 'data-action': pick.action } : {}),
     };
   }
   return {
@@ -926,8 +928,9 @@ const countWithFold = (shape, foldCell) => (foldCell ? shape.columnCount + 1 : s
  * and drawn first, `RowActions` the host's own, rendered with
  * `actionsProps` plus the row under `rowProp`, the class `rowClass`
  * answers on each row, the pick `rowPick` answers on each row, `{ press,
- * held }`, a row with a `press` being one link by role, focused by Tab,
- * pressed by a click outside its own controls and by Enter, and a `held`
+ * held, action }`, a row with a `press` being one link by role, focused by Tab,
+ * pressed by a click outside its own controls and by Enter, `action` its
+ * `data-action`, and a `held`
  * row greyed with `aria-disabled`, one full-width detail row under every row whose
  * key is in `expandedKeys` (rendering `Detail` with `detailProps` plus
  * the row under `rowProp`), one `tbody` per group with a `GroupHeading`

@@ -1,7 +1,15 @@
 import PropTypes from 'prop-types';
 import { Suspense, lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaGripVertical, FaPlus, FaTrash, FaTriangleExclamation } from 'react-icons/fa6';
+import {
+  FaArrowsRotate,
+  FaGripVertical,
+  FaPlus,
+  FaPuzzlePiece,
+  FaTrash,
+  FaTriangleExclamation,
+  FaXmark,
+} from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
 import RecordRows from '../../../components/common/RecordRows';
@@ -242,12 +250,12 @@ const DOMAIN_LIST = 'machine-setting-domain-list';
 /**
  * The Edit parts fold of the General step: the server id, the hostname
  * and the domain, the domain input offering every domain of the chain
- * in the chain's order as its list; the fold opens itself while a bare
+ * in the chain's order as its list, each labelled by its source; the fold opens itself while a bare
  * name has no domain to take, the domain input then invalid with the
  * sentence that says so and, where the host's `machines` configuration
  * has a route, the link to it.
  */
-const NameParts = ({ settings, setSetting, onPartChange, domain, loading }) => {
+const NameParts = ({ settings, setSetting, onPartChange, domain, marks, loading }) => {
   const { t } = useTranslation();
   const [opened, setOpened] = useState(false);
   return (
@@ -272,6 +280,7 @@ const NameParts = ({ settings, setSetting, onPartChange, domain, loading }) => {
           onChange={event => onPartChange('hostname', event.target.value)}
           required
           disabled={loading}
+          mark={<PackageMark marks={marks} path="settings.hostname" />}
         />
         <SettingInput
           id="machine-setting-domain"
@@ -285,7 +294,12 @@ const NameParts = ({ settings, setSetting, onPartChange, domain, loading }) => {
         />
         <datalist id={DOMAIN_LIST}>
           {domain.choices.map(row => (
-            <option key={row.source} value={row.domain} />
+            <option
+              key={row.source}
+              value={row.domain}
+              label={t(`machineEdit.createWizardSteps.domainSource.${row.source}`)}
+              data-source={row.source}
+            />
           ))}
         </datalist>
       </div>
@@ -298,6 +312,7 @@ NameParts.propTypes = {
   setSetting: PropTypes.func.isRequired,
   onPartChange: PropTypes.func.isRequired,
   domain: domainShape.isRequired,
+  marks: PropTypes.instanceOf(Set).isRequired,
   loading: PropTypes.bool,
 };
 
@@ -339,82 +354,92 @@ UpdateMark.propTypes = {
 };
 
 /**
- * The family and the version of the provisioner picked on the General
- * step, the Version label carrying the warning glyph and the catalog link
- * while the host's catalogs list a version newer than every one it
- * holds, the link's press handing to `onCatalog`, which opens the
- * catalog's versions of the family.
+ * The provisioner of the General step: while none is picked the Pick
+ * provisioner button, `onOpen` opening the pick dialog, and the line that
+ * says the Provisioning step draws with a provisioner; once picked, in the
+ * button's place, the `family/version` chip, the warning glyph and the
+ * catalog link while the host's catalogs list a version newer than every
+ * one it holds, the link's press handing to `onCatalog`, then the change
+ * glyph, `onOpen` again, and the clear glyph, `onClear`. The row carries
+ * `data-field="provisioner"` and `data-pick-state`, `picked` or `none`.
  */
-export const ProvisionerChoice = ({
-  provisioners,
+export const ProvisionerPick = ({
   familyName,
-  onFamilyChange,
-  family,
   versionKey,
-  onVersionChange,
   update = null,
   onCatalog,
+  onOpen,
+  onClear,
   loading,
 }) => {
   const { t } = useTranslation();
+  const picked = Boolean(familyName && versionKey);
   return (
-    <>
-      <div className="col-12 col-md-8">
-        <label className="form-label" htmlFor="machine-create-provisioner">
-          {t('machineEdit.createWizardSteps.provisioner')}
-        </label>
-        <select
-          id="machine-create-provisioner"
-          className="form-select"
-          value={familyName}
-          onChange={event => onFamilyChange(event.target.value)}
-          disabled={loading}
+    <div className="col-12" data-field="provisioner">
+      <span className="form-label d-block">{t('machineEdit.createWizardSteps.provisioner')}</span>
+      {picked ? (
+        <div
+          className="d-flex align-items-center gap-2 flex-wrap"
+          data-pick-state="picked"
+          data-family={familyName}
+          data-version={versionKey}
         >
-          <option value="">{t('machineEdit.createWizardSteps.noProvisioning')}</option>
-          {provisioners.map(collection => (
-            <option key={collection.name} value={collection.name}>
-              {collection.metadata?.label || collection.name}
-              {collection.valid ? '' : t('machineEdit.createWizardSteps.invalidSuffix')}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="col-12 col-md-4">
-        <label className="form-label" htmlFor="machine-create-version">
-          {t('machineEdit.createWizardSteps.version')}
+          <code className="small">{`${familyName}/${versionKey}`}</code>
           <UpdateMark update={update} onCatalog={onCatalog} disabled={loading} />
-        </label>
-        <select
-          id="machine-create-version"
-          className="form-select"
-          value={versionKey}
-          onChange={event => onVersionChange(event.target.value)}
-          disabled={loading || !family}
-        >
-          <option value="">{t('machineEdit.cdromSourceFields.select')}</option>
-          {(family?.versions || []).map(entry => (
-            <option key={entry.dir || entry.version} value={entry.version}>
-              {entry.version}
-            </option>
-          ))}
-        </select>
-      </div>
-    </>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary py-0"
+            data-action="pick-provisioner"
+            title={t('machineEdit.createWizardSteps.changeProvisioner')}
+            aria-label={t('machineEdit.createWizardSteps.changeProvisioner')}
+            disabled={loading}
+            onClick={onOpen}
+          >
+            <FaArrowsRotate aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary py-0"
+            data-action="provisioner-clear"
+            title={t('machineEdit.createWizardSteps.clearProvisioner')}
+            aria-label={t('machineEdit.createWizardSteps.clearProvisioner')}
+            disabled={loading}
+            onClick={onClear}
+          >
+            <FaXmark aria-hidden="true" />
+          </button>
+        </div>
+      ) : (
+        <div data-pick-state="none">
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-primary"
+            data-action="pick-provisioner"
+            disabled={loading}
+            onClick={onOpen}
+          >
+            <FaPuzzlePiece className="me-1" aria-hidden="true" />
+            {t('machineEdit.createWizardSteps.pickProvisioner')}
+          </button>
+          <span className="form-text text-muted d-block">
+            {t('machineEdit.createWizardSteps.useProvisionerHint')}
+          </span>
+        </div>
+      )}
+    </div>
   );
 };
 
-ProvisionerChoice.propTypes = {
-  provisioners: PropTypes.array.isRequired,
+ProvisionerPick.propTypes = {
   familyName: PropTypes.string.isRequired,
-  onFamilyChange: PropTypes.func.isRequired,
-  family: PropTypes.object,
   versionKey: PropTypes.string.isRequired,
-  onVersionChange: PropTypes.func.isRequired,
   update: PropTypes.shape({
     version: PropTypes.string.isRequired,
     source: PropTypes.string.isRequired,
   }),
   onCatalog: PropTypes.func.isRequired,
+  onOpen: PropTypes.func.isRequired,
+  onClear: PropTypes.func.isRequired,
   loading: PropTypes.bool,
 };
 
@@ -423,9 +448,9 @@ ProvisionerChoice.propTypes = {
  * bare name taking the default domain the sources resolve, the computed
  * `server id--hostname.domain` line, the Edit parts fold over the server
  * id, the hostname, the domain and its source, the Override switch, the
- * tags, the owning organization on the server role, the Use a
- * provisioner switch with the family and the version under it while on,
- * and under Advanced the notes and the boot priority.
+ * tags, the owning organization on the server role, the provisioner pick
+ * of `ProvisionerPick`, and under Advanced the notes and the boot
+ * priority.
  */
 export const GeneralStep = ({
   nameText,
@@ -443,9 +468,8 @@ export const GeneralStep = ({
   orgChoices = [],
   orgUuid = '',
   setOrgUuid = null,
-  useProvisioner,
-  setUseProvisioner,
   provisioner,
+  marks = NO_MARKS,
   advanced,
   loading,
 }) => {
@@ -520,24 +544,11 @@ export const GeneralStep = ({
           setSetting={setSetting}
           onPartChange={onPartChange}
           domain={domain}
+          marks={marks}
           loading={loading}
         />
       </div>
-      <div className="col-12">
-        <Switch
-          id="machine-create-use-provisioner"
-          labelKey="machineEdit.createWizardSteps.useProvisioner"
-          checked={useProvisioner}
-          disabled={loading}
-          onChange={setUseProvisioner}
-        />
-        {useProvisioner ? null : (
-          <span className="form-text text-muted">
-            {t('machineEdit.createWizardSteps.useProvisionerHint')}
-          </span>
-        )}
-      </div>
-      {useProvisioner ? <ProvisionerChoice {...provisioner} loading={loading} /> : null}
+      <ProvisionerPick {...provisioner} loading={loading} />
       {setOrgUuid && orgChoices.length > 0 ? (
         <OrgChoice
           orgChoices={orgChoices}
@@ -595,17 +606,13 @@ GeneralStep.propTypes = {
   setName: PropTypes.func.isRequired,
   settings: PropTypes.object.isRequired,
   setSetting: PropTypes.func.isRequired,
-  useProvisioner: PropTypes.bool.isRequired,
-  setUseProvisioner: PropTypes.func.isRequired,
   provisioner: PropTypes.shape({
-    provisioners: PropTypes.array.isRequired,
     familyName: PropTypes.string.isRequired,
-    onFamilyChange: PropTypes.func.isRequired,
-    family: PropTypes.object,
     versionKey: PropTypes.string.isRequired,
-    onVersionChange: PropTypes.func.isRequired,
     update: PropTypes.object,
     onCatalog: PropTypes.func.isRequired,
+    onOpen: PropTypes.func.isRequired,
+    onClear: PropTypes.func.isRequired,
   }).isRequired,
   tagsInput: PropTypes.string.isRequired,
   setTagsInput: PropTypes.func.isRequired,
@@ -614,6 +621,7 @@ GeneralStep.propTypes = {
   orgChoices: PropTypes.array,
   orgUuid: PropTypes.string,
   setOrgUuid: PropTypes.func,
+  marks: PropTypes.instanceOf(Set),
   advanced: PropTypes.bool,
   loading: PropTypes.bool,
 };
@@ -3707,7 +3715,7 @@ VersionFields.propTypes = {
 };
 
 /**
- * The Provisioning step, drawn while Use a provisioner is on: the install
+ * The Provisioning step, drawn while a provisioner is picked or handed: the install
  * card of a handed family the host does not hold, `install` the state of
  * `useProvisionerInstall`; the line asking for a family while none is
  * picked on General; the version's field DSL less the fields the role
@@ -4022,6 +4030,18 @@ const EditorLoading = () => (
 
 const PreviewBody = ({ preview }) => {
   const { t } = useTranslation();
+  const refused = Object.entries(preview.fields || {});
+  if (preview.state === 'failed' && refused.length > 0) {
+    return (
+      <ul className="form-text text-danger mb-0" data-list="preview-refused">
+        {refused.map(([member, message]) => (
+          <li key={member} data-member={member}>
+            <code>{member}</code>: {message}
+          </li>
+        ))}
+      </ul>
+    );
+  }
   if (preview.state === 'failed') {
     return (
       <p className="form-text text-danger mb-0" data-note="preview-failed">
@@ -4055,6 +4075,7 @@ const previewShape = PropTypes.shape({
   yaml: PropTypes.string.isRequired,
   warnings: PropTypes.arrayOf(PropTypes.string).isRequired,
   error: PropTypes.string.isRequired,
+  fields: PropTypes.objectOf(PropTypes.string),
 });
 
 PreviewBody.propTypes = {
@@ -4065,7 +4086,8 @@ PreviewBody.propTypes = {
  * The Confirm step: exactly what Create sends, one record row a member in
  * the one record shape, the Hosts.yml the agent answered
  * `POST machines/preview` with under an open fold with Copy, its warnings
- * listed and its refusal said, and the whole body as JSON under a fold.
+ * listed and its refusal said, a 422 map one line a member with the
+ * agent's message, and the whole body as JSON under a fold.
  */
 export const ConfirmStep = ({ spec, preview }) => {
   const { t } = useTranslation();

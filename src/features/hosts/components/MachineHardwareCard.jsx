@@ -90,16 +90,20 @@ const specRows = (detail, t) => {
   ];
 };
 
+const CARD_DOORS = ['vnc', 'zlogin'];
+
 const consoleRows = ({ server, id, name, t }) =>
-  consoleDoorsOf(server).map(door => ({
-    key: `console-${door.key}`,
-    label: t(door.labelKey),
-    value: (
-      <Link to={consoleRoute(id, name, door.key)} data-action={`console-${door.key}`}>
-        {t('hosts.sidebar.open')}
-      </Link>
-    ),
-  }));
+  consoleDoorsOf(server)
+    .filter(door => CARD_DOORS.includes(door.key))
+    .map(door => ({
+      key: `console-${door.key}`,
+      label: t(door.labelKey),
+      value: (
+        <Link to={consoleRoute(id, name, door.key)} data-action={`console-${door.key}`}>
+          {t('hosts.sidebar.open')}
+        </Link>
+      ),
+    }));
 
 const Forwards = ({ forwards }) => {
   const { t } = useTranslation();
@@ -135,15 +139,16 @@ Forwards.propTypes = {
  * host bridge, the brand, the type and the switches of its
  * configuration, then the port its web console answers on, pinned, of
  * this session or handed out by the agent, and one row a console the
- * host's row lists, hyperweaver-ui's VNC and zlogin rows, VNC console,
- * zlogin console, SSH and RDP, each opening the console on the machine's
- * page; under them the devices
+ * host's row lists of VNC console and zlogin console, hyperweaver-ui's
+ * VNC and zlogin rows, each opening the console on the machine's page,
+ * SSH and RDP opening from the console card and the Controls menu; under
+ * them the devices
  * plugged into the machine as the device tree; and the NAT port
  * forwards its configuration carries. zoneweaver-agent answers the
  * specifications and the devices of a zone in `configuration`,
  * hyperweaver-agent the devices in `knob_current.devices`, and each is
  * read as it is. Nothing draws for a machine that answers none of the
- * three and whose host lists no console.
+ * three and whose host lists neither console.
  */
 const MachineHardwareCard = ({ id, name, detail, folds }) => {
   const { t } = useTranslation();

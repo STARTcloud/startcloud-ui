@@ -108,20 +108,23 @@ Feature: certs
     And the certs page's "convert" action is free
     And the certs page's "save-vault" action is free
 
-  Scenario: Convert: the format select offers every format before any read, PKCS#12 picked with nothing read draws its certificate and key slots as needed, each slot turning loaded as a read fills it, Convert held until a read is picked
+  Scenario: Convert: the format select offers every format before any read, PKCS#12 picked with nothing read draws its certificate and key slots as needed in the Components card and none in the Output card, each slot turning loaded as a read fills it, Convert held until a read is picked
     Given the host answers the certs fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/convert"
     Then the certs control "certs-convert/to" is enabled
     When I choose "pkcs12" in the control "certs-convert/to"
-    Then the certs format slot "certificate" reads needed
-    And the certs format slot "key" reads needed
+    Then the components card slot "certificate" reads needed
+    And the components card slot "key" reads needed
+    And the output card draws no slot
     And the certs page's "convert" action is held
     When I drop "leaf.pem" into the input zone
-    Then the certs format slot "certificate" reads loaded
-    And the certs format slot "key" reads needed
+    Then the components card slot "certificate" reads loaded
+    And the components card slot "key" reads needed
+    And the component "Certificate" is ticked
     When I drop "leaf.key" into the input zone
-    Then the certs format slot "key" reads loaded
+    Then the components card slot "key" reads loaded
+    And the component "Private key" is ticked
     And the certs page's "convert" action is free
 
   Scenario: Convert: an Input card the person folded and opened again in the visit stays open after a read
@@ -284,15 +287,19 @@ Feature: certs
     And I fill the control "certs-request/CN" with "req"
     And I choose "p256" in the control "certs-request/alg"
     And I press the certs page's "make-request" action
-    And I press the certs page's "download" action
+    Then the outcome shows the made key
+    When I press the certs page's "download" action
     Then the download is named "req.csr"
+    And the download is named "req.key.pem"
     And the page carries no duplicate id
     When I pick the generate tab "certificate"
     And I fill the control "certs-certificate/CN" with "leaf"
     And I choose "p256" in the control "certs-certificate/alg"
     And I press the certs page's "self-sign" action
-    And I press the certs page's "download" action
+    Then the outcome shows the made key
+    When I press the certs page's "download" action
     Then the download is named "leaf.crt"
+    And the download is named "leaf.key.pem"
     And the page carries no duplicate id
 
   Scenario: Generate: a request signed with an authority of the vault is issued by it, downloads under its common name and lands in the vault linked to it, its page naming the authority as its issuer
@@ -364,29 +371,51 @@ Feature: certs
     When I press the certs page's "load-template" action
     Then the control "certs-request/CN" holds "web.test"
 
-  Scenario: Generate: the key source is one switch, disabled while the vault holds no key, and on draws the vault's keys in place of the algorithm
+  Scenario: Generate: the key source is three buttons, Generate drawn by default, Pick a key from the Vault opening the Pick secret dialog over the vault's keys, the picked key named in place of the row, and Load a key file drawing the drop zone
     Given the host answers the certs fixture
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/generate"
     And I pick the generate tab "request"
-    Then the certs control "certs-request/mode" is disabled
-    And the certs control "certs-request/mode" is not checked
-    And the certs control "certs-request/keyId" is not drawn
+    Then the key source presses "generate"
+    And the certs control "certs-request/alg" is enabled
+    And the certs page's "key-vault" action is held
     And the extended key usages draw in one row
+    When I press the certs page's "key-file" action
+    Then the key source presses "file"
+    And the certs panel "certs-request/key-zone" is drawn
+    And the certs control "certs-request/alg" is not drawn
+    When I press the certs page's "key-generate" action
+    Then the key source presses "generate"
     When I pick the generate tab "key"
     And I choose "p256" in the control "certs-key/alg"
     And I press the certs page's "generate-key" action
     And I press the certs page's "save-vault" action
     Then I see "Saved to the vault."
     When I pick the generate tab "request"
-    Then the certs control "certs-request/mode" is enabled
-    When I check the control "certs-request/mode"
-    Then the certs control "certs-request/keyId" is enabled
+    And I press the certs page's "key-vault" action
+    Then the "pick-secret" dialog is open
+    When I press "secret-pick-row" on the row "p256 key" of the dialog table "secret-pick"
+    Then the "pick-secret" dialog is closed
+    And the key source names the picked key "p256 key"
     And the certs control "certs-request/alg" is not drawn
-    When I choose "p256 key" in the control "certs-request/keyId"
-    And I fill the control "certs-request/CN" with "keyed.test"
+    When I fill the control "certs-request/CN" with "keyed.test"
     And I press the certs page's "make-request" action
     Then the outcome made reads "keyed.test"
+    And the outcome shows no made key
+    When I press the certs page's "key-change" action
+    Then the key source presses "generate"
+
+  Scenario: Generate: Signing depth draws only while Certificate authority is on
+    Given the host answers the certs fixture
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/generate"
+    And I pick the generate tab "certificate"
+    Then the certs control "certs-certificate/is_ca" is not checked
+    And the certs control "certs-certificate/path_len" is not drawn
+    When I check the control "certs-certificate/is_ca"
+    Then the certs control "certs-certificate/path_len" is enabled
+    When I turn off the certs control "certs-certificate/is_ca"
+    Then the certs control "certs-certificate/path_len" is not drawn
 
   Scenario: Generate: the Sign CSR tab with an empty vault draws both Paste instead switches on and disabled with the paste zones open
     Given the host answers the certs fixture
@@ -411,6 +440,7 @@ Feature: certs
     Then I see "2 records imported"
     And the vault lists 2 rows
     When I open "/certs/rec-cert-1"
+    And I press the certs page's "edit" action
     And I fill the control "certs-details/name" with "Renamed leaf"
     And I press the certs page's "save" action
     Then I see "Saved to the vault."
@@ -457,6 +487,28 @@ Feature: certs
     Then the vault lists 3 rows
     When I open "/certs?kind=api_key"
     Then the vault lists 1 rows
+
+  Scenario: Record: a secret's Edit opens the secret record form with its tags, and the tags saved there draw in the details
+    Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs?kind=api_key"
+    And I press the certs page's "add-secret" action
+    And I fill the control "secret-record/name" with "HCL portal"
+    And I fill the control "secret-record/key" with "abc"
+    And I fill the control "secret-record/tags" with "prod, api"
+    And I send the open dialog
+    Then I see "Saved to the vault."
+    When I click "HCL portal"
+    Then the record page draws one heading with Edit in its pane and no pill
+    And the record's details read "prod, api"
+    When I press the certs page's "edit" action
+    Then the "secret-record" dialog is open
+    And the control "secret-record/tags" holds "prod, api"
+    When I fill the control "secret-record/tags" with "prod, api, portal"
+    And I send the open dialog
+    Then the "secret-record" dialog is closed
+    And the record's details read "prod, api, portal"
 
   Scenario: Vault: the bulk Delete of the picked rows behind the typed confirmation, the focus on the heading after
     Given the host answers the certs fixture
@@ -529,6 +581,24 @@ Feature: certs
     And the host was sent PUT to "/api/certs/row-leaf" 2 times
     And the page raised 0 danger notices
 
+  Scenario: Record: the page draws one heading with Edit in its pane, no pill and no folding section, and Edit turns the details into fields with Save and Cancel in the same pane
+    Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs"
+    And I click "Add New"
+    And I drop "vault.certs.json" into the vault
+    Then the vault lists 2 rows
+    When I open "/certs/rec-cert-1"
+    Then the record page draws one heading with Edit in its pane and no pill
+    And the certs control "certs-details/name" is not drawn
+    When I press the certs page's "edit" action
+    Then the record heading's pane holds "save" and "cancel"
+    And the certs control "certs-details/name" is enabled
+    When I press the certs page's "cancel" action
+    Then the certs control "certs-details/name" is not drawn
+    And the record page draws one heading with Edit in its pane and no pill
+
   Scenario: Record: Publish, Guests and Public from the header are three PUTs of the synced record, each answer's words drawn on the header
     Given the host answers the certs fixture
     And the browser keeps the vault's sync to "hyperweaver-server" off
@@ -595,6 +665,7 @@ Feature: certs
     And I pull the shared row "www.fixture.test"
     Then I see "www.fixture.test was pulled into the vault."
     When I open "/certs/rec-leaf"
+    And I press the certs page's "edit" action
     And I fill the control "certs-details/name" with "Renamed"
     And I press the certs page's "save" action
     Then I see "Saved to the vault."
@@ -609,6 +680,7 @@ Feature: certs
     And I pull the shared row "Dana leaf"
     Then I see "Dana leaf was pulled into the vault."
     When I open "/certs/rec-own"
+    And I press the certs page's "edit" action
     And I fill the control "certs-details/name" with "Dana renamed"
     And I press the certs page's "save" action
     Then I see "Saved to the vault."
@@ -661,6 +733,25 @@ Feature: certs
     And I do not see "Sam draft"
     And I do not see "Dana leaf"
 
+  Scenario: Shared: two picked rows are pulled to the vault together with one notice naming the count, and the pick is cleared
+    Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/shared"
+    Then the shared table lists 5 rows
+    When I tick the shared row "Fixture Root CA"
+    And I tick the shared row "www.fixture.test"
+    Then I see "2 selected"
+    When I press the certs page's "bulk-pull" action
+    Then the page raised 1 success notice
+    And I do not see "2 selected"
+    And the shared row "Fixture Root CA" offers "Pull again"
+    And the shared row "www.fixture.test" offers "Pull again"
+    When I open "/certs"
+    Then the vault lists 2 rows
+    And I see "Fixture Root CA"
+    And I see "www.fixture.test"
+
   Scenario: Shared: Pull again replaces the pulled copy with the row as the store holds it
     Given the host answers the certs fixture
     And the browser keeps the vault's sync to "hyperweaver-server" off
@@ -672,6 +763,7 @@ Feature: certs
     Then I see "www.fixture.test was pulled into the vault."
     And the shared row "www.fixture.test" offers "Pull again"
     When I open "/certs/rec-leaf"
+    And I press the certs page's "edit" action
     And I fill the control "certs-details/name" with "Renamed"
     And I press the certs page's "save" action
     Then I see "Saved to the vault."

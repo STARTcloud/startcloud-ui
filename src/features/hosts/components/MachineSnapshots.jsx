@@ -144,12 +144,13 @@ const useBulkDelete = ({ id, name, onDone }) => {
 
 /**
  * The snapshots of one machine, a glass section behind
- * `machine-snapshots`: the heading with the count and, for a person who
- * may create machines, its pane reading the picked state while rows are
+ * `machine-snapshots`: the page's one heading, `title` with the count
+ * once read, and in its pane, for a person who may create machines, the
+ * picked state while rows are
  * picked, "N selected", Clear selection and Delete selected behind the
  * typed confirmation, one `DELETE machines/{name}/snapshots/{snapshot}`
  * a picked row, one notice naming the count and the rows read again
- * once, then Take snapshot; and the one `SubTable` of the copy
+ * once, then Take snapshot, then `actions`; and the one `SubTable` of the copy
  * `useMachineSnapshots` holds, its select column drawn for that person,
  * narrowed by the navbar binding of `useDetailSearch` under
  * `table_prefs_snapshots`, in the agent's own order until a header sorts
@@ -163,7 +164,15 @@ const useBulkDelete = ({ id, name, onDone }) => {
  * start follows it, and where it does not the person is told and offered
  * the start.
  */
-const MachineSnapshots = ({ id, name, context, machine = null, running }) => {
+const MachineSnapshots = ({
+  id,
+  name,
+  context,
+  machine = null,
+  running,
+  title,
+  actions = null,
+}) => {
   const { t, i18n } = useTranslation();
   const server = useHostRow(id);
   const gates = machineToolGates({ server, machine, role: context.user?.role });
@@ -198,19 +207,21 @@ const MachineSnapshots = ({ id, name, context, machine = null, running }) => {
 
   const removePicked = () => bulk.remove(picked()).then(selection.clear);
 
-  const actions = gates.snapshot ? (
+  const pane = (
     <>
-      <PickedActions selection={selection} busy={busy} onDelete={() => setDeleting(true)} />
-      <TakeButton busy={busy} onTake={() => setOpen({ kind: 'take', snapshot: null })} />
+      {gates.snapshot ? (
+        <>
+          <PickedActions selection={selection} busy={busy} onDelete={() => setDeleting(true)} />
+          <TakeButton busy={busy} onTake={() => setOpen({ kind: 'take', snapshot: null })} />
+        </>
+      ) : null}
+      {actions}
     </>
-  ) : null;
+  );
 
   return (
     <div data-panel="machine-snapshots" data-count={snapshots.length}>
-      <SectionHeading
-        title={t('machine.machineSnapshots.snapshotsHeading', { count: snapshots.length })}
-        actions={actions}
-      />
+      <SectionHeading title={title} count={loaded ? snapshots.length : null} actions={pane} />
       {state ? (
         <p className={state.tone} data-note={state.note}>
           {t(state.key, state.values)}
@@ -272,6 +283,8 @@ MachineSnapshots.propTypes = {
   context: pageContextShape.isRequired,
   machine: PropTypes.object,
   running: PropTypes.bool.isRequired,
+  title: PropTypes.string.isRequired,
+  actions: PropTypes.node,
 };
 
 export default MachineSnapshots;

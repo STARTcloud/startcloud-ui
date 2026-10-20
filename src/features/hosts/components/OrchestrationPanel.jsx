@@ -253,7 +253,7 @@ OrderRow.propTypes = {
  * The orchestration of a host, the body of the host's Orchestration
  * page under its one heading: `title`, the status of
  * `GET machines/orchestration/status` as the badge, and in the pane the
- * strategy select, Enable behind the typed confirmation or Disable, each
+ * strategy select, Enable behind a plain confirmation or Disable, each
  * written at once, Preview, Apply and Refresh, which reads the status,
  * the priorities and the page's `onRefresh` again; under it the boot
  * order of `GET machines/priorities` straight on the page, the rows
@@ -435,7 +435,7 @@ const OrchestrationPanel = ({ id, title, onRefresh }) => {
         message={t('host.orchestrationPanel.enableOrchestrationMessage')}
         confirmText={t('host.orchestrationPanel.enable')}
         variant="restart"
-        keyword="enable"
+        typed={false}
       />
     </div>
   );

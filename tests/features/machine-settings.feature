@@ -31,6 +31,22 @@ Feature: machine settings
     Then the host was sent GET to "/api/agents/1/system/usb" 1 times
     And the host was sent GET to "/api/agents/1/machines/dev-1/usb/filters" 1 times
 
+  Scenario: Machine page: the Settings page draws one heading row titled Settings with Organization access, Apply, Reset and Refresh in its pane and no chevron, the tabs straight under it
+    Given the host answers the hosts fixture
+    And the host answers the hosts-machines fixture
+    And the host answers the hosts-tools fixture
+    And the host answers the hosts-settings fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/machines/dev-1/settings"
+    Then the settings page draws
+    And the machine page draws one heading titled "Settings"
+    And the heading's pane offers "org-access"
+    And the heading's pane offers "apply-settings"
+    And the heading's pane offers "reset-settings"
+    And the heading's pane ends with Refresh
+    When I press the machine page's "refresh" action
+    Then the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
+
   Scenario: Machine page: a write one request and one notice, a change on a machine that runs asks and Apply at next power cycle sends the changed member alone
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture

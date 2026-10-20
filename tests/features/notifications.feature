@@ -74,3 +74,45 @@ Feature: notifications live
     Then I see "Rebuild failed: failure"
     And the page raised 1 danger notice
     And the account menu's Rebuild row is idle
+
+  Scenario: Notifications live: a danger notice card rings its dismiss with the countdown and goes away on its own without a click
+    Given the host answers the agent-profile fixture
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/"
+    And I open the account menu
+    And I press the account menu's Notifications row
+    Then the notifications modal lists 3 rows
+    When I click "Mark all read"
+    Then the page raised 1 danger notice
+    And the danger notice card carries the countdown ring
+    And the danger notice card goes away without a click
+
+  Scenario: Notifications live: the Copy glyph beside a notice card's dismiss puts the card's text on the clipboard
+    Given the host answers the agent-profile fixture
+    And the browser may use the clipboard
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/"
+    And I open the account menu
+    And I press the account menu's Notifications row
+    Then the notifications modal lists 3 rows
+    When I click "Mark all read"
+    Then the page raised 1 danger notice
+    When I press "Escape"
+    And I press the copy glyph of the danger notice card
+    Then the clipboard holds the text of the danger notice card
+
+  Scenario: Notifications live: a danger notice card the pointer leaves starts its ring again over the card's whole span
+    Given the host answers the agent-profile fixture
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/"
+    And I open the account menu
+    And I press the account menu's Notifications row
+    Then the notifications modal lists 3 rows
+    When I click "Mark all read"
+    Then the page raised 1 danger notice
+    When I press "Escape"
+    Then the danger notice card started its ring 0 times
+    When I rest the pointer on the danger notice card and move it away
+    Then the danger notice card started its ring 1 times
+    When I rest the pointer on the danger notice card and move it away
+    Then the danger notice card started its ring 2 times

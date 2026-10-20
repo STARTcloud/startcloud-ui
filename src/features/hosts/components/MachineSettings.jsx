@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaCheck, FaHourglassHalf, FaPlus, FaTrash } from 'react-icons/fa6';
 
 import RecordRows from '../../../components/common/RecordRows';
+import SectionHeading from '../../../components/common/SectionHeading';
 import TabStrip from '../../../components/common/TabStrip';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { fetchMachineDefaults, fetchOsTypes } from '../api/machines';
@@ -19,6 +20,7 @@ import {
   editableFields,
   filesystemsOf,
   knobValuesOf,
+  pendingCount,
   pendingRowsOf,
   sectionForTab,
   visibleTabs,
@@ -192,6 +194,48 @@ CpuTopologySection.propTypes = {
   cpuTopo: PropTypes.object.isRequired,
   update: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
+};
+
+const pendingText = (pendingChanges, t) => {
+  const count = pendingCount({ pending_changes: pendingChanges });
+  return count > 0 ? t('machineEdit.machineSettings.pendingCount', { count }) : null;
+};
+
+const SettingsPane = ({ org, held, onApply, onReset, actions = null }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {org}
+      <button
+        type="button"
+        className="btn btn-sm btn-primary"
+        data-action="apply-settings"
+        onClick={onApply}
+        disabled={held}
+      >
+        <FaCheck className="me-2" aria-hidden="true" />
+        {t('machineEdit.machineSettings.apply')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        data-action="reset-settings"
+        onClick={onReset}
+        disabled={held}
+      >
+        {t('machineEdit.machineSettings.reset')}
+      </button>
+      {actions}
+    </>
+  );
+};
+
+SettingsPane.propTypes = {
+  org: PropTypes.node.isRequired,
+  held: PropTypes.bool.isRequired,
+  onApply: PropTypes.func.isRequired,
+  onReset: PropTypes.func.isRequired,
+  actions: PropTypes.node,
 };
 
 const CREDENTIAL_PROFILE = 'machine_login';
@@ -700,6 +744,10 @@ const useSettingsFeeds = ({ status, hostId, server }) => {
 
 /**
  * The Settings page of one machine, hyperweaver-ui's Settings tab: the
+ * page's one heading, `title` with the count of the accrued
+ * `pending_changes` groups as muted text while any waits, and in its
+ * pane Organization access on the `hyperweaver-server` role, Apply,
+ * Reset, then `actions`; under it the
  * tabs over every editor, each seeded from `knob_current` over the
  * configuration, the Credentials tab the machine's credentials from
  * `credentials`, each a row of the host's store with its name, kind and
@@ -731,6 +779,8 @@ const MachineSettings = ({
   snapshots = false,
   running,
   onDone,
+  title,
+  actions = null,
 }) => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -831,8 +881,19 @@ const MachineSettings = ({
     })
   );
 
+  const pane = (
+    <SettingsPane
+      org={<MachineOrgAccess status={status} id={hostId} name={name} disabled={formDisabled} />}
+      held={formDisabled || unchanged}
+      onApply={submit}
+      onReset={resetForm}
+      actions={actions}
+    />
+  );
+
   return (
     <div data-settings={name}>
+      <SectionHeading title={title} count={pendingText(pendingChanges, t)} actions={pane} />
       <MachineSettingsStatus
         issues={apply.issues}
         phase={apply.phase}
@@ -849,9 +910,6 @@ const MachineSettings = ({
         onApplyNow={apply.applyPendingNow}
         onCancel={apply.cancelPending}
       />
-      <div className="d-flex justify-content-end mb-2">
-        <MachineOrgAccess status={status} id={hostId} name={name} disabled={formDisabled} />
-      </div>
       <TabStrip tabs={tabs} active={tab} onSelect={setTab} className="mb-3" />
       <p className="form-text text-muted">{t('machineEdit.machineSettings.fieldsHint')}</p>
       <KnobTabs page={page} />
@@ -868,27 +926,6 @@ const MachineSettings = ({
           onResized={onDone}
         />
       ) : null}
-      <div className="d-flex gap-2 mt-3 border-top pt-3">
-        <button
-          type="button"
-          className="btn btn-primary"
-          data-action="apply-settings"
-          onClick={submit}
-          disabled={formDisabled || unchanged}
-        >
-          <FaCheck className="me-2" aria-hidden="true" />
-          {t('machineEdit.machineSettings.apply')}
-        </button>
-        <button
-          type="button"
-          className="btn btn-outline-secondary"
-          data-action="reset-settings"
-          onClick={resetForm}
-          disabled={formDisabled || unchanged}
-        >
-          {t('machineEdit.machineSettings.reset')}
-        </button>
-      </div>
       {rawDetails ? (
         <details className="mt-3" data-raw="details">
           <summary className="fs-6 fw-bold">
@@ -922,6 +959,8 @@ MachineSettings.propTypes = {
   snapshots: PropTypes.bool,
   running: PropTypes.bool.isRequired,
   onDone: PropTypes.func.isRequired,
+  title: PropTypes.string.isRequired,
+  actions: PropTypes.node,
 };
 
 export default MachineSettings;

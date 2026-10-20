@@ -113,7 +113,7 @@ ManageTable.propTypes = {
 /**
  * A list inside a dialog of a page of a host: the `SubTable` over rows
  * the page's search does not reach, sorted by the dialog alone, every
- * column shown.
+ * column shown, `rowPick` the table's own row pick.
  */
 export const DialogTable = ({
   name,
@@ -122,6 +122,7 @@ export const DialogTable = ({
   rowKey,
   RowActions = null,
   actionsProps = NO_PROPS,
+  rowPick = null,
   ctx,
   emptyText,
 }) => {
@@ -134,6 +135,7 @@ export const DialogTable = ({
         rowKey={rowKey}
         RowActions={RowActions}
         actionsProps={actionsProps}
+        rowPick={rowPick}
         sort={sort}
         onSort={(column, options) => setSort(current => nextSort(current, column, options))}
         hiddenColumns={NO_HIDDEN}
@@ -151,6 +153,7 @@ DialogTable.propTypes = {
   rowKey: PropTypes.func.isRequired,
   RowActions: PropTypes.elementType,
   actionsProps: PropTypes.object,
+  rowPick: PropTypes.func,
   ctx: PropTypes.object.isRequired,
   emptyText: PropTypes.node.isRequired,
 };

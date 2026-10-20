@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FaPen, FaPlay, FaPlus, FaStop, FaTrash } from 'react-icons/fa6';
 
 import ConfirmModal from '../../../../components/common/ConfirmModal';
+import SplitButton from '../../../../components/common/SplitButton';
 import { useStatus } from '../../../../contexts/StatusContext';
 import {
   createHostOnlyIf,
@@ -228,10 +229,12 @@ const DIALOGS = {
 };
 
 /**
- * The one spaces table of the Spaces page, a folding glass section whose
- * heading is the page's: `title`, `count` after it, and in its pane
- * Create, one button a family the host draws, for a role that controls
- * hosts, then the page's `actions`, Refresh; on a host that lists
+ * The one spaces table of the Spaces page, a glass section whose heading
+ * is the page's: `title`, `count` after it, and in its pane, for a role
+ * that controls hosts, New space, one split button whose press opens the
+ * dialog of the first family the host may create and whose menu lists
+ * every family it may create, then the page's `actions`, Refresh; on a
+ * host that lists
  * `network-spaces`, the host-only interfaces with their DHCP, the
  * VirtualBox 7 host-only networks, the NAT networks with their forwards
  * and the read-only internal networks, each family drawn as
@@ -253,7 +256,6 @@ const NetworkSpacesPanel = ({
   table,
   ctx,
   filtering,
-  fold,
   tools,
   title,
   count = null,
@@ -311,24 +313,29 @@ const NetworkSpacesPanel = ({
     });
 
   const Dialog = dialog ? DIALOGS[dialog.kind] : null;
+  const [first] = creatable;
 
   const pane = (
     <>
-      {canEdit
-        ? creatable.map(kind => (
-            <button
-              key={kind}
-              type="button"
-              className="btn btn-sm btn-outline-primary"
-              onClick={() => setDialog({ kind, space: null })}
-              disabled={tools.busy}
-              data-tool={`create-${kind}`}
-            >
-              <FaPlus className="me-2" aria-hidden="true" />
-              {t(CREATE_KEYS[kind])}
-            </button>
-          ))
-        : null}
+      {canEdit && first ? (
+        <SplitButton
+          action="space-create"
+          tool={`create-${first}`}
+          labelKey="host.networkSpaces.newSpace"
+          icon={FaPlus}
+          onClick={() => setDialog({ kind: first, space: null })}
+          menuAction="space-create-menu"
+          menuTool="create-menu"
+          menuLabelKey="host.networkSpaces.newSpaceOptions"
+          busy={tools.busy}
+          items={creatable.map(kind => ({
+            action: `space-create-${kind}`,
+            tool: `create-${kind}`,
+            labelKey: CREATE_KEYS[kind],
+            onClick: () => setDialog({ kind, space: null }),
+          }))}
+        />
+      ) : null}
       {actions}
     </>
   );
@@ -355,10 +362,9 @@ const NetworkSpacesPanel = ({
         emptyKey="hosts.networking.spaces.empty"
         reading={reading}
         filtering={filtering}
-        fold={fold}
         actions={pane}
       />
-      {intnets.length > 0 && !fold.folded ? (
+      {intnets.length > 0 ? (
         <p className="text-muted small" data-note="intnets">
           {t('host.networkSpaces.intnetNote')}
         </p>
@@ -393,7 +399,6 @@ NetworkSpacesPanel.propTypes = {
   table: PropTypes.object.isRequired,
   ctx: PropTypes.object.isRequired,
   filtering: PropTypes.bool.isRequired,
-  fold: PropTypes.object.isRequired,
   tools: PropTypes.object.isRequired,
   title: PropTypes.string.isRequired,
   count: PropTypes.node,

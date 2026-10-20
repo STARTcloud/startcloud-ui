@@ -37,8 +37,8 @@ Feature: config contract
     And the host was sent GET to "/api/config/restart-status" 2 times
     And I see "Restart required."
     When I click the last "Restart"
-    And I fill the field placeholdered "Type 'restart' to confirm" with "restart"
-    And I confirm the dialog with "Restart"
+    Then the open dialog asks for no typed word
+    When I confirm the dialog with "Restart"
     Then I see "Restarting."
     And the host was sent POST to "/api/config/restart"
     And I do not see "Restart required."

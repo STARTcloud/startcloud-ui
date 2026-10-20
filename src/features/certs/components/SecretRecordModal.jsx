@@ -19,6 +19,19 @@ const JSON_ROWS = 8;
 
 const customTextOf = secret => (secret ? JSON.stringify(secret, null, 2) : '');
 
+/**
+ * The tags a comma-separated text stands for, each trimmed, the empty
+ * ones dropped.
+ *
+ * @param {string} text - The tags as typed
+ * @returns {Array<string>} The tags
+ */
+export const tagsOfText = text =>
+  text
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(Boolean);
+
 const extraRowsOf = extra =>
   Object.entries(extra || {}).map(([name, value]) => ({ id: newId(), name, value: String(value) }));
 
@@ -61,6 +74,7 @@ export const secretDraftOf = (record, kind, profileId) => {
     name: record?.name || '',
     kind: own,
     profile: profile?.id || '',
+    tags: (record?.tags || []).join(', '),
     notes: record?.notes || '',
     ...membersOf(record, own, profile),
     custom: customOf(record, own, profile),
@@ -92,6 +106,7 @@ export const recordOfSecretDraft = (draft, record) => ({
   kind: draft.kind,
   name: draft.name.trim(),
   profile: draft.profile,
+  tags: tagsOfText(draft.tags),
   notes: draft.notes,
   facts: null,
   secret: secretOf(draft),
@@ -258,7 +273,8 @@ ExtraRows.propTypes = {
  * members with the first required, a password, key or private half
  * behind the reveal input, a key or a file's bytes as a textarea and the
  * bytes read from a picked file, a `custom` row's map as JSON text, the
- * notes, and the extra rows of named values with Add and Remove; Save
+ * extra rows of named values with Add and Remove, the tags as
+ * comma-separated text and the notes; Save
  * hands `onSave` the record once the rules pass. While the draft differs
  * from the one it opened on, a backdrop click, Escape, the close button
  * and Cancel ask the discard prompt. `data-dialog` is `secret-record`.
@@ -288,6 +304,7 @@ const SecretRecordModal = ({
       setDraft(current => ({
         ...secretDraftOf(null, value, profileId),
         name: current.name,
+        tags: current.tags,
         notes: current.notes,
         extra: current.extra,
       }));
@@ -370,6 +387,7 @@ const SecretRecordModal = ({
               />
             ) : null}
             <ExtraRows draft={draft} rules={rules} profile={profile} onChange={set} />
+            <TextField name="tags" draft={draft} rules={rules} onChange={set} />
             <TextAreaField name="notes" draft={draft} rules={rules} onChange={set} />
           </Modal.Body>
           <Modal.Footer>

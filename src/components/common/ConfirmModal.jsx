@@ -9,9 +9,12 @@ const VARIANTS = {
 };
 
 /**
- * The typed confirmation of a destructive step: the keyword the person
- * types, Cancel and Confirm; `onConfirmed`, where given, is called once
- * the dialog has left the page after a confirm, the place a caller moves
+ * The confirmation of a consequential step: with `typed`, the default, the
+ * keyword the person types before Confirm takes, the word of a destroy or a
+ * delete; without it a plain question answered by Cancel or Confirm, the
+ * shape of a stop, a kill, a cancel, a restart, a reset, an enable, a
+ * disable or an apply. `onConfirmed`, where given, is called once the
+ * dialog has left the page after a confirm, the place a caller moves
  * focus to when the confirm removed the control that opened the dialog,
  * and the dialog then neither holds focus while it leaves nor hands it
  * back to that control.
@@ -23,6 +26,7 @@ const ConfirmModal = ({
   title = '',
   message = '',
   variant = 'delete',
+  typed = true,
   keyword: ownKeyword = '',
   confirmText = '',
   onConfirmed = null,
@@ -47,13 +51,17 @@ const ConfirmModal = ({
     handleClose();
   };
 
+  const confirm = () => {
+    setConfirmed(true);
+    handleConfirm();
+    setInputValue('');
+    setError('');
+    handleClose();
+  };
+
   const handleConfirmClick = () => {
-    if (inputValue.toLowerCase() === keyword) {
-      setConfirmed(true);
-      handleConfirm();
-      setInputValue('');
-      setError('');
-      handleClose();
+    if (!typed || inputValue.toLowerCase() === keyword) {
+      confirm();
     } else {
       setError(t('pages.confirm.typeToConfirm', { keyword }));
     }
@@ -64,6 +72,8 @@ const ConfirmModal = ({
       onConfirmed();
     }
   };
+
+  const defaultMessage = typed ? t(`${keys}.message`, { keyword }) : t(`${keys}.plainMessage`);
 
   return (
     <Modal
@@ -79,13 +89,15 @@ const ConfirmModal = ({
         <Modal.Title>{title || t(`${keys}.title`)}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <div className="mb-3">{message || t(`${keys}.message`, { keyword })}</div>
-        <Form.Control
-          type="text"
-          value={inputValue}
-          onChange={handleInputChange}
-          placeholder={t('pages.confirm.placeholder', { keyword })}
-        />
+        <div className={typed ? 'mb-3' : undefined}>{message || defaultMessage}</div>
+        {typed ? (
+          <Form.Control
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            placeholder={t('pages.confirm.placeholder', { keyword })}
+          />
+        ) : null}
         {error ? (
           <div className="alert alert-danger" role="alert">
             {error}
@@ -111,6 +123,7 @@ ConfirmModal.propTypes = {
   title: PropTypes.string,
   message: PropTypes.node,
   variant: PropTypes.oneOf(Object.keys(VARIANTS)),
+  typed: PropTypes.bool,
   keyword: PropTypes.string,
   confirmText: PropTypes.string,
   onConfirmed: PropTypes.func,

@@ -16,8 +16,8 @@ Feature: consoles
     And the console panel offers "console-ftp"
     And the console panel offers no "console-start-zlogin"
     And the hardware card offers "console-vnc"
-    And the hardware card offers "console-ssh"
-    And the hardware card offers "console-rdp"
+    And the hardware card offers no "console-ssh"
+    And the hardware card offers no "console-rdp"
     And the hardware card offers no "console-zlogin"
     And the host was sent GET to "/api/agents/1/machines/dev-1/vnc/info" 1 times
     And the host was not sent GET to "/api/agents/1/zlogin/sessions"
@@ -381,19 +381,6 @@ Feature: consoles
     Then the console panel draws the "inactive" display
     And the document carries "data-brand" as "shi"
     And the console placeholder mark is "/brand/hyperweaver/mark.svg"
-
-  Scenario: Console doors: the hardware card's SSH door of a machine holding two SSH credentials asks Connect as before it starts
-    Given the host answers the agent fixture
-    And the host answers the agent-machines fixture
-    And the host answers the agent-consoles fixture
-    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
-    When I open "/hosts/self/machines/dev-1"
-    And I press the hardware card's "console-ssh" door
-    Then the Connect as dialog lists "sec-deploy,sec-domino"
-    And the host was not sent POST to "/api/machines/dev-1/ssh/start"
-    When I connect as "sec-deploy" in the Connect as dialog
-    Then the host was sent POST to "/api/machines/dev-1/ssh/start" carrying "credential_id" as "sec-deploy"
-    And the console panel draws the "ssh" display
 
   Scenario: Console doors: the SSH door of a row of the machines list opens the machine's page, which asks Connect as before it starts
     Given the host answers the agent fixture

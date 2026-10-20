@@ -90,6 +90,7 @@ export default {
   'POST /api/agents/1/machines/preview': {
     status: 200,
     file: 'preview-200.json',
+    refused: 'preview-refused.json',
   },
   'GET /api/organizations': {
     status: 200,

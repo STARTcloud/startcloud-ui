@@ -267,18 +267,6 @@ export const matchesMachine = (row, needle) =>
   ].some(text => text.toLowerCase().includes(needle));
 
 /**
- * The counts the machines heading draws: every row, the running ones and
- * the rest.
- *
- * @param {Array<Object>} rows - The machine rows
- * @returns {{ total: number, running: number, stopped: number }} The counts
- */
-export const machineCounts = rows => {
-  const running = rows.filter(row => statusOf(row) === 'running').length;
-  return { total: rows.length, running, stopped: rows.length - running };
-};
-
-/**
  * The actions a machine's row of the list offers, by the person's role,
  * the machine's own status and the gates the Controls menu shares
  * (`gatesOf`): Power on while it neither runs nor is paused; Pause,

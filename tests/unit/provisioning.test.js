@@ -8,10 +8,12 @@ import {
   clean,
   dependencyWarnings,
   hookReasonOf,
+  idRangeOf,
   invalidNameProblems,
   manifestRoleOf,
   manifestRolesOf,
   needsHookConfirmation,
+  pickedToEdge,
   pipelineOutcome,
   playbookListsOf,
   provisionStatusTone,
@@ -273,6 +275,26 @@ describe('the roles of a version', () => {
   });
 });
 
+describe('the picked roles', () => {
+  const rows = [1, 2, 3, 4, 5].map(id => ({ _ui_id: id, name: `r${id}` }));
+
+  it('reads the shift-click range either way, both ends included', () => {
+    expect(idRangeOf(rows, 2, 4)).toEqual([2, 3, 4]);
+    expect(idRangeOf(rows, 5, 3)).toEqual([3, 4, 5]);
+    expect(idRangeOf(rows, 3, 3)).toEqual([3]);
+    expect(idRangeOf(rows, null, 2)).toEqual([2]);
+    expect(idRangeOf(rows, 9, 2)).toEqual([2]);
+    expect(idRangeOf(rows, 2, 9)).toEqual([]);
+  });
+
+  it('moves the picked rows as one block to the top or the bottom, each part keeping its order', () => {
+    const picked = new Set([4, 2]);
+    expect(pickedToEdge(rows, picked, 'top').map(row => row._ui_id)).toEqual([2, 4, 1, 3, 5]);
+    expect(pickedToEdge(rows, picked, 'bottom').map(row => row._ui_id)).toEqual([1, 3, 5, 2, 4]);
+    expect(pickedToEdge(rows, new Set(), 'top')).toEqual(rows);
+  });
+});
+
 describe('the roles search', () => {
   const specs = {
     domino: { collection: 'startcloud.hcl_roles', short_description: 'Installs HCL Domino' },
@@ -323,7 +345,7 @@ describe('the roles search', () => {
 });
 
 describe('the answers of the pipeline', () => {
-  it('reports a queued task with its steps and the skipped suffix', () => {
+  it('reports a queued task with its steps and the skipped suffix and never its id', () => {
     const outcome = pipelineOutcome(
       { message: 'Queued', parent_task_id: 'p1', steps: 3, playbooks_skipped: ['a.yml'] },
       'dev-1',
@@ -332,10 +354,13 @@ describe('the answers of the pipeline', () => {
     expect(outcome.nothing).toBe('');
     expect(outcome.parts).toEqual([
       'Queued',
-      'provisioning.machineProvisioning.taskWithSteps {"id":"p1","steps":3}',
+      'provisioning.machineProvisioning.taskWithSteps {"steps":3}',
       'provisioning.machineProvisioning.skippedSuffix {"skipped":"a.yml"}',
     ]);
     expect(outcome.task).toMatchObject({ id: 'p1', machine_name: 'dev-1' });
+    expect(pipelineOutcome({ parent_task_id: 'p2' }, 'dev-1', t).parts).toEqual([
+      'provisioning.machineProvisioning.queued',
+    ]);
   });
 
   it('reports a no-op that skipped everything and queued no task', () => {

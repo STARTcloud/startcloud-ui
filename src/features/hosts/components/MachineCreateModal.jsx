@@ -19,6 +19,7 @@ import {
   fetchNextServerId,
   fetchProvisioners,
   fetchProvisionerVersion,
+  fetchProvisioningNetworkStatus,
   fetchRemoteTemplates,
   fetchTemplates,
   installFromCatalog,
@@ -41,7 +42,7 @@ import {
   sourceLabelOf,
 } from '../utils/boxCatalog';
 import { hostHasFeature, hostHasHypervisor } from '../utils/capabilities';
-import { isServerRole } from '../utils/hosts';
+import { hostLabel, isServerRole } from '../utils/hosts';
 import {
   BOX_SETTING_KEYS,
   PROVISIONER_INSTALL_OPERATIONS,
@@ -55,9 +56,15 @@ import {
   emptyCloudInit,
   emptyDiskConfig,
   emptySettings,
+  highestVersionOf,
   nameParts,
   nextServerIdOf,
   packageDefaultsOf,
+  defaultUplinkOf,
+  fillProvisioningNetwork,
+  provisioningNetworkOf,
+  withDefaultUplink,
+  withProvisioningNetwork,
   prefilledFrom,
   seedBoxOf,
   seedFamilyOf,
@@ -94,6 +101,7 @@ import {
   seedSecretAnswers,
   validateAnswers,
 } from './ProvisionerFieldDsl';
+import ProvisionerPickModal from './ProvisionerPickModal';
 import ResourceIssues from './ResourceIssues';
 import TaskDialog from './TaskDialog';
 import VersionCatalogModal from './VersionCatalogModal';
@@ -112,7 +120,9 @@ const NO_ROLES = [];
 
 const NO_CATALOGS = { sources: [], reads: [] };
 
-const PREVIEW_EMPTY = { body: '', yaml: '', warnings: [], error: '' };
+const NO_FIELDS = {};
+
+const PREVIEW_EMPTY = { body: '', yaml: '', warnings: [], error: '', fields: NO_FIELDS };
 
 const previewStateOf = (answer, body) => {
   if (answer.body !== body) {
@@ -132,6 +142,12 @@ const DISK_PATHS = {
 };
 
 const seededRows = manifest => seedRoles(manifest).map(tagRow);
+
+const pickOwnerOf = (server, appStatus, id) =>
+  server ? hostLabel(server) : appStatus?.hostname || id;
+
+const pickedOf = form =>
+  form.familyName ? { name: form.familyName, version: form.versionKey } : null;
 
 const listOf = value => (Array.isArray(value) ? value : []);
 
@@ -280,8 +296,10 @@ const templateAvailablePoolsOf = ({ templates, settings, agentDefaults }) => {
  * every provisioner install task of the host on `task-updated`, whoever
  * queued it, and through `loadProvisioners`, which answers the families;
  * the pools, datasets and volumes of a host that lists `zfs`, the
- * registered media of a VirtualBox host, the uplinks and the free
- * addresses, each read when its step is entered, so a picker is never
+ * registered media of a VirtualBox host, the uplinks, the free
+ * addresses and, on a VirtualBox host that lists `provisioning`,
+ * `GET provisioning/network/status` for the Network step's provisioning
+ * adapter, each read when its step is entered, so a picker is never
  * older than the visit to its step, the registries and their catalogs
  * again through `loadCatalogs` once a handed box's registry is added,
  * the provisioner catalog sources and each one's catalog once as the
@@ -308,6 +326,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     vboxMedia: [],
     bridgeChoices: [],
     ipSuggestions: null,
+    provisioningNetwork: null,
     catalogs: NO_CATALOGS,
   });
   const patch = useCallback(next => setFeeds(current => ({ ...current, ...next })), []);
@@ -325,6 +344,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
   const templated = hostHasFeature(server, 'templates');
   const cached = hostHasFeature(server, 'artifacts');
   const catalogued = hostHasFeature(server, 'provisioner-registry');
+  const provisioned = vbox && hostHasFeature(server, 'provisioning');
 
   const loadCatalogSources = useCallback(
     (fresh = false) => {
@@ -367,7 +387,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
       settle(fetchBridgedInterfaces(status, id)).then(data => {
         const rows = data ? flattenBridgedInterfaces(data) : [];
         patch({ bridgeChoices: bridgeChoicesOf(rows) });
-        return rows;
+        return { rows, uplink: defaultUplinkOf(data, rows) };
       }),
     [status, id, patch]
   );
@@ -375,6 +395,15 @@ const useCreateFeeds = ({ status, id, server, t }) => {
   const loadIpSuggestions = useCallback(() => {
     settle(fetchIpSuggestions(status, id)).then(data => patch({ ipSuggestions: data }));
   }, [status, id, patch]);
+
+  const loadProvisioningNetwork = useCallback(() => {
+    if (!provisioned) {
+      return;
+    }
+    settle(fetchProvisioningNetworkStatus(status, id)).then(data =>
+      patch({ provisioningNetwork: data })
+    );
+  }, [provisioned, status, id, patch]);
 
   const readCatalogs = useCallback(
     sources => {
@@ -462,6 +491,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     }
     loadZfs();
     loadMedia();
+    loadProvisioningNetwork();
   }, [
     status,
     id,
@@ -474,6 +504,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     loadArtifacts,
     loadZfs,
     loadMedia,
+    loadProvisioningNetwork,
   ]);
 
   return {
@@ -491,6 +522,7 @@ const useCreateFeeds = ({ status, id, server, t }) => {
     loadMedia,
     loadUplinks,
     loadIpSuggestions,
+    loadProvisioningNetwork,
   };
 };
 
@@ -527,6 +559,8 @@ const useCreateForm = () => {
     roles: [],
     properties: {},
     downloads: {},
+    provisioningRow: null,
+    packageDomain: '',
     syncMethod: 'rsync',
     removeTransport: '',
     sourceFilter: '',
@@ -609,6 +643,92 @@ StepPills.propTypes = {
   onPick: PropTypes.func.isRequired,
 };
 
+/**
+ * The wizard's one fixed set of moves, drawn at the right end of the bar
+ * under the dialog's title on every step in the same order: Back, Next or
+ * on Confirm the Create split button with Create and start and Create and
+ * provision, then Cancel.
+ */
+const WizardNav = ({
+  busy,
+  backHeld,
+  onBack,
+  onCancel,
+  submitButton,
+  confirming,
+  onCreate,
+  provisionHeld,
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div className="d-flex align-items-center gap-2 ms-auto" data-pane="wizard-nav">
+      <button
+        type="button"
+        className="btn btn-outline-secondary"
+        data-action="back"
+        onClick={onBack}
+        disabled={busy || backHeld}
+      >
+        {t('machineEdit.machineCreateModal.back')}
+      </button>
+      {confirming ? (
+        <Dropdown as="div" className="btn-group" align="end">
+          {submitButton}
+          <Dropdown.Toggle
+            split
+            variant="primary"
+            data-action="submit-menu"
+            aria-label={t('machineEdit.machineCreateModal.createOptions')}
+            disabled={busy}
+          />
+          <Dropdown.Menu>
+            <Dropdown.Item
+              as="button"
+              type="button"
+              data-action="submit-start"
+              onClick={() => onCreate(CREATE_MODES.start)}
+              disabled={busy}
+            >
+              {t('machineEdit.machineCreateModal.createAndStart')}
+            </Dropdown.Item>
+            <Dropdown.Item
+              as="button"
+              type="button"
+              data-action="submit-provision"
+              onClick={() => onCreate(CREATE_MODES.provision)}
+              disabled={busy || provisionHeld}
+            >
+              {t('machineEdit.machineCreateModal.createAndProvision')}
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      ) : (
+        submitButton
+      )}
+      <button
+        type="button"
+        className="btn btn-secondary"
+        data-action="cancel"
+        onClick={onCancel}
+        disabled={busy}
+      >
+        {t('pages.confirm.cancel')}
+      </button>
+    </div>
+  );
+};
+
+WizardNav.propTypes = {
+  busy: PropTypes.bool.isRequired,
+  backHeld: PropTypes.bool.isRequired,
+  onBack: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  submitButton: PropTypes.node.isRequired,
+  confirming: PropTypes.bool.isRequired,
+  onCreate: PropTypes.func.isRequired,
+  provisionHeld: PropTypes.bool.isRequired,
+};
+
 const HypervisorChoice = ({ value, onChange, disabled }) => {
   const { t } = useTranslation();
   return (
@@ -649,16 +769,18 @@ const seededAnswers = (manifest, inventory) => {
 
 /**
  * The default domain chain of the General step: the rows of the domain
- * input's list from the browser's `hosts_prefs` preference and the host's
- * `settings.domain_choices`, the domain a bare name takes, the first
+ * input's list from the browser's `hosts_prefs` preference, the host's
+ * `settings.domain_choices` and the picked provisioner's default domain,
+ * `form.packageDomain`, the domain a bare name takes, the first
  * non-empty of the chain, whether a bare name is left without a domain,
  * and the route of the host's `machines` configuration where it has one.
  */
 const useDomainChain = ({ agentDefaults, form, aggregated, status, server, id }) => {
   const prefs = useHostPrefs();
+  const { packageDomain } = form;
   const choices = useMemo(
-    () => domainChoicesOf(agentDefaults, prefs.defaultDomain),
-    [agentDefaults, prefs.defaultDomain]
+    () => domainChoicesOf(agentDefaults, prefs.defaultDomain, packageDomain),
+    [agentDefaults, prefs.defaultDomain, packageDomain]
   );
   const defaultDomain = defaultDomainOf({
     preference: prefs.defaultDomain,
@@ -674,13 +796,19 @@ const useDomainChain = ({ agentDefaults, form, aggregated, status, server, id })
   };
 };
 
+const versionEntryOf = (family, value) =>
+  family?.versions?.find(entry => entry.version === value || entry.dir === value) || null;
+
 /**
  * The provisioner picked on General: the family and the version, the
  * version's detail read once per pick, its roles, its field answers and
  * its package defaults landing on the form as it answers, every `secret`
  * field then preselected through `seedSecretAnswers` from one read of
  * the host's store a kind the configuration names, an answer the person
- * already made never overwritten.
+ * already made never overwritten. `pickProvisioner(name, version)` picks
+ * a family and its version at once and turns `useProvisioner` on,
+ * `clearProvisioner` drops both and turns it off, and `changeVersion`
+ * picks another version of the family held.
  */
 const useProvisionerPick = ({ status, id, form, set, update, provisioners, inventory }) => {
   const fetchSeq = useRef(0);
@@ -690,32 +818,24 @@ const useProvisionerPick = ({ status, id, form, set, update, provisioners, inven
     () => provisioners.find(collection => collection.name === form.familyName) || null,
     [provisioners, form.familyName]
   );
-  const version = useMemo(
-    () =>
-      family?.versions?.find(
-        entry => entry.version === form.versionKey || entry.dir === form.versionKey
-      ) || null,
-    [family, form.versionKey]
-  );
+  const version = useMemo(() => versionEntryOf(family, form.versionKey), [family, form.versionKey]);
 
-  const changeFamily = value => {
+  const familyReset = {
+    roles: [],
+    properties: {},
+    downloads: {},
+    fromPackage: new Set(),
+    packageDomain: '',
+  };
+
+  const clearProvisioner = () => {
     fetchSeq.current += 1;
     setVersionDetail(null);
     setVersionPending(false);
-    set({
-      familyName: value,
-      versionKey: '',
-      roles: [],
-      properties: {},
-      downloads: {},
-      fromPackage: new Set(),
-      ...(value && { useProvisioner: true }),
-    });
+    set({ ...familyReset, familyName: '', versionKey: '', useProvisioner: false });
   };
 
-  const changeVersion = value => {
-    const next =
-      family?.versions?.find(entry => entry.version === value || entry.dir === value) || null;
+  const loadVersion = (familyName, next, value) => {
     set({
       versionKey: value,
       roles: seededRows(next),
@@ -725,42 +845,48 @@ const useProvisionerPick = ({ status, id, form, set, update, provisioners, inven
     fetchSeq.current += 1;
     const seq = fetchSeq.current;
     setVersionDetail(null);
-    if (!next || !form.familyName) {
+    if (!next || !familyName) {
       setVersionPending(false);
       return;
     }
     setVersionPending(true);
-    settle(fetchProvisionerVersion(status, id, form.familyName, next.version || value)).then(
-      data => {
+    settle(fetchProvisionerVersion(status, id, familyName, next.version || value)).then(data => {
+      if (seq !== fetchSeq.current) {
+        return;
+      }
+      setVersionPending(false);
+      const manifest = data?.metadata || null;
+      if (!manifest) {
+        return;
+      }
+      setVersionDetail(data);
+      const defaults = packageDefaultsOf(manifest);
+      update(current => ({
+        roles: seededRows(manifest),
+        properties: seededAnswers(manifest, inventory),
+        ...(defaults ? prefilledFrom(defaults, current) : {}),
+      }));
+      const config = dslConfiguration(manifest);
+      if (secretKindsOf(config).length === 0) {
+        return;
+      }
+      readSecretRowsOf(status, id, config).then(rows => {
         if (seq !== fetchSeq.current) {
           return;
         }
-        setVersionPending(false);
-        const manifest = data?.metadata || null;
-        if (!manifest) {
-          return;
-        }
-        setVersionDetail(data);
-        const defaults = packageDefaultsOf(manifest);
         update(current => ({
-          roles: seededRows(manifest),
-          properties: seededAnswers(manifest, inventory),
-          ...(defaults ? prefilledFrom(defaults, current) : {}),
+          properties: { ...seedSecretAnswers(config, rows), ...current.properties },
         }));
-        const config = dslConfiguration(manifest);
-        if (secretKindsOf(config).length === 0) {
-          return;
-        }
-        readSecretRowsOf(status, id, config).then(rows => {
-          if (seq !== fetchSeq.current) {
-            return;
-          }
-          update(current => ({
-            properties: { ...seedSecretAnswers(config, rows), ...current.properties },
-          }));
-        });
-      }
-    );
+      });
+    });
+  };
+
+  const changeVersion = value => loadVersion(form.familyName, versionEntryOf(family, value), value);
+
+  const pickProvisioner = (name, value) => {
+    const held = provisioners.find(collection => collection.name === name) || null;
+    set({ ...familyReset, familyName: name, versionKey: '', useProvisioner: true });
+    loadVersion(name, versionEntryOf(held, value), value);
   };
 
   return {
@@ -769,7 +895,8 @@ const useProvisionerPick = ({ status, id, form, set, update, provisioners, inven
     versionInfo: versionDetail?.metadata || version,
     roleSpecs: versionDetail?.role_specs?.roles || null,
     versionPending,
-    changeFamily,
+    pickProvisioner,
+    clearProvisioner,
     changeVersion,
   };
 };
@@ -906,7 +1033,6 @@ const StepBody = ({ wizard }) => {
     openBoxVault,
     source,
     seedBox,
-    picked,
     naming,
     domain,
     provisioner,
@@ -939,16 +1065,8 @@ const StepBody = ({ wizard }) => {
           orgChoices={orgChoices}
           orgUuid={form.orgUuid}
           setOrgUuid={aggregated ? setter('orgUuid') : null}
-          useProvisioner={form.useProvisioner}
-          setUseProvisioner={checked => {
-            if (checked) {
-              set({ useProvisioner: true });
-            } else {
-              picked.changeFamily('');
-              set({ useProvisioner: false });
-            }
-          }}
           provisioner={provisioner}
+          marks={marks}
           advanced={showAdvanced}
           loading={busy}
         />
@@ -1058,8 +1176,8 @@ StepBody.propTypes = {
  * The dialog that creates one machine, hyperweaver-ui's create wizard, a
  * form dialog of eight steps: General, OS & Disks, System, CPU, Memory,
  * Network, Provisioning and Confirm, each a pill that opens while every
- * step before it is clean, the Provisioning pill drawn while Use a
- * provisioner is on, Next the primary action until Confirm, where the
+ * step before it is clean, the Provisioning pill drawn while a
+ * provisioner is picked or handed, Next the primary action until Confirm, where the
  * split button sends the one request, `POST machines` with the spec of
  * `buildSpec`, Create with `start_after_create` and
  * `provision_after_create` false, Create and start with the first true
@@ -1072,7 +1190,10 @@ StepBody.propTypes = {
  * a VirtualBox host's controllers, knobs and ports, the UTM choice on a
  * host that names `utm`. The pickers are fed by one read of each feed
  * as the dialog opens, the ones a step consumes read again as it is
- * entered. A provisioner version picked on General prefills the steps
+ * entered. General's Pick provisioner opens `ProvisionerPickModal` over
+ * the families the host holds, a card's Pick landing the family at its
+ * highest version by `highestVersionOf` and a version's Pick that
+ * version. A provisioner version picked on General prefills the steps
  * from its manifest's `metadata.defaults`, its `settings`, `disks`,
  * `networks`, `tags` and `guest_agent`, a value the person typed
  * never overwritten and every filled value marked from package until
@@ -1080,7 +1201,7 @@ StepBody.propTypes = {
  * configuration's default names through `seedRolePicks`, and preselects
  * every `secret` field whose kind and
  * profile exactly one row of the host's store matches, the store read
- * once a kind as the version answers; the Version label carries the
+ * once a kind as the version answers; the picked chip carries the
  * warning glyph and the catalog link while the host's catalogs list a
  * newer version, the link opening `VersionCatalogModal` over the
  * family's catalog versions, a version's Install sending
@@ -1098,11 +1219,10 @@ StepBody.propTypes = {
  * query, lands its box on the box fields as a custom pick, BoxVault's
  * `box` members or the catalog's `box_<provider>` member the host's
  * hypervisors pick through `seedBoxOf`, and its provisioner on General,
- * the switch turned on, the host's family named by the part after the
- * handed `provisioner`'s slash, picked once the provisioners have
- * answered, and the version named, or the family's first, picked once the
- * family is, so the version's manifest is read as a person's pick reads
- * it; a family the host does not hold puts `useProvisionerInstall`'s card
+ * the host's family named by the part after the handed `provisioner`'s
+ * slash, picked once the provisioners have answered at the version
+ * named, else at the family's highest, so the version's manifest is read
+ * as a person's pick reads it; a family the host does not hold puts `useProvisionerInstall`'s card
  * on the Provisioning step, its press installing the family through the
  * host's catalog and the provisioners read again, so the same picks land,
  * and a family installed elsewhere while the dialog is open, on the
@@ -1318,6 +1438,8 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
     }
   }, [seedFamily, set]);
 
+  const [pickOpen, setPickOpen] = useState(false);
+
   useEffect(() => {
     if (!defaultDomain) {
       return;
@@ -1327,20 +1449,26 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
         ? { settings: { ...current.settings, ...nameParts(current.nameText, defaultDomain) } }
         : {}
     );
-  }, [defaultDomain, update]);
+  }, [defaultDomain, form.nameText, update]);
 
-  const { changeFamily, changeVersion, family: pickedFamily } = picked;
+  const { pickProvisioner, changeVersion, family: pickedFamily } = picked;
 
   useEffect(() => {
     if (!seedFamily || provisionerSeeded.current) {
       return;
     }
-    if (!feeds.provisioners.some(collection => collection.name === seedFamily)) {
+    const held = feeds.provisioners.find(collection => collection.name === seedFamily);
+    if (!held) {
       return;
     }
-    provisionerSeeded.current = 'family';
-    changeFamily(seedFamily);
-  }, [seedFamily, feeds.provisioners, changeFamily]);
+    provisionerSeeded.current = 'picked';
+    const versions = held.versions || [];
+    const named = seed?.provisioner_version || '';
+    const chosen =
+      versions.find(entry => entry.version === named || entry.dir === named)?.version ||
+      highestVersionOf(versions.map(entry => entry.version));
+    pickProvisioner(seedFamily, chosen);
+  }, [seedFamily, seed, feeds.provisioners, pickProvisioner]);
 
   useEffect(() => {
     if (!wantedVersion.current || !pickedFamily) {
@@ -1355,21 +1483,7 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
     }
   }, [pickedFamily, changeVersion]);
 
-  useEffect(() => {
-    if (provisionerSeeded.current !== 'family' || !pickedFamily) {
-      return;
-    }
-    const versions = pickedFamily.versions || [];
-    const named = seed?.provisioner_version || '';
-    const chosen =
-      versions.find(entry => entry.version === named || entry.dir === named) || versions[0];
-    provisionerSeeded.current = 'version';
-    if (chosen) {
-      changeVersion(chosen.version);
-    }
-  }, [seed, pickedFamily, changeVersion]);
-
-  const { loadZfs, loadMedia, loadUplinks, loadIpSuggestions } = feeds;
+  const { loadZfs, loadMedia, loadUplinks, loadIpSuggestions, loadProvisioningNetwork } = feeds;
   const loadedStep = useRef('');
 
   useEffect(() => {
@@ -1382,18 +1496,35 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
       loadMedia();
     }
     if (stepId === 'network') {
-      loadUplinks().then(rows => {
-        if (rows.length > 0) {
-          update(current => ({
-            networks: current.networks.map((network, index) =>
-              index === 0 && !network.bridge ? { ...network, bridge: rows[0].name } : network
-            ),
-          }));
+      loadUplinks().then(({ uplink }) => {
+        if (uplink) {
+          update(current => ({ networks: withDefaultUplink(current.networks, uplink) }));
         }
       });
       loadIpSuggestions();
+      loadProvisioningNetwork();
     }
-  }, [stepId, loadZfs, loadMedia, loadUplinks, loadIpSuggestions, update]);
+  }, [stepId, loadZfs, loadMedia, loadUplinks, loadIpSuggestions, loadProvisioningNetwork, update]);
+
+  const provisioningRow = useMemo(
+    () => provisioningNetworkOf(feeds.provisioningNetwork, feeds.ipSuggestions),
+    [feeds.provisioningNetwork, feeds.ipSuggestions]
+  );
+
+  useEffect(() => {
+    if (!provisioningRow) {
+      return;
+    }
+    update(current => {
+      if (current.typed.has('networks')) {
+        return { provisioningRow };
+      }
+      const place = current.fromPackage.has('networks.0')
+        ? fillProvisioningNetwork
+        : withProvisioningNetwork;
+      return { provisioningRow, networks: place(current.networks, provisioningRow) };
+    });
+  }, [provisioningRow, update]);
 
   const availablePools = useMemo(
     () =>
@@ -1499,14 +1630,21 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
           yaml: typeof answer?.yaml === 'string' ? answer.yaml : '',
           warnings: listOf(answer?.warnings).map(String),
           error: '',
+          fields: NO_FIELDS,
         });
       },
       error => {
         if (seq !== previewSeq.current) {
           return;
         }
-        setPreviewAnswer({ body, yaml: '', warnings: [], error: error.message || '' });
         const refused = fieldMapOf(error);
+        setPreviewAnswer({
+          body,
+          yaml: '',
+          warnings: [],
+          error: error.message || '',
+          fields: refused,
+        });
         if (Object.keys(refused).length > 0) {
           setFieldErrors(refused);
         }
@@ -1585,14 +1723,12 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
   };
 
   const provisioner = {
-    provisioners: feeds.provisioners,
     familyName: form.familyName,
-    onFamilyChange: changeFamily,
-    family: pickedFamily,
     versionKey: form.versionKey,
-    onVersionChange: changeVersion,
     update: catalogUpdate,
     onCatalog: () => setCatalogOpen(true),
+    onOpen: () => setPickOpen(true),
+    onClear: picked.clearProvisioner,
   };
 
   const marks = useMemo(
@@ -1724,7 +1860,10 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
               {t('machineEdit.machineCreateModal.createTitle', { resource: noun })}
             </Modal.Title>
           </Modal.Header>
-          <Modal.Body>
+          <div
+            className="modal-header py-2 flex-wrap align-items-start gap-2"
+            data-bar="wizard-nav"
+          >
             <StepPills
               steps={steps}
               stepId={stepId}
@@ -1732,6 +1871,18 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
               busy={busy}
               onPick={goTo}
             />
+            <WizardNav
+              busy={busy}
+              backHeld={stepIndex === 0}
+              onBack={() => goTo(steps[Math.max(stepIndex - 1, 0)])}
+              onCancel={guard.close}
+              submitButton={submitButton}
+              confirming={confirming}
+              onCreate={create}
+              provisionHeld={!form.familyName}
+            />
+          </div>
+          <Modal.Body>
             {feeds.failure ? (
               <div className="alert alert-warning" role="status" data-note="feeds-failed">
                 {feeds.failure}
@@ -1746,25 +1897,7 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
             <StepBody wizard={wizard} />
           </Modal.Body>
           <Modal.Footer>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              data-action="cancel"
-              onClick={guard.close}
-              disabled={busy}
-            >
-              {t('pages.confirm.cancel')}
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              data-action="back"
-              onClick={() => goTo(steps[Math.max(stepIndex - 1, 0)])}
-              disabled={busy || stepIndex === 0}
-            >
-              {t('machineEdit.machineCreateModal.back')}
-            </button>
-            <div className="form-check form-switch ms-2 me-auto">
+            <div className="form-check form-switch me-auto">
               <input
                 id="machine-create-advanced"
                 className="form-check-input"
@@ -1778,44 +1911,26 @@ const CreateWizard = ({ status, id, user, seed, tools, onClose }) => {
                 {t('machineEdit.machineCreateModal.advanced')}
               </label>
             </div>
-            {confirming ? (
-              <Dropdown as="div" className="btn-group" drop="up" align="end">
-                {submitButton}
-                <Dropdown.Toggle
-                  split
-                  variant="primary"
-                  data-action="submit-menu"
-                  aria-label={t('machineEdit.machineCreateModal.createOptions')}
-                  disabled={busy}
-                />
-                <Dropdown.Menu>
-                  <Dropdown.Item
-                    as="button"
-                    type="button"
-                    data-action="submit-start"
-                    onClick={() => create(CREATE_MODES.start)}
-                    disabled={busy}
-                  >
-                    {t('machineEdit.machineCreateModal.createAndStart')}
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    as="button"
-                    type="button"
-                    data-action="submit-provision"
-                    onClick={() => create(CREATE_MODES.provision)}
-                    disabled={busy || !form.familyName}
-                  >
-                    {t('machineEdit.machineCreateModal.createAndProvision')}
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            ) : (
-              submitButton
-            )}
           </Modal.Footer>
         </form>
       </Modal>
       <DiscardPrompt {...guard.prompt} />
+      {pickOpen ? (
+        <ProvisionerPickModal
+          status={status}
+          id={id}
+          sources={feeds.catalogs.sources}
+          families={feeds.provisioners}
+          owner={pickOwnerOf(server, appStatus, id)}
+          picked={pickedOf(form)}
+          busy={busy}
+          onPick={(name, version) => {
+            setPickOpen(false);
+            pickProvisioner(name, version);
+          }}
+          onClose={() => setPickOpen(false)}
+        />
+      ) : null}
       {catalogOpen && pickedFamily ? (
         <VersionCatalogModal
           catalogs={feeds.catalogs}

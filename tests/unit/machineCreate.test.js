@@ -13,11 +13,14 @@ import {
   catalogSourceSeedOf,
   catalogVersionOf,
   cleanNetworks,
+  compareVersions,
   createRouteOf,
   createSeedOf,
   createdOf,
   defaultDomainOf,
   defaultExternalNetwork,
+  defaultUplinkOf,
+  fillProvisioningNetwork,
   domainChoicesOf,
   domainConfigRouteOf,
   emptyCloudInit,
@@ -27,6 +30,7 @@ import {
   handoffReasonKey,
   handoffRouteOf,
   handoffTitleOf,
+  highestVersionOf,
   hostCreates,
   hostTakes,
   installOfferOf,
@@ -35,6 +39,7 @@ import {
   packageDefaultsOf,
   parseVboxPassthrough,
   prefilledFrom,
+  provisioningNetworkOf,
   roleRowsOf,
   seedBoxFor,
   seedBoxOf,
@@ -43,8 +48,11 @@ import {
   stepOpen,
   stepProblemOf,
   stepsFor,
+  tagListOf,
   templateSourceFor,
   templateSourceFormOf,
+  withDefaultUplink,
+  withProvisioningNetwork,
   withoutCreateSeed,
 } from '../../src/features/hosts/utils/machineCreate.js';
 
@@ -935,11 +943,11 @@ describe('buildSpec', () => {
         name: 'networking',
         enabled: false,
         collection: 'startcloud.startcloud_roles',
-        tags: 'always',
+        tags: ['always'],
         files: {},
         vars: {},
       },
-      { name: 'acme.extra.role', enabled: true, tags: 'late', files: {}, vars: {} },
+      { name: 'acme.extra.role', enabled: true, tags: ['late'], files: {}, vars: {} },
     ]);
     const spec = buildSpec(
       formOf({
@@ -958,6 +966,311 @@ describe('buildSpec', () => {
     ]);
     expect(spec.roles[0]).not.toHaveProperty('_ui_id');
     expect(spec.wait_for).toEqual(['c2', 'c3']);
+  });
+
+  it('sends every role tag as a list, a manifest string one tag, a manifest list its strings, a blank or other value none', () => {
+    expect(tagListOf('always')).toEqual(['always']);
+    expect(tagListOf(' always ')).toEqual(['always']);
+    expect(tagListOf(['a', '', 7, ' b '])).toEqual(['a', 'b']);
+    expect(tagListOf('')).toEqual([]);
+    expect(tagListOf(null)).toEqual([]);
+    expect(tagListOf({ tag: 'x' })).toEqual([]);
+    const roles = roleRowsOf(
+      [
+        { name: 'networking', enabled: true, files: {}, vars: {} },
+        { name: 'quick_start', enabled: true, files: {}, vars: {}, tags: '' },
+        { name: 'ssl', enabled: true, files: {}, vars: {}, tags: ['mine'] },
+      ],
+      [
+        { name: 'networking', collection: 'startcloud.startcloud_roles', tags: 'always' },
+        { name: 'quick_start', tags: ['always', 'docs'] },
+        { name: 'ssl', tags: 'always' },
+      ]
+    );
+    expect(roles.map(role => role.tags)).toEqual([['always'], ['always', 'docs'], ['mine']]);
+  });
+
+  it('builds the exact body of a provisioned VirtualBox create, every role tag a list and every member the type the agent decodes', () => {
+    const manifestRoles = [
+      { name: 'setup', collection: 'startcloud.startcloud_roles', default_enabled: true },
+      {
+        name: 'networking',
+        collection: 'startcloud.startcloud_roles',
+        tags: 'always',
+        default_enabled: true,
+      },
+      { name: 'domino_install', collection: 'startcloud.hcl_roles', default_enabled: true },
+    ];
+    const spec = buildSpec(
+      formOf({
+        familyName: 'hcl_domino_standalone_provisioner',
+        version: { version: '0.6.2' },
+        versionKey: '0.6.2',
+        settings: {
+          ...emptySettings(),
+          hostname: '4848654658',
+          domain: 'startcloud.com',
+          server_id: '5556',
+          memory: '2G',
+          box: 'STARTcloud/debian12-server',
+          box_version: '2026.6.17',
+          box_arch: 'amd64',
+          setup_wait: '420',
+        },
+        diskConfig: { ...emptyDiskConfig(), bootVolumeName: 'boot', bootMount: '/' },
+        zones: { guest_agent: true },
+        tagsInput: 'domino, standalone',
+        roles: [
+          { _ui_id: 1, name: 'setup', enabled: true, files: {}, vars: {} },
+          { _ui_id: 2, name: 'networking', enabled: true, files: {}, vars: {} },
+          {
+            _ui_id: 3,
+            name: 'domino_install',
+            enabled: true,
+            files: {
+              installer: 'Domino_14.5.1_Linux_English.tar',
+              installer_hash: 'abc',
+              installer_version: '14.5.1',
+              fixpack: '',
+            },
+            vars: {},
+          },
+        ],
+        manifestRoles,
+        properties: { CERT_SELFSIGNED: true, EXTRA_PACKAGES: ['htop'], MAJOR: 14 },
+        downloads: { 'domino_install/installer': { task_id: 't-1', artifact_id: 'a-1' } },
+      })
+    );
+    expect(spec).toEqual({
+      provisioner: { name: 'hcl_domino_standalone_provisioner', version: '0.6.2' },
+      settings: {
+        hostname: '4848654658',
+        domain: 'startcloud.com',
+        server_id: '5556',
+        vcpus: 2,
+        memory: '2G',
+        box: 'STARTcloud/debian12-server',
+        box_version: '2026.6.17',
+        box_arch: 'amd64',
+        setup_wait: 420,
+      },
+      disks: {
+        boot: {
+          type: 'template',
+          sparse: true,
+          volume_name: 'boot',
+          clone_strategy: 'copy',
+          mount: '/',
+        },
+      },
+      vbox: { guest_agent: true },
+      tags: ['domino', 'standalone'],
+      networks: [
+        {
+          type: 'external',
+          bridge: '',
+          dhcp4: true,
+          dhcp6: false,
+          mac: 'auto',
+          dns: ['1.1.1.1', '8.8.8.8'],
+        },
+      ],
+      roles: [
+        {
+          name: 'setup',
+          enabled: true,
+          collection: 'startcloud.startcloud_roles',
+          files: {},
+          vars: {},
+        },
+        {
+          name: 'networking',
+          enabled: true,
+          collection: 'startcloud.startcloud_roles',
+          tags: ['always'],
+          files: {},
+          vars: {},
+        },
+        {
+          name: 'domino_install',
+          enabled: true,
+          collection: 'startcloud.hcl_roles',
+          files: {
+            installer: 'Domino_14.5.1_Linux_English.tar',
+            installer_hash: 'abc',
+            installer_version: '14.5.1',
+          },
+          vars: {},
+        },
+      ],
+      properties: { CERT_SELFSIGNED: true, EXTRA_PACKAGES: ['htop'], MAJOR: 14 },
+      sync_method: 'rsync',
+      wait_for: ['t-1'],
+      start_after_create: false,
+      provision_after_create: false,
+    });
+    spec.roles.forEach(role => {
+      expect(typeof role.name).toBe('string');
+      expect(typeof role.enabled).toBe('boolean');
+      Object.values(role.files).forEach(value => expect(typeof value).toBe('string'));
+      if ('tags' in role) {
+        expect(Array.isArray(role.tags)).toBe(true);
+      }
+    });
+  });
+});
+
+describe('the networks of the Network step', () => {
+  const status = {
+    enabled: true,
+    config: {
+      enabled: true,
+      subnet: '10.190.190.0/24',
+      host_ip: '10.190.190.1',
+      netmask: '255.255.255.0',
+    },
+  };
+
+  it('fills the provisioning NIC from the host provisioning network, the address a suggestion of that subnet alone', () => {
+    expect(provisioningNetworkOf(status, null)).toEqual({
+      type: 'host',
+      address: '',
+      netmask: '255.255.255.0',
+      gateway: '10.190.190.1',
+      dhcp4: true,
+      dhcp6: false,
+      provisional: true,
+      is_control: true,
+      mac: 'auto',
+    });
+    expect(
+      provisioningNetworkOf(status, {
+        subnet: '10.190.190.0/24',
+        suggestions: ['10.190.190.13'],
+      })
+    ).toMatchObject({ address: '10.190.190.13', dhcp4: false });
+    expect(
+      provisioningNetworkOf(status, { subnet: '192.168.1.0/24', suggestions: ['192.168.1.5'] })
+        .address
+    ).toBe('');
+    expect(provisioningNetworkOf({ enabled: false }, null)).toBeNull();
+    expect(provisioningNetworkOf(null, null)).toBeNull();
+  });
+
+  it('places the row after the external network, fills a host entry the list holds and adds nothing to a package list', () => {
+    const row = provisioningNetworkOf(status, null);
+    const external = defaultExternalNetwork();
+    expect(withProvisioningNetwork([external], row).map(network => network.type)).toEqual([
+      'external',
+      'host',
+    ]);
+    const own = { type: 'host', address: '10.190.190.20', dhcp4: false, netmask: '' };
+    expect(withProvisioningNetwork([external, own], row)[1]).toMatchObject({
+      address: '10.190.190.20',
+      dhcp4: false,
+      netmask: '255.255.255.0',
+      gateway: '10.190.190.1',
+      provisional: true,
+    });
+    expect(fillProvisioningNetwork([external], row)).toEqual([external]);
+    expect(withProvisioningNetwork([external], null)).toEqual([external]);
+  });
+
+  it('opens the external network on the default-route uplink, else the first, and never a host entry', () => {
+    const rows = [{ name: 'eth1' }, { name: 'eth0' }];
+    expect(defaultUplinkOf({ default: 'eth0' }, rows)).toBe('eth0');
+    expect(defaultUplinkOf({ default: 'wlan9' }, rows)).toBe('eth1');
+    expect(defaultUplinkOf(null, [])).toBe('');
+    const host = { type: 'host', bridge: '' };
+    expect(withDefaultUplink([host, defaultExternalNetwork()], 'eth0')).toEqual([
+      host,
+      { ...defaultExternalNetwork(), bridge: 'eth0' },
+    ]);
+    const bridged = { ...defaultExternalNetwork(), bridge: 'igb0' };
+    expect(withDefaultUplink([bridged], 'eth0')).toEqual([bridged]);
+  });
+
+  it('draws exactly the networks a package lists, a host entry filled from the provisioning row', () => {
+    const filled = prefilledFrom(
+      {
+        ...PACKAGE_DEFAULTS,
+        networks: [
+          { type: 'external', dhcp4: true },
+          { type: 'host', address: '10.190.190.9' },
+        ],
+      },
+      formOf({ provisioningRow: provisioningNetworkOf(status, null) })
+    );
+    expect(filled.networks.map(network => network.type)).toEqual(['external', 'host']);
+    expect(filled.networks[1]).toMatchObject({
+      address: '10.190.190.9',
+      gateway: '10.190.190.1',
+      is_control: true,
+    });
+    const plain = prefilledFrom(
+      PACKAGE_DEFAULTS,
+      formOf({ provisioningRow: provisioningNetworkOf(status, null) })
+    );
+    expect(plain.networks.map(network => network.type)).toEqual(['external']);
+  });
+});
+
+describe('the name a provisioner fills', () => {
+  it('fills the hostname while the form holds none and names the package domain for the chain', () => {
+    const empty = formOf({ settings: { ...emptySettings() } });
+    const filled = prefilledFrom(
+      { ...PACKAGE_DEFAULTS, settings: { hostname: 'domino', domain: 'pkg.example.com' } },
+      empty
+    );
+    expect(filled.settings.hostname).toBe('domino');
+    expect(filled.nameText).toBe('domino');
+    expect(filled.fromPackage.has('settings.hostname')).toBe(true);
+    expect(filled.packageDomain).toBe('pkg.example.com');
+    const kept = prefilledFrom(
+      { ...PACKAGE_DEFAULTS, settings: { hostname: 'domino' } },
+      formOf({ typed: new Set(['settings.hostname']) })
+    );
+    expect(kept.settings.hostname).toBe('web-3');
+    expect(kept).not.toHaveProperty('nameText');
+  });
+
+  it('lists the provisioner domain last in the chain and takes it only while every other source is empty', () => {
+    const defaults = {
+      settings: { domain: 'startcloud.com', domain_choices: [{ source: 'user', domain: 'u.x' }] },
+    };
+    expect(domainChoicesOf(defaults, 'pref.x', 'pkg.x')).toEqual([
+      { source: 'preference', domain: 'pref.x' },
+      { source: 'user', domain: 'u.x' },
+      { source: 'agent', domain: 'startcloud.com' },
+      { source: 'provisioner', domain: 'pkg.x' },
+    ]);
+    expect(defaultDomainOf({ choices: domainChoicesOf(defaults, '', 'pkg.x') })).toBe('u.x');
+    expect(defaultDomainOf({ choices: domainChoicesOf({ settings: {} }, '', 'pkg.x') })).toBe(
+      'pkg.x'
+    );
+  });
+});
+
+describe('the version a provisioner pick lands on', () => {
+  it('orders versions by semantic version, numbers as numbers, a prerelease below its release', () => {
+    expect(compareVersions('0.10.0', '0.9.9')).toBe(1);
+    expect(compareVersions('0.6.2', '0.6.2')).toBe(0);
+    expect(compareVersions('0.6.2-rc.1', '0.6.2')).toBe(-1);
+    expect(compareVersions('0.6.2-rc.2', '0.6.2-rc.10')).toBe(-1);
+    expect(compareVersions('1.0.0-alpha', '1.0.0-1')).toBe(1);
+    expect(compareVersions('1.0.0-alpha', '1.0.0-alpha.1')).toBe(-1);
+    expect(compareVersions('v1.2.0', '1.2.0+build.7')).toBe(0);
+    expect(compareVersions('1.0', '1.0.1')).toBe(-1);
+  });
+
+  it('answers the highest version, not the first and not the highest by text', () => {
+    expect(highestVersionOf(['0.1.26', '0.1.27'])).toBe('0.1.27');
+    expect(highestVersionOf(['0.9.9', '0.10.0', '0.6.2-rc.1', '0.6.2'])).toBe('0.10.0');
+    expect(highestVersionOf(['2.0.0-rc.1', '1.9.0'])).toBe('2.0.0-rc.1');
+    expect(highestVersionOf(['1.0.0-rc.1', '1.0.0'])).toBe('1.0.0');
+    expect(highestVersionOf(['', '0.3.0'])).toBe('0.3.0');
+    expect(highestVersionOf([])).toBe('');
+    expect(highestVersionOf(null)).toBe('');
   });
 });
 

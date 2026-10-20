@@ -253,7 +253,10 @@ const MachineGuestAgentCard = ({ id, name, detail, turn, onChanged, folds }) => 
   ) : null;
 
   return (
-    <div className="col-12 col-lg-6 col-xxl-4" data-panel="machine-guest-agent">
+    <div
+      className={`col-12${folds.folded(FOLD) ? '' : ' flex-grow-1'}`}
+      data-panel="machine-guest-agent"
+    >
       <SectionCard
         title={t('machine.machineGuestAgent.heading')}
         badge={checked}

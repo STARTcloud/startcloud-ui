@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useStatus } from '../../../../contexts/StatusContext';
-import { useFolds } from '../../../../hooks/useFolds';
 import { pageContextShape } from '../../../../utils/itemShape';
 import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useHostReading, useHostReadingsRefresh } from '../../hooks/useHostReadings';
@@ -22,16 +21,15 @@ const NO_ROWS = [];
 /**
  * The Spaces page of a host, behind `network-spaces`: one heading, the
  * spaces table's own, the section's title counting the spaces the
- * page's search left with the create buttons and Refresh in its pane,
- * and under it `NetworkSpacesPanel` over the families the host's platform
- * draws, every write through `useNetworkingTools` and its task dialog
- * drawn once; the fold kept under `table_prefs_spaces`.
+ * page's search left with New space and Refresh in its pane, and under
+ * it `NetworkSpacesPanel` over the families the host's platform draws,
+ * every write through `useNetworkingTools` and its task dialog drawn
+ * once.
  */
 const SpacesPage = ({ id, server, context, section, onRefresh }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
   const refreshReadings = useHostReadingsRefresh();
-  const folds = useFolds(`${context.prefsPrefix}_${section}`);
   const spaces = useHostReading(id, 'network-spaces');
   const tools = useNetworkingTools();
   const families = spaceFamiliesOf(server);
@@ -78,11 +76,6 @@ const SpacesPage = ({ id, server, context, section, onRefresh }) => {
         table={search.tables.spaces}
         ctx={ctx}
         filtering={search.filtering}
-        fold={{
-          folded: folds.folded('manage-spaces'),
-          onFold: () => folds.toggle('manage-spaces'),
-          title: '',
-        }}
         tools={tools}
         title={sectionTitle(section, server, '', t)}
         count={spaces.loaded ? search.tables.spaces.rows.length : null}
