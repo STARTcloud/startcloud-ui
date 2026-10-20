@@ -594,7 +594,7 @@ Feature: machines
     And the host was sent GET to "/api/agents/1/machines/dev-1/snapshots" 2 times
     And the machine page offers no "bulk-delete"
 
-  Scenario: Machine page: a write one request and one notice, the restore of a machine that is off waits behind the typed confirmation on a zone
+  Scenario: Machine page: a write one request and one notice, the restore of a machine that is off waits behind a plain confirmation on a zone
     Given the host answers the zones fixture
     And the host answers the zones-machines fixture
     And the host answers the zones-tools fixture
@@ -604,7 +604,8 @@ Feature: machines
     And the snapshot "daily-20260926-0300" offers "restore-start"
     When I press "restore" on the snapshot "daily-20260926-0300"
     Then the open dialog notes "restore-destroys-later"
-    When I confirm the open dialog
+    And the open dialog asks for no typed word
+    When I confirm the open plain dialog
     Then the host was sent POST to "/api/machines/web-2/snapshots/daily-20260926-0300/restore" 1 times
     And the page raised 1 success notice
     And the host was sent GET to "/api/machines/web-2/snapshots" 2 times
@@ -621,7 +622,7 @@ Feature: machines
     And the host was not sent POST to "/api/agents/1/machines/dev-2/start"
     When I press "restore-start" on the snapshot "nightly"
     Then the open dialog notes no "restore-destroys-later"
-    When I confirm the open dialog
+    When I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/1/machines/dev-2/snapshots/nightly/restore" 1 times
     And the host was sent POST to "/api/agents/1/machines/dev-2/start" at least 1 times
 
@@ -1137,7 +1138,7 @@ Feature: machines
     When I open "/hosts/self/machines/web-2/snapshots"
     And I press "restore-start" on the snapshot "daily-20260926-0300"
     Then the open dialog notes "restore-destroys-later"
-    When I confirm the open dialog
+    When I confirm the open plain dialog
     Then the host was sent POST to "/api/machines/web-2/snapshots/daily-20260926-0300/restore" 1 times
     And the page raised 1 success notice
     And the page raised 1 warning notice
@@ -1156,7 +1157,7 @@ Feature: machines
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-2/snapshots"
     And I press "restore-start" on the snapshot "nightly"
-    And I confirm the open dialog
+    And I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/1/machines/dev-2/snapshots/nightly/restore" 1 times
     And the host was sent GET to "/api/agents/1/tasks/a1000000-0000-4000-8000-000000000002"
     And the host was sent POST to "/api/agents/1/machines/dev-2/start" at least 1 times

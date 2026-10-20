@@ -1355,11 +1355,8 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
         title={
           itemToDelete?.type === 'user_remove' ? t('orgConsole.buttons.removeFromOrg') : undefined
         }
-        message={
-          itemToDelete?.type === 'user_remove'
-            ? t('pages.confirm.message', { keyword: t('pages.confirm.keyword') })
-            : undefined
-        }
+        message={itemToDelete?.type === 'user_remove' ? t('pages.confirm.plainMessage') : undefined}
+        typed={itemToDelete?.type !== 'user_remove'}
       />
     </div>
   );

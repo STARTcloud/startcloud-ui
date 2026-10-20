@@ -13,7 +13,6 @@ import { useGuard } from '../../contexts/GuardContext';
 import { useNotify } from '../../contexts/NoticeContext';
 import { useStatus } from '../../contexts/StatusContext';
 import { useEventStream } from '../../hooks/useEventStream';
-import { useFolds } from '../../hooks/useFolds';
 import { log } from '../../lib/logger';
 import { formatFileSize } from '../../utils/formatFileSize';
 import { formatRelativeTime } from '../../utils/relativeTime';
@@ -23,16 +22,10 @@ import { absoluteTime } from './InboxList';
 import MarkdownText from './MarkdownText';
 import { httpsUrl } from './MethodList';
 import RecordRows from './RecordRows';
-import SectionCard, { foldsShape } from './SectionCard';
+import SectionCard from './SectionCard';
 import SectionHeading from './SectionHeading';
 
 const EMPTY = { data: null, loaded: false, failed: false };
-
-const OVERVIEW_FOLD = 'update-overview';
-
-const CHANGELOG_FOLD = 'update-changelog';
-
-const ASSETS_FOLD = 'update-assets';
 
 const ADMIN_CONFIRM = {
   titleKey: 'admin.update.confirmTitle',
@@ -226,18 +219,15 @@ AssetRow.propTypes = {
   asset: assetShape.isRequired,
 };
 
-const AssetsCard = ({ release, folds }) => {
+const AssetsCard = ({ release }) => {
   const { t } = useTranslation();
-  const folded = folds.folded(ASSETS_FOLD);
   return (
-    <div data-panel="update-assets" data-assets-of={release.tag} data-folded={folded}>
+    <div data-panel="update-assets" data-assets-of={release.tag}>
       <SectionCard
         title={t('hosts.nav.updateAssets')}
         badge={
           <span className="badge text-bg-secondary rounded-pill">{release.assets.length}</span>
         }
-        folded={folded}
-        onFold={() => folds.toggle(ASSETS_FOLD)}
       >
         <ul className="upd-asset-list">
           {release.assets.map(asset => (
@@ -251,12 +241,10 @@ const AssetsCard = ({ release, folds }) => {
 
 AssetsCard.propTypes = {
   release: releaseShape.isRequired,
-  folds: foldsShape.isRequired,
 };
 
-const OverviewCard = ({ data, folds, language }) => {
+const OverviewCard = ({ data, language }) => {
   const { t } = useTranslation();
-  const folded = folds.folded(OVERVIEW_FOLD);
   const published = String(data.release_date ?? '');
   const releaseUrl = httpsUrl(data.release_url);
   const changelog = httpsUrl(data.changelog);
@@ -287,12 +275,8 @@ const OverviewCard = ({ data, folds, language }) => {
       : []),
   ];
   return (
-    <div data-panel="update-overview" data-folded={folded}>
-      <SectionCard
-        title={t('update.overview')}
-        folded={folded}
-        onFold={() => folds.toggle(OVERVIEW_FOLD)}
-      >
+    <div data-panel="update-overview">
+      <SectionCard title={t('update.overview')}>
         <RecordRows rows={rows} className={links ? 'mb-2' : 'mb-0'} />
         {links ? (
           <div className="upd-foot-links">
@@ -319,13 +303,11 @@ const OverviewCard = ({ data, folds, language }) => {
 
 OverviewCard.propTypes = {
   data: PropTypes.object.isRequired,
-  folds: foldsShape.isRequired,
   language: PropTypes.string.isRequired,
 };
 
-const ChangelogCard = ({ release, folds, language }) => {
+const ChangelogCard = ({ release, language }) => {
   const { t } = useTranslation();
-  const folded = folds.folded(CHANGELOG_FOLD);
   const url = httpsUrl(release.url);
   const title = release.name || release.tag;
   return (
@@ -334,15 +316,9 @@ const ChangelogCard = ({ release, folds, language }) => {
       data-release={release.tag}
       data-latest={!release.prerelease}
       data-prerelease={release.prerelease}
-      data-folded={folded}
       className="h-100"
     >
-      <SectionCard
-        title={t('update.changelog')}
-        className="h-100 mb-0"
-        folded={folded}
-        onFold={() => folds.toggle(CHANGELOG_FOLD)}
-      >
+      <SectionCard title={t('update.changelog')} className="h-100 mb-0">
         <div className="d-flex align-items-center flex-wrap gap-2 mb-1">
           <h6 className="mb-0 upd-release-title">
             {url ? (
@@ -388,7 +364,6 @@ const ChangelogCard = ({ release, folds, language }) => {
 
 ChangelogCard.propTypes = {
   release: releaseShape.isRequired,
-  folds: foldsShape.isRequired,
   language: PropTypes.string.isRequired,
 };
 
@@ -433,11 +408,11 @@ UpdateButton.propTypes = {
 /**
  * The shared Update page of one backend: the heading reading whether a
  * newer release is published, in the success or the warning tone, with
- * Update behind the typed confirmation while one is, then Refresh in its
+ * Update behind a plain confirmation while one is, then Refresh in its
  * pane; under it two columns, stacked under the large breakpoint, the
  * left holding Overview with Assets under it and the right Changelog at
- * the column's full height, each card folding under its own key in the
- * prefs under `prefsKey`, open until folded: Overview,
+ * the column's full height, each a card with its heading and no chevron:
+ * Overview,
  * the current and the latest version and the published date as record
  * rows, the date relative with the absolute time in its tooltip, then the
  * release link and the changelog link as small text links, each drawn
@@ -460,7 +435,7 @@ UpdateButton.propTypes = {
  * `{ current_version, latest_version, update_available, release_url,
  * release_date, changelog, release_notes, assets, releases }` and `apply`
  * answering `{ message, task_id, target_version }`; `title`, the heading;
- * `prefsKey`, the localStorage key of the page's prefs; `confirm`,
+ * `confirm`,
  * `{ titleKey, messageKey }`, the keys of the confirmation, given `app`,
  * `currentVersion` and `latestVersion`, the `admin.update.*` keys by
  * default; and `onRefresh`, called beside the page's own check on
@@ -474,17 +449,15 @@ UpdateButton.propTypes = {
  * @param {Object} props
  * @param {{ check: Function, apply: Function }} props.update - The update adapter
  * @param {import('react').ReactNode} props.title - The heading
- * @param {string} props.prefsKey - The localStorage key of the page's prefs
  * @param {{ titleKey: string, messageKey: string }} [props.confirm] - The confirmation's keys
  * @param {Function|null} [props.onRefresh] - Called on Refresh
  * @returns {import('react').ReactElement} The page
  */
-const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefresh = null }) => {
+const UpdatePage = ({ update, title, confirm = ADMIN_CONFIRM, onRefresh = null }) => {
   const { t, i18n } = useTranslation();
   const status = useStatus();
   const notify = useNotify();
   const guard = useGuard();
-  const folds = useFolds(prefsKey);
   const [check, setCheck] = useState(EMPTY);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -576,13 +549,11 @@ const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefres
         {check.data ? (
           <div className="row g-3">
             <div className="col-12 col-lg-6" data-column="side">
-              <OverviewCard data={check.data} folds={folds} language={i18n.language} />
-              {release?.assets.length ? <AssetsCard release={release} folds={folds} /> : null}
+              <OverviewCard data={check.data} language={i18n.language} />
+              {release?.assets.length ? <AssetsCard release={release} /> : null}
             </div>
             <div className="col-12 col-lg-6" data-column="main">
-              {release ? (
-                <ChangelogCard release={release} folds={folds} language={i18n.language} />
-              ) : null}
+              {release ? <ChangelogCard release={release} language={i18n.language} /> : null}
             </div>
           </div>
         ) : null}
@@ -595,7 +566,7 @@ const UpdatePage = ({ update, title, prefsKey, confirm = ADMIN_CONFIRM, onRefres
         message={t(confirm.messageKey, values)}
         confirmText={t('agentSettings.agentSettings.updateNowButton')}
         variant="restart"
-        keyword="update"
+        typed={false}
       />
     </>
   );
@@ -607,7 +578,6 @@ UpdatePage.propTypes = {
     apply: PropTypes.func.isRequired,
   }).isRequired,
   title: PropTypes.node.isRequired,
-  prefsKey: PropTypes.string.isRequired,
   confirm: PropTypes.shape({
     titleKey: PropTypes.string.isRequired,
     messageKey: PropTypes.string.isRequired,

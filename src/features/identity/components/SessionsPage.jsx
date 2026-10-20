@@ -142,7 +142,7 @@ const useSelection = rows => {
 
 /**
  * The Sessions page's bulk actions, drawn in the heading's action pane
- * while rows are selected: Revoke, behind the shared confirm and the
+ * while rows are selected: Revoke, behind the shared plain confirm and the
  * step-up dialog, over `POST /api/admin/sessions/bulk`, and the result
  * line naming processed, skipped and each error's code translated
  * (decision 148).
@@ -198,10 +198,8 @@ const BulkActions = ({ selected, onDone }) => {
         handleClose={() => setPending(false)}
         handleConfirm={send}
         title={t('admin.activity.sessions.revokeTitle')}
-        message={t('admin.activity.sessions.bulk.confirmBody', {
-          count: selected.length,
-          keyword: t('pages.confirm.keyword'),
-        })}
+        message={t('admin.activity.sessions.bulk.confirmBody', { count: selected.length })}
+        typed={false}
       />
     </>
   );
@@ -223,7 +221,7 @@ BulkActions.propTypes = {
  * muted text after the title, the table's select column a real checkbox
  * header, the select-all for the page, checked, unchecked or
  * indeterminate, with Authorized and Last active as two columns, Revoke
- * behind the confirm, the heading's action pane gaining, while rows are
+ * behind the plain confirm, the heading's action pane gaining, while rows are
  * picked, "N selected", Clear selection and Revoke behind the step-up
  * dialog too, and the pager.
  */
@@ -335,6 +333,7 @@ const SessionsPage = () => {
           user: revoking?.full_name || '',
           app: revoking?.client_name || '',
         })}
+        typed={false}
       />
     </div>
   );

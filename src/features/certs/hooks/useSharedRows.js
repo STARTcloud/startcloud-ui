@@ -7,17 +7,19 @@ import { fetchCerts } from '../api/certsStore';
 const IDLE = { rows: [], loaded: false, failed: false };
 
 /**
- * The rows of the backend's store the person reads: one `GET /api/certs`
- * an organization the person belongs to, or one under no organization
- * while they belong to none, each row once, read on open, on `read` and
- * on the `certs` topic's `cert-updated` and `cert-removed` while
- * `enabled`, nothing read otherwise.
+ * The rows of a store the person reads, the backend's by default: one
+ * `GET /api/certs` an organization the person belongs to, or one under
+ * no organization while they belong to none, each row once, read on
+ * open, on `read` and on the `certs` topic's `cert-updated` and
+ * `cert-removed` while `enabled`, nothing read otherwise; `fetchRows`
+ * names another store's read, the identity provider's.
  *
  * @param {Array<{ name: string }>} organizations - The person's organizations
  * @param {boolean} [enabled] - Whether the store is read at all
+ * @param {Function} [fetchRows] - The store's read of one organization's rows
  * @returns {{ rows: Array<Object>, loaded: boolean, failed: boolean, read: Function }} The rows
  */
-export const useSharedRows = (organizations, enabled = true) => {
+export const useSharedRows = (organizations, enabled = true, fetchRows = fetchCerts) => {
   const [state, setState] = useState(IDLE);
   const names = organizations.map(organization => organization.name).join(',');
 
@@ -26,7 +28,7 @@ export const useSharedRows = (organizations, enabled = true) => {
       return;
     }
     const list = names ? names.split(',') : [''];
-    Promise.all(list.map(name => fetchCerts(name).catch(() => [])))
+    Promise.all(list.map(name => fetchRows(name).catch(() => [])))
       .then(answers => {
         const seen = new Set();
         const rows = answers
@@ -38,7 +40,7 @@ export const useSharedRows = (organizations, enabled = true) => {
         log.api.error('Error fetching shared certificates', { error: error.message });
         setState(current => ({ ...current, loaded: true, failed: true }));
       });
-  }, [names, enabled]);
+  }, [names, enabled, fetchRows]);
 
   useEffect(() => {
     read();

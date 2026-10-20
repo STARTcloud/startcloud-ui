@@ -5,6 +5,12 @@ import { hostConfig } from '../api/agentSettings';
 const EMPTY_NAMES = [];
 
 /**
+ * The name of the agent's database configuration file, the file the
+ * Database page's Edit settings opens.
+ */
+export const DB_CONFIG = 'db';
+
+/**
  * The names of a host's configuration files, the registry row's
  * `capabilities.config`, empty while the row carries none.
  *

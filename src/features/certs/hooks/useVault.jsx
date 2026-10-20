@@ -2,9 +2,11 @@ import PropTypes from 'prop-types';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { useStatus } from '../../../contexts/StatusContext';
-import { hasFeatureStrict } from '../../../utils/capabilities';
+import { authMethod, hasFeatureStrict } from '../../../utils/capabilities';
+import { fetchIdpStatus } from '../api/certsStore';
 import * as vaultDb from '../lib/vaultDb';
 import { fromBundle, toBundle } from '../utils/bundle';
+import { IDP, IDP_DESTINATION } from '../utils/destinations';
 import { downloadText } from '../utils/download';
 import { fileNameOf } from '../utils/formats';
 import { DEFAULT_THRESHOLD_DAYS } from '../utils/records';
@@ -15,11 +17,15 @@ const BUNDLE_NAME = fileNameOf('vault', 'certs', 'json');
 
 const NO_SYNC = {};
 
+const NO_RUNS = {};
+
+const NO_IDP = { stored: false, name: '' };
+
 const EMPTY = {
   records: [],
   loaded: false,
   version: 0,
-  preferences: { threshold_days: DEFAULT_THRESHOLD_DAYS, sync: NO_SYNC },
+  preferences: { threshold_days: DEFAULT_THRESHOLD_DAYS, sync: NO_SYNC, last_synced: NO_RUNS },
 };
 
 export const VaultContext = createContext(null);
@@ -46,21 +52,51 @@ const applied = (current, event) => {
   return next;
 };
 
+const runsOf = value => (value && typeof value === 'object' ? value : NO_RUNS);
+
+const useIdpStore = asked => {
+  const [idp, setIdp] = useState(NO_IDP);
+  useEffect(() => {
+    if (!asked) {
+      return undefined;
+    }
+    let mounted = true;
+    fetchIdpStatus()
+      .then(payload => {
+        if (mounted) {
+          setIdp({
+            stored: hasFeatureStrict(payload, 'certs-store'),
+            name: payload?.brand?.name || '',
+          });
+        }
+      })
+      .catch(() => null);
+    return () => {
+      mounted = false;
+    };
+  }, [asked]);
+  return asked ? idp : NO_IDP;
+};
+
 /**
  * The certs feature's one context: the vault's records, read once from
  * the browser's `certs-vault` store and kept in step with every write
  * through the store's own events, the preferences store beside them, and
- * the keeper of the shared store's mirror while the host lists
- * `certs-store` and a person is signed in, handed the organization the
- * rows are sent to, the backend's role name its `sync` switch is keyed
- * by, and the memberships the Shared page lists.
+ * one keeper a destination of the mirror while a person is signed in:
+ * the serving backend while the host lists `certs-store`, keyed by the
+ * backend's role name, and the identity provider while the host signs in
+ * through it (`idp`) and the issuer's own status, read once, lists
+ * `certs-store`, keyed by `idp`; each handed the organization the rows
+ * are sent to, and the memberships the Shared page lists.
  */
 const VaultProvider = ({ signedIn, user = null, organization, organizations, children }) => {
   const status = useStatus();
   const [state, setState] = useState(EMPTY);
   const [sync, setSync] = useState(null);
+  const [idpSync, setIdpSync] = useState(null);
   const stored = hasFeatureStrict(status, 'certs-store');
   const enabled = hasFeatureStrict(status, 'certs');
+  const idp = useIdpStore(enabled && signedIn && authMethod(status) === 'idp');
 
   useEffect(() => {
     if (!enabled) {
@@ -71,13 +107,14 @@ const VaultProvider = ({ signedIn, user = null, organization, organizations, chi
       vaultDb.list(),
       vaultDb.readPreference('threshold_days', DEFAULT_THRESHOLD_DAYS),
       vaultDb.readPreference('sync', NO_SYNC),
-    ]).then(([records, threshold_days, syncPrefs]) => {
+      vaultDb.readPreference('last_synced', NO_RUNS),
+    ]).then(([records, threshold_days, syncPrefs, last_synced]) => {
       if (mounted) {
         setState(current => ({
           ...current,
           records,
           loaded: true,
-          preferences: { threshold_days, sync: syncPrefs },
+          preferences: { threshold_days, sync: syncPrefs, last_synced: runsOf(last_synced) },
         }));
       }
     });
@@ -124,17 +161,24 @@ const VaultProvider = ({ signedIn, user = null, organization, organizations, chi
 
   const setPreference = useCallback((key, value) => vaultDb.writePreference(key, value), []);
 
+  const preferences = useMemo(
+    () => ({ ...state.preferences, last_synced: runsOf(state.preferences.last_synced) }),
+    [state.preferences]
+  );
+
   const value = useMemo(
     () => ({
       records: state.records,
       loaded: state.loaded,
       version: state.version,
-      preferences: state.preferences,
+      preferences,
       stored,
+      idp,
       signedIn,
       organization,
       organizations,
       sync,
+      idpSync,
       add,
       update,
       remove,
@@ -144,11 +188,14 @@ const VaultProvider = ({ signedIn, user = null, organization, organizations, chi
     }),
     [
       state,
+      preferences,
       stored,
+      idp,
       signedIn,
       organization,
       organizations,
       sync,
+      idpSync,
       add,
       update,
       remove,
@@ -166,6 +213,16 @@ const VaultProvider = ({ signedIn, user = null, organization, organizations, chi
           user={user}
           destination={status.role || ''}
           onApi={setSync}
+        />
+      ) : null}
+      {enabled && idp.stored ? (
+        <VaultSyncKeeper
+          organization={organization}
+          user={user}
+          destination={IDP}
+          api={IDP_DESTINATION}
+          streamed={false}
+          onApi={setIdpSync}
         />
       ) : null}
       {children}
@@ -186,11 +243,15 @@ export default VaultProvider;
 /**
  * The vault every certs page draws from: `records`, whether they are
  * `loaded`, the `version` raised on every write, the `preferences`
- * (`threshold_days` and `sync`, `{ [destination]: boolean }`), whether
- * the host `stored` rows, whether
+ * (`threshold_days`, `sync`, `{ [destination]: boolean }`, the default
+ * of every row whose own `sync` map names no store, and `last_synced`,
+ * `{ [destination]: string }`, the instant each destination's mirror last
+ * completed a run), whether the host `stored` rows, the identity
+ * provider's store as `idp`, `{ stored, name }`, whether
  * a person is `signedIn`, the active `organization` and the person's
- * `organizations`, the mirror's `sync` (`mirror`, `pull`) while it runs
- * and null otherwise, and the writes `add(record)`, `update(record, patch)`, `remove(record)`,
+ * `organizations`, the backend mirror's `sync` and the identity provider
+ * mirror's `idpSync` (`mirror`, `pull`) while each runs and null
+ * otherwise, and the writes `add(record)`, `update(record, patch)`, `remove(record)`,
  * `importBundle(text)` (answering the records the vault did not hold,
  * null for text that is no bundle), `exportBundle(records)` and
  * `setPreference(key, value)`, every other write answering the record

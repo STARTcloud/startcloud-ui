@@ -395,18 +395,31 @@ const headerClass = (column, width, folded) => {
   return folded ? `${base} folded` : base;
 };
 
+/**
+ * The words a column's header draws: its own `label` where it carries
+ * text that is data, else its `labelKey` translated.
+ *
+ * @param {Object} column - The column
+ * @param {Function} t - The translator
+ * @returns {string} The label
+ */
+export const columnLabel = (column, t) => column.label || t(column.labelKey);
+
+const columnTitle = (column, t) => {
+  if (column.title) {
+    return column.title;
+  }
+  return column.titleKey ? t(column.titleKey) : undefined;
+};
+
 const HeaderCell = ({ column, width, folded, sort, onSort, onResize }) => {
   const { t } = useTranslation();
   const cell = useRef(null);
   useCssVar(cell, '--col-width', width);
   return (
-    <th
-      ref={cell}
-      className={headerClass(column, width, folded)}
-      title={column.titleKey ? t(column.titleKey) : undefined}
-    >
+    <th ref={cell} className={headerClass(column, width, folded)} title={columnTitle(column, t)}>
       <SortHeader column={column.key} sort={sort} onSort={onSort}>
-        {t(column.labelKey)}
+        {columnLabel(column, t)}
       </SortHeader>
       {onResize ? <ResizeHandle columnKey={column.key} cell={cell} onResize={onResize} /> : null}
     </th>
@@ -418,7 +431,9 @@ HeaderCell.propTypes = {
     key: PropTypes.string.isRequired,
     kind: PropTypes.oneOf(KIND_NAMES).isRequired,
     labelKey: PropTypes.string.isRequired,
+    label: PropTypes.string,
     titleKey: PropTypes.string,
+    title: PropTypes.string,
   }).isRequired,
   width: PropTypes.string,
   folded: PropTypes.bool.isRequired,
@@ -512,7 +527,7 @@ const FoldedRecord = ({ drawn, folded, row, ctx }) => {
     .filter(column => folded.has(column.key))
     .map(column => ({
       key: column.key,
-      label: t(column.labelKey),
+      label: columnLabel(column, t),
       value: cellContent(column, row, ctx),
     }));
   return <RecordRows rows={rows} className="mb-0 record-folded" />;
@@ -885,8 +900,10 @@ const countWithFold = (shape, foldCell) => (foldCell ? shape.columnCount + 1 : s
  * each only when it is not in `hiddenColumns` and its `when` is absent or
  * true for the rows and `ctx` (so a column can read the viewer and the
  * host from `ctx` as well as the rows). A column is `{ key, kind,
- * labelKey, titleKey?, value, render?, priority?, prose? }`, `titleKey`
- * the tooltip of its header where the column has one: `value(row, ctx)`
+ * labelKey, label?, titleKey?, title?, value, render?, priority?, prose? }`,
+ * `titleKey` the tooltip of its header where the column has one, and
+ * `label` and `title` the header's words and tooltip where they are data
+ * rather than a key, a store's initial and its name: `value(row, ctx)`
  * answers the one thing the cell shows, a string, a number, the instant
  * of a date or relative kind, the word of a badge or word kind, the
  * joined labels of a badges kind, and is what the cell draws unless
@@ -1088,7 +1105,9 @@ const tableShape = {
       key: PropTypes.string.isRequired,
       kind: PropTypes.oneOf(KIND_NAMES).isRequired,
       labelKey: PropTypes.string.isRequired,
+      label: PropTypes.string,
       titleKey: PropTypes.string,
+      title: PropTypes.string,
       value: PropTypes.func.isRequired,
       render: PropTypes.func,
       defaultHidden: PropTypes.bool,

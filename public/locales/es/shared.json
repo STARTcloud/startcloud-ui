@@ -544,7 +544,7 @@
           "unknown": "Desconocido"
         },
         "unlink": "Desvincular",
-        "unlinkBody": "Desvincula {{provider}} de tu cuenta. Escribe \"{{keyword}}\" para confirmar.",
+        "unlinkBody": "¿Desvincular {{provider}} de tu cuenta?",
         "unlinkReason": "Desvincular {{provider}} cambia cómo inicias sesión.",
         "unlinked": "Cuenta desvinculada.",
         "available": "Proveedores disponibles",
@@ -773,7 +773,7 @@
       "signOutReason": "Cerrar una sesión cambia cómo tienes la sesión iniciada.",
       "signedOut": "Sesión cerrada.",
       "revokeAll": "Revocar todas las sesiones, este navegador incluido",
-      "revokeAllBody": "Se cierran todas las sesiones, este navegador incluido, y tendrás que iniciar sesión de nuevo. Escribe \"{{keyword}}\" para confirmar.",
+      "revokeAllBody": "Se cierran todas las sesiones, este navegador incluido, y tendrás que iniciar sesión de nuevo.",
       "revokeAllReason": "Revocar todas las sesiones termina cómo tienes la sesión iniciada.",
       "revokedAll": "Se cerraron todas las sesiones.",
       "current": "Esta sesión",
@@ -932,6 +932,7 @@
         "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
         "confirmTitle": "Confirmar la acción en bloque",
         "confirmBody": "{{action}} para {{count}} cuentas seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
+        "confirmPlainBody": "{{action}} para {{count}} cuentas seleccionadas.",
         "stepUpReason": "Eliminar cuentas acaba con la forma en que esas personas inician sesión.",
         "setCustomerId": "Establecer ID de cliente",
         "setPrimaryOrganization": "Establecer organización principal",
@@ -1002,6 +1003,7 @@
         "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
         "confirmTitle": "Confirmar la acción en bloque",
         "confirmBody": "{{action}} para {{count}} organizaciones seleccionadas. Escribe \"{{keyword}}\" para confirmar.",
+        "confirmPlainBody": "{{action}} para {{count}} organizaciones seleccionadas.",
         "stepUpReason": "Eliminar organizaciones no se puede deshacer.",
         "setCustomerId": "Establecer ID de cliente",
         "errors": {
@@ -1045,7 +1047,7 @@
           "selected": "{{count}} seleccionadas",
           "clearSelection": "Limpiar selección",
           "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
-          "confirmBody": "{{count}} sesiones seleccionadas se revocan. Escribe \"{{keyword}}\" para confirmar.",
+          "confirmBody": "{{count}} sesiones seleccionadas se revocan.",
           "stepUpReason": "Revocar sesiones cierra la sesión de esas personas de inmediato.",
           "errors": {
             "not_found": "ya no existe"
@@ -1198,13 +1200,13 @@
       "unblockTitle": "Desbloquear la dirección",
       "unblockBody": "{{ip}} podrá iniciar sesión de nuevo de inmediato.",
       "unblockAllTitle": "Desbloquear todas las direcciones",
-      "unblockAllBody": "{{count}} direcciones podrán iniciar sesión de nuevo de inmediato. Escribe \"{{keyword}}\" para confirmar.",
+      "unblockAllBody": "{{count}} direcciones podrán iniciar sesión de nuevo de inmediato.",
       "bulk": {
         "selected": "{{count}} seleccionadas",
         "clearSelection": "Limpiar selección",
         "result": "Procesados {{processed}}, omitidos {{skipped}}, errores {{errors}}.",
         "confirmTitle": "Desbloquear la selección",
-        "confirmBody": "{{count}} direcciones seleccionadas podrán iniciar sesión de nuevo de inmediato. Escribe \"{{keyword}}\" para confirmar.",
+        "confirmBody": "{{count}} direcciones seleccionadas podrán iniciar sesión de nuevo de inmediato.",
         "errors": {
           "not_blocked": "no está bloqueada actualmente"
         }
@@ -1408,7 +1410,7 @@
       "uploaded": "Subido a {{path}}.",
       "testPassed": "La prueba pasó.",
       "runStarted": "Iniciado.",
-      "runConfirm": "Ejecuta {{title}} ahora. Escribe \"{{keyword}}\" para confirmar."
+      "runPlainMessage": "¿Ejecutar {{title}} ahora?"
     },
     "restart": {
       "heading": "Reinicio necesario.",
@@ -1578,7 +1580,7 @@
     "deleteBody": "{{name}} y sus membresías se eliminan. Escribe \"{{keyword}}\" para confirmar.",
     "deleted": "Organización eliminada.",
     "leave": "Salir",
-    "leaveBody": "Sales de {{name}} y pierdes el acceso. Escribe \"{{keyword}}\" para confirmar.",
+    "leaveBody": "Sales de {{name}} y pierdes el acceso.",
     "left": "Saliste de la organización.",
     "managedBy": "gestionado por {{source}}",
     "lastOwner": "El último propietario no puede cambiar su propio rol",
@@ -4257,10 +4259,10 @@
     "permissions": "Permisos:",
     "requiredScope": "Necesario para iniciar sesión",
     "removeScope": "Quitar el permiso {{scope}}",
-    "removeScopeBody": "Quita el permiso {{scope}} de {{app}}. Escribe \"{{keyword}}\" para confirmar.",
+    "removeScopeBody": "¿Quitar el permiso {{scope}} de {{app}}?",
     "sessions": "Sesiones",
     "revoke": "Revocar el acceso",
-    "revokeBody": "Revoca el acceso de {{app}} a tu cuenta; sus {{count}} sesiones activas terminan. Escribe \"{{keyword}}\" para confirmar.",
+    "revokeBody": "Revoca el acceso de {{app}} a tu cuenta; sus {{count}} sesiones activas terminan.",
     "revokeReason": "Revocar {{app}} cambia cómo tienes la sesión iniciada."
   },
   "userTerms": {
@@ -4308,7 +4310,7 @@
       "connected": "Hyperweaver está conectado.",
       "disconnect": "Desconectar",
       "disconnectTitle": "¿Desconectar Hyperweaver?",
-      "disconnectBody": "Tus servidores y el destino del Deploy se olvidan. Escribe '{{keyword}}' para confirmar.",
+      "disconnectBody": "Tus servidores y el destino del Deploy se olvidan.",
       "disconnected": "Hyperweaver está desconectado."
     }
   },
@@ -4631,7 +4633,6 @@
       "reloadButton": "Recargar",
       "addButton": "Agregar",
       "failedLoadSecrets": "Fallo al cargar los secretos: {{message}}",
-      "pickSecret": "Elegir secreto",
       "edit": "Editar",
       "remove": "Quitar",
       "removeTitle": "Quitar secreto",
@@ -11307,6 +11308,7 @@
       "editParts": "Editar partes",
       "noDefaultDomain": "Este host no tiene un dominio predeterminado. Escribe uno, o define el dominio predeterminado del host en su configuración.",
       "setDefaultDomain": "Definir el dominio predeterminado del host",
+      "pickDomain": "Elegir un dominio",
       "domainSource": {
         "preference": "Navegador",
         "user": "Tu predeterminado",
@@ -12089,7 +12091,8 @@
       "subject": "Sujeto",
       "sharedBy": "Compartido por",
       "published": "Publicado",
-      "profile": "Perfil"
+      "profile": "Perfil",
+      "organization": "Org"
     },
     "actions": {
       "convert": "Convertir",
@@ -12202,6 +12205,31 @@
       "lastSynced": "última sincronización {{when}}",
       "never": "nunca sincronizado",
       "noOrganization": "{{name}} conserva los registros de los tipos marcados en tu propio almacén de este host."
+    },
+    "stores": {
+      "column": "Sincronización",
+      "hostLetter": "H",
+      "vaultLetter": "B",
+      "idpLetter": "I",
+      "idpName": "Proveedor de identidad",
+      "turnOn": "Activar la sincronización con {{store}}",
+      "turnOff": "Desactivar la sincronización con {{store}}",
+      "enable": "Activar la sincronización",
+      "disable": "Desactivar la sincronización",
+      "settings": "Configuración",
+      "turnedOn": "{{name}} se sincroniza con {{store}}.",
+      "turnedOff": "{{name}} ya no se sincroniza con {{store}}.",
+      "synced_one": "{{count}} copia sincronizada.",
+      "synced_other": "{{count}} copias sincronizadas.",
+      "syncNow": "Sincronizar ahora",
+      "actions": "Acciones",
+      "deleteSelected": "Eliminar seleccionados",
+      "exportSelected": "Exportar seleccionados",
+      "deletedMany_one": "{{count}} secreto eliminado",
+      "deletedMany_other": "{{count}} secretos eliminados",
+      "deleteManyMessage_one": "¿Eliminar {{count}} secreto del almacén de este host? No se puede deshacer.",
+      "deleteManyMessage_other": "¿Eliminar {{count}} secretos del almacén de este host? No se pueden deshacer.",
+      "noOrganization": "Sin organización"
     },
     "input": {
       "drop": "Suelta un certificado, una clave o un paquete aquí",

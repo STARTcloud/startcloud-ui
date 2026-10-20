@@ -105,7 +105,7 @@ const ownerCount = members => members.filter(member => member.role === 'OWNER').
 
 const pendingInvitesOf = org => (Array.isArray(org.pending_invites) ? org.pending_invites : []);
 
-const confirmMessage = t => t('pages.confirm.message', { keyword: t('pages.confirm.keyword') });
+const confirmMessage = t => t('pages.confirm.plainMessage');
 
 const runBulk = async (rows, call) => {
   const settled = await Promise.allSettled(rows.map(row => call(row)));
@@ -1242,7 +1242,8 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
     }
   };
 
-  const confirm = (title, message, run) => setPending({ title, message, run });
+  const confirm = (title, message, run, typed = false) =>
+    setPending({ title, message, run, typed });
 
   const setRole = (member, role) =>
     act(
@@ -1264,10 +1265,8 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
     );
 
   const leave = () =>
-    confirm(
-      t('orgConsole.leave'),
-      t('orgConsole.leaveBody', { name: current?.name || '', keyword: t('pages.confirm.keyword') }),
-      () => act(() => organizations.leave(org), 'orgConsole.left', leftOrganization)
+    confirm(t('orgConsole.leave'), t('orgConsole.leaveBody', { name: current?.name || '' }), () =>
+      act(() => organizations.leave(org), 'orgConsole.left', leftOrganization)
     );
 
   const remove = () =>
@@ -1277,7 +1276,8 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
         name: current?.name || '',
         keyword: t('pages.confirm.keyword'),
       }),
-      () => act(() => organizations.remove(org), 'orgConsole.deleted', leftOrganization)
+      () => act(() => organizations.remove(org), 'orgConsole.deleted', leftOrganization),
+      true
     );
 
   const regenerate = () =>
@@ -1363,6 +1363,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
         handleConfirm={() => pending?.run()}
         title={pending?.title || ''}
         message={pending?.message || ''}
+        typed={Boolean(pending?.typed)}
       />
       <ConvertDialog
         show={showConvert}

@@ -260,7 +260,8 @@ SelectDialog.propTypes = {
  * The Organizations page's bulk actions, drawn in the section heading's
  * action pane while rows are selected and the adapter carries `bulk`: Set
  * customer id, Set access mode, Set default role and Regenerate invite
- * code beside Suspend, Resume and Delete, the delete action stepped up, a
+ * code beside Suspend, Resume and Delete, Delete behind the typed
+ * confirmation and every other behind a plain one, the delete stepped up, a
  * personal organization skipped with `personal`, and the result line
  * naming processed, skipped and each error's code translated (identity
  * contract decisions 139, 147).
@@ -366,11 +367,17 @@ const BulkActions = ({ bulk, selected, onDone }) => {
         handleClose={() => setPending('')}
         handleConfirm={send}
         title={t('admin.organizations.bulk.confirmTitle')}
-        message={t('admin.organizations.bulk.confirmBody', {
-          action: pending ? t(`admin.organizations.bulk.${pending}`) : '',
-          count: selected.length,
-          keyword: t('pages.confirm.keyword'),
-        })}
+        message={t(
+          pending === 'delete'
+            ? 'admin.organizations.bulk.confirmBody'
+            : 'admin.organizations.bulk.confirmPlainBody',
+          {
+            action: pending ? t(`admin.organizations.bulk.${pending}`) : '',
+            count: selected.length,
+            keyword: t('pages.confirm.keyword'),
+          }
+        )}
+        typed={pending === 'delete'}
       />
     </>
   );

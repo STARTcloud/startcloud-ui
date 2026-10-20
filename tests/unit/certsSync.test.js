@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DETACHED,
+  linkedRecord,
   newerThan,
+  ownMembersOf,
   patchOfVerbs,
   recordOf,
   rowNotAfter,
@@ -157,6 +159,27 @@ describe('DETACHED and newerThan', () => {
     ).toBe(false);
     expect(newerThan({}, { updated_at: '2026-01-01T00:00:00Z' })).toBe(false);
     expect(newerThan({ updated_at: '2026-01-01T00:00:00Z' }, {})).toBe(true);
+  });
+});
+
+describe('linkedRecord and ownMembersOf', () => {
+  it('links the record to the answered row, keeping its own members where the answer omits one', () => {
+    expect(
+      linkedRecord({ ...record, created_by: 'mark' }, { id: 'row-5', updated_at: 'u' }, 'acme')
+    ).toMatchObject({
+      remote_id: 'row-5',
+      organization: 'acme',
+      created_by: 'mark',
+      synced_at: 'u',
+    });
+  });
+
+  it("reads every member of the backend's row, an absent one as detached", () => {
+    expect(ownMembersOf({ remote_id: 'row-1', organization: 'acme' })).toEqual({
+      ...DETACHED,
+      remote_id: 'row-1',
+      organization: 'acme',
+    });
   });
 });
 

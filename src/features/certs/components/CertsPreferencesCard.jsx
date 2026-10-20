@@ -12,6 +12,7 @@ import { useFormRules } from '../../../hooks/useFormRules';
 import { formatRelativeTime } from '../../../utils/relativeTime';
 import { useVault } from '../hooks/useVault';
 import { syncsTo } from '../hooks/useVaultSync';
+import { IDP } from '../utils/destinations';
 import { KINDS } from '../utils/records';
 import { PREFERENCES_LABELS, PREFERENCES_SCHEMA } from '../utils/schemas';
 
@@ -19,19 +20,17 @@ import { TextField } from './fields';
 
 const PREFS_KEY = 'table_prefs_certs_preferences';
 
-const lastSyncedOf = records =>
-  records
-    .filter(record => record.remote_id && record.synced_at)
-    .map(record => record.synced_at)
-    .sort()
-    .at(-1) || '';
+const destinationShape = PropTypes.shape({
+  key: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+});
 
-const DestinationSwitch = ({ destination, name, checked, lastSynced, onToggle }) => {
+const DestinationSwitch = ({ destination, checked, lastSynced, onToggle }) => {
   const { t, i18n } = useTranslation();
   return (
     <Field
-      id={`certs-sync/${destination}`}
-      label={t('certs.sync.destination', { name })}
+      id={`certs-sync/${destination.key}`}
+      label={t('certs.sync.destination', { name: destination.name })}
       hint={
         lastSynced
           ? t('certs.sync.lastSynced', { when: formatRelativeTime(lastSynced, i18n.language) })
@@ -47,7 +46,7 @@ const DestinationSwitch = ({ destination, name, checked, lastSynced, onToggle })
             className="form-check-input"
             checked={checked}
             onChange={onToggle}
-            data-destination={destination}
+            data-destination={destination.key}
           />
         </div>
       )}
@@ -56,31 +55,32 @@ const DestinationSwitch = ({ destination, name, checked, lastSynced, onToggle })
 };
 
 DestinationSwitch.propTypes = {
-  destination: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
+  destination: destinationShape.isRequired,
   checked: PropTypes.bool.isRequired,
   lastSynced: PropTypes.string.isRequired,
   onToggle: PropTypes.func.isRequired,
 };
 
-const PreferencesForm = ({ thresholdDays, held, destination, synced, onSave }) => {
+const PreferencesForm = ({ thresholdDays, held, destinations, onSave }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const vault = useVault();
   const [draft, setDraft] = useState({ threshold_days: String(thresholdDays) });
-  const [on, setOn] = useState(() => syncsTo(held, destination));
+  const [ons, setOns] = useState(() =>
+    Object.fromEntries(destinations.map(entry => [entry.key, syncsTo(held, entry.key)]))
+  );
   const rules = useFormRules({
     schema: PREFERENCES_SCHEMA,
     values: draft,
     labels: PREFERENCES_LABELS,
     idPrefix: 'certs-preferences',
   });
-  const brand = status.brand?.name || destination;
+  const brand = status.brand?.name || status.role || '';
 
   const submit = event => {
     event.preventDefault();
     if (rules.validateAll()) {
-      onSave({ threshold_days: Number(draft.threshold_days), on });
+      onSave({ threshold_days: Number(draft.threshold_days), ons });
     }
   };
 
@@ -100,7 +100,7 @@ const PreferencesForm = ({ thresholdDays, held, destination, synced, onSave }) =
           />
         </div>
       </div>
-      {synced ? (
+      {destinations.length > 0 ? (
         <div className="border-top pt-3" data-panel="certs-sync">
           <p className="text-body-secondary">
             {vault.organization
@@ -108,15 +108,18 @@ const PreferencesForm = ({ thresholdDays, held, destination, synced, onSave }) =
               : t('certs.sync.noOrganization', { name: brand })}
           </p>
           <div className="row">
-            <div className="col-md-4">
-              <DestinationSwitch
-                destination={destination}
-                name={brand}
-                checked={on}
-                lastSynced={lastSyncedOf(vault.records)}
-                onToggle={() => setOn(current => !current)}
-              />
-            </div>
+            {destinations.map(entry => (
+              <div key={entry.key} className="col-md-4">
+                <DestinationSwitch
+                  destination={entry}
+                  checked={ons[entry.key]}
+                  lastSynced={vault.preferences.last_synced[entry.key] || ''}
+                  onToggle={() =>
+                    setOns(current => ({ ...current, [entry.key]: !current[entry.key] }))
+                  }
+                />
+              </div>
+            ))}
           </div>
         </div>
       ) : null}
@@ -130,8 +133,7 @@ const PreferencesForm = ({ thresholdDays, held, destination, synced, onSave }) =
 PreferencesForm.propTypes = {
   thresholdDays: PropTypes.number.isRequired,
   held: PropTypes.object.isRequired,
-  destination: PropTypes.string.isRequired,
-  synced: PropTypes.bool.isRequired,
+  destinations: PropTypes.arrayOf(destinationShape).isRequired,
   onSave: PropTypes.func.isRequired,
 };
 
@@ -141,16 +143,19 @@ PreferencesForm.propTypes = {
  * `table_prefs_certs_preferences`, one form with one Save preferences at
  * its foot: the expiry threshold in days the vault's Expiring reads, a
  * whole number from one checked on blur and on Save, kept in the
- * browser's vault preferences and never sent to a host; and, while the
- * host lists `certs-store` and a person is signed in, one switch a
- * destination, Sync to the serving backend under its brand name, keyed
- * in the `sync` preference by the backend's role name and on for a
- * person who never chose, with the last time the store answered a record
- * as its hint, over a sentence naming where the rows go, the active
- * organization or the primary membership, else the person's own store on
- * this host. Save writes both preferences and, while the destination is
- * on, sends every unsent record of the vault, one success notice while
- * every send went through and none while any was refused.
+ * browser's vault preferences and never sent to a host; and one switch a
+ * destination, Sync to the serving backend under its brand name while
+ * the host lists `certs-store` and a person is signed in, keyed in the
+ * `sync` preference by the backend's role name, and Sync to the identity
+ * provider under its brand name while its own status lists
+ * `certs-store`, keyed by `idp`, each on for a person who never chose and
+ * the default of every row whose own `sync` map names no store, each with
+ * the instant its mirror last completed a run as its hint, over a
+ * sentence naming where the rows go, the active organization or the
+ * primary membership, else the person's own store. Save writes the
+ * preferences and, for every destination that is on, sends every unsent
+ * record of the vault, one success notice while every send went through
+ * and none while any was refused.
  */
 const CertsPreferencesCard = ({ className = 'mt-3 mb-0' }) => {
   const { t } = useTranslation();
@@ -160,17 +165,39 @@ const CertsPreferencesCard = ({ className = 'mt-3 mb-0' }) => {
   const vault = useVault();
   const thresholdDays = vault.preferences.threshold_days;
   const held = vault.preferences.sync || {};
-  const destination = status.role || '';
-  const synced = Boolean(vault.stored && vault.signedIn);
+  const destinations = [
+    ...(vault.stored && vault.signedIn
+      ? [
+          {
+            key: status.role || '',
+            name: status.brand?.name || status.role || '',
+            mirror: vault.sync,
+          },
+        ]
+      : []),
+    ...(vault.idp.stored
+      ? [
+          {
+            key: IDP,
+            name: vault.idp.name || t('certs.stores.idpName'),
+            mirror: vault.idpSync,
+          },
+        ]
+      : []),
+  ];
 
-  const save = async ({ threshold_days, on }) => {
+  const save = async ({ threshold_days, ons }) => {
     await vault.setPreference('threshold_days', threshold_days);
-    if (!synced) {
+    if (destinations.length === 0) {
       return;
     }
-    await vault.setPreference('sync', { ...held, [destination]: on });
-    const refused = vault.sync && on ? await vault.sync.mirror(KINDS) : 0;
-    if (refused === 0) {
+    await vault.setPreference('sync', { ...held, ...ons });
+    const answers = await Promise.all(
+      destinations.map(entry =>
+        entry.mirror && ons[entry.key] ? entry.mirror.mirror(KINDS) : Promise.resolve(0)
+      )
+    );
+    if (answers.every(refused => refused === 0)) {
       notify('success', t('certs.notice.syncSaved'));
     }
   };
@@ -185,11 +212,10 @@ const CertsPreferencesCard = ({ className = 'mt-3 mb-0' }) => {
     >
       <div data-panel="certs-preferences">
         <PreferencesForm
-          key={`${thresholdDays}:${JSON.stringify(held)}`}
+          key={`${thresholdDays}:${JSON.stringify(held)}:${destinations.length}`}
           thresholdDays={thresholdDays}
           held={held}
-          destination={destination}
-          synced={synced}
+          destinations={destinations}
           onSave={save}
         />
       </div>

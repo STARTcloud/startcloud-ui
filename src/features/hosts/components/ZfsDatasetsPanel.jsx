@@ -470,41 +470,33 @@ DatasetDialogs.propTypes = {
 const listOf = answer => (Array.isArray(answer?.datasets) ? answer.datasets : []);
 
 /**
- * The ZFS dataset manager, hyperweaver-ui's datasets panel: the pool's
- * real hierarchy as an expandable tree, filesystems and volumes nested
- * by name, each dataset's snapshots folded under it, usage as a bar, a
- * search over the names, a pool filter and the three type toggles;
- * Create dataset, Expand all and Collapse all in the heading. The
- * datasets and the snapshots are read as two sweeps as the panel opens
- * and again when `turn` moves, the page's Refresh and the end of a task
- * this page queued. Every write is a queued task through `tools`, one
- * notice; Promote confirms first behind the typed word. With
- * `snapshotsOpen` every dataset's snapshots are unfolded as the tree is
- * read, the Snapshots page's view of the same tree. `selection`, a
- * `useSelection` keyed by the snapshot's name, draws a checkbox on every
- * snapshot row, its select column; `busy` holds every control while the
- * page's own write is in flight.
+ * Every snapshot row of a dataset tree, the roots' and their
+ * descendants'.
+ *
+ * @param {Array<Object>} nodes - The nodes of `buildTree`
+ * @returns {Array<Object>} The snapshot rows
  */
-const ZfsDatasetsPanel = ({
-  id,
-  turn,
-  tools,
-  snapshotsOpen = false,
-  selection = null,
-  busy: held = false,
-}) => {
+export const snapshotRowsOf = nodes =>
+  nodes.flatMap(node => [...node.snapshots, ...snapshotRowsOf(node.children)]);
+
+/**
+ * The read of a host's dataset tree: the datasets and the snapshots read
+ * as two sweeps as the caller draws and again when `turn` moves or the
+ * pool filter changes, the pools' names for the pool filter, and with
+ * `snapshotsOpen` every dataset's snapshots unfolded as the tree is read.
+ *
+ * @param {Object} options - `{ id, turn, snapshotsOpen? }`
+ * @returns {{ tree: Array, pools: Array<string>, poolFilter: string, setPoolFilter: Function, snapsOpen: Set<string>, setSnapsOpen: Function, loaded: boolean, failed: string }} The tree and its state
+ */
+export const useDatasetTree = ({ id, turn, snapshotsOpen = false }) => {
   const { t } = useTranslation();
   const status = useStatus();
   const [tree, setTree] = useState([]);
   const [pools, setPools] = useState([]);
   const [poolFilter, setPoolFilter] = useState('');
-  const [nameFilter, setNameFilter] = useState('');
-  const [collapsed, setCollapsed] = useState(() => new Set());
   const [snapsOpen, setSnapsOpen] = useState(() => new Set());
-  const [show, setShow] = useState(ALL_SHOWN);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState('');
-  const [modal, setModal] = useState(null);
 
   const take = useCallback(
     ([datasets, snapshots]) => {
@@ -554,6 +546,42 @@ const ZfsDatasetsPanel = ({
     );
   }, [status, id, turn]);
 
+  return { tree, pools, poolFilter, setPoolFilter, snapsOpen, setSnapsOpen, loaded, failed };
+};
+
+/**
+ * The tree of `useDatasetTree` under one heading: `title`, `count` as
+ * muted text after it, and in its pane `lead`, Expand all, Collapse all,
+ * Create dataset and `trail`; under it `searchBox`, where given, the pool
+ * filter and the three type toggles, then the pool's real hierarchy,
+ * filesystems and volumes nested by name, each dataset's snapshots
+ * folded under it, usage as a bar, the rows narrowed by `needle`. Every
+ * write is a queued task through `tools`, one notice; Promote confirms
+ * first with a plain confirmation. `selection`, a `useSelection` keyed by
+ * the snapshot's name, draws a checkbox on every snapshot row, its select
+ * column; `busy` holds every control while the page's own write is in
+ * flight.
+ */
+export const DatasetTree = ({
+  id,
+  data,
+  tools,
+  needle,
+  title,
+  count = null,
+  lead = null,
+  trail = null,
+  searchBox = null,
+  selection = null,
+  busy: held = false,
+}) => {
+  const { t } = useTranslation();
+  const status = useStatus();
+  const { tree, pools, poolFilter, setPoolFilter, snapsOpen, setSnapsOpen, loaded, failed } = data;
+  const [collapsed, setCollapsed] = useState(() => new Set());
+  const [show, setShow] = useState(ALL_SHOWN);
+  const [modal, setModal] = useState(null);
+
   const promote = name =>
     tools.send({
       call: () => promoteZfsDataset(status, id, name),
@@ -568,14 +596,13 @@ const ZfsDatasetsPanel = ({
     onSelect: name => selection?.toggle(name),
   };
 
-  const needle = nameFilter.trim().toLowerCase();
   const view = { needle, show, collapsed, snapsOpen, selected: selection?.selected || null };
   const roots = tree.filter(node => nodeMatches(node, needle, show));
   const busy = tools.busy || held;
-  const title = t('host.zfsDatasetsPanel.datasetsHeading');
 
   const actions = (
     <>
+      {lead}
       <button
         type="button"
         className="btn btn-sm btn-outline-secondary"
@@ -609,24 +636,15 @@ const ZfsDatasetsPanel = ({
         <FaPlus className="me-2" aria-hidden="true" />
         {t('host.zfsDatasetsPanel.createDataset')}
       </button>
+      {trail}
     </>
   );
 
   return (
     <div data-panel="storage-zfs-datasets" data-count={tree.length}>
-      <SectionHeading title={title} actions={actions} />
+      <SectionHeading title={title} count={count} actions={actions} />
       <div className="row g-2 mb-3">
-        <div className="col-12 col-md-5">
-          <input
-            className="form-control form-control-sm"
-            type="search"
-            name="dataset-search"
-            placeholder={t('host.zfsDatasetsPanel.searchPlaceholder')}
-            aria-label={t('host.zfsDatasetsPanel.searchLabel')}
-            value={nameFilter}
-            onChange={event => setNameFilter(event.target.value)}
-          />
-        </div>
+        {searchBox ? <div className="col-12 col-md-5">{searchBox}</div> : null}
         <div className="col-12 col-md-3">
           <select
             className="form-select form-select-sm"
@@ -722,27 +740,84 @@ const ZfsDatasetsPanel = ({
             ? t('host.promoteConfirmModal.message', { name: modal.name })
             : ''
         }
-        keyword={t('host.promoteConfirmModal.confirmText').toLowerCase()}
+        variant="restart"
+        typed={false}
         confirmText={t('host.promoteConfirmModal.confirmText')}
       />
     </div>
   );
 };
 
-ZfsDatasetsPanel.propTypes = {
+const toolsShape = PropTypes.shape({
+  send: PropTypes.func.isRequired,
+  watch: PropTypes.func.isRequired,
+  busy: PropTypes.bool.isRequired,
+});
+
+DatasetTree.propTypes = {
   id: PropTypes.string.isRequired,
-  turn: PropTypes.number.isRequired,
-  tools: PropTypes.shape({
-    send: PropTypes.func.isRequired,
-    watch: PropTypes.func.isRequired,
-    busy: PropTypes.bool.isRequired,
+  data: PropTypes.shape({
+    tree: PropTypes.array.isRequired,
+    pools: PropTypes.arrayOf(PropTypes.string).isRequired,
+    poolFilter: PropTypes.string.isRequired,
+    setPoolFilter: PropTypes.func.isRequired,
+    snapsOpen: PropTypes.instanceOf(Set).isRequired,
+    setSnapsOpen: PropTypes.func.isRequired,
+    loaded: PropTypes.bool.isRequired,
+    failed: PropTypes.string.isRequired,
   }).isRequired,
-  snapshotsOpen: PropTypes.bool,
+  tools: toolsShape.isRequired,
+  needle: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  count: PropTypes.node,
+  lead: PropTypes.node,
+  trail: PropTypes.node,
+  searchBox: PropTypes.node,
   selection: PropTypes.shape({
     selected: PropTypes.instanceOf(Set).isRequired,
     toggle: PropTypes.func.isRequired,
   }),
   busy: PropTypes.bool,
+};
+
+/**
+ * The ZFS dataset manager of the Pools and datasets page, hyperweaver-ui's
+ * datasets panel: the `DatasetTree` of `useDatasetTree` under the
+ * Datasets heading with its own search box over the names, the tree read
+ * again when `turn` moves, the page's Refresh and the end of a task this
+ * page queued.
+ */
+const ZfsDatasetsPanel = ({ id, turn, tools }) => {
+  const { t } = useTranslation();
+  const data = useDatasetTree({ id, turn });
+  const [nameFilter, setNameFilter] = useState('');
+  const searchBox = (
+    <input
+      className="form-control form-control-sm"
+      type="search"
+      name="dataset-search"
+      placeholder={t('host.zfsDatasetsPanel.searchPlaceholder')}
+      aria-label={t('host.zfsDatasetsPanel.searchLabel')}
+      value={nameFilter}
+      onChange={event => setNameFilter(event.target.value)}
+    />
+  );
+  return (
+    <DatasetTree
+      id={id}
+      data={data}
+      tools={tools}
+      needle={nameFilter.trim().toLowerCase()}
+      title={t('host.zfsDatasetsPanel.datasetsHeading')}
+      searchBox={searchBox}
+    />
+  );
+};
+
+ZfsDatasetsPanel.propTypes = {
+  id: PropTypes.string.isRequired,
+  turn: PropTypes.number.isRequired,
+  tools: toolsShape.isRequired,
 };
 
 export default ZfsDatasetsPanel;

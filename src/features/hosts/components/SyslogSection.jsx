@@ -76,7 +76,7 @@ const statusRows = ({ config, t }) => {
  * `SyslogConfiguration` as the body of the Manage page's Syslog section:
  * the status of the logging service, its type, its state, its file and
  * its rule count, the switch between the traditional syslog and rsyslog
- * behind the typed confirmation, then the current rules over the one
+ * behind a plain confirmation, then the current rules over the one
  * table the page's binding narrows, the configuration editor and the
  * rule builder on the one tab strip, and the help. Every write is one
  * request and one notice, the configuration read again on a success.
@@ -176,7 +176,7 @@ const SyslogSection = ({ id, ctx, table, reading, filtering }) => {
         message={switchMessage}
         confirmText={t('hostTime.syslogConfiguration.switchModalConfirm')}
         variant="restart"
-        keyword="switch"
+        typed={false}
       />
       {data.task ? (
         <TaskDialog status={status} id={id} task={data.task.row} onHide={data.closeTask} />

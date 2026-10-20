@@ -248,7 +248,6 @@ const InstallersPage = ({ id, server, context, section, onRefresh }) => {
 
   const listingContext = {
     ...context,
-    orgMark: null,
     prefsPrefix,
     files: { busy: busy || saving, onAction, onFetch },
   };

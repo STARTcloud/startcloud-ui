@@ -69,6 +69,34 @@ export const DETACHED = {
 };
 
 /**
+ * The members a record keeps of the serving backend's row, each of
+ * `DETACHED`'s keys as the record holds it.
+ *
+ * @param {Object} record - The record
+ * @returns {Object} The members
+ */
+export const ownMembersOf = record =>
+  Object.fromEntries(Object.keys(DETACHED).map(key => [key, record[key] ?? DETACHED[key]]));
+
+/**
+ * The record a store's answer links: the record with the answered row's
+ * id as `remote_id`, its organization, its creator and its `updated_at`
+ * as `synced_at`, each kept from the record where the answer omits it.
+ *
+ * @param {Object} record - The record sent
+ * @param {Object} row - The wire row the store answered
+ * @param {string} organization - The organization the row was sent to
+ * @returns {Object} The linked record
+ */
+export const linkedRecord = (record, row, organization) => ({
+  ...record,
+  remote_id: row.id,
+  organization: row.organization || organization,
+  created_by: row.created_by || record.created_by,
+  synced_at: row.updated_at || record.synced_at,
+});
+
+/**
  * Whether a wire row is newer than the record held for it.
  *
  * @param {Object} row - The wire row

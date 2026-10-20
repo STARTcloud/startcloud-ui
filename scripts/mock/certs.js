@@ -293,7 +293,9 @@ const removed = ctx => {
  * published public row by anyone; a row under no organization is the
  * person's own, read and changed by them alone; a member shares, the
  * sharer or an owner or admin of the organization changes and removes, a
- * guest and a global admin by role alone refused 403, and every write is sent on
+ * guest and a global admin by role alone refused 403, a row's `record`
+ * kept as it is sent, its stable `id` and its own `sync` map among it,
+ * and every write is sent on
  * the `certs` topic as `cert-updated` or `cert-removed`.
  *
  * @param {Object} router - `sessionRoute`

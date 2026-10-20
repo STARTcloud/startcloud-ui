@@ -359,6 +359,15 @@ Then('the networking page draws {int} chart cards under its heading', async ({ p
   await expect(charts.locator('[data-chart] .card')).toHaveCount(count);
 });
 
+Then(
+  'the chart cards of the networking page draw their headings and no chevron',
+  async ({ page }) => {
+    const charts = frameOf(page).locator('[data-panel="networking-charts"]');
+    await expect(charts.locator('[data-chart] .section-card-title').first()).toBeVisible();
+    await expect(charts.locator('.section-card-chevron')).toHaveCount(0);
+  }
+);
+
 Then("the overview's networking link opens {string}", async ({ page }, href) => {
   await expect(page.locator('[data-panel="interfaces"]')).toBeVisible();
   await expect(overviewLink(page)).toHaveAttribute('href', href);

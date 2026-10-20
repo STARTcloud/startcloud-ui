@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaTrash } from 'react-icons/fa6';
 
@@ -7,16 +7,23 @@ import ConfirmModal from '../../../../components/common/ConfirmModal';
 import { useNotify } from '../../../../contexts/NoticeContext';
 import { useStatus } from '../../../../contexts/StatusContext';
 import { useSelection } from '../../../../hooks/useSelection';
+import { pageContextShape } from '../../../../utils/itemShape';
 import { destroyZfsSnapshot } from '../../api/zfsAPI';
+import { tableOf, useHostManageSearch } from '../../hooks/useHostManageSearch';
 import { useZfsTools } from '../../hooks/useZfsTools';
+import { sectionTitle } from '../../pages';
 import RefreshButton from '../RefreshButton';
 import SectionPane from '../SectionPane';
 import TaskDialog from '../TaskDialog';
-import ZfsDatasetsPanel from '../ZfsDatasetsPanel';
+import { DatasetTree, snapshotRowsOf, useDatasetTree } from '../ZfsDatasetsPanel';
 
 const NO_ROWS = [];
 
+const NO_COLUMNS = [];
+
 const nameOf = row => row.name;
+
+const matchesSnapshot = (row, needle) => row.name.toLowerCase().includes(needle);
 
 const PickedSnapshots = ({ selection, busy, onDestroy }) => {
   const { t } = useTranslation();
@@ -107,23 +114,45 @@ const useBulkDestroy = ({ id, tools }) => {
 /**
  * The Snapshots page of a host, the ZFS dataset manager's tree with
  * every dataset's snapshots unfolded as the one body of its own page,
- * behind `zfs`: the heading, and in its pane, while snapshots are
- * picked, "N selected", Clear selection and Destroy selected, then
- * Refresh; under it `ZfsDatasetsPanel` drawn with `snapshotsOpen` and
- * the select column of one `useSelection` over the snapshot names, each
- * snapshot's rollback, clone, holds and destroy. Destroy selected waits
- * behind the typed confirmation and sends one `DELETE storage/snapshot` a
- * picked snapshot, one notice naming the count, the pick cleared; every
- * write is a queued task through the one `useZfsTools`, the tree read
- * again when a task this page queued ends and on Refresh.
+ * behind `zfs`: one heading row, the section's title counting the
+ * snapshots the navbar search leaves, and in its pane, while snapshots
+ * are picked, "N selected", Clear selection and Destroy selected, then
+ * Expand all, Collapse all, Create dataset and Refresh; under it the
+ * pool filter, the type toggles and the `DatasetTree` with the select
+ * column of one `useSelection` over the snapshot names, each snapshot's
+ * rollback, clone, holds and destroy. The navbar search narrows the tree
+ * by name through `useHostManageSearch`. Destroy selected waits behind
+ * the typed confirmation and sends one `DELETE storage/snapshot` a picked
+ * snapshot, one notice naming the count, the pick cleared; every write is
+ * a queued task through the one `useZfsTools`, the tree read again when a
+ * task this page queued ends and on Refresh.
  */
-const SnapshotsPage = ({ id, server, section, onRefresh }) => {
-  const { t } = useTranslation();
+const SnapshotsPage = ({ id, server, context, section, onRefresh }) => {
+  const { t, i18n } = useTranslation();
   const status = useStatus();
   const [turn, setTurn] = useState(0);
   const [destroying, setDestroying] = useState(false);
   const bump = useCallback(() => setTurn(current => current + 1), []);
   const tools = useZfsTools({ id, onSettled: bump });
+  const data = useDatasetTree({ id, turn, snapshotsOpen: true });
+  const rows = useMemo(() => snapshotRowsOf(data.tree), [data.tree]);
+  const search = useHostManageSearch({
+    section,
+    tables: {
+      snapshots: tableOf({
+        key: 'snapshots',
+        labelKey: 'navbar.contextTabs.snapshots',
+        rows,
+        columns: NO_COLUMNS,
+        matches: matchesSnapshot,
+        sort: 'name',
+        offered: false,
+      }),
+    },
+    ctx: { ...context, t, language: i18n.language },
+    prefsPrefix: context.prefsPrefix,
+    placeholderKey: 'host.zfsDatasetsPanel.searchPlaceholder',
+  });
   const selection = useSelection(NO_ROWS, { keyOf: nameOf, labelOf: nameOf });
   const bulk = useBulkDestroy({ id, tools });
   const busy = tools.busy || bulk.busy;
@@ -136,21 +165,22 @@ const SnapshotsPage = ({ id, server, section, onRefresh }) => {
 
   const destroyPicked = () => bulk.destroy(names).then(selection.clear);
 
-  const actions = (
-    <>
-      <PickedSnapshots selection={selection} busy={busy} onDestroy={() => setDestroying(true)} />
-      <RefreshButton onRefresh={refresh} />
-    </>
+  const picked = (
+    <PickedSnapshots selection={selection} busy={busy} onDestroy={() => setDestroying(true)} />
   );
 
   return (
-    <SectionPane section={section} server={server} actions={actions}>
+    <SectionPane section={section} server={server} headed={false}>
       <div data-panel="storage-management">
-        <ZfsDatasetsPanel
+        <DatasetTree
           id={id}
-          turn={turn}
+          data={data}
           tools={tools}
-          snapshotsOpen
+          needle={search.needle}
+          title={sectionTitle(section, server, '', t)}
+          count={data.loaded ? search.tables.snapshots.rows.length : null}
+          lead={picked}
+          trail={<RefreshButton onRefresh={refresh} />}
           selection={selection}
           busy={bulk.busy}
         />
@@ -174,6 +204,7 @@ const SnapshotsPage = ({ id, server, section, onRefresh }) => {
 SnapshotsPage.propTypes = {
   id: PropTypes.string.isRequired,
   server: PropTypes.object.isRequired,
+  context: pageContextShape.isRequired,
   section: PropTypes.string.isRequired,
   onRefresh: PropTypes.func.isRequired,
 };

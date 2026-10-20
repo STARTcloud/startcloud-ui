@@ -14,7 +14,7 @@ Feature: host-database
     And the section page offers no "database-settings"
     And the host was sent GET to "/api/agents/1/database/stats" 1 times
 
-  Scenario: Database: Edit settings draws first in the heading's pane while the host's row names a db configuration file and opens the host's db configuration page
+  Scenario: Database: Edit settings draws first in the heading's pane while the host's row names a db configuration file, the one door to the host's db configuration page, the column drawing no row for that file
     Given the host answers the hosts fixture
     And the host answers the hosts-database fixture
     And the host answers the hosts-database-config fixture
@@ -23,8 +23,11 @@ Feature: host-database
     Then the "databases" table of the section page lists 2 rows
     And the section page draws one heading
     And the heading pane of the section page reads "database-settings,database-vacuum,database-analyze,database-cleanup,refresh"
+    And the host column draws the "database" row to "/hosts/3/agent/database"
+    And the host column draws no "config:db" row
     When I press the section page's "database-settings" action
     Then the path is "/hosts/3/agent/config/db"
+    And the section page says a super-admin is required
 
   Scenario: Database: Vacuum, Analyze and Cleanup each one request and one notice, the vacuum naming the space reclaimed, the statistics read again
     Given the host answers the hosts fixture

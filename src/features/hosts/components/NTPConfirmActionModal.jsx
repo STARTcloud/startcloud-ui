@@ -7,13 +7,13 @@ import RecordRows from '../../../components/common/RecordRows';
 const SHOWN_PEERS = 5;
 
 const ACTIONS = {
-  sync: { scope: 'sync', keyword: 'sync' },
-  restart: { scope: 'restart', keyword: 'restart' },
-  save: { scope: 'save', keyword: 'save' },
-  'switch-ntp': { scope: 'switchNtp', keyword: 'switch' },
-  'switch-chrony': { scope: 'switchChrony', keyword: 'switch' },
-  'switch-ntpsec': { scope: 'switchNtpsec', keyword: 'switch' },
-  timezone: { scope: 'changeTimezone', keyword: 'timezone' },
+  sync: 'sync',
+  restart: 'restart',
+  save: 'save',
+  'switch-ntp': 'switchNtp',
+  'switch-chrony': 'switchChrony',
+  'switch-ntpsec': 'switchNtpsec',
+  timezone: 'changeTimezone',
 };
 
 const STATUS_TONES = { available: 'success', disabled: 'warning' };
@@ -176,16 +176,15 @@ Extra.propTypes = {
 
 /**
  * The confirmation of a time action, hyperweaver-ui's dialog over the
- * typed confirmation of the pages contract: the service's or the time
+ * plain confirmation of the pages contract: the service's or the time
  * zone's record, the sentence and the warning of the action, the peers
  * a sync will use, the note of a configuration file to be created, the
  * reboot recommended after a time zone change or the restart's note,
- * and the action's own word typed to confirm, the restart a plain
- * confirmation with no word; `onConfirm` sends the request.
+ * answered by Cancel or the action; `onConfirm` sends the request.
  */
 const NTPConfirmActionModal = ({ service = null, action, onClose, onConfirm }) => {
   const { t } = useTranslation();
-  const { scope, keyword } = ACTIONS[action] || { scope: '', keyword: 'confirm' };
+  const scope = ACTIONS[action] || '';
   const title = scope
     ? t(`host.ntpConfirmActionModal.${scope}Title`)
     : t('host.ntpConfirmActionModal.confirmAction');
@@ -230,8 +229,7 @@ const NTPConfirmActionModal = ({ service = null, action, onClose, onConfirm }) =
       title={title}
       confirmText={title}
       variant="restart"
-      typed={action !== 'restart'}
-      keyword={keyword}
+      typed={false}
       message={message}
     />
   );

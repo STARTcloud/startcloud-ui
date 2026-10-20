@@ -56,7 +56,7 @@ Feature: agent-settings
     And the host was sent GET to "/api/agents/1/app/updates/check" 1 times
     And the host was sent GET to "/api/agents/1/api-keys" 1 times
 
-  Scenario: Agent pages: Update is one request and one notice behind the typed confirmation
+  Scenario: Agent pages: Update is one request and one notice behind a plain confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
@@ -65,7 +65,8 @@ Feature: agent-settings
     Then the agent page links to "https://github.com/Makr91/hyperweaver-agent/releases/tag/v1.3.0"
     And the agent page links to "https://github.com/Makr91/hyperweaver-agent/blob/main/CHANGELOG.md"
     When I press the agent page's "settings-update" action
-    And I confirm the open dialog with "update"
+    Then the open dialog asks for no typed word
+    When I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/1/app/updates/apply" 1 times
     And I see "Update to 1.3.0 queued"
 
@@ -78,8 +79,9 @@ Feature: agent-settings
     Then the Update page draws the cards "Overview,Assets,Changelog" in order
     And the Update page draws the panels "update-overview,update-assets" in the "side" column
     And the Update page draws the panels "update-release" in the "main" column
+    And the Update page draws no fold chevron
 
-  Scenario: Agent pages: the Update page draws the release notes as rendered markdown in the Changelog card, the assets in their own card open until folded and the fold kept over a reload
+  Scenario: Agent pages: the Update page draws the release notes as rendered markdown in the Changelog card and the assets in their own card
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
@@ -91,18 +93,11 @@ Feature: agent-settings
     And I see "Hosts.yml Editor"
     And I do not see "###"
     And the agent page draws the "update-assets" panel
-    And the "update-assets" section of the agent page is open
     And the agent page lists the asset "hyperweaver-agent-1.3.0-linux-amd64.deb"
     And the agent page lists the asset "checksums.txt"
     And the agent page links to "https://github.com/Makr91/hyperweaver-agent/releases/download/v1.3.0/hyperweaver-agent-1.3.0-linux-amd64.deb"
     And I see "36.9 MB"
     And I see "486 Bytes"
-    When I fold the "update-assets" section of the agent page
-    Then the "update-assets" section of the agent page is folded
-    And the agent page lists no asset
-    When I load the page again
-    Then the "update-assets" section of the agent page is folded
-    And the agent page lists no asset
 
   Scenario: Agent pages: a check without notes and assets draws the versions, the links and the one release's card alone, no notes and no Assets card
     Given the host answers the hosts fixture
@@ -150,7 +145,6 @@ Feature: agent-settings
     And I do not see "###"
     And I do not see "utm support"
     And the assets of the release "v1.3.0" draw in their own card after the Overview card
-    And the assets of the release "v1.3.0" are open
     And the release "v1.3.0" lists the asset "hyperweaver-agent-1.3.0-linux-amd64.deb"
     And the release "v1.3.0" lists the asset "SHA256SUMS.txt"
     And the agent page links to "https://github.com/Makr91/hyperweaver-agent/releases/download/v1.3.0/SHA256SUMS.txt"
@@ -191,7 +185,7 @@ Feature: agent-settings
     And the release "v1.4.0-beta.1" shows the checksum "3f0c9a1b7e4d2c8f5a6b1d0e9c7a4f2b8d6e3c1a0f9b7d5e2c4a6f8b1d3e5c7a"
     And I see "37.3 MB"
 
-  Scenario: Agent pages: the Secrets page draws one heading row with Add, Pick secret, Reload and the view toggle in its pane in that order, no search box of its own, the navbar search narrowing its rows
+  Scenario: Agent pages: the Secrets page draws one heading row with Add, the Actions group with its Last synced line, the view toggle and Reload in its pane in that order, no Pick secret and no search box of its own, the navbar search narrowing its rows
     Given the host answers the hosts fixture
     And the host answers the hosts-agent-settings fixture
     And the host answers the hosts-api-keys fixture
@@ -200,7 +194,9 @@ Feature: agent-settings
     When I open "/hosts/1/agent/secrets"
     Then the section page "secrets" draws
     And the section page draws one heading
-    And the heading pane of the section page reads "secret-add,secret-pick,secrets-reload,view-toggle"
+    And the heading pane of the section page reads "secret-add,secrets-actions,view-toggle,secrets-reload"
+    And the agent page offers no "secret-pick"
+    And the agent page notes "last-synced"
     And the section page draws no search box
     And the agent page offers no "refresh"
     And the "secrets" table of the section page lists 2 rows
@@ -224,6 +220,9 @@ Feature: agent-settings
     And the secret row "admin-pass" is of kind "password"
     And the row "leaf" of the "secrets" table of the section page offers "pull"
     And the row "admin-pass" of the "secrets" table of the section page offers "secret-edit"
+    And the secrets table heads the store "host-1" with "H"
+    And the secret row "leaf" marks the store "host-1" as "equal"
+    And the secret row "admin-pass" marks the store "host-1" as "equal"
     When I press "/"
     And I open the filter panel
     And I toggle the filter pill of the kind of the secret row "leaf"
@@ -268,6 +267,34 @@ Feature: agent-settings
     And the host was sent GET to "/api/agents/1/certs" 3 times
     When I press the agent page's "secrets-reload" action
     Then the host was sent GET to "/api/agents/1/certs" 4 times
+
+  Scenario: Agent pages: the host's mark on a Secrets row is a check while the host holds the row, a click turns the host's sync off and removes the row there as one DELETE, and a right click opens Enable sync, Disable sync and Settings
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/secrets"
+    Then the secret row "github" marks the store "host-1" as "equal"
+    When I open the menu of the store mark "host-1" of the secret row "github"
+    Then the store mark menu offers "enable,disable,settings"
+    When I pick "disable" in the store mark menu
+    Then the host was sent DELETE to "/api/agents/1/certs/sec-github" 1 times
+    And the page raised 1 success notice
+    When I press the store mark "host-1" of the secret row "deploy"
+    Then the host was sent DELETE to "/api/agents/1/certs/sec-deploy" 1 times
+
+  Scenario: Agent pages: two picked Secrets rows are removed together by Delete selected of the Actions menu behind the typed confirmation, one DELETE a row and one notice naming the count
+    Given the host answers the hosts fixture
+    And the host answers the hosts-agent-settings fixture
+    And the host answers the hosts-api-keys fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"super-admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/1/agent/secrets"
+    And I tick the secret row "github"
+    Then I see "1 selected"
+    When I pick "delete-selected" in the section page's Actions menu
+    And I confirm the open delete dialog with "delete"
+    Then the host was sent DELETE to "/api/agents/1/certs/sec-github" 1 times
+    And I see "1 secret deleted"
 
   Scenario: Agent pages: Refresh reads the list of servers, the host's stats and every read of the page again
     Given the host answers the hosts fixture

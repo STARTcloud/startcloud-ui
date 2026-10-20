@@ -51,8 +51,8 @@ const bodyOf = ({ action, values, file, pointer }) => {
  * beside the control posting multipart `file` and `pointer` to the route
  * and drawing the answer's `path` as a success line, the field's value
  * untouched; `test` sends the form values as the clause says and draws
- * `configManager.actions.testPassed` on 200; `run` opens a confirm dialog
- * titled by the property's or the section's `title` and draws
+ * `configManager.actions.testPassed` on 200; `run` opens a plain confirm
+ * dialog titled by the property's or the section's `title` and draws
  * `configManager.actions.runStarted` on 202; every call runs through
  * `guard`, so a `403 step_up_required` opens the step-up dialog and
  * retries the same call unchanged; a 422 is handed to `onRefused` to paint
@@ -154,10 +154,9 @@ const ConfigAction = ({
         handleClose={() => setConfirming(false)}
         handleConfirm={run}
         title={title}
-        message={t('configManager.actions.runConfirm', {
-          title,
-          keyword: t('pages.confirm.keyword'),
-        })}
+        variant="restart"
+        typed={false}
+        message={t('configManager.actions.runPlainMessage', { title })}
       />
     </>
   );

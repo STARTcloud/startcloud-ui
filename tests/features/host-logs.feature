@@ -42,14 +42,14 @@ Feature: host-logs
     Then the host was sent POST to "/api/agents/3/system/syslog/reload" 1 times
     And the page raised 3 success notices
 
-  Scenario: Logs: the switch of the logging service behind the typed confirmation
+  Scenario: Logs: the switch of the logging service behind a plain confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-logs fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/system/logs"
     And I press the section page's "syslog-switch-rsyslog" action
     Then the "syslog-switch" dialog is open
-    When I confirm the open dialog with "switch"
+    When I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/3/system/syslog/switch" carrying "target" as "rsyslog"
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/system/syslog/config" 2 times

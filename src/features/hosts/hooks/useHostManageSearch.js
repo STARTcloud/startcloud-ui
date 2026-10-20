@@ -348,7 +348,7 @@ const drawnTable = ({ table, needle, ctx, prefs, sets, setPrefs, setSets, rowRef
  * @param {Object} options.ctx - The context the tables' columns receive
  * @param {string} options.prefsPrefix - The prefix of the page's prefs keys
  * @param {string} options.placeholderKey - The key of the search box's placeholder
- * @returns {{ tables: Object, filtering: boolean }} Each table's rows, row ref, sort, hidden columns and widths by its `key`, and whether a query or a filter narrows
+ * @returns {{ tables: Object, filtering: boolean, needle: string }} Each table's rows, row ref, sort, hidden columns and widths by its `key`, whether a query or a filter narrows, and the query trimmed and lower-cased
  */
 export const useHostManageSearch = ({ section, tables, ctx, prefsPrefix, placeholderKey }) => {
   const { t } = useTranslation();
@@ -395,5 +395,9 @@ export const useHostManageSearch = ({ section, tables, ctx, prefsPrefix, placeho
     onClearFilters: () => list.forEach(table => table.clear()),
   });
 
-  return { tables: drawn, filtering: needle !== '' || list.some(table => table.active) };
+  return {
+    tables: drawn,
+    filtering: needle !== '' || list.some(table => table.active),
+    needle,
+  };
 };

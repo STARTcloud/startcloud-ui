@@ -18,7 +18,7 @@ const NONE = { current: '', available: [] };
  * runlevel of `GET system/host/runlevel`, the runlevel chosen among the
  * ones the host offers with Change runlevel, and Single-user and
  * Multi-user with the network services switch, each a queued task
- * behind the typed confirmation, `POST system/host/runlevel`,
+ * behind a plain confirmation, `POST system/host/runlevel`,
  * `POST system/host/single-user` and `POST system/host/multi-user`,
  * raising one notice with View task and reading the runlevel again on
  * a success.
@@ -160,7 +160,7 @@ const RunlevelSection = ({ id }) => {
         title={t('hosts.manage.runlevel.confirmTitle')}
         message={message}
         variant="restart"
-        keyword="runlevel"
+        typed={false}
       />
       {task ? <TaskDialog status={status} id={id} task={task.row} onHide={closeTask} /> : null}
     </div>

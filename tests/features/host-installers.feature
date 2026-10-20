@@ -15,8 +15,11 @@ Feature: host installer files and provisioners
     And the installer files listing draws no "product" column
     And the file "Domino_14.5_Linux_English.tar" reads "14.5" in its "release" column
     And the file "Domino_14.5_FP1_Linux.tar" reads "FP1" in its "patch" column
-    And the file "Domino_14.5_Linux_English.tar" offers "move"
+    And the file "Domino_14.5_Linux_English.tar" offers "download"
     And the file "Domino_14.5_Linux_English.tar" offers "details"
+    When I open the menu of the file "Domino_14.5_Linux_English.tar"
+    Then the file "Domino_14.5_Linux_English.tar" offers "move"
+    And the file "Domino_14.5_Linux_English.tar" offers "copy"
     And the file "Domino_14.5_Linux_English.tar" offers "delete"
     And the host was sent GET to "/api/agents/3/artifacts/storage/paths" 1 times
     And the host was sent GET to "/api/agents/3/artifacts" 1 times
@@ -286,7 +289,8 @@ Feature: host installer files and provisioners
     And the file "Win11_24H2_English_x64.iso" carries a "warning" badge
     And the file "debian-13.1.0-amd64-netinst.iso" carries a "success" badge
     And the file "Domino_14.5_Linux_English.tar" offers "download"
-    And the file "Domino_14.5_Linux_English.tar" offers "move"
+    When I open the menu of the file "Domino_14.5_Linux_English.tar"
+    Then the file "Domino_14.5_Linux_English.tar" offers "move"
 
   Scenario: Installer files: the storage location dialog of the Locations modal offers every kind, an installer family location made with its type
     Given the host answers the hosts fixture
@@ -309,12 +313,14 @@ Feature: host installer files and provisioners
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/3/provisioning/installers"
+    And I open the menu of the file "debian-13.1.0-amd64-netinst.iso"
     And I press "move" on the file "debian-13.1.0-amd64-netinst.iso"
     Then the catalog dialog select "artifact-transfer-dest" offers 1 options
     When I pick "loc-old" in the catalog dialog select "artifact-transfer-dest"
     And I submit the catalog dialog "artifact-move"
     Then the host was sent POST to "/api/agents/3/artifacts/11/move" carrying "destination_storage_location_id" as "loc-old"
-    And the file "Domino_14.5_FP1_Linux.tar" holds "move"
+    When I open the menu of the file "Domino_14.5_FP1_Linux.tar"
+    Then the file "Domino_14.5_FP1_Linux.tar" holds "move"
 
   Scenario: Provisioners: the families of every enabled catalog source as cards, read once a source per load, a source that answers 401 drawing no family and named with the agent's message in one warning banner, the installed ones alone when the page opens, the Update glyph on a family behind the catalog and the glyph greyed on one at its newest, Add turning the Installed group off so every family draws with the missing greyed and their controls live, a second Add turning it back on, and the Installed pill off greying them
     Given the host answers the hosts fixture

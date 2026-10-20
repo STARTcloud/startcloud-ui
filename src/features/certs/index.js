@@ -4,6 +4,9 @@ export { default as CertsPreferencesCard } from './components/CertsPreferencesCa
 export { default as PickSecretModal } from './components/PickSecretModal';
 export { default as PullAction } from './components/PullAction';
 export { default as SecretRecordModal } from './components/SecretRecordModal';
+export { default as SecretsActions } from './components/SecretsActions';
+export { syncChipsColumnOf, syncColumnsOf } from './components/SyncMarks';
+export { useSecretStores } from './hooks/useSecretStores';
 export {
   SECRET_STORE_COLUMNS,
   SECRET_STORE_FILTERS,

@@ -24,8 +24,9 @@ const CONFIRM_ACTIONS = [
  * The Users page's bulk actions, drawn in the section heading's action pane
  * while rows are selected: Enable, Suspend, Add role, Remove role, Set
  * customer id, Set primary organization, Revoke sessions, Unlock and
- * Delete over the adapter's `bulk`; the confirm-gated actions behind the
- * shared confirm, Delete and Revoke sessions stepped up, Unlock direct,
+ * Delete over the adapter's `bulk`; Delete behind the typed confirmation
+ * and the other confirm-gated actions behind a plain one, Delete and
+ * Revoke sessions stepped up, Unlock direct,
  * and the result line naming processed, skipped and each error's code
  * translated (decision 146).
  */
@@ -151,11 +152,17 @@ const BulkBar = ({ bulk, selected, users, catalog, onDone }) => {
         handleClose={() => setPending('')}
         handleConfirm={send}
         title={t('admin.users.bulk.confirmTitle')}
-        message={t('admin.users.bulk.confirmBody', {
-          action: pending ? t(`admin.users.bulk.${pending}`) : '',
-          count: selected.length,
-          keyword: t('pages.confirm.keyword'),
-        })}
+        message={t(
+          pending === 'delete'
+            ? 'admin.users.bulk.confirmBody'
+            : 'admin.users.bulk.confirmPlainBody',
+          {
+            action: pending ? t(`admin.users.bulk.${pending}`) : '',
+            count: selected.length,
+            keyword: t('pages.confirm.keyword'),
+          }
+        )}
+        typed={pending === 'delete'}
       />
     </>
   );

@@ -14,7 +14,8 @@ Feature: host artifacts
     And the installer files listing draws the "status" column
     And the installer files listing draws the "location" column
     And the file "debian-13" offers "details"
-    And the file "debian-13" offers "move"
+    When I open the menu of the file "debian-13"
+    Then the file "debian-13" offers "move"
     And the installer files listing lists no transfer
     And the host was sent GET to "/api/agents/1/artifacts/storage/paths" 1 times
     And the host was sent GET to "/api/agents/1/artifacts" 1 times
@@ -111,7 +112,8 @@ Feature: host artifacts
     When I press the section page's "artifact-scan" action
     Then the host was sent POST to "/api/agents/1/artifacts/scan" carrying "false" at "/verify_checksums"
     And the page raised 1 success notice
-    When I press "delete" on the file "windows-11"
+    When I open the menu of the file "windows-11"
+    And I press "delete" on the file "windows-11"
     Then the "artifact-delete" dialog is open
     And the host was not sent DELETE to "/api/agents/1/artifacts/files"
     When I check the field "artifact-delete-files-too"

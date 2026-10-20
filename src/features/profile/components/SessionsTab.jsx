@@ -120,8 +120,8 @@ SignOutButton.propTypes = {
  * The Sessions tab of the identity contract: the active sessions with
  * their client, device, location and address, the authorized time with
  * its absolute time in the tooltip, the caller's own row badged "This
- * session", Sign out per row and Revoke all sessions behind a confirm
- * that says this browser is signed out too; the other rows' Sign out and
+ * session", Sign out per row and Revoke all sessions behind a plain
+ * confirm that says this browser is signed out too; the other rows' Sign out and
  * the revoke-all are stepped up, the current row's Sign out is the plain
  * sign-out, and an answer's `next` is followed when the call ended this
  * session; the list is a glass section of the pages contract, a
@@ -229,8 +229,8 @@ const SessionsTab = ({ account, guard, onSignedOut }) => {
   const all = pending?.kind === 'all';
   const confirmTitle = all ? t('profile.sessions.revokeAll') : t('profile.sessions.signOut');
   const confirmMessage = all
-    ? t('profile.sessions.revokeAllBody', { keyword: t('pages.confirm.keyword') })
-    : t('pages.confirm.message', { keyword: t('pages.confirm.keyword') });
+    ? t('profile.sessions.revokeAllBody')
+    : t('pages.confirm.plainMessage');
 
   const revokeAllButton = (
     <button
@@ -270,6 +270,7 @@ const SessionsTab = ({ account, guard, onSignedOut }) => {
         handleConfirm={confirmPending}
         title={confirmTitle}
         message={confirmMessage}
+        typed={false}
       />
     </div>
   );

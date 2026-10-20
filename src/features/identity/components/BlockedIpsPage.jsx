@@ -92,7 +92,7 @@ const useSelection = rows => {
 
 /**
  * The Blocked IPs page's bulk actions, drawn in the heading's action pane
- * while rows are selected: Unblock, behind the shared confirm, over
+ * while rows are selected: Unblock, behind the shared plain confirm, over
  * `POST /api/admin/brute-force/bulk`, and the result line naming
  * processed, skipped and each error's code translated (decision 149).
  */
@@ -139,10 +139,8 @@ const BulkActions = ({ selected, onDone }) => {
         handleClose={() => setPending(false)}
         handleConfirm={send}
         title={t('admin.blocked.bulk.confirmTitle')}
-        message={t('admin.blocked.bulk.confirmBody', {
-          count: selected.length,
-          keyword: t('pages.confirm.keyword'),
-        })}
+        message={t('admin.blocked.bulk.confirmBody', { count: selected.length })}
+        typed={false}
       />
     </>
   );
@@ -157,8 +155,8 @@ BulkActions.propTypes = {
  * Security › Blocked IPs: a `SectionHeading` carrying the enabled line
  * and the blocked count as muted text after the title, Unblock all
  * (`DELETE /api/admin/brute-force`) as the heading's action behind a
- * confirm, the table's select column a real checkbox header, the
- * select-all for the page, the per-row Unblock behind its own confirm,
+ * plain confirm, the table's select column a real checkbox header, the
+ * select-all for the page, the per-row Unblock behind its own plain confirm,
  * and the heading's action pane gaining, while rows are picked, "N
  * selected", Clear selection and Unblock beside Unblock all; its search
  * bound to the navbar box over the address, the query mirrored in the URL
@@ -287,16 +285,15 @@ const BlockedIpsPage = () => {
         handleConfirm={confirmUnblock}
         title={t('admin.blocked.unblockTitle')}
         message={t('admin.blocked.unblockBody', { ip: unblocking?.ip || '' })}
+        typed={false}
       />
       <ConfirmModal
         show={unblockingAll}
         handleClose={() => setUnblockingAll(false)}
         handleConfirm={confirmUnblockAll}
         title={t('admin.blocked.unblockAllTitle')}
-        message={t('admin.blocked.unblockAllBody', {
-          count: blocked.length,
-          keyword: t('pages.confirm.keyword'),
-        })}
+        message={t('admin.blocked.unblockAllBody', { count: blocked.length })}
+        typed={false}
       />
     </div>
   );

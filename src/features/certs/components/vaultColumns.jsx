@@ -11,8 +11,10 @@ import {
   recordPath,
   recordStatus,
 } from '../utils/records';
+import { VAULT } from '../utils/stores';
 
 import StatusBadge from './StatusBadge';
+import { organizationColumn } from './storeColumns';
 
 const statusWord = (record, ctx) => {
   const status = recordStatus(record, ctx.now, ctx.thresholdDays);
@@ -23,8 +25,9 @@ const hasEnd = hasAny(notAfterOf);
 
 /**
  * The vault table's columns, each sorting by what its cell shows: the
- * name linking to the record's page, the kind, the profile where any
- * record names one, the expiry status as a badge and the end as a date
+ * name linking to the record's page while the Vault holds the record,
+ * the organization where any row names one, the kind, the profile where
+ * any record names one, the expiry status as a badge and the end as a date
  * where any record has an end, the algorithm and the issuer where any
  * record carries them, the count of versions held where any record holds
  * one and the last change as a relative time.
@@ -35,12 +38,16 @@ export const vaultColumns = [
     kind: 'name',
     labelKey: 'pages.table.name',
     value: nameOf,
-    render: record => (
-      <Link to={recordPath(record)} className="fw-semibold">
-        {nameOf(record)}
-      </Link>
-    ),
+    render: record =>
+      !record.held || record.held[VAULT] ? (
+        <Link to={recordPath(record)} className="fw-semibold">
+          {nameOf(record)}
+        </Link>
+      ) : (
+        <span className="fw-semibold">{nameOf(record)}</span>
+      ),
   },
+  organizationColumn,
   {
     key: 'kind',
     kind: 'word',

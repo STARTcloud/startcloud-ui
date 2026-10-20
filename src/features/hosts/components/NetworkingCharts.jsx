@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { Form } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
-import { foldsShape } from '../../../components/common/SectionCard';
 import { chartOf } from '../charts/registry';
 import { useHostSeries } from '../hooks/useHostSeries';
 import { CHART_SORTS, interfaceSpec, sortedInterfaces, summarySpec } from '../utils/networking';
@@ -61,11 +60,11 @@ SortSelect.propTypes = {
  * received, sent and both, a line an interface, each titled by its own
  * card header, and then one chart an interface, titled by the
  * interface's own name, its three lines received, sent and both, in the
- * `order` the heading's `SortSelect` names, each a `ChartCard` folding
- * by its own chevron, all over `entities`, the points per interface the
- * page drew of the series.
+ * `order` the heading's `SortSelect` names, each a `ChartCard` with its
+ * heading and no chevron, all over `entities`, the points per interface
+ * the page drew of the series.
  */
-const NetworkingCharts = ({ id, host, entities, folds, order }) => {
+const NetworkingCharts = ({ id, host, entities, order }) => {
   const { t } = useTranslation();
   const { rows, loaded, failed, offered } = useHostSeries(id, 'network');
   const names = useMemo(() => sortedInterfaces(entities, order), [entities, order]);
@@ -92,8 +91,6 @@ const NetworkingCharts = ({ id, host, entities, folds, order }) => {
                 spec={summarySpec(chart.member, entities, t)}
                 emptyText={emptyText}
                 host={host}
-                folds={folds}
-                fold={`chart-network-${chart.key}`}
               >
                 <OneSampleNote single={single} />
               </ChartCard>
@@ -115,8 +112,6 @@ const NetworkingCharts = ({ id, host, entities, folds, order }) => {
                   spec={interfaceSpec(entities[name], t)}
                   emptyText={emptyText}
                   host={host}
-                  folds={folds}
-                  fold={`chart-interface:${name}`}
                 >
                   <OneSampleNote single={single} />
                 </ChartCard>
@@ -133,7 +128,6 @@ NetworkingCharts.propTypes = {
   id: PropTypes.string.isRequired,
   host: PropTypes.string.isRequired,
   entities: PropTypes.object.isRequired,
-  folds: foldsShape.isRequired,
   order: PropTypes.string.isRequired,
 };
 

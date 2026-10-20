@@ -55,14 +55,14 @@ const CONFIRMS = {
     messageKey: 'host.userTable.deleteUserConfirm',
     confirmKey: 'host.userTable.delete',
     variant: 'delete',
-    keyword: 'delete',
+    typed: true,
   },
   lock: {
     titleKey: 'host.userTable.lockUserAccountTitle',
     messageKey: 'host.userTable.lockUserConfirm',
     confirmKey: 'host.userTable.lock',
     variant: 'restart',
-    keyword: 'lock',
+    typed: false,
   },
 };
 
@@ -72,8 +72,9 @@ const CONFIRMS = {
  * the rows the page's binding left, its request filters in the
  * navbar's panel, Create user in the tab's heading, and on each row
  * Edit, Set password, Lock account, View details and Delete. The
- * create, the edit, the password and the delete each open their dialog
- * over the pages contract's form or typed confirmation, send one
+ * create, the edit and the password each open their form dialog, the
+ * lock a plain confirmation and the delete the typed confirmation of the
+ * pages contract; each sends one
  * request, raise one notice and read the users again on a success; a
  * write the agent queues as a task is followed on `task-updated` and
  * the users read again when it ends. Nothing polls.
@@ -217,7 +218,7 @@ const UserSection = ({
           message={t(confirm.messageKey, { username: dialog.user.username })}
           confirmText={t(confirm.confirmKey)}
           variant={confirm.variant}
-          keyword={confirm.keyword}
+          typed={confirm.typed}
         />
       ) : null}
       {task ? <TaskDialog status={status} id={id} task={task.row} onHide={closeTask} /> : null}

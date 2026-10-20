@@ -75,7 +75,7 @@ Feature: certs
     When I press the certs page's "save-vault" action
     Then I see "2 records imported"
     When I open "/certs"
-    Then the vault lists 2 rows
+    Then the vault lists 7 rows
     And I see "www.fixture.test"
     And I see "www.fixture.test key"
 
@@ -332,7 +332,7 @@ Feature: certs
     When I press the certs page's "save-vault" action
     Then the certs page's "save-vault" action is held
     When I open "/certs"
-    Then the vault lists 5 rows
+    Then the vault lists 10 rows
     And I see "Fixture Vault CA"
     And I see "www.vault.test"
     And the vault row "www.vault.test" is issued by "Fixture Vault CA"
@@ -438,7 +438,7 @@ Feature: certs
     And I click "Add New"
     And I drop "vault.certs.json" into the vault
     Then I see "2 records imported"
-    And the vault lists 2 rows
+    And the vault lists 7 rows
     When I open "/certs/rec-cert-1"
     And I press the certs page's "edit" action
     And I fill the control "certs-details/name" with "Renamed leaf"
@@ -450,7 +450,7 @@ Feature: certs
     And I confirm the open dialog
     Then I see "Renamed leaf was removed."
     And the vault heading holds the focus
-    And the vault lists 1 rows
+    And the vault lists 6 rows
 
   Scenario: Vault: a secret of the api_key kind added through the record form lists under the Secrets narrowing with its profile, and its page draws the secret section
     Given the host answers the certs fixture
@@ -484,7 +484,7 @@ Feature: certs
     When I open "/certs"
     And I click "Add New"
     And I drop "vault.certs.json" into the vault
-    Then the vault lists 3 rows
+    Then the vault lists 8 rows
     When I open "/certs?kind=api_key"
     Then the vault lists 1 rows
 
@@ -510,24 +510,24 @@ Feature: certs
     Then the "secret-record" dialog is closed
     And the record's details read "prod, api, portal"
 
-  Scenario: Vault: the bulk Delete of the picked rows behind the typed confirmation, the focus on the heading after
+  Scenario: Vault: Delete selected of the Actions menu removes the picked rows the browser holds behind the typed confirmation, the focus on the heading after
     Given the host answers the certs fixture
     And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs"
     And I click "Add New"
     And I drop "vault.certs.json" into the vault
-    Then the vault lists 2 rows
+    Then the vault lists 7 rows
     When I tick the vault row "Local leaf"
     And I tick the vault row "Local key"
     Then I see "2 selected"
-    When I press the certs page's "delete" action
+    When I pick "delete-selected" in the certs page's Actions menu
     And I confirm the open dialog
     Then I see "2 records removed"
     And the vault heading holds the focus
     And I do not see "Local leaf"
 
-  Scenario: Vault: the record page's Delete of a pulled row sends no DELETE and lands on the vault with the heading focused, and the vault row's Delete does the same from the vault narrowed to Authorities
+  Scenario: Vault: the record page's Delete of a pulled row sends no DELETE and lands on the vault with the heading focused, the row still listed from the backend's store, and the vault row's Delete does the same from the vault narrowed to Authorities
     Given the host answers the certs fixture
     And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
@@ -541,15 +541,17 @@ Feature: certs
     And I confirm the open dialog
     Then the path is "/certs"
     And the vault heading holds the focus
-    And the vault lists 1 rows
+    And the vault lists 5 rows
+    And the vault row "www.fixture.test" marks the store "hyperweaver-server" as "equal"
     And the host was not sent DELETE to "/api/certs/row-leaf"
     When I open "/certs?kind=authority"
-    Then the vault lists 1 rows
+    Then the vault lists 2 rows
     When I press "delete" on the vault row "Fixture Root CA"
     And I confirm the open dialog
     Then I see "Fixture Root CA was removed."
     And the vault heading holds the focus
-    And the vault lists 0 rows
+    And the vault lists 2 rows
+    And the vault row "Fixture Root CA" offers "Pull to vault"
     And the host was not sent DELETE to "/api/certs/row-root"
 
   Scenario: Vault: the Visibility and Status pickers over the picked synced rows the person manages, one PUT a row a pick
@@ -563,7 +565,7 @@ Feature: certs
     When I pull the shared row "www.fixture.test"
     Then I see "www.fixture.test was pulled into the vault."
     When I open "/certs"
-    Then the vault lists 2 rows
+    Then the vault lists 5 rows
     When I tick the vault row "Fixture Root CA"
     And I tick the vault row "www.fixture.test"
     And I pick "public" in the "Visibility" menu
@@ -588,7 +590,7 @@ Feature: certs
     When I open "/certs"
     And I click "Add New"
     And I drop "vault.certs.json" into the vault
-    Then the vault lists 2 rows
+    Then the vault lists 7 rows
     When I open "/certs/rec-cert-1"
     Then the record page draws one heading with Edit in its pane and no pill
     And the certs control "certs-details/name" is not drawn
@@ -653,7 +655,7 @@ Feature: certs
     Then the host was sent DELETE to "/api/certs/row-root" 1 times
     And I see "Removed from acme."
     When I open "/certs"
-    Then the vault lists 1 rows
+    Then the vault lists 5 rows
     And I see "Fixture Root CA"
 
   Scenario: Mirror: a member renaming a pulled copy of another person's row sends no PUT, while a manager renaming their own sends one
@@ -733,22 +735,24 @@ Feature: certs
     And I do not see "Sam draft"
     And I do not see "Dana leaf"
 
-  Scenario: Shared: two picked rows are pulled to the vault together with one notice naming the count, and the pick is cleared
+  Scenario: Shared: two picked rows are pulled to the vault together by Pull selected of the Actions menu with one notice naming the count, the pick cleared and each row's Vault mark a check
     Given the host answers the certs fixture
     And the browser keeps the vault's sync to "hyperweaver-server" off
     And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
     When I open "/certs/shared"
     Then the shared table lists 5 rows
+    And the shared row "Fixture Root CA" marks the store "vault" as "none"
     When I tick the shared row "Fixture Root CA"
     And I tick the shared row "www.fixture.test"
     Then I see "2 selected"
-    When I press the certs page's "bulk-pull" action
+    When I pick "bulk-pull" in the certs page's Actions menu
     Then the page raised 1 success notice
     And I do not see "2 selected"
     And the shared row "Fixture Root CA" offers "Pull again"
     And the shared row "www.fixture.test" offers "Pull again"
+    And the shared row "Fixture Root CA" marks the store "vault" as "equal"
     When I open "/certs"
-    Then the vault lists 2 rows
+    Then the vault lists 5 rows
     And I see "Fixture Root CA"
     And I see "www.fixture.test"
 
@@ -771,6 +775,39 @@ Feature: certs
     And I pull the shared row "www.fixture.test"
     Then I see "www.fixture.test was pulled into the vault."
     When I open "/certs"
-    Then the vault lists 1 rows
+    Then the vault lists 3 rows
     And I see "www.fixture.test"
     And I do not see "Renamed"
+
+  Scenario: Shared: every secret the person reaches lists on the store page, a row the Vault lacks drawn with an empty V mark whose click keeps it in the Vault and turns the row's Vault sync on, and its right click offers Enable sync, Disable sync and Settings
+    Given the host answers the certs fixture
+    And the browser keeps the vault's sync to "hyperweaver-server" off
+    And the browser holds "user" as "{\"id\":2,\"username\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/certs/shared"
+    Then the shared table lists 5 rows
+    And the shared table heads the store "vault" with "V"
+    And the shared table heads the store "hyperweaver-server" with "H"
+    And the shared row "Prominic Root CA" marks the store "hyperweaver-server" as "equal"
+    And the shared row "Prominic Root CA" marks the store "vault" as "none"
+    When I open the menu of the store mark "vault" of the shared row "Prominic Root CA"
+    Then the store mark menu offers "enable,disable,settings"
+    When I pick "enable" in the store mark menu
+    Then the shared row "Prominic Root CA" marks the store "vault" as "equal"
+    When I open "/certs"
+    Then the vault lists 5 rows
+    And the vault table draws no store column "vault"
+
+  Scenario: Sync: on a host that signs in through an identity provider whose own status lists certs-store, the vault's records reach both the backend's store and the identity provider's, and the Vault draws an I column beside the backend's
+    Given the host answers the certs-idp fixture
+    And the identity provider "https://auth.example.com" answers no discovery
+    And the browser holds "catalog.access_token" as "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiI4ZjJjMWQ1Mi02ZjBlLTRjMGEtOWE1NC0zYzFmNmYyYTllMTEiLCJuYW1lIjoiTWFyayBHaWxiZXJ0IiwiZW1haWwiOiJtYXJrQG00a3IubmV0Iiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCBub3RpZmljYXRpb25zOnJlYWQiLCJleHAiOjQxMDI0NDQ4MDB9."
+    And the browser holds "catalog.token_type" as "Bearer"
+    And the browser holds "catalog.expires_at" as "4102444800000"
+    When I open "/certs"
+    Then the host was sent GET to "/api/status" on the origin "https://auth.example.com"
+    When I click "Add New"
+    And I drop "vault.certs.json" into the vault
+    Then the host was sent POST to "/api/certs" on the origin "https://auth.example.com"
+    And the host was sent POST to "/api/certs" 4 times
+    And the vault table draws the store column "idp"
+    And the vault table draws the store column "provisioner-catalog"

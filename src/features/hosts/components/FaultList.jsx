@@ -74,7 +74,7 @@ const summaryRows = (summary, t) => {
  * summary while the agent answers one, the one table over the faults the
  * page's binding left, the resolved switch and the limit in the navbar's
  * panel, and on each row Acquit, Mark repaired and Mark replaced behind
- * the typed confirmation and View details; every action one request and
+ * a plain confirmation and View details; every action one request and
  * one notice, the faults read again on a success. Nothing polls.
  */
 const FaultList = ({ id, ctx, table, reading, filtering }) => {
@@ -151,7 +151,7 @@ const FaultList = ({ id, ctx, table, reading, filtering }) => {
           message={confirmMessage}
           confirmText={actionLabel}
           variant="restart"
-          keyword={dialog.action}
+          typed={false}
         />
       ) : null}
     </>

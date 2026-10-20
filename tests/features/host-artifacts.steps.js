@@ -74,6 +74,11 @@ Then('the file {string} carries a {string} badge', async ({ page }, name, tone) 
   await expect(fileOf(page, name).locator(`.badge.text-bg-${tone}`)).toHaveCount(1);
 });
 
+When('I open the menu of the file {string}', async ({ page }, name) => {
+  await fileOf(page, name).locator('.dropdown-toggle').click();
+  await expect(fileOf(page, name).locator('.dropdown-menu.show')).toBeVisible();
+});
+
 When('I press {string} on the file {string}', async ({ page }, action, name) => {
   await fileOf(page, name).locator(`[data-action="${action}"]`).click();
 });

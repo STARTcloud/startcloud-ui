@@ -18,7 +18,8 @@ const toggled = (visibility, key) => ({ ...visibility, [key]: visibility[key] ==
 /**
  * One chart card of the hosts feature, the shape every chart of the
  * host, Bandwidth, storage and machine pages takes: a section card that
- * folds under `fold`, its header carrying the title, `badges` after it
+ * folds under `fold` where `folds` is given and draws no chevron
+ * otherwise, its header carrying the title, `badges` after it
  * and in its actions the pills of the chart's lines, Refresh as a glyph
  * where the card has one, and the glyph that opens the chart at size;
  * under it the one `Chart` over `spec`, over the page's window before
@@ -42,8 +43,8 @@ const ChartCard = ({
   onToggle = null,
   emptyText,
   host,
-  folds,
-  fold,
+  folds = null,
+  fold = '',
   onRefresh = null,
   className = '',
   cardClassName = 'mb-0',
@@ -104,8 +105,8 @@ const ChartCard = ({
         badge={badges}
         actions={actions}
         className={cardClassName}
-        folded={folds.folded(fold)}
-        onFold={() => folds.toggle(fold)}
+        folded={folds ? folds.folded(fold) : false}
+        onFold={folds ? () => folds.toggle(fold) : null}
       >
         <Chart
           title={chartTitle}
@@ -154,8 +155,8 @@ ChartCard.propTypes = {
   onToggle: PropTypes.func,
   emptyText: PropTypes.string.isRequired,
   host: PropTypes.string.isRequired,
-  folds: foldsShape.isRequired,
-  fold: PropTypes.string.isRequired,
+  folds: foldsShape,
+  fold: PropTypes.string,
   onRefresh: PropTypes.func,
   className: PropTypes.string,
   cardClassName: PropTypes.string,

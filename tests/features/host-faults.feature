@@ -11,7 +11,7 @@ Feature: host-faults
     And the host column draws no "system" group
     And the host was not sent GET to "/api/agents/1/system/fault-management/faults"
 
-  Scenario: Faults: the summary and the faults over the one table, the details in a list dialog, acquit and mark repaired each behind the typed confirmation with the faults read again
+  Scenario: Faults: the summary and the faults over the one table, the details in a list dialog, acquit and mark repaired each behind a plain confirmation with the faults read again
     Given the host answers the hosts fixture
     And the host answers the hosts-faults fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -33,13 +33,13 @@ Feature: host-faults
     When I press "Escape"
     And I press "acquit" on the row "ZFS-8000-8A" of the "faults" table of the section page
     Then the "fault-acquit" dialog is open
-    When I confirm the open dialog with "acquit"
+    When I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/3/system/fault-management/actions/acquit" carrying "target" as "e7a1c3d4-9b2f-4c1e-8d3a-5f6e7a8b9c0d"
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/system/fault-management/faults" 2 times
     When I press "repaired" on the row "CPU-8000-4E" of the "faults" table of the section page
     Then the "fault-repaired" dialog is open
-    When I confirm the open dialog with "repaired"
+    When I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/3/system/fault-management/actions/repaired" carrying "fmri" as "cpu:///cpuid=3"
     And the page raised 2 success notices
 

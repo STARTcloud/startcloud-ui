@@ -252,7 +252,7 @@ AvailableUpdates.propTypes = {
  * while any wait and the disk suffices, the plan summary and the raw
  * output; and the update history over the one table narrowed by the
  * page's binding. Refresh metadata sends `POST system/updates/refresh`
- * and Install `POST system/updates/install` behind the typed
+ * and Install `POST system/updates/install` behind a plain
  * confirmation, each raising one notice and reading the check and the
  * history again when it answers and again when the task it queued
  * ends. Nothing polls.
@@ -348,7 +348,7 @@ const SystemUpdatesSection = ({ id, ctx, table, reading, filtering }) => {
           count: check.data?.total_updates || 0,
         })}
         variant="restart"
-        keyword="install"
+        typed={false}
       />
       {task ? <TaskDialog status={status} id={id} task={task.row} onHide={closeTask} /> : null}
     </div>

@@ -42,6 +42,19 @@ const profileColumn = {
   value: (row, ctx) => (profileOf(row) ? ctx.t(`certs.profile.${profileOf(row)}.label`) : ''),
 };
 
+/**
+ * The Org column of a table over the stores' rows: the organization the
+ * row belongs to, blank for a row of none, drawn while any row names one.
+ */
+export const organizationColumn = {
+  key: 'organization',
+  kind: 'word',
+  labelKey: 'certs.table.organization',
+  priority: 3,
+  when: hasAny(row => row.organization),
+  value: row => row.organization || '',
+};
+
 const sharedByColumn = {
   key: 'created_by',
   kind: 'text',
@@ -59,7 +72,8 @@ const updatedColumn = {
 
 /**
  * The columns of a table over the store's wire rows: the name, the kind,
- * the profile where any row names one, the subject, the expiry status and
+ * the profile where any row names one, the organization where any row
+ * names one, the subject, the expiry status and
  * the end where any row has one, the visibility and the published words
  * for a viewer who manages the rows, who shared the row and the last
  * change as a relative time.
@@ -68,6 +82,7 @@ export const STORE_COLUMNS = [
   nameColumn,
   kindColumn,
   profileColumn,
+  organizationColumn,
   {
     key: 'subject',
     kind: 'text',

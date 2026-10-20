@@ -390,6 +390,22 @@ Feature: host storage
     And the host was sent GET to "/api/agents/3/storage/datasets" 2 times
     And the host was not sent GET to "/api/agents/3/monitoring/storage/pools"
 
+  Scenario: Storage: the Snapshots page draws one heading row counting the snapshots, no search box of its own, the navbar search narrowing the tree
+    Given the host answers the hosts fixture
+    And the host answers the hosts-storage fixture
+    And the host answers the hosts-search fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/storage/snapshots"
+    Then the dataset tree draws 9 rows
+    And the section page draws one heading
+    And the section page draws no search box
+    And the heading of the networking page counts 2
+    When I press "/"
+    And I type "daily" in the navbar search box
+    Then the navbar search count reads "1 / 2"
+    And the heading of the networking page counts 1
+    And the dataset tree draws the row "tank/zones/web-1/boot@daily-20260927"
+
   Scenario: Storage: the create dataset dialog sends the pool and the name as one name, a queued task, and closes
     Given the host answers the hosts fixture
     And the host answers the hosts-storage fixture

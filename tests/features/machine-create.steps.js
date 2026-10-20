@@ -196,15 +196,23 @@ Then('the wizard draws no step {string}', async ({ page }, step) => {
   await expect(pillOf(page, step)).toHaveCount(0);
 });
 
-Then('the field {string} lists the options {string}', async ({ page }, id, options) => {
-  const list = await dialogOf(page).locator(`[id="${id}"]`).getAttribute('list');
+const domainRowsOf = page => dialogOf(page).locator('[data-list="domain-chain"] [data-source]');
+
+Then('the domain list reads {string}', async ({ page }, domains) => {
+  await expect(domainRowsOf(page).first()).toBeVisible();
   await expect
     .poll(() =>
-      dialogOf(page)
-        .locator(`datalist[id="${list}"] option`)
-        .evaluateAll(nodes => nodes.map(node => node.value).join(','))
+      domainRowsOf(page).evaluateAll(nodes => nodes.map(node => node.dataset.value).join(','))
     )
-    .toBe(options);
+    .toBe(domains);
+});
+
+When('I pick the domain of the source {string}', async ({ page }, source) => {
+  await dialogOf(page).locator(`[data-list="domain-chain"] [data-source="${source}"]`).click();
+});
+
+Then("the open dialog's {string} action is held", async ({ page }, action) => {
+  await expect(dialogOf(page).locator(`[data-action="${action}"]`)).toBeDisabled();
 });
 
 Then('the wizard step {string} is open', async ({ page }, step) => {
@@ -356,13 +364,11 @@ When("I press the page's {string} action", async ({ page }, action) => {
   await page.locator(`[data-action="${action}"]`).click();
 });
 
-Then('the field {string} lists the sources {string}', async ({ page }, id, sources) => {
-  const list = await dialogOf(page).locator(`[id="${id}"]`).getAttribute('list');
+Then('the domain list reads the sources {string}', async ({ page }, sources) => {
+  await expect(domainRowsOf(page).first()).toBeVisible();
   await expect
     .poll(() =>
-      dialogOf(page)
-        .locator(`datalist[id="${list}"] option`)
-        .evaluateAll(nodes => nodes.map(node => node.dataset.source).join(','))
+      domainRowsOf(page).evaluateAll(nodes => nodes.map(node => node.dataset.source).join(','))
     )
     .toBe(sources);
 });

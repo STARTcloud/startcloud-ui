@@ -1,18 +1,13 @@
 import PropTypes from 'prop-types';
+import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import {
-  FaArrowsTurnRight,
-  FaCircleInfo,
-  FaCopy,
-  FaDownload,
-  FaTrash,
-  FaTriangleExclamation,
-} from 'react-icons/fa6';
+import { FaCircleInfo, FaDownload, FaTriangleExclamation } from 'react-icons/fa6';
 
 import { fileLevelColumns } from '../../../components/common/levelColumns';
-import RecordRows from '../../../components/common/RecordRows';
-import { drawnColumns, hasAny } from '../../../components/common/SubTable';
+import RowMenu from '../../../components/common/RowMenu';
+import { hasAny } from '../../../components/common/SubTable';
 import { listWord } from '../../../utils/closedLists';
+import { middleEllipsis } from '../../../utils/text';
 import { hostFileGroupsOf, matchesHostFile } from '../utils/hostFiles';
 import { ARTIFACT_TYPES } from '../utils/manageCatalog';
 
@@ -43,6 +38,12 @@ const statusTitle = (item, t) => {
   return t(titleKey, values);
 };
 
+const statusBadge = (item, ctx) => (
+  <span className={`badge text-bg-${item.statusTone}`} title={statusTitle(item, ctx.t)}>
+    {ctx.t(STATUS_KEYS[item.status][0])}
+  </span>
+);
+
 const textColumn = (key, labelKey, priority, member) => ({
   key,
   kind: 'text',
@@ -58,7 +59,8 @@ const textColumn = (key, labelKey, priority, member) => ({
  * architecture and language as closed-list words, the size and the
  * checksum, then the product while the listing is not grouped by it, the
  * release and the patch of the registry, the version the agent parsed,
- * the storage location and the status badge with its tooltip.
+ * the storage location cut in its middle with the full path as its
+ * tooltip and the status badge with its tooltip.
  */
 export const HOST_FILE_COLUMNS = [
   ...fileLevelColumns(),
@@ -82,18 +84,21 @@ export const HOST_FILE_COLUMNS = [
     labelKey: 'host.installerFiles.colLocation',
     priority: 6,
     value: item => item.location || '',
-    render: item => <span className="small">{item.location || '-'}</span>,
+    render: item =>
+      item.location ? (
+        <span className="small" title={item.location}>
+          {middleEllipsis(item.location)}
+        </span>
+      ) : (
+        <span className="small">-</span>
+      ),
   },
   {
     key: 'status',
     kind: 'badge',
     labelKey: 'host.installerFiles.colStatus',
     value: item => item.status,
-    render: (item, ctx) => (
-      <span className={`badge text-bg-${item.statusTone}`} title={statusTitle(item, ctx.t)}>
-        {ctx.t(STATUS_KEYS[item.status][0])}
-      </span>
-    ),
+    render: statusBadge,
   },
 ];
 
@@ -138,19 +143,24 @@ export const HOST_FILE_FILTERS = [
   },
 ];
 
-const ACTIONS = [
+const GLYPHS = [
+  ['download', FaDownload, 'host.installerFiles.download', 'btn-outline-primary', true],
   ['details', FaCircleInfo, 'host.installerFiles.details', 'btn-outline-secondary', false],
-  ['download', FaDownload, 'host.installerFiles.download', 'btn-outline-secondary', true],
-  ['move', FaArrowsTurnRight, 'host.installerFiles.moveToLocation', 'btn-outline-secondary', true],
-  ['copy', FaCopy, 'host.installerFiles.copyToLocation', 'btn-outline-secondary', true],
-  ['delete', FaTrash, 'host.installerFiles.deleteEntry', 'btn-outline-danger', false],
+];
+
+const TRANSFERS = [
+  ['move', 'host.installerFiles.moveToLocation'],
+  ['copy', 'host.installerFiles.copyToLocation'],
 ];
 
 /**
- * The actions of one file row: the warning glyph on a missing file,
- * which hands the row to `ctx.files.onFetch`, then Details, Download,
- * Move to location and Copy to location, the three held while the file
- * is missing, and Delete, each handing the artifact row to
+ * The actions of one file row, the shape of a downloads file's: the
+ * warning glyph on a missing file, which hands the row to
+ * `ctx.files.onFetch`, then Download in the primary outline the shared
+ * `DownloadAction` draws and Details, then the row's More menu, the one
+ * `RowMenu`, holding Move to location and Copy to location and, under a
+ * divider, Delete in the danger tone; Download, Move and Copy are held
+ * while the file is missing, and each hands the artifact row to
  * `ctx.files.onAction`.
  */
 export const HostFileRowActions = ({ item, ctx }) => {
@@ -158,6 +168,7 @@ export const HostFileRowActions = ({ item, ctx }) => {
   const { busy, onAction, onFetch } = ctx.files;
   const missing = !item.fileExists;
   const fetchLabel = t('host.installerFiles.fetchMissing', { filename: item.name });
+  const held = needsFile => busy || (needsFile && missing);
   return (
     <span className="d-inline-flex align-items-center gap-1" data-artifact={item.id}>
       {missing ? (
@@ -173,7 +184,7 @@ export const HostFileRowActions = ({ item, ctx }) => {
           <FaTriangleExclamation aria-hidden="true" />
         </button>
       ) : null}
-      {ACTIONS.map(([action, Icon, labelKey, tone, needsFile]) => (
+      {GLYPHS.map(([action, Icon, labelKey, tone, needsFile]) => (
         <button
           key={action}
           type="button"
@@ -181,12 +192,37 @@ export const HostFileRowActions = ({ item, ctx }) => {
           title={t(labelKey)}
           aria-label={t(labelKey)}
           data-action={action}
-          disabled={busy || (needsFile && missing)}
+          disabled={held(needsFile)}
           onClick={() => onAction(action, item.artifact)}
         >
           <Icon aria-hidden="true" />
         </button>
       ))}
+      <RowMenu label={t('pages.table.more')}>
+        {TRANSFERS.map(([action, labelKey]) => (
+          <Dropdown.Item
+            key={action}
+            as="button"
+            type="button"
+            data-action={action}
+            disabled={held(true)}
+            onClick={() => onAction(action, item.artifact)}
+          >
+            {t(labelKey)}
+          </Dropdown.Item>
+        ))}
+        <Dropdown.Divider />
+        <Dropdown.Item
+          as="button"
+          type="button"
+          className="text-danger"
+          data-action="delete"
+          disabled={held(false)}
+          onClick={() => onAction('delete', item.artifact)}
+        >
+          {t('host.installerFiles.deleteEntry')}
+        </Dropdown.Item>
+      </RowMenu>
     </span>
   );
 };
@@ -208,24 +244,36 @@ HostFileRowActions.propTypes = {
 };
 
 /**
- * The body of one file's card: the drawn columns as record rows, the
- * value each cell would have drawn.
+ * The chips of one file's card, the status badge with its tooltip the
+ * Status column draws.
+ */
+const HostFileChips = ({ item, ctx }) => statusBadge(item, ctx);
+
+HostFileChips.propTypes = {
+  item: PropTypes.object.isRequired,
+  ctx: PropTypes.object.isRequired,
+};
+
+const WORDS = ['kind', 'platform', 'architecture'];
+
+/**
+ * The foot line of one file's card, in the foot line's place and look of
+ * every other card: the kind, platform and architecture as closed-list
+ * words, the size, the version and the storage location, each only while
+ * the file carries it, joined by a middle dot.
  */
 const HostFileCardBody = ({ item, ctx }) => {
-  const { t } = useTranslation();
-  const columns = drawnColumns(HOST_FILE_COLUMNS, [item], ctx).filter(
-    column => column.key !== 'name'
-  );
-  return (
-    <RecordRows
-      className="mb-0"
-      rows={columns.map(column => ({
-        key: column.key,
-        label: t(column.labelKey),
-        value: column.render ? column.render(item, ctx) : column.value(item, ctx),
-      }))}
-    />
-  );
+  const facts = [
+    ...WORDS.filter(group => item[group]).map(group => listWord(ctx.t, group, item[group])),
+    item.fileSize ? ctx.formatFileSize(item.fileSize) : '',
+    item.version,
+    item.location,
+  ].filter(Boolean);
+  return facts.length > 0 ? (
+    <div className="d-flex align-items-center gap-3 small text-body-secondary">
+      <span>{facts.join(' · ')}</span>
+    </div>
+  ) : null;
 };
 
 HostFileCardBody.propTypes = {
@@ -270,7 +318,8 @@ const HOST_FILE_BULK = [
  * person groups otherwise, the product, organization, kind, location
  * and status groups, the table by default and cards as the toggle, no
  * item pages and no watches, Delete selected the one bulk action through
- * the adapter's `bulk`, and the row actions over `ctx.files`.
+ * the adapter's `bulk`, the row actions over `ctx.files`, and each card
+ * the status badge as its chip and the file's facts as its foot line.
  *
  * @param {Object} options - What differs per host
  * @param {Object} options.adapter - The adapter of `hostFilesAdapter`
@@ -303,6 +352,7 @@ export const hostFilesCollection = ({ adapter }) => ({
   bulk: { items: HOST_FILE_BULK },
   slots: {
     RowActions: HostFileRowActions,
+    ItemChips: HostFileChips,
     CardBody: HostFileCardBody,
     BulkDialog: HostFileBulkDialog,
   },

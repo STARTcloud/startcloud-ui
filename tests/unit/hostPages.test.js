@@ -5,6 +5,7 @@ import {
   hostPageOf,
   hostPagePath,
   hostPagesFor,
+  sectionOffered,
 } from '../../src/features/hosts/pages.js';
 
 const rowOf = (features, hypervisors = [], config = undefined) => ({
@@ -249,6 +250,13 @@ describe('hostPagesFor', () => {
         to: '/hosts/1/agent/config/machines',
       }),
     ]);
+  });
+
+  it('draws no row for the db configuration file, the Database row its one door, and still offers its page', () => {
+    const row = rowOf([], ['virtualbox'], ['app', 'db']);
+    expect(pagesOf(row, 1).agent).toEqual(['config:app', 'api-keys', 'database', 'update']);
+    expect(sectionOffered('config', row, 'db')).toBe(true);
+    expect(sectionOffered('config', row, 'mail')).toBe(false);
   });
 
   it('answers each row with its route, its label key and whether its route is exact', () => {

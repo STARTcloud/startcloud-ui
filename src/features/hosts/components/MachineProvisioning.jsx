@@ -35,8 +35,6 @@ import { TERMINAL_TASK_STATUSES, formatTaskDate } from '../utils/tasks';
 import ProvisioningEditor from './ProvisioningEditor';
 import TaskDialog from './TaskDialog';
 
-const HOOK_KEYWORD = 'provision';
-
 const provisionerRows = (document, t) =>
   document.provisioner_name || document.provisioner_version
     ? [
@@ -141,7 +139,7 @@ const useProvisionStatus = ({ status, id, name, offered }) => {
  * `syncback` or `/run-provisioners`, one notice reporting the queued
  * task with View task where the host lists `tasks`, a 200 no-op that
  * skipped everything reported as a warning, and the host-hooks refusal,
- * the 409 with `needs_confirmation`, asking the typed confirmation
+ * the 409 with `needs_confirmation`, asking a plain confirmation
  * before the same request goes again with `confirm_host_hooks`. On a
  * machine whose status reads `provisioned`, for a person the pipeline
  * rows are offered to, the editor's play glyphs send the same
@@ -340,7 +338,7 @@ const MachineProvisioning = ({ id, name, context, title, actions = null }) => {
         title={t('provisioning.machineProvisioning.hookConfirmTitle')}
         message={`${hookReason} ${t('provisioning.machineProvisioning.hookConfirmSuffix')}`}
         variant="restart"
-        keyword={HOOK_KEYWORD}
+        typed={false}
         confirmText={t('provisioning.machineProvisioning.confirmAndProvision')}
       />
       {task ? <TaskDialog status={status} id={id} task={task} onHide={closeTask} /> : null}

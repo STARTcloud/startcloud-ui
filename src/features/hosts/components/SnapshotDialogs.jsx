@@ -154,10 +154,10 @@ FormDialogs.propTypes = {
 /**
  * The dialogs of a machine's snapshots, each opened by `open`, the kind
  * and the snapshot it is for: the take, the edit and the template made
- * of a snapshot as form dialogs; the restore, the restore that starts
- * the machine after it and the delete behind the typed confirmation,
- * each with hyperweaver-ui's own title, sentence and button and the word
- * of its own to type, `restore` or `delete`; and the holds as a list
+ * of a snapshot as form dialogs; the restore and the restore that starts
+ * the machine after it behind a plain confirmation and the delete behind
+ * the typed confirmation, its word `delete`, each with hyperweaver-ui's
+ * own title, sentence and button; and the holds as a list
  * dialog, the snapshots read again as it closes. On a host whose restore
  * is a rollback, `gates.rollback`, the confirmation of a restore says
  * under its sentence that every snapshot taken after the one restored is
@@ -234,7 +234,8 @@ const SnapshotDialogs = ({ id, name, open, gates, running, tools, onClose, onHol
             ''
           )
         }
-        keyword={confirming ? t(CONFIRM_WORDS[open.kind]).toLowerCase() : ''}
+        typed={open.kind === 'delete'}
+        keyword={open.kind === 'delete' ? t(CONFIRM_WORDS.delete).toLowerCase() : ''}
         confirmText={confirming ? t(CONFIRM_ACTIONS[open.kind]) : ''}
       />
       {tools.task ? (

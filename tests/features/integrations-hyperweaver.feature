@@ -73,12 +73,12 @@ Feature: integrations hyperweaver
     And the host was sent PATCH to "/api/user/integrations/hyperweaver" 1 times
     And the host was sent GET to "/api/user" 4 times
 
-  Scenario: Hyperweaver: Disconnect waits behind the confirmation and sends the DELETE
+  Scenario: Hyperweaver: Disconnect waits behind a plain confirmation and sends the DELETE
     When I open "/user/profile/preferences"
     Then the Hyperweaver card draws
     When I press the Hyperweaver card's "disconnect" action
     Then the host was not sent DELETE to "/api/user/integrations/hyperweaver"
-    When I confirm the open dialog
+    When I confirm the open plain dialog
     Then the host was sent DELETE to "/api/user/integrations/hyperweaver" 1 times
     And the host was sent GET to "/api/user" 4 times
 

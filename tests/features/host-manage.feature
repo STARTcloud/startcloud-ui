@@ -280,7 +280,7 @@ Feature: host-manage
     And the host was sent GET to "/api/agents/3/system/rbac/profiles" 1 times
     And the host was sent GET to "/api/agents/3/system/rbac/roles" 1 times
 
-  Scenario: Time: the time synchronization status, the peers over the one table, a sync and a switch each behind the typed confirmation
+  Scenario: Time: the time synchronization status, the peers over the one table, a sync and a switch each behind a plain confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -293,15 +293,15 @@ Feature: host-manage
     And the section page's "time-switch-ntp" action is held
     And the section page's "time-switch-ntpsec" action is held
     When I press the section page's "time-sync" action
-    And I confirm the open dialog with "sync"
+    And I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/3/system/time-sync/sync" 1 times
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/system/time-sync/status" 2 times
     When I press the section page's "time-switch-chrony" action
-    And I confirm the open dialog with "switch"
+    And I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/3/system/time-sync/switch" carrying "target_system" as "chrony"
 
-  Scenario: Time: the time synchronization configuration, a server added to the text and the save behind the typed confirmation
+  Scenario: Time: the time synchronization configuration, a server added to the text and the save behind a plain confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -315,11 +315,11 @@ Feature: host-manage
     And I press the section page's "time-add-server" action
     Then the section page notes "unsaved"
     When I press the section page's "time-save" action
-    And I confirm the open dialog with "save"
+    And I confirm the open plain dialog
     Then the host was sent PUT to "/api/agents/3/system/time-sync/config" carrying "backup_existing" as "false"
     And the host was sent GET to "/api/agents/3/system/time-sync/config" 2 times
 
-  Scenario: Time: the time zone chosen among the ones the host answered and changed behind the typed confirmation
+  Scenario: Time: the time zone chosen among the ones the host answered and changed behind a plain confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -330,11 +330,11 @@ Feature: host-manage
     When I choose "Europe/Berlin" in the section field "timezone-select"
     Then the section page notes "timezone-selected"
     When I press the section page's "timezone-change" action
-    And I confirm the open dialog with "timezone"
+    And I confirm the open plain dialog
     Then the host was sent PUT to "/api/agents/3/system/timezone" carrying "timezone" as "Europe/Berlin"
     And the host was sent GET to "/api/agents/3/system/timezone" 2 times
 
-  Scenario: Updates: the system updates, the check drawn with Install behind the typed confirmation and the history over the one table
+  Scenario: Updates: the system updates, the check drawn with Install behind a plain confirmation and the history over the one table
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -345,7 +345,7 @@ Feature: host-manage
     And the section page notes no "disk-space"
     And the host was sent GET to "/api/agents/3/system/updates/check" 1 times
     When I press the section page's "updates-install" action
-    And I confirm the open dialog with "install"
+    And I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/3/system/updates/install" 1 times
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/system/updates/check" 2 times
@@ -400,7 +400,7 @@ Feature: host-manage
     And the host was sent GET to "/api/agents/3/machines/orchestration/status" 2 times
     And the section page's "orchestration-apply" action is held
 
-  Scenario: System: the runlevel behind runlevel, a change a queued task behind the typed confirmation
+  Scenario: System: the runlevel behind runlevel, a change a queued task behind a plain confirmation
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -410,12 +410,12 @@ Feature: host-manage
     And the section page's "runlevel-change" action is held
     When I choose "s" in the section field "runlevel-select"
     And I press the section page's "runlevel-change" action
-    And I confirm the open dialog with "runlevel"
+    And I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/3/system/host/runlevel" carrying "runlevel" as "s"
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/system/host/runlevel" 2 times
     When I press the section page's "runlevel-single" action
-    And I confirm the open dialog with "runlevel"
+    And I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/3/system/host/single-user" carrying "confirm" as "true"
 
   Scenario: System: Refresh reads again the list of servers, the host's stats and every read of the page, the other pages' reads untouched

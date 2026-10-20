@@ -152,27 +152,23 @@ AppActions.propTypes = {
   onRevoke: PropTypes.func.isRequired,
 };
 
-const confirmationsFor = (t, applications) => {
-  const keyword = t('pages.confirm.keyword');
-  return {
-    revoke: app => ({
-      title: t('applications.revoke'),
-      message: t('applications.revokeBody', {
-        app: nameOf(app),
-        count: app.active_sessions || 0,
-        keyword,
-      }),
-      call: () => applications.revoke(app.client_id),
-      reason: t('applications.revokeReason', { app: nameOf(app) }),
+const confirmationsFor = (t, applications) => ({
+  revoke: app => ({
+    title: t('applications.revoke'),
+    message: t('applications.revokeBody', {
+      app: nameOf(app),
+      count: app.active_sessions || 0,
     }),
-    scope: (app, scope) => ({
-      title: t('applications.removeScope', { scope }),
-      message: t('applications.removeScopeBody', { scope, app: nameOf(app), keyword }),
-      call: () => applications.removeScope(app.client_id, scope),
-      reason: '',
-    }),
-  };
-};
+    call: () => applications.revoke(app.client_id),
+    reason: t('applications.revokeReason', { app: nameOf(app) }),
+  }),
+  scope: (app, scope) => ({
+    title: t('applications.removeScope', { scope }),
+    message: t('applications.removeScopeBody', { scope, app: nameOf(app) }),
+    call: () => applications.removeScope(app.client_id, scope),
+    reason: '',
+  }),
+});
 
 /**
  * The Applications page of the identity contract at `/user/applications`,
@@ -180,7 +176,7 @@ const confirmationsFor = (t, applications) => {
  * estate the person authorized (icon, name, the active-session and
  * unregistered badges, first and last use, the permission chips each with
  * a remove control and none on `openid`, a Sessions link to the profile's
- * Sessions route and Revoke access behind a confirm that names the
+ * Sessions route and Revoke access behind a plain confirm that names the
  * sessions it ends); every stepped-up call goes through the step-up
  * dialog; the navbar search is bound with a query over the applications
  * by name.
@@ -276,6 +272,7 @@ const ApplicationsPage = ({ applications, stepUp, user = null }) => {
         handleConfirm={confirmPending}
         title={pending?.title || ''}
         message={pending?.message || ''}
+        typed={false}
       />
       {dialog}
     </div>

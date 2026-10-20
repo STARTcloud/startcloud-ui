@@ -148,7 +148,7 @@ Feature: agent-profile
     When I open "/certs"
     And I click "Add New"
     And I drop "vault.certs.json" into the vault
-    Then the vault lists 2 rows
+    Then the vault lists 7 rows
     And the host was not sent POST to "/api/certs"
     When I open "/profile/preferences"
     Then the certs control "certs-sync/hyperweaver-server" is not checked
@@ -182,7 +182,7 @@ Feature: agent-profile
     When I press the page's "save-certs-preferences" action
     Then I see "Sync settings saved."
 
-  Scenario: Agent profile: on an agent that lists certs-store, the Secrets page's Pick secret from the Vault store writes the picked record to the host's store as one POST under no organization and closes
+  Scenario: Agent profile: on an agent that lists certs-store, the Secrets page lists the Vault's records beside the host's rows with an H and a V column, and the empty H mark of a Vault row writes it to the host's store as one POST under no organization
     Given the host answers the agent-signins fixture
     And the host answers the agent-profile-plain fixture
     And the host answers the agent-profile-certs fixture
@@ -195,11 +195,29 @@ Feature: agent-profile
     And the host was not sent POST to "/api/certs"
     When I open "/hosts/self/agent/secrets"
     Then the section page "secrets" draws
-    When I press the agent page's "secret-pick" action
-    Then the "pick-secret" dialog is open
-    When I choose "vault" in the control "pick-secret-store"
-    And I press "secret-pick-row" on the row "Local leaf" of the dialog table "secret-pick"
+    And the agent page offers no "secret-pick"
+    And the "secrets" table of the section page lists 2 rows
+    And the secrets table heads the store "hyperweaver-agent" with "H"
+    And the secrets table heads the store "vault" with "V"
+    And the secret row "Local leaf" marks the store "hyperweaver-agent" as "none"
+    And the secret row "Local leaf" marks the store "vault" as "equal"
+    When I press the store mark "hyperweaver-agent" of the secret row "Local leaf"
     Then the host was sent POST to "/api/certs" carrying "kind" as "certificate"
     And the host was sent POST to "/api/certs" carrying "organization" as ""
     And the host was sent POST to "/api/certs" 1 times
-    And the "pick-secret" dialog is closed
+
+  Scenario: Agent profile: Sync now on the Secrets page writes every Vault record the host's answer lacks to the host's store, its sync on by default, beside the Last synced line
+    Given the host answers the agent-signins fixture
+    And the host answers the agent-profile-plain fixture
+    And the host answers the agent-profile-certs fixture
+    And the browser holds "apikey" as "{\"id\":12,\"name\":\"Mark\",\"role\":\"admin\"}"
+    When I open "/certs"
+    And I click "Add New"
+    And I drop "vault.certs.json" into the vault
+    Then the vault lists 2 rows
+    And the host was sent POST to "/api/certs" 2 times
+    When I open "/hosts/self/agent/secrets"
+    Then the agent page notes "last-synced"
+    And the secret row "Local leaf" marks the store "hyperweaver-agent" as "none"
+    When I press the agent page's "sync-now" action
+    Then the host was sent POST to "/api/certs" 4 times

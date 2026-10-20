@@ -47,7 +47,7 @@ import { arrivalPath } from '../../utils/searchRow';
 import { MACHINE_PAGES } from './machinePages';
 import { hostHasSettings } from './utils/agentSettings';
 import { hostHasFeature } from './utils/capabilities';
-import { configNamesOf } from './utils/configNodes';
+import { DB_CONFIG, configNamesOf } from './utils/configNodes';
 import { machineNoun } from './utils/hosts';
 import { machineRoute, nounKeyOf } from './utils/machines';
 import { MANAGE_SECTIONS, sectionOffered as manageSectionOffered } from './utils/manage';
@@ -88,14 +88,18 @@ const anySection = sectionKeys => {
 
 const settings = gate(['hypervisors'], hostHasSettings);
 
+const configPage = name => ({
+  key: `config:${name}`,
+  segment: `agent/config/${encodeURIComponent(name)}`,
+  icon: FaSliders,
+  label: name,
+  ...always,
+});
+
 const configPages = server =>
-  configNamesOf(server).map(name => ({
-    key: `config:${name}`,
-    segment: `agent/config/${encodeURIComponent(name)}`,
-    icon: FaSliders,
-    label: name,
-    ...always,
-  }));
+  configNamesOf(server)
+    .filter(name => name !== DB_CONFIG)
+    .map(configPage);
 
 /**
  * The pages of a host, in groups of `{ key, labelKey(server), icon, flat?,
@@ -533,11 +537,11 @@ export const hostPageOf = (pathname, server) => {
 
 const PAGE_KEYS = { files: 'file-manager' };
 
-const pageKeyOf = (sectionKey, name) =>
-  sectionKey === 'config' ? `config:${name}` : PAGE_KEYS[sectionKey] || sectionKey;
-
 /**
- * The group and the page of `HOST_PAGES` a section page draws.
+ * The group and the page of `HOST_PAGES` a section page draws, the
+ * `config` section's page one for every file of the row's
+ * `capabilities.config`, the `db` file's among them though the column
+ * draws no row for it.
  *
  * @param {string} sectionKey - The section's key
  * @param {Object|null} server - The registry row, or the one serving agent's
@@ -545,14 +549,16 @@ const pageKeyOf = (sectionKey, name) =>
  * @returns {{ group: Object|null, page: Object|null }} The group and the page, `page` null for a file the row does not name
  */
 export const pageEntryOf = (sectionKey, server, name = '') => {
-  const pageKey = pageKeyOf(sectionKey, name);
-  const agent = sectionKey === 'config';
+  if (sectionKey === 'config') {
+    return {
+      group: HOST_PAGES.find(candidate => candidate.key === 'agent') || null,
+      page: configNamesOf(server).includes(name) ? configPage(name) : null,
+    };
+  }
+  const pageKey = PAGE_KEYS[sectionKey] || sectionKey;
   const group =
-    HOST_PAGES.find(candidate =>
-      agent
-        ? candidate.key === 'agent'
-        : pagesOf(candidate, server).some(page => page.key === pageKey)
-    ) || null;
+    HOST_PAGES.find(candidate => pagesOf(candidate, server).some(page => page.key === pageKey)) ||
+    null;
   const page = group ? pagesOf(group, server).find(entry => entry.key === pageKey) || null : null;
   return { group, page };
 };

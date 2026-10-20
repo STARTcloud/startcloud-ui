@@ -270,6 +270,51 @@ When('I pull the shared row {string}', async ({ page }, text) => {
   await sharedRow(page, text).locator('[data-action="pull"]').click();
 });
 
+const markIn = (row, store) => row.locator(`[data-action="sync-mark"][data-store="${store}"]`);
+
+When("I pick {string} in the certs page's Actions menu", async ({ page }, action) => {
+  await actionOf(page, 'secrets-actions').click();
+  await openMenu(page).locator(`[data-action="${action}"]`).click();
+});
+
+Then(
+  'the vault row {string} marks the store {string} as {string}',
+  async ({ page }, text, store, state) => {
+    await expect(markIn(vaultRow(page, text), store)).toHaveAttribute('data-sync-state', state);
+  }
+);
+
+Then(
+  'the shared row {string} marks the store {string} as {string}',
+  async ({ page }, text, store, state) => {
+    await expect(markIn(sharedRow(page, text), store)).toHaveAttribute('data-sync-state', state);
+  }
+);
+
+When(
+  'I open the menu of the store mark {string} of the shared row {string}',
+  async ({ page }, store, text) => {
+    await markIn(sharedRow(page, text), store).click({ button: 'right' });
+  }
+);
+
+Then('the shared table heads the store {string} with {string}', async ({ page }, store, letter) => {
+  await expect(sharedTable(page).locator(`thead th.col-sync-${store}`)).toContainText(letter);
+});
+
+Then('the vault table draws the store column {string}', async ({ page }, store) => {
+  await expect(page.locator(`[data-page="certs-vault"] thead th.col-sync-${store}`)).toHaveCount(1);
+});
+
+Then('the vault table draws no store column {string}', async ({ page }, store) => {
+  await expect(page.locator('[data-page="certs-vault"] thead th.col-name')).toHaveCount(1);
+  await expect(page.locator(`[data-page="certs-vault"] thead th.col-sync-${store}`)).toHaveCount(0);
+});
+
+Then('the vault row {string} offers {string}', async ({ page }, text, label) => {
+  await expect(vaultRow(page, text).locator('[data-action="pull"]')).toHaveText(label);
+});
+
 When('I pick {string} in the {string} menu', async ({ page }, action, menu) => {
   await menuToggle(page, menu).click();
   await openMenu(page).locator(`[data-action="${action}"]`).click();

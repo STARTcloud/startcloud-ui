@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { Suspense, lazy, useState } from 'react';
+import { InputGroup } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import {
   FaArrowsRotate,
@@ -12,6 +13,7 @@ import {
 } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
+import PickMenu from '../../../components/common/PickMenu';
 import RecordRows from '../../../components/common/RecordRows';
 import { boxDiskSizeOf, boxOptionsOf } from '../utils/machineCreate';
 import { agentDefaultLabel, zfsDatasetOptions, zfsPoolOptions } from '../utils/machineHelpers';
@@ -105,23 +107,18 @@ const SettingInput = ({
   placeholder,
   required = false,
   disabled = false,
-  list,
   min,
   max,
   mark = null,
   feedback = null,
-}) => (
-  <div className="col-12 col-md-4">
-    <label className="form-label" htmlFor={id}>
-      {label}
-      {mark}
-    </label>
+  trailing = null,
+}) => {
+  const input = (
     <input
       id={id}
       className={feedback ? 'form-control is-invalid' : 'form-control'}
       type={type}
       placeholder={placeholder}
-      list={list}
       min={min}
       max={max}
       value={value ?? ''}
@@ -129,9 +126,28 @@ const SettingInput = ({
       disabled={disabled}
       required={required}
     />
-    {feedback}
-  </div>
-);
+  );
+  return (
+    <div className="col-12 col-md-4">
+      <label className="form-label" htmlFor={id}>
+        {label}
+        {mark}
+      </label>
+      {trailing ? (
+        <InputGroup hasValidation={Boolean(feedback)}>
+          {input}
+          {trailing}
+          {feedback}
+        </InputGroup>
+      ) : (
+        <>
+          {input}
+          {feedback}
+        </>
+      )}
+    </div>
+  );
+};
 
 SettingInput.propTypes = {
   id: PropTypes.string.isRequired,
@@ -142,11 +158,11 @@ SettingInput.propTypes = {
   placeholder: PropTypes.string,
   required: PropTypes.bool,
   disabled: PropTypes.bool,
-  list: PropTypes.string,
   min: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   max: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   mark: PropTypes.node,
   feedback: PropTypes.node,
+  trailing: PropTypes.node,
 };
 
 const Switch = ({ id, labelKey, checked, disabled, onChange, small = false }) => {
@@ -245,19 +261,32 @@ const domainShape = PropTypes.shape({
   configRoute: PropTypes.string,
 });
 
-const DOMAIN_LIST = 'machine-setting-domain-list';
-
 /**
  * The Edit parts fold of the General step: the server id, the hostname
- * and the domain, the domain input offering every domain of the chain
- * in the chain's order as its list, each labelled by its source; the fold opens itself while a bare
- * name has no domain to take, the domain input then invalid with the
- * sentence that says so and, where the host's `machines` configuration
- * has a route, the link to it.
+ * and the domain, the domain input free to type with the button inside
+ * it of `PickMenu` listing every domain of the chain in the chain's
+ * order, each labelled by its source, a pick filling the input as typing
+ * does; the fold opens itself while a bare name has no domain to take,
+ * the domain input then invalid with the sentence that says so and,
+ * where the host's `machines` configuration has a route, the link to it.
  */
 const NameParts = ({ settings, setSetting, onPartChange, domain, marks, loading }) => {
   const { t } = useTranslation();
   const [opened, setOpened] = useState(false);
+  const pick = (
+    <PickMenu
+      rows={domain.choices.map(row => ({
+        value: row.domain,
+        label: t(`machineEdit.createWizardSteps.domainSource.${row.source}`),
+        source: row.source,
+      }))}
+      onPick={next => onPartChange('domain', next)}
+      action="pick-domain"
+      label={t('machineEdit.createWizardSteps.pickDomain')}
+      list="domain-chain"
+      disabled={loading}
+    />
+  );
   return (
     <details
       data-fold="name-parts"
@@ -289,19 +318,9 @@ const NameParts = ({ settings, setSetting, onPartChange, domain, marks, loading 
           onChange={event => onPartChange('domain', event.target.value)}
           required
           disabled={loading}
-          list={DOMAIN_LIST}
           feedback={domain.missing ? <NoDomainFeedback configRoute={domain.configRoute} /> : null}
+          trailing={pick}
         />
-        <datalist id={DOMAIN_LIST}>
-          {domain.choices.map(row => (
-            <option
-              key={row.source}
-              value={row.domain}
-              label={t(`machineEdit.createWizardSteps.domainSource.${row.source}`)}
-              data-source={row.source}
-            />
-          ))}
-        </datalist>
       </div>
     </details>
   );
@@ -447,10 +466,10 @@ ProvisionerPick.propTypes = {
  * The General step: one Name, a dotted name split at its first dot and a
  * bare name taking the default domain the sources resolve, the computed
  * `server id--hostname.domain` line, the Edit parts fold over the server
- * id, the hostname, the domain and its source, the Override switch, the
- * tags, the owning organization on the server role, the provisioner pick
- * of `ProvisionerPick`, and under Advanced the notes and the boot
- * priority.
+ * id, the hostname and the domain with its pick of the chain, the
+ * Override switch, the tags, the owning organization on the server
+ * role, the provisioner pick of `ProvisionerPick`, and under Advanced
+ * the notes and the boot priority.
  */
 export const GeneralStep = ({
   nameText,

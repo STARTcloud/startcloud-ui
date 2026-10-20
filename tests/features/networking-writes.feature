@@ -294,6 +294,30 @@ Feature: networking writes
     And the host was sent GET to "/api/agents/3/monitoring/network/ipaddresses" 1 times
     And the host was sent GET to "/api/agents/3/network/addresses" 1 times
 
+  Scenario: Addresses: the create dialog closes at once while untouched and asks before a backdrop click closes it after a change, Keep editing keeps the address and Discard closes it
+    Given the host answers the hosts fixture
+    And the host answers the hosts-overview fixture
+    And the host answers the hosts-networking fixture
+    And the host answers the hosts-networking-writes fixture
+    And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
+    When I open "/hosts/3/network/addresses"
+    And I press the "addresses" section's "create-address" tool
+    Then the "address-create" dialog is open
+    When I click the backdrop of the open dialog
+    Then no dialog is open
+    When I press the "addresses" section's "create-address" tool
+    And I type "10.0.0.50" into the field "address-input"
+    And I click the backdrop of the open dialog
+    Then the "discard-changes" dialog is open
+    When I press the open dialog's "keep-editing" action
+    Then the "discard-changes" dialog is closed
+    And the "address-create" dialog is open
+    And the field "address-input" reads "10.0.0.50"
+    When I click the backdrop of the open dialog
+    And I press the open dialog's "discard" action
+    Then no dialog is open
+    And the host was not sent POST to "/api/agents/3/network/addresses"
+
   Scenario: Addresses: on a VirtualBox host the disable of an address is behind its own plain confirmation and the delete of one of several under one object names the bare address
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture

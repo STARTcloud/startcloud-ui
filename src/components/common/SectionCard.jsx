@@ -19,7 +19,8 @@ const stop = event => event.stopPropagation();
  * folds the card except its action controls, the body collapsing under
  * it, open by default, `folded` and `onFold` the page's own state kept in
  * its prefs object under `folds` (identity contract decision 117), the
- * chevron's tooltip `foldTitle` where a page names one;
+ * chevron's tooltip `foldTitle` where a page names one; without `onFold`
+ * the card draws its heading with no chevron and never folds;
  * `tone="danger"` draws the border and the header in the danger colours.
  */
 const SectionCard = ({
@@ -31,7 +32,7 @@ const SectionCard = ({
   sectionRef = undefined,
   className = 'mb-3',
   folded = false,
-  onFold,
+  onFold = null,
   foldTitle = '',
   children,
 }) => {
@@ -45,7 +46,7 @@ const SectionCard = ({
         className={`card-header section-card-head d-flex align-items-center gap-2${
           tone ? ` bg-${tone}-subtle text-${tone}` : ''
         }`}
-        onClick={onFold}
+        onClick={onFold ?? undefined}
       >
         <h5 className="mb-0 section-card-title">{title}</h5>
         {badge}
@@ -58,20 +59,22 @@ const SectionCard = ({
             {actions}
           </span>
         ) : null}
-        <button
-          type="button"
-          className={`btn btn-link btn-sm p-0 text-reset section-card-chevron${
-            folded ? ' folded' : ''
-          }${actions ? '' : ' ms-auto'}`}
-          aria-expanded={!folded}
-          aria-controls={bodyId}
-          aria-label={chevronTitle}
-          title={chevronTitle}
-        >
-          <FaChevronDown aria-hidden />
-        </button>
+        {onFold ? (
+          <button
+            type="button"
+            className={`btn btn-link btn-sm p-0 text-reset section-card-chevron${
+              folded ? ' folded' : ''
+            }${actions ? '' : ' ms-auto'}`}
+            aria-expanded={!folded}
+            aria-controls={bodyId}
+            aria-label={chevronTitle}
+            title={chevronTitle}
+          >
+            <FaChevronDown aria-hidden />
+          </button>
+        ) : null}
       </div>
-      <Collapse in={!folded}>
+      <Collapse in={!onFold || !folded}>
         <div className="card-body" id={bodyId}>
           {children}
         </div>
@@ -89,7 +92,7 @@ SectionCard.propTypes = {
   sectionRef: PropTypes.shape({ current: PropTypes.any }),
   className: PropTypes.string,
   folded: PropTypes.bool,
-  onFold: PropTypes.func.isRequired,
+  onFold: PropTypes.func,
   foldTitle: PropTypes.string,
   children: PropTypes.node.isRequired,
 };

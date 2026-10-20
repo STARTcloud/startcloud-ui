@@ -132,7 +132,7 @@ const noticesFor = (profile, t) => {
  * The Linked accounts section of the Security page, from
  * `GET /api/user/linked-accounts`: the federated providers the person
  * signed in with (the provider icon, the name, "Linked as", the last use,
- * the live status badge, Unlink behind a confirm and stepped up), the
+ * the live status badge, Unlink behind a plain confirm and stepped up), the
  * providers the site still offers with Link account, which posts the link
  * route stepped up and follows its `next`, and the set-a-password and
  * two-factor notices beside them.
@@ -253,8 +253,8 @@ const LinkedAccountsSection = ({ account, profile, guard, onSaved, folds }) => {
         title={t('profile.security.linked.unlink')}
         message={t('profile.security.linked.unlinkBody', {
           provider: pending?.provider_name || '',
-          keyword: t('pages.confirm.keyword'),
         })}
+        typed={false}
       />
     </SectionCard>
   );

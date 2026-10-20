@@ -226,17 +226,27 @@ const storeRow = ({ id, kind, name, profile, record, createdBy, at }) => ({
 });
 
 const seededStore = () =>
-  STORE_SEEDS.map(([kind, name, profile, secret, extra], index) =>
-    storeRow({
-      id: `sec-${String(index + 1).padStart(4, '0')}`,
+  STORE_SEEDS.map(([kind, name, profile, secret, extra], index) => {
+    const at = ago(DAY_MINUTES * (index + 2));
+    const serial = String(index + 1).padStart(4, '0');
+    return storeRow({
+      id: `sec-${serial}`,
       kind,
       name,
       profile,
-      record: { secret, extra },
+      record: {
+        id: `rec-seed-${serial}`,
+        secret,
+        extra,
+        tags: [],
+        notes: '',
+        updated_at: at,
+        sync: index === 0 ? { vault: false } : {},
+      },
       createdBy: 'system',
-      at: ago(DAY_MINUTES * (index + 2)),
-    })
-  );
+      at,
+    });
+  });
 
 const stateOf = host => {
   if (!states.has(host.id)) {
@@ -635,7 +645,9 @@ const codeExchange = ctx => {
  * carrying the 0.2.0 release's notes as markdown and its five assets, and
  * its apply, a queued task, the host's own store behind `certs-store`,
  * `GET certs` narrowed by `kind`, seeded with rows of every secret kind
- * under their profiles, `POST certs`, `PUT certs/{id}` and
+ * under their profiles, each record carrying its stable id and its own
+ * `sync` map, the first turning the Vault off, its record kept as sent
+ * on every write, `POST certs`, `PUT certs/{id}` and
  * `DELETE certs/{id}` kept at once, and the API
  * keys with their generate, bootstrap and delete;
  * and on the `hyperweaver-agent` role the six sign-in paths of its

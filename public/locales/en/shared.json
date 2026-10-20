@@ -544,7 +544,7 @@
           "unknown": "Unknown"
         },
         "unlink": "Unlink",
-        "unlinkBody": "Unlink {{provider}} from your account. Type \"{{keyword}}\" to confirm.",
+        "unlinkBody": "Unlink {{provider}} from your account?",
         "unlinkReason": "Unlinking {{provider}} changes how you sign in.",
         "unlinked": "Account unlinked.",
         "available": "Available providers",
@@ -773,7 +773,7 @@
       "signOutReason": "Signing out a session changes how you are signed in.",
       "signedOut": "Session signed out.",
       "revokeAll": "Revoke all sessions, this browser included",
-      "revokeAllBody": "Every session is signed out, this browser included, and you will need to sign in again. Type \"{{keyword}}\" to confirm.",
+      "revokeAllBody": "Every session is signed out, this browser included, and you will need to sign in again.",
       "revokeAllReason": "Revoking every session ends how you are signed in.",
       "revokedAll": "Every session was signed out.",
       "current": "This session",
@@ -932,6 +932,7 @@
         "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
         "confirmTitle": "Confirm the bulk action",
         "confirmBody": "{{action}} for {{count}} selected accounts. Type \"{{keyword}}\" to confirm.",
+        "confirmPlainBody": "{{action}} for {{count}} selected accounts.",
         "stepUpReason": "Deleting accounts ends how those people sign in.",
         "setCustomerId": "Set customer id",
         "setPrimaryOrganization": "Set primary organization",
@@ -1002,6 +1003,7 @@
         "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
         "confirmTitle": "Confirm the bulk action",
         "confirmBody": "{{action}} for {{count}} selected organizations. Type \"{{keyword}}\" to confirm.",
+        "confirmPlainBody": "{{action}} for {{count}} selected organizations.",
         "stepUpReason": "Deleting organizations cannot be undone.",
         "setCustomerId": "Set customer id",
         "errors": {
@@ -1045,7 +1047,7 @@
           "selected": "{{count}} selected",
           "clearSelection": "Clear selection",
           "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
-          "confirmBody": "{{count}} selected sessions are revoked. Type \"{{keyword}}\" to confirm.",
+          "confirmBody": "{{count}} selected sessions are revoked.",
           "stepUpReason": "Revoking sessions signs those people out at once.",
           "errors": {
             "not_found": "no longer exists"
@@ -1198,13 +1200,13 @@
       "unblockTitle": "Unblock the address",
       "unblockBody": "{{ip}} may sign in again at once.",
       "unblockAllTitle": "Unblock every address",
-      "unblockAllBody": "{{count}} addresses may sign in again at once. Type \"{{keyword}}\" to confirm.",
+      "unblockAllBody": "{{count}} addresses may sign in again at once.",
       "bulk": {
         "selected": "{{count}} selected",
         "clearSelection": "Clear selection",
         "result": "Processed {{processed}}, skipped {{skipped}}, errors {{errors}}.",
         "confirmTitle": "Unblock the selection",
-        "confirmBody": "{{count}} selected addresses may sign in again at once. Type \"{{keyword}}\" to confirm.",
+        "confirmBody": "{{count}} selected addresses may sign in again at once.",
         "errors": {
           "not_blocked": "not currently blocked"
         }
@@ -1408,7 +1410,7 @@
       "uploaded": "Uploaded to {{path}}.",
       "testPassed": "The test passed.",
       "runStarted": "Started.",
-      "runConfirm": "Run {{title}} now. Type \"{{keyword}}\" to confirm."
+      "runPlainMessage": "Run {{title}} now?"
     },
     "restart": {
       "heading": "Restart required.",
@@ -1578,7 +1580,7 @@
     "deleteBody": "{{name}} and its memberships are deleted. Type \"{{keyword}}\" to confirm.",
     "deleted": "Organization deleted.",
     "leave": "Leave",
-    "leaveBody": "You leave {{name}} and lose access to it. Type \"{{keyword}}\" to confirm.",
+    "leaveBody": "You leave {{name}} and lose access to it.",
     "left": "You left the organization.",
     "managedBy": "managed by {{source}}",
     "lastOwner": "The last owner cannot change their own role",
@@ -4257,10 +4259,10 @@
     "permissions": "Permissions:",
     "requiredScope": "Required to sign in",
     "removeScope": "Remove {{scope}} permission",
-    "removeScopeBody": "Remove the {{scope}} permission from {{app}}. Type \"{{keyword}}\" to confirm.",
+    "removeScopeBody": "Remove the {{scope}} permission from {{app}}?",
     "sessions": "Sessions",
     "revoke": "Revoke access",
-    "revokeBody": "Revoke {{app}}'s access to your account; its {{count}} active sessions end. Type \"{{keyword}}\" to confirm.",
+    "revokeBody": "Revoke {{app}}'s access to your account; its {{count}} active sessions end.",
     "revokeReason": "Revoking {{app}} changes how you are signed in."
   },
   "userTerms": {
@@ -4308,7 +4310,7 @@
       "connected": "Hyperweaver is connected.",
       "disconnect": "Disconnect",
       "disconnectTitle": "Disconnect Hyperweaver?",
-      "disconnectBody": "Your servers and deploy target are forgotten. Type '{{keyword}}' to confirm.",
+      "disconnectBody": "Your servers and deploy target are forgotten.",
       "disconnected": "Hyperweaver is disconnected."
     }
   },
@@ -4631,7 +4633,6 @@
       "reloadButton": "Reload",
       "addButton": "Add",
       "failedLoadSecrets": "Failed to load secrets: {{message}}",
-      "pickSecret": "Pick secret",
       "edit": "Edit",
       "remove": "Remove",
       "removeTitle": "Remove secret",
@@ -11307,6 +11308,7 @@
       "editParts": "Edit parts",
       "noDefaultDomain": "No default domain is set for this host. Type one, or set the host's default domain in its configuration.",
       "setDefaultDomain": "Set the host's default domain",
+      "pickDomain": "Pick a domain",
       "domainSource": {
         "preference": "Browser",
         "user": "Your default",
@@ -12089,7 +12091,8 @@
       "subject": "Subject",
       "sharedBy": "Shared by",
       "published": "Published",
-      "profile": "Profile"
+      "profile": "Profile",
+      "organization": "Org"
     },
     "actions": {
       "convert": "Convert",
@@ -12202,6 +12205,31 @@
       "lastSynced": "last synced {{when}}",
       "never": "never synced",
       "noOrganization": "{{name}} keeps the records of the checked kinds in your own store on this host."
+    },
+    "stores": {
+      "column": "Sync",
+      "hostLetter": "H",
+      "vaultLetter": "V",
+      "idpLetter": "I",
+      "idpName": "Identity provider",
+      "turnOn": "Turn on sync to {{store}}",
+      "turnOff": "Turn off sync to {{store}}",
+      "enable": "Enable sync",
+      "disable": "Disable sync",
+      "settings": "Settings",
+      "turnedOn": "{{name}} syncs to {{store}}.",
+      "turnedOff": "{{name}} no longer syncs to {{store}}.",
+      "synced_one": "{{count}} copy synced.",
+      "synced_other": "{{count}} copies synced.",
+      "syncNow": "Sync now",
+      "actions": "Actions",
+      "deleteSelected": "Delete selected",
+      "exportSelected": "Export selected",
+      "deletedMany_one": "{{count}} secret deleted",
+      "deletedMany_other": "{{count}} secrets deleted",
+      "deleteManyMessage_one": "Delete {{count}} secret from this host's store? It cannot be undone.",
+      "deleteManyMessage_other": "Delete {{count}} secrets from this host's store? They cannot be undone.",
+      "noOrganization": "No organization"
     },
     "input": {
       "drop": "Drop a certificate, key or bundle here",

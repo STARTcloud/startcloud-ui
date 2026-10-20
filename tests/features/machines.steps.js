@@ -306,7 +306,11 @@ When('I pick the naming {string}', async ({ page }, mode) => {
 });
 
 When('I send the open dialog', async ({ page }) => {
-  await dialogOf(page).locator('.modal-footer .btn-primary:not(.dropdown-toggle)').click();
+  await dialogOf(page)
+    .locator(
+      '.modal-footer .btn-primary:not(.dropdown-toggle), [data-pane="wizard-nav"] [data-action="submit"]'
+    )
+    .click();
 });
 
 When('I type {string} into the field {string}', async ({ page }, text, id) => {

@@ -256,7 +256,7 @@ Feature: machine provisioning
     And the page raised 0 success notices
     And the provisioning status reads "not_started"
 
-  Scenario: Provisioning page: the pipeline behind `provisioning`, the host-hooks refusal asks the typed confirmation and the same request goes again with confirm_host_hooks
+  Scenario: Provisioning page: the pipeline behind `provisioning`, the host-hooks refusal asks a plain confirmation and the same request goes again with confirm_host_hooks
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-provisioning fixture
@@ -265,7 +265,7 @@ Feature: machine provisioning
     Then the host was sent POST to "/api/agents/1/machines/dev-2/provision" carrying nothing at "/confirm_host_hooks"
     And the page raised 0 danger notices
     And I see "This document runs host hooks"
-    When I confirm the open dialog with "provision"
+    When I confirm the open plain dialog
     Then the host was sent POST to "/api/agents/1/machines/dev-2/provision" carrying "true" at "/confirm_host_hooks"
     And the host was sent POST to "/api/agents/1/machines/dev-2/provision" 2 times
 

@@ -9,7 +9,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
 import { runDatabaseMaintenance } from '../api/database';
 import { useManageSend } from '../hooks/useHostManage';
-import { configNamesOf, configPath } from '../utils/configNodes';
+import { DB_CONFIG, configNamesOf, configPath } from '../utils/configNodes';
 import { MAINTENANCE_ACTIONS, formatDatabaseBytes, reclaimedText } from '../utils/database';
 import { isServerRole } from '../utils/hosts';
 
@@ -27,8 +27,6 @@ const ACTIONS = {
   analyze: { Icon: FaMagnifyingGlassChart, tone: 'primary' },
   cleanup: { Icon: FaTrashArrowUp, tone: 'warning' },
 };
-
-const DB_CONFIG = 'db';
 
 const dbConfigRouteOf = ({ status, server, id }) => {
   if (isServerRole(status)) {

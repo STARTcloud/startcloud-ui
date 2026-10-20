@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
@@ -19,8 +19,11 @@ const FIRST_FIELD = 'input:not([disabled]), select:not([disabled]), textarea:not
  * drawn over the fields. The form carries `dialog` as `data-dialog`;
  * `variant` is the primary action's Bootstrap variant, `danger` on a
  * dialog that destroys, and `disabled` holds the action while the form
- * is not yet complete; while `dirty`, a backdrop click, Escape, the close
- * button and Cancel ask the discard prompt before `onClose`.
+ * is not yet complete; while the draft is dirty, a backdrop click,
+ * Escape, the close button and Cancel ask the discard prompt before
+ * `onClose`. The draft is dirty from the first change or input event
+ * inside the form until a submit, unless the caller passes `dirty`,
+ * which then decides alone.
  */
 const ToolFormDialog = ({
   dialog,
@@ -29,7 +32,7 @@ const ToolFormDialog = ({
   problemKey = '',
   variant = 'primary',
   disabled = false,
-  dirty = false,
+  dirty = null,
   busy,
   onClose,
   onSubmit,
@@ -37,7 +40,14 @@ const ToolFormDialog = ({
 }) => {
   const { t } = useTranslation();
   const formRef = useRef(null);
-  const guard = useDiscardGuard(dirty, onClose);
+  const [touched, setTouched] = useState(false);
+  const guard = useDiscardGuard(dirty ?? touched, onClose);
+
+  const touch = () => {
+    if (!touched) {
+      setTouched(true);
+    }
+  };
 
   const focusFirst = () => {
     const form = formRef.current;
@@ -48,6 +58,7 @@ const ToolFormDialog = ({
 
   const submit = event => {
     event.preventDefault();
+    setTouched(false);
     onSubmit();
   };
 
@@ -60,7 +71,14 @@ const ToolFormDialog = ({
         dialogClassName="form-modal"
         scrollable
       >
-        <form ref={formRef} onSubmit={submit} noValidate data-dialog={dialog}>
+        <form
+          ref={formRef}
+          onSubmit={submit}
+          onChange={touch}
+          onInput={touch}
+          noValidate
+          data-dialog={dialog}
+        >
           <Modal.Header closeButton>
             <Modal.Title as="h5">{title}</Modal.Title>
           </Modal.Header>

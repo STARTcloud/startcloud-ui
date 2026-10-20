@@ -153,7 +153,10 @@ export const columnsGroup = ({ key = 'columns', label = '', columns, hidden, onT
   activeSet: new Set(columns.map(column => column.key).filter(column => !hidden.has(column))),
   activeClass: 'bg-secondary',
   columns: true,
-  labelFor: column => t(columns.find(entry => entry.key === column).labelKey),
+  labelFor: column => {
+    const entry = columns.find(drawn => drawn.key === column);
+    return entry.label || t(entry.labelKey);
+  },
   onToggle,
 });
 

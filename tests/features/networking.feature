@@ -272,7 +272,7 @@ Feature: networking
     When I load the page again
     Then the "routes" section of the networking page is folded
 
-  Scenario: Bandwidth: the page draws exactly one heading, the chart order then the window in its pane and no chevron, the chart cards straight under it
+  Scenario: Bandwidth: the page draws exactly one heading, the chart order then the window in its pane and no chevron, the chart cards straight under it, each with its heading and no chevron
     Given the host answers the hosts fixture
     And the host answers the hosts-overview fixture
     And the host answers the hosts-networking fixture
@@ -282,6 +282,7 @@ Feature: networking
     And the section page draws one heading
     And the heading of the networking page carries the selects "chart-sort,window" and no chevron
     And the networking page draws 5 chart cards under its heading
+    And the chart cards of the networking page draw their headings and no chevron
 
   Scenario: Bandwidth: the charts, the three that draw every interface together and one an interface, all from the one read of the usage
     Given the host answers the hosts fixture

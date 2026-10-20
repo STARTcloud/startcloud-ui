@@ -56,6 +56,59 @@ Then('the secret row {string} is of kind {string}', async ({ page }, name, kind)
   );
 });
 
+const markOf = (page, name, store) =>
+  secretRowOf(page, name).locator(`[data-action="sync-mark"][data-store="${store}"]`);
+
+Then(
+  'the secret row {string} marks the store {string} as {string}',
+  async ({ page }, name, store, state) => {
+    await expect(markOf(page, name, store)).toHaveAttribute('data-sync-state', state);
+  }
+);
+
+Then(
+  'the secrets table heads the store {string} with {string}',
+  async ({ page }, store, letter) => {
+    await expect(
+      frameOf(page).locator(`[data-panel="secrets"] thead th.col-sync-${store}`)
+    ).toContainText(letter);
+  }
+);
+
+When(
+  'I press the store mark {string} of the secret row {string}',
+  async ({ page }, store, name) => {
+    await markOf(page, name, store).click();
+  }
+);
+
+When(
+  'I open the menu of the store mark {string} of the secret row {string}',
+  async ({ page }, store, name) => {
+    await markOf(page, name, store).click({ button: 'right' });
+  }
+);
+
+Then('the store mark menu offers {string}', async ({ page }, rows) => {
+  const drawn = await page
+    .locator('.sidebar-menu [data-menu-row]')
+    .evaluateAll(nodes => nodes.map(node => node.getAttribute('data-menu-row')));
+  expect(drawn.join(',')).toBe(rows);
+});
+
+When('I pick {string} in the store mark menu', async ({ page }, row) => {
+  await page.locator(`.sidebar-menu [data-menu-row="${row}"]`).click();
+});
+
+When('I tick the secret row {string}', async ({ page }, name) => {
+  await frameOf(page).getByRole('checkbox', { name, exact: true }).check();
+});
+
+When("I pick {string} in the section page's Actions menu", async ({ page }, action) => {
+  await frameOf(page).locator('[data-action="secrets-actions"]').click();
+  await page.locator(`.dropdown-menu.show [data-action="${action}"]`).click();
+});
+
 When('I toggle the filter pill of the kind of the secret row {string}', async ({ page }, name) => {
   const label = (await secretRowOf(page, name).locator('td.col-kind').innerText()).trim();
   await page
@@ -72,7 +125,9 @@ Then('the heading pane of the section page reads {string}', async ({ page }, nam
     .locator(':scope > *')
     .evaluateAll(nodes =>
       nodes.map(node =>
-        node.getAttribute('role') === 'group' ? 'view-toggle' : node.getAttribute('data-action')
+        node.getAttribute('role') === 'group'
+          ? 'view-toggle'
+          : node.getAttribute('data-action') || node.getAttribute('data-pane')
       )
     );
   expect(drawn.join(',')).toBe(names);
@@ -129,30 +184,14 @@ Then('the agent page draws no release notes', async ({ page }) => {
   await expect(frameOf(page).locator('[data-panel="update"] .upd-notes')).toHaveCount(0);
 });
 
-When('I fold the {string} section of the agent page', async ({ page }, name) => {
-  await frameOf(page).locator(`[data-panel="${name}"] .section-card-chevron`).click();
-});
-
-Then('the {string} section of the agent page is folded', async ({ page }, name) => {
-  await expect(frameOf(page).locator(`[data-panel="${name}"]`)).toHaveAttribute(
-    'data-folded',
-    'true'
-  );
-});
-
-Then('the {string} section of the agent page is open', async ({ page }, name) => {
-  await expect(frameOf(page).locator(`[data-panel="${name}"]`)).toHaveAttribute(
-    'data-folded',
-    'false'
-  );
+Then('the Update page draws no fold chevron', async ({ page }) => {
+  const update = frameOf(page).locator('[data-panel="update"]');
+  await expect(update.locator('.section-card-title').first()).toBeVisible();
+  await expect(update.locator('.section-card-chevron')).toHaveCount(0);
 });
 
 Then('the agent page lists the asset {string}', async ({ page }, name) => {
   await expect(frameOf(page).locator('.upd-asset').filter({ hasText: name }).first()).toBeVisible();
-});
-
-Then('the agent page lists no asset', async ({ page }) => {
-  await expect(frameOf(page).locator('.upd-asset:visible')).toHaveCount(0);
 });
 
 const releaseOf = (page, tag) => frameOf(page).locator(`[data-release="${tag}"]`);
@@ -196,10 +235,6 @@ Then(
 
 const assetsOf = (page, tag) =>
   frameOf(page).locator(`[data-panel="update-assets"][data-assets-of="${tag}"]`);
-
-Then('the assets of the release {string} are open', async ({ page }, tag) => {
-  await expect(assetsOf(page, tag)).toHaveAttribute('data-folded', 'false');
-});
 
 Then(
   'the assets of the release {string} draw in their own card after the Overview card',

@@ -19,7 +19,6 @@ export const SERVICE = 'hyperweaver';
 const FORM_KEY = 'integration-hyperweaver';
 const PREFS_KEY = 'table_prefs_integrations_hyperweaver';
 const LOCAL = 'local';
-const KEYWORD = 'disconnect';
 const NO_SORT = [];
 const NO_HIDDEN = new Set();
 const EMPTY_TYPED = { origin: '', label: '' };
@@ -362,7 +361,7 @@ DisconnectButton.propTypes = {
  * with the whole `settings`, the removed default passing to the first
  * server and a deploy target that named the removed origin falling back
  * to `local`; Save sends the same `PATCH` with the picked default and
- * target; Disconnect waits behind the typed confirmation and sends
+ * target; Disconnect waits behind a plain confirmation and sends
  * `DELETE /api/user/integrations/hyperweaver`. The form is evaluated
  * through the host's `integration-hyperweaver` rules form, the typed
  * server as the next element of `servers`, so a bad origin is refused at
@@ -468,8 +467,8 @@ const HyperweaverServiceCard = ({
             handleClose={() => setConfirming(false)}
             handleConfirm={form.disconnect}
             title={t('integrations.hyperweaver.disconnectTitle')}
-            message={t('integrations.hyperweaver.disconnectBody', { keyword: KEYWORD })}
-            keyword={KEYWORD}
+            message={t('integrations.hyperweaver.disconnectBody')}
+            typed={false}
             confirmText={t('integrations.hyperweaver.disconnect')}
           />
         ) : null}
