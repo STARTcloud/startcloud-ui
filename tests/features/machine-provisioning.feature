@@ -245,15 +245,15 @@ Feature: machine provisioning
     Then the host was sent GET to "/api/agents/1/machines/dev-1/provision/status" 3 times
     And the host was sent GET to "/api/agents/1/machines/dev-1" 2 times
 
-  Scenario: Provisioning page: the pipeline behind `provisioning`, a run of the provisioners the agent skips whole raises one warning and no task
+  Scenario: Provisioning page: the pipeline behind `provisioning`, a run of the provisioners queues every entry of the document as one task with one success notice
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-provisioning fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
     When I open "/hosts/1/machines/dev-2/provisioning?run=run-provisioners"
     Then the host was sent POST to "/api/agents/1/machines/dev-2/run-provisioners" 1 times
-    And the page raised 1 warning notice
-    And the page raised 0 success notices
+    And the page raised 1 success notice
+    And the page raised 0 warning notices
     And the provisioning status reads "not_started"
 
   Scenario: Provisioning page: the pipeline behind `provisioning`, the host-hooks refusal asks a plain confirmation and the same request goes again with confirm_host_hooks

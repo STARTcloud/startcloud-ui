@@ -340,8 +340,7 @@ export const syncMachine = (status, id, name, syncback = false) =>
 /**
  * Run the stored document's provisioners ad hoc,
  * `POST machines/{name}/run-provisioners`; answered `{ parent_task_id,
- * playbook_count, playbooks_skipped, task_chain }`, or a 200 no-op
- * carrying `playbooks_skipped` and no task while every entry was skipped.
+ * playbook_count, task_chain }`, every entry of the document run.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
@@ -522,6 +521,19 @@ export const copyArtifact = (status, id, artifactId, destinationId) =>
  */
 export const scanArtifacts = (status, id, body) =>
   client.post(agentPath(status, id, 'artifacts/scan'), body);
+
+/**
+ * Resolve the files one box registry lists against the host's cache,
+ * `POST artifacts/registry/{source}/sync`, a queued task the Installer
+ * files page's Scan sends beside its scan, one a registry.
+ *
+ * @param {Object} status - The payload from `probeStatus`
+ * @param {string} id - The registry id, or `self` on an agent role
+ * @param {string} source - The registry's key
+ * @returns {Promise<Object>} The queued task
+ */
+export const syncRegistrySource = (status, id, source) =>
+  client.post(agentPath(status, id, `artifacts/registry/${encodeURIComponent(source)}/sync`));
 
 /**
  * Download an artifact from a URL, `POST artifacts/download`.

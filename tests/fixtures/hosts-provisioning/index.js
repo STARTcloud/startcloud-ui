@@ -19,7 +19,7 @@ export default {
   },
   'POST /api/agents/1/machines/dev-2/run-provisioners': {
     status: 200,
-    file: 'run-provisioners-noop-200.json',
+    file: 'run-provisioners-200.json',
   },
   'PUT /api/agents/1/machines/dev-1': { status: 200, file: 'document-200.json' },
   'PUT /api/agents/1/machines/dev-2': { status: 200, file: 'document-200.json' },

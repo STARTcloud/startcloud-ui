@@ -20,16 +20,18 @@ export const createAddress = (status, id, body) =>
 
 /**
  * Change an IP address in place, `PUT network/addresses/{addrobj}` with
- * the body of `addressEditBody`, a queued task.
+ * the body of `addressEditBody` and the query of `addressEditParams`, a
+ * queued task.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
  * @param {string} addrobj - The address object
  * @param {Object} body - The body of `addressEditBody`
+ * @param {Object} [params] - The query of `addressEditParams`
  * @returns {Promise<Object>} The agent's answer
  */
-export const updateAddress = (status, id, addrobj, body) =>
-  client.put(named(status, id, 'addresses', addrobj), body);
+export const updateAddress = (status, id, addrobj, body, params = {}) =>
+  client.put(named(status, id, 'addresses', addrobj), body, { params });
 
 /**
  * Delete an IP address, `DELETE network/addresses/{addrobj}` with the

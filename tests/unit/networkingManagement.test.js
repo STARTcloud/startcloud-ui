@@ -11,6 +11,7 @@ import {
   addressBody,
   addressDeleteParams,
   addressEditBody,
+  addressEditParams,
   addressFormOf,
   addressInterfacesOf,
   addressObjectOf,
@@ -329,6 +330,11 @@ describe('the addresses', () => {
     });
     expect(addressDeleteParams({ rows, row: rows[2], goAgent: true })).toEqual({ release: false });
     expect(addressDeleteParams({ rows, row: rows[0], goAgent: false })).toEqual({ release: false });
+    expect(addressEditParams({ rows, row: rows[1], goAgent: true })).toEqual({
+      address: '10.0.0.6',
+    });
+    expect(addressEditParams({ rows, row: rows[2], goAgent: true })).toEqual({});
+    expect(addressEditParams({ rows, row: rows[0], goAgent: false })).toEqual({});
     expect(bareAddressOf({ ip_address: '10.0.0.9', addr: '10.0.0.9/24' })).toBe('10.0.0.9');
     expect(bareAddressOf({ addr: '10.0.0.9/24' })).toBe('10.0.0.9');
     expect(bareAddressOf({})).toBe('');

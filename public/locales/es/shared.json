@@ -11539,8 +11539,7 @@
       "kind": {
         "installer": "Instalador",
         "fixpack": "Fixpack",
-        "hotfix": "Hotfix",
-        "id_file": "Archivo ID"
+        "hotfix": "Hotfix"
       },
       "noFileKnown": "No se conoce ningún archivo para este rol",
       "via": {
@@ -11680,10 +11679,8 @@
       "hookConfirmTitle": "Este paquete ejecuta scripts en el host del agente",
       "hookConfirmSuffix": "Confirmar los ejecuta y se recuerda para esta máquina — los futuros aprovisionamientos no volverán a preguntar.",
       "confirmAndProvision": "Confirmar y aprovisionar",
-      "nothingToRun": "Nada para ejecutar — omitido por la directiva run: {{skipped}}",
       "queued": "En cola",
-      "taskWithSteps": "Su cadena ejecuta {{steps}} pasos.",
-      "skippedSuffix": "— omitido: {{skipped}}"
+      "taskWithSteps": "Su cadena ejecuta {{steps}} pasos."
     },
     "provisionerFieldDsl": {
       "hideValue": "Ocultar el valor",

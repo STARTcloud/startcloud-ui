@@ -572,38 +572,22 @@ export const dependencyWarnings = (roles, hints, index) => {
 
 /**
  * What the Provisioning page says of a pipeline answer, hyperweaver-ui's
- * report: `nothing`, the skipped entries of a 200 no-op that queued no
- * task, joined; else the sentence in `parts`, the agent's own message or
- * the queued word, the steps where the answer counts them and the
- * skipped suffix where it skips any, never the task's id; and `task`, the
- * queued parent as the task dialog opens on it, or null.
+ * report: the sentence in `parts`, the agent's own message or the queued
+ * word and the steps where the answer counts them, never the task's id;
+ * and `task`, the queued parent as the task dialog opens on it, or null.
  *
  * @param {Object|null} answer - The agent's answer
  * @param {string} name - The machine name
  * @param {Function} t - The translator
- * @returns {{ nothing: string, parts: Array<string>, task: Object|null }} The outcome
+ * @returns {{ parts: Array<string>, task: Object|null }} The outcome
  */
 export const pipelineOutcome = (answer, name, t) => {
   const data = answer || {};
-  const skipped = Array.isArray(data.playbooks_skipped) ? data.playbooks_skipped : [];
-  const skippedWords = skipped
-    .map(entry => (typeof entry === 'string' ? entry : entry?.playbook || JSON.stringify(entry)))
-    .join(', ');
-  if (!data.parent_task_id && skipped.length > 0) {
-    return {
-      nothing: t('provisioning.machineProvisioning.nothingToRun', { skipped: skippedWords }),
-      parts: [],
-      task: null,
-    };
-  }
   const parts = [data.message || t('provisioning.machineProvisioning.queued')];
   if (data.parent_task_id && data.steps) {
     parts.push(t('provisioning.machineProvisioning.taskWithSteps', { steps: data.steps }));
   }
-  if (skipped.length > 0) {
-    parts.push(t('provisioning.machineProvisioning.skippedSuffix', { skipped: skippedWords }));
-  }
-  return { nothing: '', parts, task: queuedTaskOf(data, name) };
+  return { parts, task: queuedTaskOf(data, name) };
 };
 
 /**

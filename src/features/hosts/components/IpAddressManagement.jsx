@@ -18,6 +18,7 @@ import {
   addressBody,
   addressDeleteParams,
   addressEditBody,
+  addressEditParams,
   addressInterfacesOf,
   isGoAgent,
 } from '../utils/networkingManagement';
@@ -42,7 +43,9 @@ const CLOSED = { open: false, row: null };
  * answers, and Enable, Disable, Edit and Delete on each managed row. A
  * create sends `POST network/addresses` with `addressBody`; an edit, the
  * same form opened on the row with its interface and address object held,
- * sends `PUT network/addresses/{addrobj}` with `addressEditBody`; a
+ * sends `PUT network/addresses/{addrobj}` with `addressEditBody` and, on
+ * a VirtualBox or UTM host whose one object covers several addresses,
+ * `?address=` naming the one replaced; a
  * delete, behind the typed confirmation, sends
  * `DELETE network/addresses/{addrobj}` with `addressDeleteParams` over
  * the managed rows; Enable and Disable send their `PUT`, the Disable of a
@@ -87,7 +90,13 @@ const IpAddressManagement = ({
       id,
       call: () =>
         editing
-          ? updateAddress(status, id, editing.addrobj, addressEditBody(values))
+          ? updateAddress(
+              status,
+              id,
+              editing.addrobj,
+              addressEditBody(values),
+              addressEditParams({ rows: managedRows, row: editing, goAgent })
+            )
           : createAddress(status, id, addressBody(values)),
       doneKey: editing
         ? 'hosts.networking.tools.addressUpdated'

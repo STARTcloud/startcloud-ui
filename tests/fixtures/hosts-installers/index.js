@@ -16,6 +16,8 @@ export default {
   },
   'GET /api/agents/3/artifacts': { status: 200, file: 'agents-3-artifacts.json' },
   'POST /api/agents/3/artifacts/scan': { status: 202, file: 'queued-202.json' },
+  'POST /api/agents/3/artifacts/registry/boxvault/sync': { status: 202, file: 'queued-202.json' },
+  'POST /api/agents/3/artifacts/registry/mirror/sync': { status: 202, file: 'queued-202.json' },
   'POST /api/agents/3/artifacts/download': { status: 202, file: 'queued-202.json' },
   'POST /api/agents/3/artifacts/hcl-download': { status: 202, file: 'queued-202.json' },
   'GET /api/agents/3/templates/sources': { status: 200, file: 'agents-3-template-sources.json' },

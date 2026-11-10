@@ -1,0 +1,31 @@
+label: M4kr.net
+description: M4kr's teal on cool slate, the machined block letters as the mark.
+brand: m4kr
+primary: '#0f766e'
+on_primary: '#ffffff'
+logo: /brand/m4kr/mark.svg
+logo_color:
+  light: '#0f766e'
+  dark: '#2dd4bf'
+display: "'Montserrat', 'Open Sans', sans-serif"
+surfaces:
+  light:
+    body-bg: '#ffffff'
+    tertiary-bg: '#f8f9fa'
+    secondary-bg: '#e9ecef'
+    border-color: '#dee2e6'
+    body-color: '#212529'
+    emphasis-color: '#000000'
+    secondary-color: '#495057'
+    link-color: '#0f766e'
+    link-hover-color: '#0b5a54'
+  dark:
+    body-bg: '#0f1719'
+    tertiary-bg: '#162124'
+    secondary-bg: '#1d2b2f'
+    border-color: '#2d4045'
+    body-color: '#d5e2e4'
+    emphasis-color: '#ffffff'
+    secondary-color: '#9bb0b4'
+    link-color: '#5eead4'
+    link-hover-color: '#2dd4bf'

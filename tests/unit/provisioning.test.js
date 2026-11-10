@@ -345,30 +345,20 @@ describe('the roles search', () => {
 });
 
 describe('the answers of the pipeline', () => {
-  it('reports a queued task with its steps and the skipped suffix and never its id', () => {
+  it('reports a queued task with its steps and never its id', () => {
     const outcome = pipelineOutcome(
-      { message: 'Queued', parent_task_id: 'p1', steps: 3, playbooks_skipped: ['a.yml'] },
+      { message: 'Queued', parent_task_id: 'p1', steps: 3, playbook_count: 2 },
       'dev-1',
       t
     );
-    expect(outcome.nothing).toBe('');
     expect(outcome.parts).toEqual([
       'Queued',
       'provisioning.machineProvisioning.taskWithSteps {"steps":3}',
-      'provisioning.machineProvisioning.skippedSuffix {"skipped":"a.yml"}',
     ]);
     expect(outcome.task).toMatchObject({ id: 'p1', machine_name: 'dev-1' });
     expect(pipelineOutcome({ parent_task_id: 'p2' }, 'dev-1', t).parts).toEqual([
       'provisioning.machineProvisioning.queued',
     ]);
-  });
-
-  it('reports a no-op that skipped everything and queued no task', () => {
-    const outcome = pipelineOutcome({ playbooks_skipped: [{ playbook: 'a.yml' }] }, 'dev-1', t);
-    expect(outcome.nothing).toBe(
-      'provisioning.machineProvisioning.nothingToRun {"skipped":"a.yml"}'
-    );
-    expect(outcome.task).toBeNull();
   });
 
   it('falls back to the queued word for an answer without a message or a task', () => {

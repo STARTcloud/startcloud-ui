@@ -148,21 +148,24 @@ export const signalProcess = (status, id, pid, signal) =>
   client.post(agentPath(status, id, `system/processes/${encoded(pid)}/signal`), { signal });
 
 /**
- * Kill every process whose command matches a pattern,
- * `POST system/processes/batch-kill` with the pattern, the signal and
- * the zone where given.
+ * Kill many processes, `POST system/processes/batch-kill`: the picked
+ * pids with the signal where `pids` holds any, and otherwise every
+ * process whose command matches the pattern, with the signal and the
+ * zone where given; answered `{ killed, errors, pattern, message,
+ * success }`, a pid no process carries listed in `errors`.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {string} id - The registry id, or `self` on an agent role
- * @param {Object} body - `pattern`, `signal` and `zone`
+ * @param {Object} body - `pids` and `signal`, or `pattern`, `signal` and `zone`
  * @returns {Promise<Object>} The agent's answer
  */
-export const batchKill = (status, id, { pattern, signal, zone = '' }) =>
-  client.post(agentPath(status, id, 'system/processes/batch-kill'), {
-    pattern,
-    signal,
-    ...(zone ? { zone } : {}),
-  });
+export const batchKill = (status, id, { pids = [], pattern = '', signal, zone = '' }) =>
+  client.post(
+    agentPath(status, id, 'system/processes/batch-kill'),
+    pids.length > 0
+      ? { pids: pids.map(Number), signal }
+      : { pattern, signal, ...(zone ? { zone } : {}) }
+  );
 
 /**
  * The users of a host, `GET system/users`, hyperweaver-ui's read: the

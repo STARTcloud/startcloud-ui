@@ -116,7 +116,7 @@ Feature: host installer files and provisioners
     Then the host was sent POST to "/api/agents/3/artifacts/hcl-download" carrying "key_name" as "hcl-portal"
     And the host was sent POST to "/api/agents/3/artifacts/hcl-download" carrying "kind" as "fixpack"
 
-  Scenario: Installer files: Scan all is a split button, its press scanning without the re-hash and Scan all and re-hash in its menu scanning with it, no switch on the page
+  Scenario: Installer files: Scan all is a split button, its press scanning without the re-hash and resolving every enabled registry beside it, Scan all and re-hash in its menu scanning with it, no switch on the page
     Given the host answers the hosts fixture
     And the host answers the hosts-installers fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -125,6 +125,8 @@ Feature: host installer files and provisioners
     And the section page draws no switch
     When I press the section page's "artifact-scan" action
     Then the host was sent POST to "/api/agents/3/artifacts/scan" carrying "verify_checksums" as "false"
+    And the host was sent POST to "/api/agents/3/artifacts/registry/boxvault/sync" 1 times
+    And the host was sent POST to "/api/agents/3/artifacts/registry/mirror/sync" 1 times
     And the page raised 1 success notice
     When I dismiss the success notice
     And I press the section page's "artifact-scan-menu" action

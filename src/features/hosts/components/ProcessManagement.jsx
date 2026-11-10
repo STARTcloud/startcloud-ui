@@ -87,12 +87,11 @@ PickedProcesses.propTypes = {
  * Kill process, each dialog over the form dialog of the pages contract; a
  * kill, a signal and a batch kill each send their request, raise one
  * notice and read the processes again on a success. `batch` opens the
- * batch kill dialog: over a command pattern while its `pids` are empty,
- * `POST system/processes/batch-kill`, and over the picked processes
- * otherwise, one `POST system/processes/{pid}/signal` with the chosen
- * signal a pid and one notice naming the count, because the batch kill
- * takes a pattern alone; `onBatch` is called with true after a success
- * and false on a close. The signals offered are the ones the host
+ * batch kill dialog, one `POST system/processes/batch-kill` either way:
+ * over a command pattern while its `pids` are empty, and over the picked
+ * processes otherwise, the pids with the chosen signal and one notice
+ * naming the count; `onBatch` is called with true after a success and
+ * false on a close. The signals offered are the ones the host
  * delivers, TERM and KILL alone on a Windows host, and the zones of the
  * batch kill the host's machines. Nothing polls.
  */
@@ -148,10 +147,7 @@ const ProcessManagement = ({
     const { pids } = batch;
     const picked = pids.length > 0;
     const { error } = await send({
-      call: () =>
-        picked
-          ? Promise.all(pids.map(pid => signalProcess(status, id, pid, body.signal)))
-          : batchKill(status, id, body),
+      call: () => batchKill(status, id, picked ? { pids, signal: body.signal } : body),
       doneKey: picked
         ? 'hosts.manage.processes.pickedKilled'
         : 'hosts.manage.processes.batchKilled',

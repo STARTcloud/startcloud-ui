@@ -151,7 +151,7 @@ Feature: host-manage
     And the page raised 1 success notice
     And the host was sent GET to "/api/agents/3/system/processes" 3 times
 
-  Scenario: Processes: two picked rows draw the picked-state group, Kill selected opens the batch kill dialog over them with the signal alone, one signal request a pid and one notice, and the pick cleared
+  Scenario: Processes: two picked rows draw the picked-state group, Kill selected opens the batch kill dialog over them with the signal alone, one batch kill carrying the pids and one notice, and the pick cleared
     Given the host answers the hosts fixture
     And the host answers the hosts-manage fixture
     And the browser holds "user" as "{\"id\":1,\"username\":\"mark\",\"role\":\"admin\",\"access_token\":\"t\"}"
@@ -166,9 +166,10 @@ Feature: host-manage
     And the open dialog draws no field "batch-kill-pattern"
     When I choose "KILL" in the field "batch-kill-signal"
     And I press the open dialog's "submit" action
-    Then the host was sent POST to "/api/agents/3/system/processes/128/signal" carrying "signal" as "KILL"
-    And the host was sent POST to "/api/agents/3/system/processes/135/signal" carrying "signal" as "KILL"
-    And the host was not sent POST to "/api/agents/3/system/processes/batch-kill"
+    Then the host was sent POST to "/api/agents/3/system/processes/batch-kill" carrying "pids" as "128,135"
+    And the host was sent POST to "/api/agents/3/system/processes/batch-kill" carrying "signal" as "KILL"
+    And the host was not sent POST to "/api/agents/3/system/processes/128/signal"
+    And the host was not sent POST to "/api/agents/3/system/processes/135/signal"
     And the page raised 1 success notice
     And no dialog is open
     And the section page offers no "bulk-kill"

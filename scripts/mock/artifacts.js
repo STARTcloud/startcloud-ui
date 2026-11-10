@@ -314,6 +314,13 @@ const scanned = ctx =>
     },
   });
 
+const registrySynced = ctx =>
+  queued(ctx, {
+    operation: 'artifact_registry_sync',
+    message: `Registry ${ctx.params.source} resolve queued`,
+    metadata: { source_name: ctx.params.source },
+  });
+
 const afterScan = host => {
   const store = storeOf(host);
   store.paths.forEach(path => {
@@ -527,9 +534,11 @@ const downloadedFile = ({ row }) => ({
  * type, the location, the search, the sort and the page, the ISO images
  * alone at `artifacts/iso`, one artifact's
  * detail, its bytes at `download`, the batch delete at
- * `artifacts/files`; the scan, the download from a URL, the move and
- * the copy each a queued task on the target `artifact` that changes the
- * rows when it completes; and the two-step upload, `upload/prepare`
+ * `artifacts/files`; the scan, the registry resolve at
+ * `artifacts/registry/{source}/sync`, the download from a URL, the move
+ * and the copy each a queued task on the target `artifact`, the scan,
+ * the download, the move and the copy changing the rows when they
+ * complete; and the two-step upload, `upload/prepare`
  * answering the task the multipart is then sent under at
  * `upload/{task}`, which lands the artifact at once.
  *
@@ -549,6 +558,7 @@ export const mountArtifacts = agentRoute => {
   agentRoute('GET', 'artifacts/iso', behind(listedIsos));
   agentRoute('DELETE', 'artifacts/files', behind(deletedArtifacts));
   agentRoute('POST', 'artifacts/scan', behind(scanned));
+  agentRoute('POST', 'artifacts/registry/:source/sync', behind(registrySynced));
   agentRoute('POST', 'artifacts/download', behind(downloadedFromUrl));
   agentRoute('POST', 'artifacts/upload/prepare', behind(preparedUpload));
   agentRoute('POST', 'artifacts/upload/:task', behind(receivedUpload));

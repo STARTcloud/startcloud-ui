@@ -3,7 +3,6 @@
   "message": "Provisioner run queued",
   "machine_name": "dev-1",
   "parent_task_id": "c3000000-0000-4000-8000-000000000001",
-  "playbook_count": 1,
-  "playbooks_skipped": ["ansible/playbook.yml"],
+  "playbook_count": 2,
   "task_chain": ["c3000000-0000-4000-8000-000000000005"]
 }

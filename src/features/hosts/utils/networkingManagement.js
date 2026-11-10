@@ -296,6 +296,20 @@ export const addressDeleteParams = ({ rows, row, goAgent }) => {
   return { release: false, ...(goAgent && siblings > 1 && bare ? { address: bare } : {}) };
 };
 
+/**
+ * The query of `PUT network/addresses/{addrobj}`: on a VirtualBox or UTM
+ * host whose one address object covers several addresses, the bare
+ * address the edit replaces; empty otherwise.
+ *
+ * @param {Object} options - The rows held, the row and whether the host is such a one
+ * @returns {Object} The query
+ */
+export const addressEditParams = ({ rows, row, goAgent }) => {
+  const siblings = rows.filter(entry => entry.addrobj === row.addrobj).length;
+  const bare = bareAddressOf(row);
+  return goAgent && siblings > 1 && bare ? { address: bare } : {};
+};
+
 export const canEnableAddress = row => lower(row?.state) === 'disabled';
 
 export const canDisableAddress = row => lower(row?.state) === 'ok';

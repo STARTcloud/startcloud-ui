@@ -1,0 +1,31 @@
+label: Philotic.cloud
+description: Philotic's amber phi on warm stone, set in a monospace face.
+brand: philotic
+primary: '#ff9800'
+on_primary: '#000000'
+logo: /brand/philotic/mark.svg
+logo_color:
+  light: '#b36b00'
+  dark: '#ff9800'
+display: "ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace"
+surfaces:
+  light:
+    body-bg: '#ffffff'
+    tertiary-bg: '#f8f9fa'
+    secondary-bg: '#e9ecef'
+    border-color: '#dee2e6'
+    body-color: '#212529'
+    emphasis-color: '#000000'
+    secondary-color: '#495057'
+    link-color: '#8f4f00'
+    link-hover-color: '#703d00'
+  dark:
+    body-bg: '#1c1917'
+    tertiary-bg: '#262220'
+    secondary-bg: '#302b28'
+    border-color: '#45403b'
+    body-color: '#e7e2dc'
+    emphasis-color: '#ffffff'
+    secondary-color: '#b3aca4'
+    link-color: '#ffb84d'
+    link-hover-color: '#ffa31a'

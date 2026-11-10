@@ -11539,8 +11539,7 @@
       "kind": {
         "installer": "Installer",
         "fixpack": "Fixpack",
-        "hotfix": "Hotfix",
-        "id_file": "ID file"
+        "hotfix": "Hotfix"
       },
       "noFileKnown": "No file known for this role",
       "via": {
@@ -11680,10 +11679,8 @@
       "hookConfirmTitle": "This package runs scripts on the agent host",
       "hookConfirmSuffix": "Confirming runs them and is remembered for this machine — future provisions will not ask again.",
       "confirmAndProvision": "Confirm & Provision",
-      "nothingToRun": "Nothing to run — skipped by run directive: {{skipped}}",
       "queued": "Queued",
-      "taskWithSteps": "Its chain runs {{steps}} steps.",
-      "skippedSuffix": "— skipped: {{skipped}}"
+      "taskWithSteps": "Its chain runs {{steps}} steps."
     },
     "provisionerFieldDsl": {
       "hideValue": "Hide the value",

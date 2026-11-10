@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="M4kr.net">
+  <style>
+    .brand-mark-root { color-scheme: light dark; }
+    .m4-teal { fill: #0f766e; fill: light-dark(#0f766e, #2dd4bf); }
+  </style>
+  <g class="brand-mark-root" transform="translate(41 106)">
+    <path class="m4-teal" d="M0,0 H55 L102.5,105 L150,0 H205 V300 H155 V95 L102.5,200 L50,95 V300 H0 Z"/>
+    <path class="m4-teal" fill-rule="evenodd" transform="translate(225 0)" d="M115,0 H175 V190 H205 V240 H175 V300 H125 V240 H0 V185 Z M125,75 V190 H52 Z"/>
+  </g>
+</svg>

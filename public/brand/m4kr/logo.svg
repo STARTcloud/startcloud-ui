@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1660 300" role="img" aria-label="M4kr.net">
+  <style>
+    .brand-mark-root { color-scheme: light dark; }
+    .m4-teal { fill: #0f766e; fill: light-dark(#0f766e, #2dd4bf); }
+    .m4-gray { fill: #6c757d; fill: light-dark(#6c757d, #adb5bd); }
+  </style>
+  <g class="brand-mark-root">
+    <path class="m4-teal" d="M0,0 H55 L102.5,105 L150,0 H205 V300 H155 V95 L102.5,200 L50,95 V300 H0 Z"/>
+    <path class="m4-teal" fill-rule="evenodd" transform="translate(230 0)" d="M115,0 H175 V190 H205 V240 H175 V300 H125 V240 H0 V185 Z M125,75 V190 H52 Z"/>
+    <path class="m4-teal" transform="translate(460 0)" d="M0,0 H50 V120 L140,0 H205 L95,150 L205,300 H140 L50,180 V300 H0 Z"/>
+    <path class="m4-teal" fill-rule="evenodd" transform="translate(690 0)" d="M0,0 H160 L205,45 V130 L165,170 H150 L205,300 H148 L98,175 H50 V300 H0 Z M50,50 V125 H140 L155,110 V65 L140,50 Z"/>
+    <path class="m4-gray" transform="translate(920 0)" d="M0,250 H50 V300 H0 Z"/>
+    <path class="m4-gray" transform="translate(995 0)" d="M0,0 H55 L155,190 V0 H205 V300 H150 L50,110 V300 H0 Z"/>
+    <path class="m4-gray" transform="translate(1225 0)" d="M0,0 H205 V50 H50 V125 H170 V175 H50 V250 H205 V300 H0 Z"/>
+    <path class="m4-gray" transform="translate(1455 0)" d="M0,0 H205 V50 H127.5 V300 H77.5 V50 H0 Z"/>
+  </g>
+</svg>

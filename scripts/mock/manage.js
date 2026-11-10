@@ -447,8 +447,27 @@ const signalProcess = ctx => {
   });
 };
 
+const killedAnswer = ({ killed, errors, pattern, signal }) =>
+  ok({
+    killed,
+    errors,
+    pattern,
+    message: `Signal ${signal} sent to ${killed.length} process(es), ${errors.length} failed`,
+    success: true,
+  });
+
 const batchKill = ctx => {
   const { body, host } = ctx;
+  const signal = body.signal || 'TERM';
+  if (Array.isArray(body.pids) && body.pids.length > 0) {
+    const rows = stateOf(host).processes;
+    const killed = body.pids.filter(pid => rows.some(row => String(row.pid) === String(pid)));
+    const errors = body.pids
+      .filter(pid => !killed.includes(pid))
+      .map(pid => ({ pid, error: 'process not found' }));
+    killed.forEach(pid => dropProcess(host, pid));
+    return killedAnswer({ killed, errors, pattern: '', signal });
+  }
   if (!body.pattern) {
     return refusal(400, 'pattern is required');
   }
@@ -457,12 +476,7 @@ const batchKill = ctx => {
     .filter(row => !body.zone || row.zone === body.zone)
     .map(row => row.pid);
   killed.forEach(pid => dropProcess(host, pid));
-  return ok({
-    success: true,
-    message: `${killed.length} processes killed`,
-    killed,
-    signal: body.signal,
-  });
+  return killedAnswer({ killed, errors: [], pattern: body.pattern, signal });
 };
 
 const users = ctx => {

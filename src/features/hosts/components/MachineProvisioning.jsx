@@ -137,8 +137,7 @@ const useProvisionStatus = ({ status, id, name, offered }) => {
  * by the Controls menu, the tree or a row is sent once as the page
  * opens, `POST machines/{name}/provision`, `/sync`, `/sync` with
  * `syncback` or `/run-provisioners`, one notice reporting the queued
- * task with View task where the host lists `tasks`, a 200 no-op that
- * skipped everything reported as a warning, and the host-hooks refusal,
+ * task with View task where the host lists `tasks`, and the host-hooks refusal,
  * the 409 with `needs_confirmation`, asking a plain confirmation
  * before the same request goes again with `confirm_host_hooks`. On a
  * machine whose status reads `provisioned`, for a person the pipeline
@@ -200,10 +199,6 @@ const MachineProvisioning = ({ id, name, context, title, actions = null }) => {
     try {
       const answer = await callOf(kind, options);
       const outcome = pipelineOutcome(answer, name, t);
-      if (outcome.nothing) {
-        notify('warning', outcome.nothing);
-        return;
-      }
       const viewable = outcome.task && hostHasFeature(server, 'tasks');
       notify('success', outcome.parts.join(' '), {
         action: viewable

@@ -565,26 +565,12 @@ const sync = ctx => {
 };
 
 const runProvisioners = ctx => {
-  const { host, row, document } = ctx;
-  const state = stateOf(host, row);
-  const playbooks = playbooksOf(document);
-  const skipped = playbooks
-    .filter(playbook => playbook.run === 'once' && state.status === 'provisioned')
-    .map(playbook => playbook.playbook);
-  const running = playbooks.length - skipped.length;
-  if (playbooks.length > 0 && running === 0) {
-    return ok({
-      success: true,
-      message: 'Nothing to run: every playbook was skipped by its run directive',
-      playbook_count: 0,
-      playbooks_skipped: skipped,
-    });
-  }
+  const running = playbooksOf(ctx.document).length;
   return queued(ctx, {
     operation: 'machine_provision_parent',
     message: 'Provisioner run queued',
-    metadata: { playbook_count: running, playbooks_skipped: skipped },
-    more: { playbook_count: running, playbooks_skipped: skipped },
+    metadata: { playbook_count: running },
+    more: { playbook_count: running },
   });
 };
 
@@ -713,9 +699,8 @@ const version = ctx => {
  * task's, one of `roles`, `scripts` or `playbook` narrowing the run on a
  * machine that has provisioned once to entries the document holds and
  * refused 400 otherwise; `POST machines/{name}/sync`, `syncback` choosing the flagged
- * folders; and `POST machines/{name}/run-provisioners`, a 200 no-op with
- * `playbooks_skipped` while every playbook runs once and the machine was
- * provisioned. `GET` and `PUT machines/{name}/hosts-yml` read and save the
+ * folders; and `POST machines/{name}/run-provisioners`, every playbook of
+ * the document queued as one task. `GET` and `PUT machines/{name}/hosts-yml` read and save the
  * whole document as YAML, 403 to a person who is no admin, a refused
  * YAML naming its `line` and `column`. Behind `provisioner-registry`:
  * `GET provisioning/provisioners` and one version's detail, the whole

@@ -14,6 +14,7 @@ import {
   fetchArtifactStoragePaths,
   moveArtifact,
   scanArtifacts,
+  syncRegistrySource,
 } from '../../api/provisioning';
 import { fetchTemplateSources } from '../../api/templates';
 import { useArtifactDownloads } from '../../hooks/useArtifactDownloads';
@@ -115,7 +116,9 @@ const SOURCE_KINDS = ['upload', 'register', 'registry', 'download', 'hcl'];
  * BoxVault while the host lists `templates`, Download URL, HCL portal
  * while it lists `provisioner-registry`, the split Scan all,
  * `POST artifacts/scan` with `verify_checksums` false, with Scan all and
- * re-hash, the same with `verify_checksums` true, in its menu, Locations opening the
+ * re-hash, the same with `verify_checksums` true, in its menu, either
+ * press sending one `POST artifacts/registry/{source}/sync` an enabled
+ * registry beside the scan, Locations opening the
  * one modal of the storage locations, Refresh and the view toggle; Delete
  * selected the listing's bulk action behind the delete dialog; each
  * row's Details reading `GET artifacts/{id}`, Download carrying the file
@@ -230,7 +233,13 @@ const InstallersPage = ({ id, server, context, section, onRefresh }) => {
 
   const scanAll = rehash =>
     write({
-      call: () => scanArtifacts(status, id, { verify_checksums: rehash }),
+      call: () =>
+        Promise.all([
+          scanArtifacts(status, id, { verify_checksums: rehash }),
+          ...rowsOf(sources)
+            .filter(source => source.enabled !== false)
+            .map(source => syncRegistrySource(status, id, source.id || source.name)),
+        ]).then(([scan]) => scan),
       doneKey: 'host.installerFiles.scanQueuedDefault',
       failKey: 'host.installerFiles.scanFailed',
     });
