@@ -16,6 +16,14 @@
     "logo": "/brand/startcloud/mark.svg"
   },
   {
+    "name": "m4kr",
+    "css": "/themes/m4kr/m4kr.css",
+    "label": "M4kr.net",
+    "description": "M4kr's teal on cool slate, the machined block letters as the mark.",
+    "brand": "m4kr",
+    "logo": "/brand/m4kr/mark.svg"
+  },
+  {
     "name": "moonshinedev",
     "css": "/themes/moonshinedev/moonshinedev.css",
     "label": "Moonshine.dev",
@@ -30,6 +38,14 @@
     "description": "Nomad's violet on purple-black, set in IBM Plex Sans.",
     "brand": "nomadservices",
     "logo": "/brand/nomadservices/mark.svg"
+  },
+  {
+    "name": "philotic",
+    "css": "/themes/philotic/philotic.css",
+    "label": "Philotic.cloud",
+    "description": "Philotic's amber phi on warm stone, set in a monospace face.",
+    "brand": "philotic",
+    "logo": "/brand/philotic/mark.svg"
   },
   {
     "name": "prominic",

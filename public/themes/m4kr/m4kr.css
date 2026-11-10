@@ -1,0 +1,57 @@
+[data-brand='m4kr'] {
+  --brand-primary: #0f766e;
+  --brand-primary-rgb: 15, 118, 110;
+  --brand-on-primary: #ffffff;
+  --brand-icon-filter: brightness(0) invert(1);
+  --brand-logo: url('/brand/m4kr/mark.svg');
+  --brand-logo-color: #0f766e;
+  --brand-auth-display: 'Montserrat', 'Open Sans', sans-serif;
+  --brand-focus-ring: rgba(15, 118, 110, 0.69);
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: 15, 118, 110;
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+  --bs-body-bg: #ffffff;
+  --bs-body-bg-rgb: 255, 255, 255;
+  --bs-tertiary-bg: #f8f9fa;
+  --bs-tertiary-bg-rgb: 248, 249, 250;
+  --bs-secondary-bg: #e9ecef;
+  --bs-secondary-bg-rgb: 233, 236, 239;
+  --bs-border-color: #dee2e6;
+  --bs-border-color-rgb: 222, 226, 230;
+  --bs-body-color: #212529;
+  --bs-body-color-rgb: 33, 37, 41;
+  --bs-emphasis-color: #000000;
+  --bs-emphasis-color-rgb: 0, 0, 0;
+  --bs-secondary-color: #495057;
+  --bs-secondary-color-rgb: 73, 80, 87;
+  --bs-link-color: #0f766e;
+  --bs-link-color-rgb: 15, 118, 110;
+  --bs-link-hover-color: #0b5a54;
+  --bs-link-hover-color-rgb: 11, 90, 84;
+}
+
+[data-brand='m4kr'][data-bs-theme='dark'] {
+  --brand-focus-ring: rgba(15, 118, 110, 0.93);
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --brand-logo-color: #2dd4bf;
+  --bs-body-bg: #0f1719;
+  --bs-body-bg-rgb: 15, 23, 25;
+  --bs-tertiary-bg: #162124;
+  --bs-tertiary-bg-rgb: 22, 33, 36;
+  --bs-secondary-bg: #1d2b2f;
+  --bs-secondary-bg-rgb: 29, 43, 47;
+  --bs-border-color: #2d4045;
+  --bs-border-color-rgb: 45, 64, 69;
+  --bs-body-color: #d5e2e4;
+  --bs-body-color-rgb: 213, 226, 228;
+  --bs-emphasis-color: #ffffff;
+  --bs-emphasis-color-rgb: 255, 255, 255;
+  --bs-secondary-color: #9bb0b4;
+  --bs-secondary-color-rgb: 155, 176, 180;
+  --bs-link-color: #5eead4;
+  --bs-link-color-rgb: 94, 234, 212;
+  --bs-link-hover-color: #2dd4bf;
+  --bs-link-hover-color-rgb: 45, 212, 191;
+}

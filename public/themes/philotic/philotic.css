@@ -1,0 +1,57 @@
+[data-brand='philotic'] {
+  --brand-primary: #ff9800;
+  --brand-primary-rgb: 255, 152, 0;
+  --brand-on-primary: #000000;
+  --brand-icon-filter: brightness(0);
+  --brand-logo: url('/brand/philotic/mark.svg');
+  --brand-logo-color: #b36b00;
+  --brand-auth-display: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+  --brand-focus-ring: rgba(204, 122, 0, 0.93);
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: 255, 152, 0;
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, white);
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-color: var(--brand-on-primary);
+  --bs-body-bg: #ffffff;
+  --bs-body-bg-rgb: 255, 255, 255;
+  --bs-tertiary-bg: #f8f9fa;
+  --bs-tertiary-bg-rgb: 248, 249, 250;
+  --bs-secondary-bg: #e9ecef;
+  --bs-secondary-bg-rgb: 233, 236, 239;
+  --bs-border-color: #dee2e6;
+  --bs-border-color-rgb: 222, 226, 230;
+  --bs-body-color: #212529;
+  --bs-body-color-rgb: 33, 37, 41;
+  --bs-emphasis-color: #000000;
+  --bs-emphasis-color-rgb: 0, 0, 0;
+  --bs-secondary-color: #495057;
+  --bs-secondary-color-rgb: 73, 80, 87;
+  --bs-link-color: #8f4f00;
+  --bs-link-color-rgb: 143, 79, 0;
+  --bs-link-hover-color: #703d00;
+  --bs-link-hover-color-rgb: 112, 61, 0;
+}
+
+[data-brand='philotic'][data-bs-theme='dark'] {
+  --brand-focus-ring: rgba(255, 152, 0, 0.51);
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--brand-primary) 20%, black);
+  --brand-logo-color: #ff9800;
+  --bs-body-bg: #1c1917;
+  --bs-body-bg-rgb: 28, 25, 23;
+  --bs-tertiary-bg: #262220;
+  --bs-tertiary-bg-rgb: 38, 34, 32;
+  --bs-secondary-bg: #302b28;
+  --bs-secondary-bg-rgb: 48, 43, 40;
+  --bs-border-color: #45403b;
+  --bs-border-color-rgb: 69, 64, 59;
+  --bs-body-color: #e7e2dc;
+  --bs-body-color-rgb: 231, 226, 220;
+  --bs-emphasis-color: #ffffff;
+  --bs-emphasis-color-rgb: 255, 255, 255;
+  --bs-secondary-color: #b3aca4;
+  --bs-secondary-color-rgb: 179, 172, 164;
+  --bs-link-color: #ffb84d;
+  --bs-link-color-rgb: 255, 184, 77;
+  --bs-link-hover-color: #ffa31a;
+  --bs-link-hover-color-rgb: 255, 163, 26;
+}
