@@ -90,7 +90,7 @@ const ServerSetup = ({ context }) => {
     }
     setBusy(true);
     try {
-      await addServer({ ...bodyOf(form), entityName: form.entityName });
+      await addServer({ ...bodyOf(form), entity_name: form.entityName });
       notify('success', t('auth.serverSetup.bootstrapSuccessMsg'));
     } catch (error) {
       notify('danger', messageOf(error) || t('auth.serverSetup.unexpectedError'));

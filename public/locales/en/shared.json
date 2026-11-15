@@ -386,7 +386,8 @@
       "iconName": "Use only lowercase letters, digits, spaces and dashes in {{label}}, up to 64 characters.",
       "languageTag": "Enter {{label}} as a language tag such as en or es-MX.",
       "timezone": "Enter {{label}} as a time zone such as America/Chicago or UTC.",
-      "region": "Enter {{label}} as two-letter country codes or one of EU, EEA and UK."
+      "region": "Enter {{label}} as two-letter country codes or one of EU, EEA and UK.",
+      "domainName": "Enter a domain name for {{label}}, such as lab.example.com."
     },
     "minimum": "Enter {{label}} of at least {{minimum}}.",
     "maximum": "Enter {{label}} of at most {{maximum}}.",
@@ -1648,6 +1649,8 @@
       "locale": "Locale",
       "timezone": "Timezone",
       "address": "Address",
+      "baseDomain": "Default domain for new machines",
+      "baseDomainHint": "New machines of this organization take this domain unless a person's own default or the host's says otherwise.",
       "updateButton": "Update Organization",
       "manageAtIdp": "Manage at Identity Provider",
       "listed": "Listed in discovery",
@@ -3287,7 +3290,9 @@
     "preferences": {
       "title": "Hosts",
       "defaultDomain": "Default domain for new machines",
-      "defaultDomainHint": "A bare machine name takes this domain before the host's own rows; kept in this browser only."
+      "defaultDomainHint": "A bare machine name takes this domain before the host's own rows; kept in this browser only.",
+      "accountDomain": "Default domain for new machines on your account",
+      "accountDomainHint": "Stored on your account and used in every browser; the browser preference above comes first."
     }
   },
   "pages": {
@@ -11986,6 +11991,8 @@
       "fillHostPortProtocol": "Please fill in hostname, port, and protocol first",
       "testingConnection": "Testing connection...",
       "testSuccess": "Connection test successful! Server is reachable and ready for bootstrap.",
+      "testSuccessBootstrap": "Connection successful. The host is ready for bootstrap.",
+      "testSuccessExistingKey": "Connection successful. The host already holds a key; add it with its existing API key.",
       "testFailed": "Connection test failed: {{message}}",
       "testFailedGeneric": "Connection test failed. Please check your server details.",
       "hostPortProtocolRequired": "Hostname, port, and protocol are required",

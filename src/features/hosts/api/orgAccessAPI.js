@@ -1,3 +1,4 @@
+import { accountMembership } from '../../../lib/cookieSession';
 import { client, session } from '../../../lib/runtime';
 
 const serverPath = serverId => `/api/servers/${encodeURIComponent(serverId)}`;
@@ -52,28 +53,28 @@ const localOrgsOf = answer =>
   answer.status === 'fulfilled' && answer.value?.success
     ? (answer.value.organizations || [])
         .filter(org => org.org_uuid)
-        .map(org => ({ uuid: org.org_uuid, name: org.name || null, roles: [], primary: false }))
+        .map(org => ({
+          uuid: org.org_uuid,
+          name: org.name || org.org_uuid,
+          roles: [],
+          primary: false,
+        }))
     : [];
 
 const claimedOrgsOf = answer =>
   answer.status === 'fulfilled'
-    ? (answer.value?.organizations || [])
-        .filter(org => org?.uuid)
-        .map(org => ({
-          uuid: org.uuid,
-          name: org.name || null,
-          roles: Array.isArray(org.roles) ? org.roles : [],
-          primary: Boolean(org.primary),
-        }))
+    ? (answer.value?.organizations || []).filter(org => org?.uuid).map(accountMembership)
     : [];
 
 /**
- * Every organization the person can assign, merged from the server's own
- * table, `GET /api/organizations`, and the person's own memberships,
- * the session's one copy of `GET /api/userinfo/claims`; a refusal of
- * either narrows the list and assignment by a typed uuid stays possible.
+ * Every organization the person can reach, in the chrome's organization
+ * shape, merged from the server's own table, `GET /api/organizations`,
+ * and the person's own memberships, the session's one copy of
+ * `GET /api/userinfo/claims`, a membership's row winning and taking the
+ * table's name where its own is empty, a row with no name named by its
+ * uuid; a refusal of either narrows the list.
  *
- * @returns {Promise<Array<{ uuid: string, name: string|null, roles: Array<string>, primary: boolean }>>} The organizations, by name
+ * @returns {Promise<Array<{ uuid: string, name: string, roles: Array<string>, primary: boolean }>>} The organizations, by name
  */
 export const getKnownOrgs = async () => {
   const [local, claims] = await Promise.allSettled([
@@ -83,9 +84,9 @@ export const getKnownOrgs = async () => {
   const byUuid = new Map();
   localOrgsOf(local).forEach(org => byUuid.set(org.uuid, org));
   claimedOrgsOf(claims).forEach(org =>
-    byUuid.set(org.uuid, { ...org, name: org.name || byUuid.get(org.uuid)?.name || null })
+    byUuid.set(org.uuid, { ...org, name: org.name || byUuid.get(org.uuid)?.name || org.uuid })
   );
-  return [...byUuid.values()].sort((a, b) => (a.name || a.uuid).localeCompare(b.name || b.uuid));
+  return [...byUuid.values()].sort((a, b) => a.name.localeCompare(b.name));
 };
 
 /**

@@ -139,7 +139,7 @@ const settingsOf = preferences => ({
 });
 
 const patchOf = ({ settings, preferences, pin, clearPin, own }) => {
-  const patch = { ciba_channel: settings.ciba_channel };
+  const patch = 'ciba_channel' in preferences ? { ciba_channel: settings.ciba_channel } : {};
   if (settings.timezone && settings.timezone !== (preferences.timezone || '')) {
     patch.timezone = settings.timezone;
   }
@@ -198,6 +198,131 @@ ReadOnlyField.propTypes = {
   id: PropTypes.string.isRequired,
   label: PropTypes.node.isRequired,
   value: PropTypes.string.isRequired,
+};
+
+const LanguageSelect = ({ own, languages, recordLanguage, onChange }) => {
+  const { t, i18n } = useTranslation();
+  return (
+    <SelectField
+      id="profile-preferences-language"
+      label={t('profile.preferences.language')}
+      hint={own ? t('profile.preferences.languageHint') : ''}
+      value={own ? i18n.language : recordLanguage || i18n.language}
+      onChange={event => onChange(event.target.value)}
+    >
+      {languages.map(code => (
+        <option key={code} value={code}>
+          {languageName(code)}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+LanguageSelect.propTypes = {
+  own: PropTypes.bool.isRequired,
+  languages: PropTypes.arrayOf(PropTypes.string).isRequired,
+  recordLanguage: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+const ZoneSelect = ({ rules, zones, zone, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <SelectField
+      id={rules.idFor('timezone')}
+      label={t('profile.preferences.timezone')}
+      hint={t('profile.preferences.timezoneHint')}
+      error={rules.errors.timezone || ''}
+      value={zone}
+      onChange={event => onChange(event.target.value)}
+      onBlur={() => rules.onBlur('timezone')}
+    >
+      {zones.includes(zone) ? null : <option value={zone}>{zone}</option>}
+      {zones.map(name => (
+        <option key={name} value={name}>
+          {name}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+ZoneSelect.propTypes = {
+  rules: PropTypes.object.isRequired,
+  zones: PropTypes.arrayOf(PropTypes.string).isRequired,
+  zone: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+const RegionSelect = ({ rules, region, countries, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <SelectField
+      id={rules.idFor('region')}
+      label={t('profile.preferences.region')}
+      hint={t('profile.preferences.regionHint')}
+      error={rules.errors.region || ''}
+      value={region}
+      onChange={event => onChange(event.target.value)}
+      onBlur={() => rules.onBlur('region')}
+    >
+      <option value="">{t('profile.preferences.regionNotSet')}</option>
+      {REGION_SETS.map(code => (
+        <option key={code} value={code}>
+          {t(`profile.preferences.regionSet.${code.toLowerCase()}`)}
+        </option>
+      ))}
+      {countries.map(country => (
+        <option key={country.code} value={country.code}>
+          {country.label}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+RegionSelect.propTypes = {
+  rules: PropTypes.object.isRequired,
+  region: PropTypes.string.isRequired,
+  countries: PropTypes.arrayOf(
+    PropTypes.shape({ code: PropTypes.string.isRequired, label: PropTypes.string.isRequired })
+  ).isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+const ChannelSelect = ({ rules, channel, smsAllowed, onChange }) => {
+  const { t } = useTranslation();
+  const hint = (
+    <>
+      {t('profile.preferences.channelHint')}
+      {smsAllowed ? null : ` ${t('profile.preferences.channelSmsHint')}`}
+    </>
+  );
+  return (
+    <SelectField
+      id={rules.idFor('ciba_channel')}
+      label={t('profile.preferences.channel.label')}
+      hint={hint}
+      error={rules.errors.ciba_channel || ''}
+      value={channel}
+      onChange={event => onChange(event.target.value)}
+      onBlur={() => rules.onBlur('ciba_channel')}
+    >
+      {CHANNELS.map(entry => (
+        <option key={entry} value={entry} disabled={entry === 'SMS' && !smsAllowed}>
+          {t(`profile.preferences.channel.${entry}`)}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+ChannelSelect.propTypes = {
+  rules: PropTypes.object.isRequired,
+  channel: PropTypes.string.isRequired,
+  smsAllowed: PropTypes.bool.isRequired,
+  onChange: PropTypes.func.isRequired,
 };
 
 const ModeSelect = ({ own, mode, recordMode, onChange }) => {
@@ -272,12 +397,18 @@ const ReadOnlyPreferences = ({ account, profile, folds, after = null }) => {
           ],
         ]
       : []),
-    ['timezone', t('profile.preferences.timezone'), preferences.timezone || detectedZone()],
-    [
-      'region',
-      t('profile.preferences.region'),
-      preferences.region || t('profile.preferences.regionNotSet'),
-    ],
+    ...('timezone' in preferences
+      ? [['timezone', t('profile.preferences.timezone'), preferences.timezone || detectedZone()]]
+      : []),
+    ...('region' in preferences
+      ? [
+          [
+            'region',
+            t('profile.preferences.region'),
+            preferences.region || t('profile.preferences.regionNotSet'),
+          ],
+        ]
+      : []),
   ];
   return (
     <div className="tab-pane fade show active">
@@ -476,12 +607,10 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
   };
 
   const pinSet = Boolean(preferences.ciba_user_code_set) && !clearPin;
-  const channelHint = (
-    <>
-      {t('profile.preferences.channelHint')}
-      {smsAllowed ? null : ` ${t('profile.preferences.channelSmsHint')}`}
-    </>
-  );
+  const zoneField = 'timezone' in preferences;
+  const regionField = 'region' in preferences;
+  const channelField = 'ciba_channel' in preferences;
+  const pinField = own && 'ciba_user_code_set' in preferences;
 
   return (
     <div className="tab-pane fade show active">
@@ -495,19 +624,12 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
           <FormErrorSummary errors={rules.summary} />
           <div className="row">
             <div className="col-md-3">
-              <SelectField
-                id="profile-preferences-language"
-                label={t('profile.preferences.language')}
-                hint={own ? t('profile.preferences.languageHint') : ''}
-                value={own ? i18n.language : settings.language || i18n.language}
-                onChange={event => changeLanguage(event.target.value)}
-              >
-                {languages.map(code => (
-                  <option key={code} value={code}>
-                    {languageName(code)}
-                  </option>
-                ))}
-              </SelectField>
+              <LanguageSelect
+                own={own}
+                languages={languages}
+                recordLanguage={settings.language}
+                onChange={changeLanguage}
+              />
             </div>
             <div className="col-md-3">
               <ModeSelect own={own} mode={mode} recordMode={settings.mode} onChange={changeMode} />
@@ -521,99 +643,75 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
               />
             </div>
           </div>
-          <div className="row">
-            {themes.length > 0 ? (
-              <div className="col-md-3">
-                <SelectField
-                  id="profile-preferences-theme"
-                  label={t('profile.preferences.theme.label')}
-                  hint={own ? t('profile.preferences.themeHint') : ''}
-                  value={own ? theme : settings.theme}
-                  onChange={event => changeTheme(event.target.value)}
-                >
-                  <option value="">{t('profile.preferences.theme.follow')}</option>
-                  {themes.map(entry => (
-                    <option key={entry.name} value={entry.name}>
-                      {entry.label}
-                    </option>
-                  ))}
-                </SelectField>
-              </div>
-            ) : null}
-            <div className="col-md-3">
-              <SelectField
-                id={rules.idFor('timezone')}
-                label={t('profile.preferences.timezone')}
-                hint={t('profile.preferences.timezoneHint')}
-                error={rules.errors.timezone || ''}
-                value={zone}
-                onChange={event => set('timezone', event.target.value)}
-                onBlur={() => rules.onBlur('timezone')}
-              >
-                {zones.includes(zone) ? null : <option value={zone}>{zone}</option>}
-                {zones.map(name => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </SelectField>
+          {themes.length > 0 || zoneField || regionField ? (
+            <div className="row">
+              {themes.length > 0 ? (
+                <div className="col-md-3">
+                  <SelectField
+                    id="profile-preferences-theme"
+                    label={t('profile.preferences.theme.label')}
+                    hint={own ? t('profile.preferences.themeHint') : ''}
+                    value={own ? theme : settings.theme}
+                    onChange={event => changeTheme(event.target.value)}
+                  >
+                    <option value="">{t('profile.preferences.theme.follow')}</option>
+                    {themes.map(entry => (
+                      <option key={entry.name} value={entry.name}>
+                        {entry.label}
+                      </option>
+                    ))}
+                  </SelectField>
+                </div>
+              ) : null}
+              {zoneField ? (
+                <div className="col-md-3">
+                  <ZoneSelect
+                    rules={rules}
+                    zones={zones}
+                    zone={zone}
+                    onChange={value => set('timezone', value)}
+                  />
+                </div>
+              ) : null}
+              {regionField ? (
+                <div className="col-md-3">
+                  <RegionSelect
+                    rules={rules}
+                    region={settings.region}
+                    countries={countries}
+                    onChange={value => set('region', value)}
+                  />
+                </div>
+              ) : null}
             </div>
-            <div className="col-md-3">
-              <SelectField
-                id={rules.idFor('region')}
-                label={t('profile.preferences.region')}
-                hint={t('profile.preferences.regionHint')}
-                error={rules.errors.region || ''}
-                value={settings.region}
-                onChange={event => set('region', event.target.value)}
-                onBlur={() => rules.onBlur('region')}
-              >
-                <option value="">{t('profile.preferences.regionNotSet')}</option>
-                {REGION_SETS.map(code => (
-                  <option key={code} value={code}>
-                    {t(`profile.preferences.regionSet.${code.toLowerCase()}`)}
-                  </option>
-                ))}
-                {countries.map(country => (
-                  <option key={country.code} value={country.code}>
-                    {country.label}
-                  </option>
-                ))}
-              </SelectField>
+          ) : null}
+          {channelField || pinField ? (
+            <div className="row">
+              {channelField ? (
+                <div className="col-md-6">
+                  <ChannelSelect
+                    rules={rules}
+                    channel={settings.ciba_channel}
+                    smsAllowed={smsAllowed}
+                    onChange={value => set('ciba_channel', value)}
+                  />
+                </div>
+              ) : null}
+              {pinField ? (
+                <div className="col-md-6">
+                  <PinField
+                    rules={rules}
+                    pin={pin}
+                    pinSet={pinSet}
+                    pinRef={pinRef}
+                    onPin={setPin}
+                    onSet={setPinMode}
+                    onClear={clearPinMode}
+                  />
+                </div>
+              ) : null}
             </div>
-          </div>
-          <div className="row">
-            <div className="col-md-6">
-              <SelectField
-                id={rules.idFor('ciba_channel')}
-                label={t('profile.preferences.channel.label')}
-                hint={channelHint}
-                error={rules.errors.ciba_channel || ''}
-                value={settings.ciba_channel}
-                onChange={event => set('ciba_channel', event.target.value)}
-                onBlur={() => rules.onBlur('ciba_channel')}
-              >
-                {CHANNELS.map(channel => (
-                  <option key={channel} value={channel} disabled={channel === 'SMS' && !smsAllowed}>
-                    {t(`profile.preferences.channel.${channel}`)}
-                  </option>
-                ))}
-              </SelectField>
-            </div>
-            {own ? (
-              <div className="col-md-6">
-                <PinField
-                  rules={rules}
-                  pin={pin}
-                  pinSet={pinSet}
-                  pinRef={pinRef}
-                  onPin={setPin}
-                  onSet={setPinMode}
-                  onClear={clearPinMode}
-                />
-              </div>
-            ) : null}
-          </div>
+          ) : null}
           <button type="submit" className="btn btn-primary" data-action="save-preferences">
             {t('profile.preferences.save')}
           </button>
@@ -879,9 +977,17 @@ SignInNoticesCard.propTypes = {
  * zone and the region in the patch only when they differ from the stored
  * value, so a detected preselection is never written, while the rules
  * evaluate the zone and region the selects hold; the page remounts it
- * with every re-read of the record. While `readOnly`, the record an
- * identity provider owns, the language, mode, motion, theme, time zone
- * and region draw as `readonly` fields in the same card with the Manage
+ * with every re-read of the record. The time zone, the region, the
+ * approval channel and the PIN each draw only while the record's
+ * `preferences` carries its member, `timezone`, `region`, `ciba_channel`
+ * and `ciba_user_code_set`, because a control the host stores nothing
+ * for writes nowhere: the identity provider's record carries every one,
+ * an `apikey` host's record the time zone alone and a `backend` host's
+ * local account none, its section the language, mode, theme and motion
+ * alone. While `readOnly`, the record an
+ * identity provider owns, the language, mode, motion and theme, and the
+ * time zone and region while the record carries them, draw as `readonly`
+ * fields in the same card with the Manage
  * at identity provider link as its action, the approval channel and PIN
  * being the issuer's own and not drawn. Without a `session`, the record
  * another person's on the admin record page, language, mode, theme and

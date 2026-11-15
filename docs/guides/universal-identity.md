@@ -48,6 +48,7 @@ OIDC interstitials; the signed-in pages; admin, health and errors.
 
 ## Principles
 
+- **Roles and permissions are the [Universal Access Contract](universal-access/).** Every organization role word, the wire form of each, and the gate each holds is read there.
 - **The server answers, the page draws.** Every page GET on the issuer is
   the SPA; every page state is a JSON call under `/api/auth/*`; every
   action is the POST the server already takes, answered as JSON when the
@@ -2604,7 +2605,14 @@ replays inside its window and a guessing run meets `429` with
   whose mutability is `readOnly` (RFC 7644 §3.5.2), a person on any app
   of the estate must still see what the provider holds about them and
   where to change it, and the one page drawn on every UI backend is what
-  convergence means. On the
+  convergence means. A `backend` UI backend's local account writes its
+  preferences through the session's `savePreferences`, the adapter
+  carrying `preferences`, so its Preferences section draws language,
+  mode, theme and motion editable and those four alone, the time zone,
+  region, approval channel and PIN drawn only while the record's
+  `preferences` carries each member, while an identity provider's session
+  on that UI backend keeps the section read-only with the "Manage at
+  identity provider" link. On the
   issuer it draws no tab strip, the sidebar's Profile row
   (`/user/profile`) and its child rows (`/user/profile/security`,
   `/user/profile/preferences`, `/user/profile/favorites`,
@@ -2973,10 +2981,10 @@ child row active by route, so the word Profile is drawn once in the
 column, and the tab strip gone on the issuer, since
 the column is the one navigation; a `backend` UI backend's export answers
 the same group with the same Profile row at `/profile` and its children
-from the same list over that host's adapter, Security, Organizations
-and, while one of the account's memberships holds a role beyond guest or
-the account is a global admin, Service accounts, so the column never
-lists a section the page cannot draw. On the
+from the same list over that host's adapter, Security, Preferences,
+Organizations and, while one of the account's memberships holds a role
+beyond guest or the account is a global admin, Service accounts, so the
+column never lists a section the page cannot draw. On the
 issuer a person's pages are the whole site, so the column draws on every page for
 every signed-in person and those pages are never behind the user menu
 alone. The operator's sections are the identity feature's own export, mounted like every identity page

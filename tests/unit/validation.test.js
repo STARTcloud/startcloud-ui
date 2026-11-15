@@ -310,6 +310,9 @@ describe('messageFor', () => {
     expect(messageFor({ rule: 'minLength', params: { minLength: 3 } }, 'Name', t)).toBe(
       'validation.minLength:Name'
     );
+    expect(
+      messageFor({ rule: 'pattern', params: { pattern: 'domainName' } }, 'Default domain', t)
+    ).toBe('validation.pattern.domainName:Default domain');
   });
 
   it('answers a token by its reason with the token inside its braces', () => {

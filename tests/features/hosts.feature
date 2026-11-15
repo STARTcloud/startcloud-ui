@@ -349,7 +349,7 @@ Feature: hosts
     Then the host was sent POST to "/api/servers" carrying "hostname" as "agent-7.example.com"
     And the host was sent POST to "/api/servers" carrying "port" as "5001"
     And the host was sent POST to "/api/servers" carrying "protocol" as "https"
-    And the host was sent POST to "/api/servers" carrying "entityName" as "Hyperweaver-Production"
+    And the host was sent POST to "/api/servers" carrying "entity_name" as "Hyperweaver-Production"
     And the hosts page draws no registry form
 
   Scenario: Registry: /?add=host arrives with the form open and the query dropped

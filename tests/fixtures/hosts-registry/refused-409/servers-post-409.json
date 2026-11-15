@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/conflict",
+  "title": "agent-7.example.com:5001 is already registered",
+  "status": 409,
+  "detail": "agent-7.example.com:5001 is already registered"
+}

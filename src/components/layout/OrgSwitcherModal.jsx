@@ -108,7 +108,7 @@ export const byPersonalLastThenName = (a, b) =>
   Number(Boolean(a.personal)) - Number(Boolean(b.personal)) ||
   (a.name || '').localeCompare(b.name || '');
 
-const OrgRow = ({ org, active, orgMark, onPick }) => {
+const OrgRow = ({ org, active, orgMark, onPick, busy = false }) => {
   const { t } = useTranslation();
   const live = isLive(org);
   return (
@@ -117,7 +117,8 @@ const OrgRow = ({ org, active, orgMark, onPick }) => {
       className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
         active && live ? 'border-primary border-2' : ''
       }`}
-      disabled={!live}
+      disabled={!live || busy}
+      data-org={org.uuid}
       onClick={() => onPick(org.uuid)}
     >
       <div className={live ? undefined : 'opacity-50'}>
@@ -163,6 +164,7 @@ OrgRow.propTypes = {
   active: PropTypes.bool.isRequired,
   orgMark: PropTypes.node,
   onPick: PropTypes.func.isRequired,
+  busy: PropTypes.bool,
 };
 
 /**
@@ -200,7 +202,8 @@ AllRow.propTypes = {
  * list dialog with its glyph and title, the spinner while `loading`, the
  * danger alert `loadError` while `loadFailed`, the info alert `emptyText`
  * while `empty` and nothing failed, and `children`, the rows, while
- * nothing loads and the list is not empty.
+ * nothing loads and the list is not empty; `dialog` names the dialog as
+ * `data-dialog` and `footer`, where given, is the footer's content.
  */
 export const SwitcherModal = ({
   show,
@@ -212,11 +215,18 @@ export const SwitcherModal = ({
   loadError,
   empty = false,
   emptyText,
+  dialog = '',
+  footer = null,
   children,
 }) => {
   const { t } = useTranslation();
   return (
-    <Modal show={show} onHide={onHide} dialogClassName="chrome-modal list-modal">
+    <Modal
+      show={show}
+      onHide={onHide}
+      dialogClassName="chrome-modal list-modal"
+      data-dialog={dialog || undefined}
+    >
       <Modal.Header closeButton>
         <Modal.Title as="h5">
           {icon}
@@ -241,6 +251,7 @@ export const SwitcherModal = ({
         ) : null}
         {!loading && !empty ? children : null}
       </Modal.Body>
+      {footer ? <Modal.Footer>{footer}</Modal.Footer> : null}
     </Modal>
   );
 };
@@ -255,7 +266,58 @@ SwitcherModal.propTypes = {
   loadError: PropTypes.string.isRequired,
   empty: PropTypes.bool,
   emptyText: PropTypes.string.isRequired,
+  dialog: PropTypes.string,
+  footer: PropTypes.node,
   children: PropTypes.node.isRequired,
+};
+
+export const selectionShape = PropTypes.shape({
+  selected: PropTypes.arrayOf(PropTypes.string).isRequired,
+  onToggle: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  saveText: PropTypes.string.isRequired,
+  busy: PropTypes.bool,
+});
+
+const pickingOf = (selection, activeUuid, onPick) =>
+  selection
+    ? {
+        activeOf: uuid => selection.selected.includes(uuid),
+        pick: selection.onToggle,
+        busy: Boolean(selection.busy),
+      }
+    : { activeOf: uuid => uuid === activeUuid, pick: onPick, busy: false };
+
+/**
+ * The footer of the switcher's multi-select variant: Cancel closing the
+ * dialog through `onHide` and the primary Save, the selection's
+ * `saveText` its word, answering its `onSave`, both held while its
+ * `busy`.
+ */
+const SaveFooter = ({ selection, onHide }) => {
+  const { t } = useTranslation();
+  const busy = Boolean(selection.busy);
+  return (
+    <>
+      <button type="button" className="btn btn-secondary" onClick={onHide} disabled={busy}>
+        {t('pages.confirm.cancel')}
+      </button>
+      <button
+        type="button"
+        className="btn btn-primary"
+        data-action="submit"
+        onClick={selection.onSave}
+        disabled={busy}
+      >
+        {selection.saveText}
+      </button>
+    </>
+  );
+};
+
+SaveFooter.propTypes = {
+  selection: selectionShape.isRequired,
+  onHide: PropTypes.func.isRequired,
 };
 
 /**
@@ -269,7 +331,13 @@ SwitcherModal.propTypes = {
  * `allOrganizations`, on a host that narrows by
  * organization, the All organizations row first, active while
  * `activeUuid` is empty. Picking a row answers `onPick` with its uuid,
- * the empty uuid for All, and never navigates.
+ * the empty uuid for All, and never navigates. With `selection`,
+ * `{ selected, onToggle, onSave, saveText, busy }`, the switcher is the
+ * multi-select variant: every row whose uuid is in `selected` is drawn
+ * as an active one, picking a row answers `onToggle` with its uuid,
+ * `children` draw over the rows, the footer carries Cancel and Save,
+ * `saveText` its word, Save answering `onSave`, and `busy` holds the rows
+ * and Save; `title`, `icon` and `dialog` replace the switcher's own.
  */
 export const OrgSwitcherModal = ({
   show,
@@ -277,35 +345,47 @@ export const OrgSwitcherModal = ({
   organizations,
   activeUuid = '',
   allOrganizations = false,
-  onPick,
+  onPick = null,
   loading = false,
   loadFailed = false,
   orgMark = null,
+  selection = null,
+  title = '',
+  icon = null,
+  dialog = '',
+  children = null,
 }) => {
   const { t } = useTranslation();
   const rows = [...organizations].sort(byPersonalLastThenName);
+  const picking = pickingOf(selection, activeUuid, onPick);
 
   return (
     <SwitcherModal
       show={show}
       onHide={onHide}
-      icon={<FaBuilding className="me-2" />}
-      title={t('orgSwitcher.title')}
+      icon={icon || <FaBuilding className="me-2" />}
+      title={title || t('orgSwitcher.title')}
       loading={loading}
       loadFailed={loadFailed}
       loadError={t('orgSwitcher.loadError')}
-      empty={rows.length === 0}
+      empty={!selection && rows.length === 0}
       emptyText={t('orgSwitcher.noOrgsFound')}
+      dialog={dialog}
+      footer={selection ? <SaveFooter selection={selection} onHide={onHide} /> : null}
     >
+      {children}
       <div className="list-group">
-        {allOrganizations ? <AllRow active={activeUuid === ''} onPick={onPick} /> : null}
+        {allOrganizations && !selection ? (
+          <AllRow active={activeUuid === ''} onPick={onPick} />
+        ) : null}
         {rows.map(org => (
           <OrgRow
             key={org.uuid}
             org={org}
-            active={org.uuid === activeUuid}
+            active={picking.activeOf(org.uuid)}
             orgMark={orgMark}
-            onPick={onPick}
+            onPick={picking.pick}
+            busy={picking.busy}
           />
         ))}
       </div>
@@ -319,8 +399,13 @@ OrgSwitcherModal.propTypes = {
   organizations: PropTypes.arrayOf(organizationShape).isRequired,
   activeUuid: PropTypes.string,
   allOrganizations: PropTypes.bool,
-  onPick: PropTypes.func.isRequired,
+  onPick: PropTypes.func,
   loading: PropTypes.bool,
   loadFailed: PropTypes.bool,
   orgMark: PropTypes.node,
+  selection: selectionShape,
+  title: PropTypes.string,
+  icon: PropTypes.node,
+  dialog: PropTypes.string,
+  children: PropTypes.node,
 };

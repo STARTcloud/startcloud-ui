@@ -49,7 +49,11 @@ const failure = (message, messageKey) => {
  * as signed in. The account's `preferred_mode`, `preferred_theme`,
  * `preferred_motion` and `preferred_language` ride the stored record,
  * applied in memory while signed in and never mirrored into the browser's
- * own keys, and leave with the record at sign-out. `complete()` and `login()`
+ * own keys, and leave with the record at sign-out; `savePreferences(patch)`
+ * sends `PATCH /api/user/preferences` with the patch's `language`, `mode`,
+ * `theme` and `motion`, a local account's own row and a provider session's
+ * write delegated by the backend to the identity provider, and updates the
+ * four stored members on success. `complete()` and `login()`
  * store the credential, await `login` on the bus, whose handler is the one
  * `load()`, and answer the restored session, reading nothing themselves.
  * The backend's logout route signs out everywhere. A session it restores

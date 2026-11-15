@@ -1,0 +1,22 @@
+{
+  "role": "hyperweaver-server",
+  "version": "0.9.6",
+  "brand": {
+    "name": "Hyperweaver",
+    "logo_url": "/brand/hyperweaver/mark.svg",
+    "themes": [
+      {
+        "name": "shi",
+        "css": "/themes/shi/shi.css",
+        "label": "Super.Human.Installer",
+        "logo": "/brand/shi/mark.svg"
+      },
+      { "name": "lcars", "css": "/themes/lcars/lcars.css", "label": "LCARS" }
+    ]
+  },
+  "auth": ["backend"],
+  "collections": [],
+  "features": ["sidebar"],
+  "links": { "docs": "", "contact": "" },
+  "ticket": null
+}

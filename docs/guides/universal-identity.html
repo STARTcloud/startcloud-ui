@@ -4540,7 +4540,12 @@
         <code>email</code>, <code>inbox</code> and <code>push</code> as switches, "Following the
         site's default" while <code>default</code> is true and a way back that sends
         <code>null</code>, its Save sending only the members that changed, its four refusals drawn
-        on the control their pointer names.
+        on the control their pointer names. On a UI backend whose account is its own (a local
+        account on a <code>backend</code> host) the adapter carries <code>preferences</code> and
+        language, mode, theme and motion write through the session's preferences write, those four
+        alone, the time zone, region, approval channel and PIN drawn only while the record's
+        <code>preferences</code> carries each member; on a UI backend whose session is an identity
+        provider's the section stays read-only with the "Manage at identity provider" link.
       </div>
       <div class="callout">
         <strong>Favorites</strong> is the ordered list with drag handles over

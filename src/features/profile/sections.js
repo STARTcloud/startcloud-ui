@@ -23,8 +23,9 @@ import { isReadOnly } from './components/ManageLink';
  * `deletion`, and a UI backend with accounts of its own carrying
  * `details`, `address`, `phone` (`{ set }`, the number written plainly),
  * `password`, `email`, `deletion`, `verification` (the emailed
- * verification link's consume and its resend), `organizations` and
- * `serviceAccounts`.
+ * verification link's consume and its resend), `organizations`,
+ * `serviceAccounts` and, for a local account, `preferences` (language,
+ * mode, theme and motion written through the session).
  */
 export const accountShape = PropTypes.shape({
   profile: PropTypes.func.isRequired,

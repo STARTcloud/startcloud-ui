@@ -217,6 +217,18 @@ The members are the wire, request and answer alike; the shared UI's
 adapters read BoxVault's answers under these names and map them to the
 UI's own item shape.
 
+On the `hyperweaver-server` role two forms carry one more member each, a
+DNS name by that UI backend's `$defs.domainName`, optional, `null`
+clearing it: the `organization` form carries `base_domain`, the
+organization's default domain for new machines, answered by
+`GET /api/organization/{name}` and `GET /api/organizations` and carried
+as the `organization` row of `settings.domain_choices` on a proxied
+`GET /api/agents/{id}/machines/defaults`, drawn by the organization
+console while the host lists `hosts`; and the `preferences` form on
+`GET` and `PATCH /api/user/preferences` carries `default_domain`, the
+person's default domain for new machines, the `user` row of the same
+list, drawn by the Preferences section's Hosts card.
+
 Visibility travels down the tree, so every form above whose row has rows
 beneath it (the item, version, release, provider, patch and architecture
 forms and the three bulk forms) carries one more member, `recursive`
@@ -308,6 +320,13 @@ UI with `validation.equals` and the `rule` the `custom` function names.
 | `languageTag`  | `^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$`, up to 10                                                                                                    | the preferences `language` member, a BCP 47 primary subtag with optional subtags, bounded by the column that stores it                                                                                                                                           |
 | `timezone`     | `^(?:UTC\|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$`                                                                                                      | the preferences `timezone` member, an IANA zone id or `UTC`                                                                                                                                                                                                      |
 | `region`       | `^[A-Z]{2}$\|^(EU\|EEA\|UK)$`                                                                                                                     | an ISO 3166-1 alpha-2 country code or one of the three named sets a terms variant may target                                                                                                                                                                     |
+
+`domainName` is the `hyperweaver-server` role's own named pattern, a DNS
+name, carried in that UI backend's `$defs` alone: the `base_domain` of an
+organization and the `default_domain` of a person's preferences, the
+domain a bare machine name takes. The shared UI carries no fallback for
+it and paints its refusal as `validation.pattern.domainName`, because the
+host's rules are the one source of the pattern.
 
 The email regular expression, verbatim from the HTML Standard:
 

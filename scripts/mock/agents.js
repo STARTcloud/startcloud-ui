@@ -51,7 +51,7 @@ const visibleTo = person => row => {
 };
 
 const withKey = ctx => row =>
-  ctx.url.searchParams.get('includeApiKeys') === 'true' && isAdmin(ctx.person)
+  ctx.url.searchParams.get('include_api_keys') === 'true' && isAdmin(ctx.person)
     ? { ...row, api_key: serverKeyOf(row.id) }
     : row;
 
@@ -162,7 +162,7 @@ export const startFlapping = () => {
  * the sockets of the shell, the task streams, the log streams and the
  * consoles, and the Agent settings page's routes with the agent's own
  * sign-ins. The registry carries each row's API key for an admin who
- * asks `includeApiKeys`.
+ * asks `include_api_keys`.
  *
  * @param {Object} router - `publicRoute`, `sessionRoute`, `agentRoute` and `socketRoute`
  * @returns {void}

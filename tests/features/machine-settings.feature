@@ -239,7 +239,7 @@ Feature: machine settings
     Then the row of "dev-2" offers no "exec"
     And the row of "dev-2" offers no "display"
 
-  Scenario: Machine page: the organization access on the server role reads the assignment and the organizations once and sends every uuid
+  Scenario: Machine page: the organization access on the server role opens the organization switcher's multi-select variant, reads the assignment and the organizations once and sends every selected uuid
     Given the host answers the hosts fixture
     And the host answers the hosts-machines fixture
     And the host answers the hosts-tools fixture
@@ -252,10 +252,11 @@ Feature: machine settings
     And the host was sent GET to "/api/servers/1/machines/dev-1/orgs" 1 times
     And the host was sent GET to "/api/organizations" 1 times
     And the host was sent GET to "/api/userinfo/claims" 1 times
-    And the field "org-0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11" is checked
-    And the field "org-5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622" is not checked
-    When I check the field "org-5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622"
-    And I send the open dialog
+    And the organization row "0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11" is selected
+    And the organization row "5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622" is not selected
+    When I toggle the organization row "5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622"
+    Then the organization row "5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622" is selected
+    When I send the open dialog
     Then the host was sent PUT to "/api/servers/1/machines/dev-1/orgs" carrying "0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11" at "/orgs/0"
     And the host was sent PUT to "/api/servers/1/machines/dev-1/orgs" carrying "5e0e6a0c-2b55-4f0b-8d1c-91a7c3f4b622" at "/orgs/1"
     And the host was sent PUT to "/api/servers/1/machines/dev-1/orgs" 1 times

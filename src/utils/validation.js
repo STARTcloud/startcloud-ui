@@ -26,6 +26,7 @@ const PATTERN_KEYS = [
   'languageTag',
   'timezone',
   'region',
+  'domainName',
 ];
 const RULE_KEYS = [
   'required',
@@ -598,7 +599,8 @@ const tokenMessage = (params, label, t) => {
  * The user's text for one error: `validation.<rule>` with the field's label
  * and the rule's params; a pattern by its `$defs` name (`slug`,
  * `identifier`, `email`, `hex`, `orgCode`, `providerName`, `watchId`,
- * `personName`, `iconName`, `languageTag`, `timezone`, `region`) or `nonBlank` for
+ * `personName`, `iconName`, `languageTag`, `timezone`, `region`,
+ * `domainName`) or `nonBlank` for
  * the contract's whitespace rule, a format and a type by theirs; a `token`
  * by its `params.reason` (`unoffered` when the error carries none) with
  * `params.token` drawn inside its braces; a `dependentRequired` and a

@@ -1,0 +1,18 @@
+{
+  "id": 2,
+  "uuid": "person-2",
+  "username": "admin",
+  "provider": "oidc-auth",
+  "role": "admin",
+  "email": "admin@example.com",
+  "verified": true,
+  "name": "Dana Whitfield",
+  "given_name": "Dana",
+  "family_name": "Whitfield",
+  "roles": ["ROLE_USER", "ROLE_ADMIN"],
+  "organizations": [],
+  "preferred_language": "en",
+  "preferred_mode": "dark",
+  "preferred_theme": null,
+  "preferred_motion": null
+}

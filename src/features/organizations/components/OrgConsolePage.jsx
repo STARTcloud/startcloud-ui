@@ -139,10 +139,15 @@ const ORG_SCHEMA = {
     description: { type: 'string' },
   },
 };
+const HOSTS_ORG_SCHEMA = {
+  ...ORG_SCHEMA,
+  properties: { ...ORG_SCHEMA.properties, base_domain: { $ref: '#/$defs/domainName' } },
+};
 const ORG_LABELS = {
   organization: 'orgConsole.organization.name',
   email: 'orgConsole.organization.email',
   description: 'orgConsole.organization.description',
+  base_domain: 'orgConsole.organization.baseDomain',
 };
 const ACCESS_SCHEMA = {
   properties: { access_mode: { type: 'string' }, default_role: { type: 'string' } },
@@ -155,9 +160,27 @@ const EMPTY_ORG = {
   organization: '',
   email: '',
   description: '',
+  base_domain: '',
   access_mode: 'private',
   default_role: 'member',
 };
+
+/**
+ * The body of `PUT /api/organization/{name}` the console sends: the name,
+ * the email and the description, and on a host that lists `hosts` the
+ * `base_domain`, the organization's default domain for new machines,
+ * trimmed, `null` clearing it.
+ *
+ * @param {Object} form - The record form
+ * @param {boolean} hosts - Whether the host lists `hosts`
+ * @returns {Object} The body
+ */
+export const organizationUpdateOf = (form, hosts) => ({
+  organization: form.organization,
+  email: form.email,
+  description: form.description,
+  ...(hosts ? { base_domain: String(form.base_domain || '').trim() || null } : {}),
+});
 const INVITE_SCHEMA = {
   required: ['email'],
   properties: { email: { type: 'string' }, invite_role: { type: 'string' } },
@@ -290,6 +313,7 @@ const extractOrgDetailsState = orgDetails => ({
   email: orgDetails.email || '',
   emailHash: orgDetails.email_hash || '',
   description: orgDetails.description || '',
+  baseDomain: orgDetails.base_domain || '',
   accessMode: orgDetails.access_mode || 'private',
   defaultRole: orgDetails.default_role || 'member',
   logo: orgDetails.logo || '',
@@ -320,6 +344,44 @@ const ACCESS_MODE_LABEL_KEYS = {
   request: 'orgConsole.organization.accessModes.requestToJoin',
 };
 
+/**
+ * The Default domain for new machines field of the record form, drawn
+ * while the host lists `hosts`: the organization's `base_domain`, a DNS
+ * name by the host's `domainName` rule, blank clearing it.
+ */
+const BaseDomainField = ({ rules, value, onChange }) => {
+  const { t } = useTranslation();
+  const status = useStatus();
+  if (!hasFeature(status, 'hosts')) {
+    return null;
+  }
+  return (
+    <Field
+      id={rules.idFor('base_domain')}
+      label={t('orgConsole.organization.baseDomain')}
+      hint={t('orgConsole.organization.baseDomainHint')}
+      error={rules.errors.base_domain}
+    >
+      {aria => (
+        <input
+          {...aria}
+          type="text"
+          className="form-control"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onBlur={() => rules.onBlur('base_domain')}
+        />
+      )}
+    </Field>
+  );
+};
+
+BaseDomainField.propTypes = {
+  rules: PropTypes.object.isRequired,
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
 const OrgProfileDisplay = ({
   orgName,
   orgDisplayName,
@@ -331,6 +393,7 @@ const OrgProfileDisplay = ({
   orgLocale,
   orgTimezone,
   orgAddress,
+  orgBaseDomain,
   orgAccessMode,
   orgDefaultRole,
   orgIdpLink,
@@ -344,6 +407,7 @@ const OrgProfileDisplay = ({
     { key: 'locale', value: orgLocale },
     { key: 'timezone', value: orgTimezone },
     { key: 'address', value: orgAddress, multiline: true },
+    { key: 'baseDomain', value: orgBaseDomain },
     {
       key: 'accessMode',
       value: t(ACCESS_MODE_LABEL_KEYS[orgAccessMode] || 'unknown'),
@@ -404,6 +468,7 @@ OrgProfileDisplay.propTypes = {
   orgLocale: PropTypes.string.isRequired,
   orgTimezone: PropTypes.string.isRequired,
   orgAddress: PropTypes.string.isRequired,
+  orgBaseDomain: PropTypes.string.isRequired,
   orgAccessMode: PropTypes.string.isRequired,
   orgDefaultRole: PropTypes.string.isRequired,
   orgIdpLink: PropTypes.string.isRequired,
@@ -685,7 +750,11 @@ InvitationsTable.propTypes = {
  * each tab's list searched from the navbar by the one query the tabs
  * share, the members narrowed client-side by the Role
  * and Suspended `toggle` groups, every call through the app's `organizations`
- * adapter; `admin` is the app's global-admin flag,
+ * adapter; on a host that lists `hosts` the record carries Default domain
+ * for new machines, `base_domain` on the one `PUT /api/organization/{name}`
+ * with the name, the email and the description, `null` while blank, the
+ * `organization` row of the create wizard's domain chain, the IdP-managed
+ * profile drawing it as a row; `admin` is the app's global-admin flag,
  * and a rename makes the new name the active organization under
  * `activeOrgKey` and refreshes the session.
  */
@@ -694,6 +763,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
   const notify = useNotify();
   const status = useStatus();
   const invitationsEnabled = hasFeature(status, 'invitations');
+  const hosts = hasFeature(status, 'hosts');
   useEffect(() => {
     document.title = t('orgConsole.pageTitle');
   }, [t]);
@@ -713,6 +783,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
   const [orgLocale, setOrgLocale] = useState('');
   const [orgTimezone, setOrgTimezone] = useState('');
   const [orgAddress, setOrgAddress] = useState('');
+  const [orgBaseDomain, setOrgBaseDomain] = useState('');
   const [isExternalOrg, setIsExternalOrg] = useState(false);
   const [orgIdpLink, setOrgIdpLink] = useState('');
   const [orgDisplayName, setOrgDisplayName] = useState('');
@@ -730,7 +801,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
   });
   const orgRules = useFormRules({
     formKey: 'organization',
-    schema: ORG_SCHEMA,
+    schema: hosts ? HOSTS_ORG_SCHEMA : ORG_SCHEMA,
     values: orgForm,
     labels: ORG_LABELS,
   });
@@ -795,9 +866,11 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
           organization: details.name,
           email: details.email,
           description: details.description,
+          base_domain: details.baseDomain,
           access_mode: details.accessMode,
           default_role: details.defaultRole,
         });
+        setOrgBaseDomain(details.baseDomain);
         setIsExternalOrg(details.isExternalOrg);
         setOrgIdpLink(details.idpLink);
         setOrgDisplayName(details.displayName);
@@ -836,16 +909,10 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
     if (![orgRules.validateAll(), accessRules.validateAll()].every(Boolean)) {
       return;
     }
-    const {
-      organization,
-      email,
-      description,
-      access_mode: accessMode,
-      default_role: defaultRole,
-    } = orgForm;
+    const { organization, access_mode: accessMode, default_role: defaultRole } = orgForm;
 
     try {
-      await organizations.update(org, { organization, email, description });
+      await organizations.update(org, organizationUpdateOf(orgForm, hosts));
     } catch (error) {
       reportUpdateFailure(orgRules, error);
       return;
@@ -1088,6 +1155,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
                         orgLocale={orgLocale}
                         orgTimezone={orgTimezone}
                         orgAddress={orgAddress}
+                        orgBaseDomain={orgBaseDomain}
                         orgAccessMode={orgForm.access_mode}
                         orgDefaultRole={orgForm.default_role}
                         orgIdpLink={orgIdpLink}
@@ -1159,6 +1227,11 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
                           />
                         )}
                       </Field>
+                      <BaseDomainField
+                        rules={orgRules}
+                        value={orgForm.base_domain}
+                        onChange={value => setOrgField('base_domain', value)}
+                      />
 
                       <div className="row">
                         <div className="col-md-6">

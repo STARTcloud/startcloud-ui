@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "domainName": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
+      "maxLength": 253
+    }
+  },
+  "forms": {
+    "organization": {
+      "type": "object",
+      "required": ["organization", "email"],
+      "properties": {
+        "organization": { "type": "string" },
+        "email": { "type": "string" },
+        "description": { "type": "string" },
+        "base_domain": { "$ref": "#/$defs/domainName" }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "language": { "type": "string" },
+        "mode": { "type": "string", "enum": ["light", "dark", "auto"] },
+        "theme": { "type": "string" },
+        "motion": { "type": "string", "enum": ["auto", "reduce"] },
+        "default_domain": { "$ref": "#/$defs/domainName" }
+      }
+    }
+  }
+}

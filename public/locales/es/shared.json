@@ -386,7 +386,8 @@
       "iconName": "Usa solo letras minúsculas, dígitos, espacios y guiones en {{label}}, hasta 64 caracteres.",
       "languageTag": "Introduce {{label}} como una etiqueta de idioma, como es o es-MX.",
       "timezone": "Introduce {{label}} como una zona horaria, como America/Chicago o UTC.",
-      "region": "Introduce {{label}} como códigos de país de dos letras o uno de EU, EEA y UK."
+      "region": "Introduce {{label}} como códigos de país de dos letras o uno de EU, EEA y UK.",
+      "domainName": "Introduce un nombre de dominio para {{label}}, como lab.example.com."
     },
     "minimum": "Introduce {{label}} de al menos {{minimum}}.",
     "maximum": "Introduce {{label}} de como máximo {{maximum}}.",
@@ -1648,6 +1649,8 @@
       "locale": "Configuración Regional",
       "timezone": "Zona Horaria",
       "address": "Dirección",
+      "baseDomain": "Dominio predeterminado para máquinas nuevas",
+      "baseDomainHint": "Las máquinas nuevas de esta organización toman este dominio, a menos que el predeterminado propio de una persona o el del host indique otro.",
       "updateButton": "Actualizar Organización",
       "manageAtIdp": "Administrar en el Proveedor de Identidad",
       "listed": "Listada en descubrimiento",
@@ -3287,7 +3290,9 @@
     "preferences": {
       "title": "Hosts",
       "defaultDomain": "Dominio predeterminado para máquinas nuevas",
-      "defaultDomainHint": "Un nombre de máquina sin punto toma este dominio antes que las filas propias del host; se guarda solo en este navegador."
+      "defaultDomainHint": "Un nombre de máquina sin punto toma este dominio antes que las filas propias del host; se guarda solo en este navegador.",
+      "accountDomain": "Dominio predeterminado para máquinas nuevas de tu cuenta",
+      "accountDomainHint": "Se guarda en tu cuenta y se usa en todos los navegadores; la preferencia del navegador de arriba tiene prioridad."
     }
   },
   "pages": {
@@ -11986,6 +11991,8 @@
       "fillHostPortProtocol": "Completa primero el nombre de host, el puerto y el protocolo",
       "testingConnection": "Probando la conexión...",
       "testSuccess": "¡La prueba de conexión fue exitosa! El servidor es accesible y está listo para el arranque inicial.",
+      "testSuccessBootstrap": "Conexión exitosa. El host está listo para el arranque inicial.",
+      "testSuccessExistingKey": "Conexión exitosa. El host ya tiene una clave; agrégalo con su clave de API existente.",
       "testFailed": "La prueba de conexión falló: {{message}}",
       "testFailedGeneric": "La prueba de conexión falló. Revisa los datos de tu servidor.",
       "hostPortProtocolRequired": "El nombre de host, el puerto y el protocolo son obligatorios",

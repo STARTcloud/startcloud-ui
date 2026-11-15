@@ -268,6 +268,8 @@ const backendProfile = oidc => async () => {
 };
 
 const ADDRESS_MEMBERS = ['line1', 'city', 'state', 'postal_code', 'country', 'formatted'];
+const PREFERENCE_MEMBERS = ['language', 'mode', 'theme', 'motion', 'timezone'];
+const LOCAL_PREFERENCE_MEMBERS = ['language', 'mode', 'theme', 'motion'];
 
 const addressBody = record =>
   Object.fromEntries(ADDRESS_MEMBERS.map(member => [member, record?.[member] || null]));
@@ -283,15 +285,37 @@ const localDetails = userId => async body => {
 };
 
 /**
- * The writes of a local account's own record on a `backend` host.
+ * The preferences write of a profile adapter that writes through the
+ * session: the patch's members among `members` handed to the session's
+ * `savePreferences`, nothing sent while the patch carries none of them.
+ *
+ * @param {Object} patch - The Preferences section's patch
+ * @param {string[]} members - The members the host's write takes
+ * @returns {Promise<void>} Resolves once the write is sent, or at once while nothing is picked
+ */
+const savePicked = (patch, members) => {
+  const picked = Object.fromEntries(
+    Object.entries(patch).filter(([member]) => members.includes(member))
+  );
+  return Object.keys(picked).length > 0 ? session.savePreferences(picked) : Promise.resolve();
+};
+
+const localPreferences = patch => savePicked(patch, LOCAL_PREFERENCE_MEMBERS);
+
+/**
+ * The writes of a local account's own record on a `backend` host, its
+ * preferences the `language`, `mode`, `theme` and `motion` the backend
+ * stores on the account's own row, written through the session's
+ * `savePreferences`.
  *
  * @param {number} userId - The stored user's id
- * @returns {Object} The `details`, `address` and `phone` members
+ * @returns {Object} The `details`, `address`, `phone` and `preferences` members
  */
 const localRecordMembers = userId => ({
   details: localDetails(userId),
   address: record => patchProfile({ address: addressBody(record) }),
   phone: { set: number => patchProfile({ mobile_number: number || null }) },
+  preferences: localPreferences,
 });
 
 const localAccountMembers = userId => ({
@@ -302,7 +326,10 @@ const localAccountMembers = userId => ({
 
 /**
  * The profile page's `account` adapter of a `backend` host: read-only
- * for an identity provider's session, read-write for a local account.
+ * for an identity provider's session, its Preferences section drawn
+ * read-only with the Manage at identity provider link; read-write for a
+ * local account, whose Preferences section writes language, mode, theme
+ * and motion through the session's `savePreferences`.
  *
  * @param {Object} options - The session's side
  * @param {Object|null} options.user - The stored user
@@ -336,14 +363,7 @@ const apiKeyProfile = async () => {
   return user ? { ...user, preferences: { timezone: ownTimezone() } } : null;
 };
 
-const PREFERENCE_MEMBERS = ['language', 'mode', 'theme', 'motion', 'timezone'];
-
-const apiKeyPreferences = patch => {
-  const picked = Object.fromEntries(
-    Object.entries(patch).filter(([member]) => PREFERENCE_MEMBERS.includes(member))
-  );
-  return Object.keys(picked).length > 0 ? session.savePreferences(picked) : Promise.resolve();
-};
+const apiKeyPreferences = patch => savePicked(patch, PREFERENCE_MEMBERS);
 
 /**
  * The profile page's read-only `account` adapter of an `apikey` host,
@@ -1430,7 +1450,9 @@ const interstitialRoutes = ({ status, cookie, account }) => {
 /**
  * The node the Preferences section draws under its cards: the certs
  * feature's Certificates card while the host lists `certs`, the hosts
- * feature's Hosts card while it lists `hosts`, nothing otherwise.
+ * feature's Hosts card while it lists `hosts`, the session handed to it
+ * on the `hyperweaver-server` role alone, the one host whose preferences
+ * take `default_domain`, nothing otherwise.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @returns {import('react').ReactElement|null} The cards
@@ -1444,7 +1466,7 @@ const preferencesExtraFor = status => {
   return (
     <>
       {certs ? <CertsPreferencesCard /> : null}
-      {hosts ? <HostsPreferencesCard /> : null}
+      {hosts ? <HostsPreferencesCard session={isServerRole(status) ? session : null} /> : null}
     </>
   );
 };

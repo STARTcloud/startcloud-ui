@@ -9,7 +9,7 @@ const keys = new Map(
 
 /**
  * The API key the server holds for one registered agent, the row
- * `GET /api/servers?includeApiKeys=true` carries.
+ * `GET /api/servers?include_api_keys=true` carries.
  *
  * @param {string|number} id - The registry id
  * @returns {string} The key
@@ -19,7 +19,14 @@ export const serverKeyOf = id => keys.get(String(id)) || '';
 const nextId = () => Math.max(0, ...REGISTRY.map(row => Number(row.id))) + 1;
 
 const addServer = ctx => {
-  const { hostname, port, protocol, entityName, allowInsecure } = ctx.body;
+  const {
+    hostname,
+    port,
+    protocol,
+    entity_name: entityName,
+    allow_insecure: allowInsecure,
+    api_key: apiKey,
+  } = ctx.body;
   if (!hostname || !port || !protocol) {
     return refusal(400, 'hostname, port and protocol are required');
   }
@@ -35,7 +42,7 @@ const addServer = ctx => {
     entityName: entityName || '',
     allowInsecure: Boolean(allowInsecure),
   });
-  keys.set(String(id), ctx.body.apiKey || `hws_${randomBytes(10).toString('hex')}`);
+  keys.set(String(id), apiKey || `hws_${randomBytes(10).toString('hex')}`);
   return ok({ success: true, message: `${hostname} registered`, id }, 201);
 };
 
@@ -56,7 +63,7 @@ const patchServer = ctx => {
   if (!row) {
     return missing('No such server');
   }
-  setAllowInsecure(row.id, Boolean(ctx.body.allowInsecure));
+  setAllowInsecure(row.id, Boolean(ctx.body.allow_insecure));
   return ok({ success: true, message: `${row.hostname} updated` });
 };
 

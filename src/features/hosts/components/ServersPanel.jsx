@@ -38,7 +38,56 @@ const KEY_TAIL = 4;
 
 const KEY_MIN = 10;
 
+const ALREADY_REGISTERED = 409;
+
+const AGENT_REFUSED = 502;
+
+const TEST_SUCCESS_KEYS = {
+  bootstrap: 'settings.serverManagementTab.testSuccessBootstrap',
+  existing: 'settings.serverManagementTab.testSuccessExistingKey',
+};
+
+const PANE_MODES = { bootstrap: 'bootstrap', existing: 'setup' };
+
 const messageOf = error => error?.data?.message || error?.message || '';
+
+/**
+ * The Connection Status the test's own answer puts the pane in:
+ * `bootstrap` while `success` is not false and `serverInfo.bootstrapAvailable`
+ * is true, the host ready for its key to be bootstrapped; `existing` while
+ * `success` is not false and it is not, the host holding a key already,
+ * so the existing-key option is the way in; `error` otherwise.
+ *
+ * @param {Object|null} answer - The answer of `POST /api/servers/test`
+ * @returns {string} `bootstrap`, `existing` or `error`
+ */
+export const testStateOf = answer => {
+  if (!answer || answer.success === false) {
+    return 'error';
+  }
+  return answer.serverInfo?.bootstrapAvailable === true ? 'bootstrap' : 'existing';
+};
+
+/**
+ * The notice a refused `POST /api/servers` draws: the duplicate sentence
+ * for a `409`, an agent already registered; the agent's own reason, the
+ * problem's `title`, for a `502` that carries one; else the answer's
+ * message or the unexpected-error sentence.
+ *
+ * @param {Object} error - The `ApiError`
+ * @param {Object} form - The form, its `hostname`, `port` and `protocol`
+ * @param {Function} t - The translator
+ * @returns {string} The notice's text
+ */
+export const addFailureOf = (error, form, t) => {
+  if (error?.status === ALREADY_REGISTERED) {
+    return t('settings.serverManagementTab.duplicateServer', form);
+  }
+  if (error?.status === AGENT_REFUSED && error.problem?.title) {
+    return error.problem.title;
+  }
+  return messageOf(error) || t('settings.serverManagementTab.unexpectedError');
+};
 
 /**
  * An API key masked as hyperweaver-ui drew it, its first six and last
@@ -73,8 +122,9 @@ export const isDuplicateServer = (servers, form) =>
 
 /**
  * The body of `POST /api/servers` hyperweaver-ui's form sends: the
- * hostname, the port as a number, the protocol, the entity name or its
- * default, `allowInsecure`, and the pasted key while one is used.
+ * hostname, the port as a number, the protocol, `entity_name` or its
+ * default, `allow_insecure`, and the pasted key as `api_key` while one
+ * is used.
  *
  * @param {Object} form - The form
  * @returns {Object} The body
@@ -83,9 +133,9 @@ export const serverBodyOf = form => ({
   hostname: form.hostname,
   port: Number.parseInt(form.port, 10),
   protocol: form.protocol,
-  entityName: form.entityName || EMPTY_FORM.entityName,
-  allowInsecure: form.allowInsecure,
-  ...(form.useExistingApiKey ? { apiKey: form.apiKey } : {}),
+  entity_name: form.entityName || EMPTY_FORM.entityName,
+  allow_insecure: form.allowInsecure,
+  ...(form.useExistingApiKey ? { api_key: form.apiKey } : {}),
 });
 
 /**
@@ -388,6 +438,38 @@ ServerForm.propTypes = {
   loading: PropTypes.bool.isRequired,
 };
 
+/**
+ * The Connection Status pane under the help, following the test's own
+ * answer: the success alert for `bootstrap` and `existing`, its sentence
+ * saying the host is ready for bootstrap or naming the existing-key
+ * option, the danger alert for `error`.
+ */
+const ConnectionStatus = ({ testResult }) => {
+  const { t } = useTranslation();
+  const passed = testResult !== 'error';
+  return (
+    <div className="mt-3" data-note={`test-${testResult}`}>
+      <h3 className="fs-6 fw-bold mb-2">{t('host.serverStatusCard.title')}</h3>
+      <div className={`alert alert-${passed ? 'success' : 'danger'}`}>
+        <p>
+          <strong>
+            {t(passed ? 'host.serverStatusCard.successTitle' : 'host.serverStatusCard.errorTitle')}
+          </strong>
+        </p>
+        <p>
+          {passed
+            ? t('host.serverStatusCard.successMsg', { mode: PANE_MODES[testResult] })
+            : t('host.serverStatusCard.errorMsg')}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+ConnectionStatus.propTypes = {
+  testResult: PropTypes.string.isRequired,
+};
+
 const ServerHelp = ({ useExistingApiKey, testResult }) => {
   const { t } = useTranslation();
   const mode = useExistingApiKey ? 'existing' : 'bootstrap';
@@ -423,29 +505,7 @@ const ServerHelp = ({ useExistingApiKey, testResult }) => {
           <li>{t('host.serverHelpPanel.sec3')}</li>
         </ul>
       </div>
-      {testResult ? (
-        <div className="mt-3" data-note={`test-${testResult}`}>
-          <h3 className="fs-6 fw-bold mb-2">{t('host.serverStatusCard.title')}</h3>
-          <div className={`alert alert-${testResult === 'success' ? 'success' : 'danger'}`}>
-            <p>
-              <strong>
-                {t(
-                  testResult === 'success'
-                    ? 'host.serverStatusCard.successTitle'
-                    : 'host.serverStatusCard.errorTitle'
-                )}
-              </strong>
-            </p>
-            <p>
-              {testResult === 'success'
-                ? t('host.serverStatusCard.successMsg', {
-                    mode: useExistingApiKey ? 'setup' : 'bootstrap',
-                  })
-                : t('host.serverStatusCard.errorMsg')}
-            </p>
-          </div>
-        </div>
-      ) : null}
+      {testResult ? <ConnectionStatus testResult={testResult} /> : null}
     </div>
   );
 };
@@ -473,15 +533,20 @@ const problemOf = form => {
 /**
  * The registry of agents on the hosts page, hyperweaver-ui's Servers
  * tab, held for a super-admin alone (`enabled`): the API keys of
- * `GET /api/servers?includeApiKeys=true` joined onto the page's rows by
- * id, read once as the page draws, again when the stream opens fresh or
- * answers `reset`, on the page's Refresh through `refresh` and after
+ * `GET /api/servers?include_api_keys=true` joined onto the page's rows
+ * by id, read once as the page draws, again when the stream opens fresh
+ * or answers `reset`, on the page's Refresh through `refresh` and after
  * every write; the self-signed switch writing
  * `PATCH /api/servers/{id}`, Remove `DELETE /api/servers/{id}` behind the
  * typed confirmation, Edit opening the host's Services page and the
  * organizations the assignment dialog; the form of a new host, Test
  * connection sending `POST /api/servers/test` and Add or Bootstrap
  * sending `POST /api/servers`, a duplicate refused before it is sent.
+ * The test's answer alone sets `testResult`, through `testStateOf`, and
+ * its notice says the host is ready for bootstrap or names the
+ * existing-key option by the same state; a refused add draws its notice
+ * through `addFailureOf` and leaves a passed test's status as it is, a
+ * success clearing it with the form.
  * Every write is one request and one notice, the keys and the hosts
  * feature's list read again after a success. Answers the rows with their
  * keys, the registry's columns and row actions for the one table, the
@@ -536,7 +601,7 @@ export const useRegistry = ({ enabled, servers, onAdded }) => {
     refreshRegistry();
   };
 
-  const write = async ({ call, doneText, failKey }) => {
+  const write = async ({ call, doneText, failKey, failText = null }) => {
     setBusy(true);
     try {
       const answer = await call();
@@ -544,7 +609,7 @@ export const useRegistry = ({ enabled, servers, onAdded }) => {
       changed();
       return true;
     } catch (error) {
-      notify('danger', messageOf(error) || t(failKey));
+      notify('danger', failText ? failText(error) : messageOf(error) || t(failKey));
       return false;
     } finally {
       setBusy(false);
@@ -585,15 +650,15 @@ export const useRegistry = ({ enabled, servers, onAdded }) => {
         hostname: form.hostname,
         port: Number.parseInt(form.port, 10),
         protocol: form.protocol,
-        allowInsecure: form.allowInsecure,
+        allow_insecure: form.allowInsecure,
       });
-      const ok = answer?.success !== false;
-      setTestResult(ok ? 'success' : 'error');
+      const state = testStateOf(answer);
+      setTestResult(state);
       notify(
-        ok ? 'success' : 'danger',
-        ok
-          ? t('settings.serverManagementTab.testSuccess')
-          : t('settings.serverManagementTab.testFailed', { message: answer?.message || '' })
+        state === 'error' ? 'danger' : 'success',
+        state === 'error'
+          ? t('settings.serverManagementTab.testFailed', { message: answer?.message || '' })
+          : t(TEST_SUCCESS_KEYS[state])
       );
     } catch (error) {
       setTestResult('error');
@@ -611,19 +676,17 @@ export const useRegistry = ({ enabled, servers, onAdded }) => {
       return;
     }
     if (isDuplicateServer(rows, form)) {
-      setTestResult('error');
       notify('danger', t('settings.serverManagementTab.duplicateServer', form));
       return;
     }
-    setTestResult(null);
     const added = await write({
       call: () => addServer(serverBodyOf(form)),
       doneText: t('settings.serverManagementTab.serverAdded'),
-      failKey: 'settings.serverManagementTab.unexpectedError',
+      failText: error => addFailureOf(error, form, t),
     });
-    setTestResult(added ? 'success' : 'error');
     if (added) {
       setForm(EMPTY_FORM);
+      setTestResult(null);
       onAdded();
     }
   };

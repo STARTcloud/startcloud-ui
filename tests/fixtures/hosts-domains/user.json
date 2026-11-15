@@ -1,0 +1,26 @@
+{
+  "id": 1,
+  "uuid": "person-1",
+  "username": "mark",
+  "role": "admin",
+  "email": "mark@example.com",
+  "verified": true,
+  "name": "Mark Gilbert",
+  "roles": ["ROLE_USER", "ROLE_ADMIN"],
+  "organizations": [
+    {
+      "uuid": "0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11",
+      "name": "acme",
+      "display_name": "Acme",
+      "roles": ["OWNER"],
+      "primary": true,
+      "personal": false,
+      "logo_url": null,
+      "email_hash": ""
+    }
+  ],
+  "preferred_language": "en",
+  "preferred_mode": null,
+  "preferred_theme": null,
+  "preferred_motion": null
+}

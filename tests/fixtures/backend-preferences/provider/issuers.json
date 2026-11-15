@@ -1,0 +1,3 @@
+{
+  "issuers": [{ "issuer": "https://auth.example.com" }]
+}

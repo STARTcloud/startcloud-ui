@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "message": "agent-7.example.com did not answer",
+  "error": "ECONNREFUSED",
+  "serverInfo": null
+}

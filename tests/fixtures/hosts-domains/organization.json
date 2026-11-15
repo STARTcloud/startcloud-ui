@@ -1,0 +1,10 @@
+{
+  "name": "acme",
+  "display_name": "Acme",
+  "email": "team@acme.example",
+  "email_hash": "",
+  "description": "The Acme team",
+  "base_domain": "org.example.com",
+  "access_mode": "private",
+  "default_role": "member"
+}

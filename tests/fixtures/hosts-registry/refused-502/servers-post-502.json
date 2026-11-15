@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/bad-gateway",
+  "title": "The agent refused the bootstrap: an entity named Hyperweaver-Production already holds a key",
+  "status": 502,
+  "detail": "agent-7.example.com answered 409 to the bootstrap"
+}

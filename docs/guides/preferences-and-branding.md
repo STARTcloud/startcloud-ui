@@ -442,7 +442,8 @@ the language, the mode, the motion, the theme, the time zone, the region,
 the sign-in approval channel and the PIN of the write path above, and
 under it one card a feature of the host, named for that feature, each a
 browser preference kept in the browser alone and never sent to a host,
-drawn editable under a read-only record too; every card is one form
+the Hosts card's account field alone excepted, drawn editable under a
+read-only record too; every card is one form
 ending in one Save preferences, a primary submit at the form's bottom
 left, because a person who learned one card's Save has learned them all:
 
@@ -452,6 +453,15 @@ left, because a person who learned one card's Save has learned them all:
 | Certificates | `certs-store`, a person signed in                                                   | Sync to the backend, one switch a destination keyed by its role name, on until turned off | `certs-vault` | the mirror, every kind sent while the destination is on, the card's Save sending every unsent record to the active organization, or to the person's own store on the host without one; the default of every secret row whose own `sync` map names no store |
 | Certificates | the identity provider's status lists `certs-store`, a host that signs in through it | Sync to the identity provider, one switch keyed `idp`, on until turned off                | `certs-vault` | the identity provider's mirror, the same as the backend's at the issuer's `/api/certs`; the default of every secret row whose own `sync` map does not name `idp`                                                                                           |
 | Hosts        | `hosts`                                                                             | Default domain for new machines                                                           | `hosts_prefs` | the create wizard, a bare name taking it before the host's own rows                                                                                                                                                                                        |
+
+On the `hyperweaver-server` role the Hosts card carries a second field
+beside the browser's, the account's default domain for new machines, read
+from `GET /api/user/preferences` and written as `default_domain` through
+`PATCH /api/user/preferences`, a DNS name by the host's `domainName`
+rule, `null` clearing it, the one field of these cards a host is sent;
+the card's one Save writes both, and the create wizard takes the
+browser's before the account's, the `user` row of
+`settings.domain_choices`.
 
 ---
 
