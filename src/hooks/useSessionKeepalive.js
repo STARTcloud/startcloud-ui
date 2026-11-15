@@ -9,9 +9,42 @@ import {
   session,
 } from '../lib/runtime';
 import { streamsEvents } from '../lib/streamTarget';
-import { authMethod } from '../utils/capabilities';
+import { authMethod, hasFeature } from '../utils/capabilities';
 
 const hasSession = ({ method, user, loaded }) => method === 'none' || (loaded && Boolean(user));
+
+const recordOf = value => {
+  try {
+    return JSON.parse(value || 'null');
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Whether a record another tab wrote under the provider's key names a
+ * person other than the one this tab holds: both carry an email and the
+ * two differ; false while either side names none.
+ *
+ * @param {Object|null} record - The written record
+ * @param {Object|null} user - This tab's session user
+ * @returns {boolean} True when the tab must reload into the other person
+ */
+export const namesAnotherPerson = (record, user) =>
+  Boolean(record?.email) && Boolean(user?.email) && record.email !== user.email;
+
+/**
+ * Whether the browser still holds an account after a sibling tab removed
+ * the cached record: the accounts answer lists at least one entry, signed
+ * in or remembered.
+ *
+ * @param {Object|null} answer - The `GET /api/auth/accounts` answer
+ * @returns {boolean} True when a tab must reload instead of signing out
+ */
+export const othersRemain = answer => (answer?.accounts || []).length > 0;
+
+const switchesAccounts = status =>
+  authMethod(status) === 'cookie' && hasFeature(status, 'accounts', 'switch');
 
 /**
  * What a session keeps running: the tab's event stream while
@@ -27,8 +60,13 @@ const hasSession = ({ method, user, loaded }) => method === 'none' || (loaded &&
  * the stream and a tab whose reconnect fell past the ring re-reads the
  * record; beside the stream the platform's own signals: a `storage`
  * event on the provider's own key from another tab of the origin, a
- * removed key signing this tab out through the bus's `logout` and a
- * written one reloading the profile, and `pageshow` with `persisted`, a
+ * removed key signing this tab out through the bus's `logout`, unless
+ * the host keeps several accounts on one browser and
+ * `GET /api/auth/accounts` still lists one, where the tab reloads the
+ * document instead and posts no logout for a person still signed in, a
+ * written one naming another person reloading the document into that
+ * person and any other written one reloading the profile, and `pageshow`
+ * with `persisted`, a
  * document back from the back/forward cache with its old heap, reloading
  * the profile. No timer polls anything; the stream, the storage event and
  * the page's own lifecycle are the only things that say the record
@@ -67,12 +105,32 @@ export const useSessionKeepalive = ({ user, loaded, reload }) => {
   }, [user, reload]);
 
   useEffect(() => {
+    const signedOutElsewhere = () => {
+      if (!switchesAccounts(status)) {
+        events.emit('logout');
+        return;
+      }
+      session
+        .accounts()
+        .then(answer => {
+          if (othersRemain(answer)) {
+            window.location.reload();
+            return;
+          }
+          events.emit('logout');
+        })
+        .catch(() => events.emit('logout'));
+    };
     const onStorage = event => {
       if (!session.storageKey || event.key !== session.storageKey) {
         return;
       }
       if (event.newValue === null) {
-        events.emit('logout');
+        signedOutElsewhere();
+        return;
+      }
+      if (namesAnotherPerson(recordOf(event.newValue), user)) {
+        window.location.reload();
         return;
       }
       reload();
@@ -88,5 +146,5 @@ export const useSessionKeepalive = ({ user, loaded, reload }) => {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('pageshow', onPageShow);
     };
-  }, [reload]);
+  }, [reload, status, user]);
 };

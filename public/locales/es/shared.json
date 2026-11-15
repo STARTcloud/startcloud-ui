@@ -20,6 +20,7 @@
     "logoutLocalTitle": "Cerrando sesión solo en esta aplicación — haz clic para cerrar en todas partes",
     "signIn": "Iniciar sesión",
     "accountMenu": "Menú de cuenta",
+    "switchAccount": "Cambiar de cuenta",
     "preferences": "Preferencias",
     "favorites": "Favoritos",
     "notifications": "Notificaciones",
@@ -451,6 +452,17 @@
     "loadError": "Error al cargar tus organizaciones. Por favor intenta de nuevo.",
     "primaryOrg": "Organización Principal",
     "allOrganizations": "Todas las organizaciones"
+  },
+  "accountSwitcher": {
+    "title": "Cambiar de cuenta",
+    "add": "Añadir otra cuenta",
+    "signOutAll": "Cerrar todas las sesiones",
+    "active": "Activa",
+    "remembered": "Recordadas",
+    "signOut": "Cerrar la sesión de {{name}}",
+    "none": "No hay ninguna cuenta con la sesión iniciada en este navegador.",
+    "loadError": "Error al cargar las cuentas.",
+    "failed": "No se pudo cambiar de cuenta."
   },
   "roles": {
     "guest": "Invitado",

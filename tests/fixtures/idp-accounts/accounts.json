@@ -1,0 +1,21 @@
+{
+  "accounts": [
+    {
+      "id": "pX3",
+      "name": "Ada Lovelace",
+      "email": "ada@example.com",
+      "picture": "/api/user/avatar/3f5a",
+      "active": true,
+      "signed_in": true
+    },
+    {
+      "id": "rQ9",
+      "name": null,
+      "email": "grace@example.com",
+      "picture": null,
+      "active": false,
+      "signed_in": false
+    }
+  ],
+  "pending": { "client_name": "Web Mail" }
+}

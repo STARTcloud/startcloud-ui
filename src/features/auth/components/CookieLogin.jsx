@@ -518,7 +518,10 @@ const useLoginActions = ({
  * heading and the field draw at once and the button block waits on the
  * methods answer; a person whose adopted session (`account`) is live is
  * sent away, except on `?stepup`, where the session is live by design and
- * the form is what the parked request is waiting for. Every answer that
+ * the form is what the parked request is waiting for, and on the visit
+ * that follows `addAccount`, read once from the session's
+ * `addingAccount()`, where another person signs in while everyone on the
+ * browser stays signed in. Every answer that
  * signs the person in is followed through `followNext` wherever its
  * `next` leads, a path in-router and an absolute URL, the server's own or
  * a client's, as a top-level navigation, with the bus as `events`, so
@@ -531,7 +534,8 @@ const CookieLogin = ({ session, events, account, returnTo, auth, appName }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const signedIn = useSignedInRedirect(account, returnTo, !params.has('stepup'));
+  const [adding] = useState(() => session.addingAccount());
+  const signedIn = useSignedInRedirect(account, returnTo, !params.has('stepup') && !adding);
   const { methods: answer, loading } = useMethods();
   const [values, setValues] = useState({ username: '', password: '', remember: false });
   const [chosenMode, setChosenMode] = useState('');

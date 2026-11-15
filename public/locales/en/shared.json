@@ -20,6 +20,7 @@
     "logoutLocalTitle": "Logging out of this app only — click to log out everywhere",
     "signIn": "Sign in",
     "accountMenu": "Account menu",
+    "switchAccount": "Switch account",
     "preferences": "Preferences",
     "favorites": "Favorites",
     "notifications": "Notifications",
@@ -451,6 +452,17 @@
     "loadError": "Failed to load your organizations. Please try again.",
     "primaryOrg": "Primary Organization",
     "allOrganizations": "All organizations"
+  },
+  "accountSwitcher": {
+    "title": "Switch account",
+    "add": "Add another account",
+    "signOutAll": "Sign out all",
+    "active": "Active",
+    "remembered": "Remembered",
+    "signOut": "Sign out {{name}}",
+    "none": "No account is signed in on this browser.",
+    "loadError": "Failed to load the accounts.",
+    "failed": "The account could not be switched."
   },
   "roles": {
     "guest": "Guest",

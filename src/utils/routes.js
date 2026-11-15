@@ -80,6 +80,7 @@ export const UNIVERSAL_ROUTES = [
   'link-account',
   'user',
   'org',
+  'select-account',
   'notifications',
   'error',
   'api',

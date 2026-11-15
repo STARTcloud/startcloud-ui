@@ -1,7 +1,7 @@
 import { httpsUrl } from '../components/common/MethodList';
 import { guestOnly } from '../utils/membership';
 
-import { createApiClient } from './apiClient';
+import { createApiClient, encodePath } from './apiClient';
 import { isPendingGate, onGatePage, pendingGateNext } from './gates';
 import { currentPath } from './returnTo';
 
@@ -22,6 +22,9 @@ const PROVIDER_NAME = /^[A-Za-z0-9_-]+$/;
 const SAFE_PATH = /^\/(?![/\\])/;
 const OPTIONAL = { auth: 'optional' };
 const JSON_ACCEPT = { Accept: 'application/json' };
+const ACCOUNTS_PATH = '/api/auth/accounts';
+const ADDING_KEY = 'adding_account';
+const JSON_OPTIONAL = { ...OPTIONAL, headers: JSON_ACCEPT };
 
 const cookieValue = name =>
   document.cookie
@@ -66,6 +69,8 @@ const safeNext = (next, origin) => {
   }
   return '';
 };
+
+const isHome = next => typeof next === 'string' && next.split(/[?#]/)[0] === '/';
 
 /**
  * One membership in the identity provider's shape, `{ uuid, name, roles,
@@ -167,7 +172,23 @@ const cachedOf = profile => {
  * storage key and nothing on the bus, for a page that ended the session
  * itself. `begin({ method, navigate })`
  * with no method, `local` or `magic-link` moves in-router to `/login`,
- * while `oidc-<id>` stays a top-level navigation.
+ * while `oidc-<id>` stays a top-level navigation. The browser's accounts
+ * are the five members over `/api/auth/accounts`, each a top-level
+ * navigation to the answered `next` because the session cookie changes:
+ * `accounts()` reads the list; `chooseAccount(entry, from)` posts the
+ * choice, replaces the cached profile with the entry's display fields in
+ * place, so a sibling tab hears a written key and never a removed one,
+ * and leaves for `next`, or for `from` when `next` is `/` and a page
+ * named one; `addAccount()` posts the add, marks `adding_account` in
+ * `sessionStorage` and leaves for `next`, the sign-in page, and
+ * `addingAccount()` reads that mark once and clears it, so the sign-in
+ * page draws its form for the next person while the session cookie still
+ * names one, everyone staying signed in;
+ * `signOutAccount(entry)` deletes that account, a `204` answering false
+ * with nothing moved, a `200` forgetting the cached profile and the
+ * per-person keys when the entry is the active one, leaving for `next`
+ * and answering true; `signOutAccounts()` deletes every account, forgets
+ * and leaves.
  *
  * @param {Object} options - The app's side of the session
  * @param {string} options.baseUrl - The serving origin, the issuer itself
@@ -197,6 +218,22 @@ export const createCookieSession = ({ baseUrl, events, returnTo, storageKey = 'a
     claimsPromise = null;
     lastEtag = '';
     lastSession = null;
+  };
+
+  const replaceProfile = profile => {
+    claimsPromise = null;
+    lastEtag = '';
+    lastSession = null;
+    store(profile);
+  };
+
+  const forget = () => {
+    clear();
+    dropStorage(storageKey);
+  };
+
+  const leave = next => {
+    window.location.assign(safeNext(next, baseUrl) || '/');
   };
 
   const headers = (method = 'GET') => {
@@ -336,12 +373,53 @@ export const createCookieSession = ({ baseUrl, events, returnTo, storageKey = 'a
 
   const signOut = async () => {
     const next = await api
-      .post('/user/logout', null, { ...OPTIONAL, headers: JSON_ACCEPT })
+      .post('/user/logout', null, JSON_OPTIONAL)
       .then(data => data?.next)
       .catch(() => '');
-    clear();
-    dropStorage(storageKey);
-    window.location.assign(safeNext(next, baseUrl) || '/');
+    forget();
+    leave(next);
+  };
+
+  const accounts = () => api.get(ACCOUNTS_PATH, JSON_OPTIONAL);
+
+  const chooseAccount = async (entry, from = '') => {
+    const answer = await api.post(
+      encodePath('api', 'auth', 'accounts', entry.id, 'choose'),
+      null,
+      JSON_OPTIONAL
+    );
+    replaceProfile(entry);
+    leave(from && isHome(answer?.next) ? from : answer?.next);
+  };
+
+  const addAccount = async () => {
+    const answer = await api.post(`${ACCOUNTS_PATH}/add`, null, JSON_OPTIONAL);
+    sessionStorage.setItem(ADDING_KEY, '1');
+    leave(answer?.next);
+  };
+
+  const addingAccount = () => {
+    const adding = sessionStorage.getItem(ADDING_KEY) !== null;
+    sessionStorage.removeItem(ADDING_KEY);
+    return adding;
+  };
+
+  const signOutAccount = async entry => {
+    const answer = await api.delete(encodePath('api', 'auth', 'accounts', entry.id), JSON_OPTIONAL);
+    if (!answer?.next) {
+      return false;
+    }
+    if (entry.active) {
+      forget();
+    }
+    leave(answer.next);
+    return true;
+  };
+
+  const signOutAccounts = async () => {
+    const answer = await api.delete(ACCOUNTS_PATH, JSON_OPTIONAL);
+    forget();
+    leave(answer?.next);
   };
 
   return {
@@ -368,5 +446,11 @@ export const createCookieSession = ({ baseUrl, events, returnTo, storageKey = 'a
     savePreferences,
     signOut,
     signOutEverywhere: signOut,
+    accounts,
+    chooseAccount,
+    addAccount,
+    addingAccount,
+    signOutAccount,
+    signOutAccounts,
   };
 };

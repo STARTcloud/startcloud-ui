@@ -1,0 +1,13 @@
+{
+  "accounts": [
+    {
+      "id": "mK42",
+      "name": "Mark Gilbert",
+      "email": "mark@m4kr.net",
+      "picture": "/api/user/avatar/8f2c…",
+      "active": true,
+      "signed_in": true
+    }
+  ],
+  "pending": null
+}

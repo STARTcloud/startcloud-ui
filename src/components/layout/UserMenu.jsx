@@ -2,11 +2,19 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaKeyboard, FaLayerGroup, FaRightToBracket, FaSliders, FaTicket } from 'react-icons/fa6';
+import {
+  FaKeyboard,
+  FaLayerGroup,
+  FaRightToBracket,
+  FaSliders,
+  FaTicket,
+  FaUsers,
+} from 'react-icons/fa6';
 
 import { useUnread } from '../../contexts/UnreadContext';
 import { isLive } from '../../utils/membership';
 
+import { AccountSwitcherModal, accountsAdapterShape } from './AccountSwitcherModal';
 import FavoriteApps from './FavoriteApps';
 import IdentityCard, { localProfileShape } from './IdentityCard';
 import LogoutItem from './LogoutItem';
@@ -197,6 +205,94 @@ ActiveOrgItem.propTypes = {
   onOpen: PropTypes.func.isRequired,
 };
 
+/**
+ * The Switch account row beside the organization row, opening the
+ * account switcher, drawn only while the shell hands an `accounts`
+ * adapter, on the identity provider's own session while its status lists
+ * `switch` under `accounts`.
+ */
+const AccountsItem = ({ onOpen }) => {
+  const { t } = useTranslation();
+  return (
+    <Dropdown.Item
+      as="button"
+      type="button"
+      data-action="switch-account"
+      onClick={onOpen}
+      className="d-flex align-items-center"
+    >
+      <FaUsers className="me-2" />
+      <span>{t('navbar.switchAccount')}</span>
+    </Dropdown.Item>
+  );
+};
+
+AccountsItem.propTypes = {
+  onOpen: PropTypes.func.isRequired,
+};
+
+/**
+ * The account switcher's state over the shell's `accounts` adapter: the
+ * list read when the modal opens and again after a failed action, and
+ * the choose, add and sign-out-all actions, each a top-level navigation
+ * the adapter makes.
+ *
+ * @param {Object|null} accounts - The adapter, `{ list, choose, add, signOutAll }`, or null
+ * @returns {Object} `show`, `open`, `close`, `rows`, `loading`, `loadFailed`, `failed`, `busy`, `pick`, `add`, `signOutAll`
+ */
+const useAccountSwitcher = accounts => {
+  const [show, setShow] = useState(false);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const read = () => {
+    setLoading(true);
+    setLoadFailed(false);
+    return accounts
+      .list()
+      .then(answer => setRows(answer?.accounts || []))
+      .catch(() => {
+        setRows([]);
+        setLoadFailed(true);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  const open = () => {
+    setShow(true);
+    setFailed(false);
+    read();
+  };
+
+  const run = action => {
+    setBusy(true);
+    setFailed(false);
+    action()
+      .catch(() => {
+        setFailed(true);
+        return read();
+      })
+      .finally(() => setBusy(false));
+  };
+
+  return {
+    show,
+    open,
+    close: () => setShow(false),
+    rows,
+    loading,
+    loadFailed,
+    failed,
+    busy,
+    pick: entry => run(() => accounts.choose(entry)),
+    add: () => run(() => accounts.add()),
+    signOutAll: () => run(() => accounts.signOutAll()),
+  };
+};
+
 const dropProps = drop => ({ align: drop === 'up' ? 'start' : 'end', drop });
 
 /**
@@ -257,12 +353,15 @@ SupportRows.propTypes = {
 
 /**
  * The user menu of the navbar contract's User menu section, the identity
- * card, the organization row, Preferences, the favorites, the app
+ * card, the organization row, the Switch account row while an `accounts`
+ * adapter is handed, Preferences, the favorites, the app
  * section, Notifications, Help, Keyboard shortcuts (the row `onShortcuts`
  * opens the modal of) and Logout under one toggle of the
  * person's name and avatar; `allOrganizations`, on a host that narrows
  * by organization, draws the organization row from one membership on and
- * the All organizations row first in the switcher; `drop` opens it
+ * the All organizations row first in the switcher; `accounts`,
+ * `{ list, choose, add, signOutAll }`, opens the account switcher modal
+ * over the browser's accounts; `drop` opens it
  * upward at the sidebar's foot
  * while a feature's action menu holds the header's account slot, the
  * toggle there the avatar on the left and the name over the email, and
@@ -282,6 +381,7 @@ const UserMenu = ({
   onPickOrg,
   loadOrganizations,
   orgMark,
+  accounts = null,
   favorites,
   appName,
   appVersion = '',
@@ -305,6 +405,7 @@ const UserMenu = ({
   const [loadedOrgs, setLoadedOrgs] = useState(null);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [orgsFailed, setOrgsFailed] = useState(false);
+  const switcher = useAccountSwitcher(accounts);
 
   const activeOrg = organizations.find(org => org.uuid === activeOrgUuid && isLive(org)) || null;
   const switcherOrgs = loadedOrgs || organizations;
@@ -351,6 +452,8 @@ const UserMenu = ({
             orgMark={orgMark}
             onOpen={openSwitcher}
           />
+
+          {accounts ? <AccountsItem onOpen={switcher.open} /> : null}
 
           {showPreferences ? (
             <PreferencesItem
@@ -406,6 +509,21 @@ const UserMenu = ({
           onPickOrg(uuid);
         }}
       />
+
+      {accounts ? (
+        <AccountSwitcherModal
+          show={switcher.show}
+          onHide={switcher.close}
+          accounts={switcher.rows}
+          loading={switcher.loading}
+          loadFailed={switcher.loadFailed}
+          failed={switcher.failed}
+          busy={switcher.busy}
+          onPick={switcher.pick}
+          onAdd={switcher.add}
+          onSignOutAll={switcher.signOutAll}
+        />
+      ) : null}
     </>
   );
 };
@@ -423,6 +541,7 @@ UserMenu.propTypes = {
   onPickOrg: PropTypes.func.isRequired,
   loadOrganizations: PropTypes.func,
   orgMark: PropTypes.node,
+  accounts: accountsAdapterShape,
   favorites: PropTypes.array.isRequired,
   appName: PropTypes.string.isRequired,
   appVersion: PropTypes.string,

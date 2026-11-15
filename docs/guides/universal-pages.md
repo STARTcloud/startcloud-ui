@@ -195,8 +195,8 @@ schema, private, push, search, vm, hosts, watches`, the identity provider's
 `authenticator, authenticator-method, passwordRecovery, passwordReset,
 registration, complete-onboarding, qrcode, provider-registration, public,
 oauth2, activate, activated, ciba, connect, continue,
-link-account-consent, link-account, user, org, notifications,
-error` of the
+link-account-consent, link-account, user, org, select-account,
+notifications, error` of the
 [Universal Identity Contract](universal-identity/), plus the root of
 every mounted collection, its segment or, without one, its key (`boxes`,
 `isos`, `downloads`, `provisioners`). `api` is reserved on every UI backend, the `/api/status`

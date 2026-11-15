@@ -196,6 +196,69 @@ AllRow.propTypes = {
 };
 
 /**
+ * The frame every switcher modal of the navbar contract draws in: the
+ * list dialog with its glyph and title, the spinner while `loading`, the
+ * danger alert `loadError` while `loadFailed`, the info alert `emptyText`
+ * while `empty` and nothing failed, and `children`, the rows, while
+ * nothing loads and the list is not empty.
+ */
+export const SwitcherModal = ({
+  show,
+  onHide,
+  icon,
+  title,
+  loading = false,
+  loadFailed = false,
+  loadError,
+  empty = false,
+  emptyText,
+  children,
+}) => {
+  const { t } = useTranslation();
+  return (
+    <Modal show={show} onHide={onHide} dialogClassName="chrome-modal list-modal">
+      <Modal.Header closeButton>
+        <Modal.Title as="h5">
+          {icon}
+          {title}
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {loading ? (
+          <div className="text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">{t('loading')}</span>
+            </div>
+          </div>
+        ) : null}
+        {!loading && loadFailed ? (
+          <div className="alert alert-danger" role="alert">
+            {loadError}
+          </div>
+        ) : null}
+        {!loading && !loadFailed && empty ? (
+          <div className="alert alert-info">{emptyText}</div>
+        ) : null}
+        {!loading && !empty ? children : null}
+      </Modal.Body>
+    </Modal>
+  );
+};
+
+SwitcherModal.propTypes = {
+  show: PropTypes.bool.isRequired,
+  onHide: PropTypes.func.isRequired,
+  icon: PropTypes.node.isRequired,
+  title: PropTypes.string.isRequired,
+  loading: PropTypes.bool,
+  loadFailed: PropTypes.bool,
+  loadError: PropTypes.string.isRequired,
+  empty: PropTypes.bool,
+  emptyText: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
+/**
  * The organization switcher modal of the navbar contract: one row per
  * membership, personal organizations last, each its logo, its display
  * name where the membership carries one and its name otherwise, its
@@ -223,45 +286,30 @@ export const OrgSwitcherModal = ({
   const rows = [...organizations].sort(byPersonalLastThenName);
 
   return (
-    <Modal show={show} onHide={onHide} dialogClassName="chrome-modal list-modal">
-      <Modal.Header closeButton>
-        <Modal.Title as="h5">
-          <FaBuilding className="me-2" />
-          {t('orgSwitcher.title')}
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {loading ? (
-          <div className="text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">{t('loading')}</span>
-            </div>
-          </div>
-        ) : null}
-        {!loading && loadFailed ? (
-          <div className="alert alert-danger" role="alert">
-            {t('orgSwitcher.loadError')}
-          </div>
-        ) : null}
-        {!loading && !loadFailed && rows.length === 0 ? (
-          <div className="alert alert-info">{t('orgSwitcher.noOrgsFound')}</div>
-        ) : null}
-        {!loading && rows.length > 0 ? (
-          <div className="list-group">
-            {allOrganizations ? <AllRow active={activeUuid === ''} onPick={onPick} /> : null}
-            {rows.map(org => (
-              <OrgRow
-                key={org.uuid}
-                org={org}
-                active={org.uuid === activeUuid}
-                orgMark={orgMark}
-                onPick={onPick}
-              />
-            ))}
-          </div>
-        ) : null}
-      </Modal.Body>
-    </Modal>
+    <SwitcherModal
+      show={show}
+      onHide={onHide}
+      icon={<FaBuilding className="me-2" />}
+      title={t('orgSwitcher.title')}
+      loading={loading}
+      loadFailed={loadFailed}
+      loadError={t('orgSwitcher.loadError')}
+      empty={rows.length === 0}
+      emptyText={t('orgSwitcher.noOrgsFound')}
+    >
+      <div className="list-group">
+        {allOrganizations ? <AllRow active={activeUuid === ''} onPick={onPick} /> : null}
+        {rows.map(org => (
+          <OrgRow
+            key={org.uuid}
+            org={org}
+            active={org.uuid === activeUuid}
+            orgMark={orgMark}
+            onPick={onPick}
+          />
+        ))}
+      </div>
+    </SwitcherModal>
   );
 };
 

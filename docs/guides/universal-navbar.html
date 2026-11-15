@@ -1159,7 +1159,7 @@
     <p>
       The picture of the Universal Navbar Contract; where the two disagree, the contract's text
       wins. The contract covers the right-hand cluster, the search module and its filter panel, the
-      menu, its two modals, the header and footer metrics, and the footer's three slots; brand and
+      menu, its three modals, the header and footer metrics, and the footer's three slots; brand and
       layout are each app's own. The header is sticky with a small shadow, a tertiary band with a
       bottom border, 34px controls with 14px vertical padding and a 20px gutter; the cluster buttons
       are borderless and abut, the search icon first among them whenever the page has something to
@@ -2545,6 +2545,15 @@
             memberships.
           </div>
           <div class="callout">
+            <strong>Switch account row</strong> follows the organization row on the identity
+            provider's own session while its status lists <code>switch</code> under
+            <code>accounts</code>: the users glyph and the words, opening the account switcher modal
+            over <code>GET /api/auth/accounts</code>, one row per account of the browser, the active
+            and the remembered one marked, Add another account and Sign out all under them, every
+            action a top-level navigation to the answered <code>next</code>; absent on every other
+            backend.
+          </div>
+          <div class="callout">
             <strong>Logout</strong> is BoxVault's row (bridge-lock/house-lock scope toggle, default
             everywhere) as the auth server's full-width outline-danger button; hyperweaver's labels
             ("Log out of {provider}" / "…of this app only").
@@ -3208,6 +3217,22 @@
             <td>
               Both apps: shared <code>src/components/layout/OrgSwitcherModal.jsx</code>; hyperweaver
               <code>OrgSwitcherModal.jsx</code> (adds "All organizations")
+            </td>
+          </tr>
+          <tr>
+            <td>Account switcher</td>
+            <td>
+              The identity provider's own: picture → app mark; name over email; Active badge, green
+              check and primary border on the account the cookie names; Remembered badge on one
+              holding no session; picking a row posts the choice and leaves for
+              <code>next</code> as a top-level navigation; Add another account and Sign out all
+              under the rows; drawn only on the <code>cookie</code> session while the status lists
+              <code>switch</code> under <code>accounts</code>.
+            </td>
+            <td>
+              Shared <code>src/components/layout/AccountSwitcherModal.jsx</code> over the cookie
+              provider's account members; the chooser page <code>/select-account</code> draws the
+              same rows
             </td>
           </tr>
           <tr>

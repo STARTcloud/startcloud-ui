@@ -43,6 +43,7 @@ import {
   PasswordRecoveryPage,
   PasswordResetPage,
   RegisterPage,
+  SelectAccountPage,
   VerifyLinkPage,
   acceptInvitation,
   activeInvitations,
@@ -484,6 +485,7 @@ const PAGE_TITLES = {
   '/login': 'auth:login.pageTitle',
   '/login/magic': 'auth:login.magic.title',
   '/login/bootstrap': 'auth:login.bootstrap.title',
+  '/select-account': 'auth:accounts.title',
   '/auth/callback': 'auth:login.pageTitle',
   '/register': 'auth:register.pageTitle',
   '/registration': 'auth:register.pageTitle',
@@ -1325,6 +1327,12 @@ const signInRoutes = ({ status, cookie, account }) => {
       token: 'cookie',
     },
     {
+      path: '/select-account',
+      open: cookie && hasFeature(status, 'accounts', 'switch'),
+      element: <SelectAccountPage session={session} />,
+      token: 'accounts',
+    },
+    {
       path: '/authenticator',
       open: tfa,
       element: <TfaCodePage returnTo={returnTo} events={events} />,
@@ -1404,7 +1412,11 @@ const interstitialRoutes = ({ status, cookie, account }) => {
   const row = (path, gate, element) => ({ path, open: gate, element, token: 'interstitials' });
   return gatedRoutes([
     row('/oauth2/consent', signedIn, <ConsentPage returnTo={returnTo} />),
-    row('/activate', signedIn, <DeviceActivatePage account={account} returnTo={returnTo} />),
+    row(
+      '/activate',
+      signedIn,
+      <DeviceActivatePage account={account} returnTo={returnTo} session={session} />
+    ),
     row('/activated', open, <DeviceActivatedPage />),
     row('/ciba/approve', signedIn, <CibaApprovePage />),
     row('/connect/logout/confirm', signedIn, <LogoutConfirmPage returnTo={returnTo} />),

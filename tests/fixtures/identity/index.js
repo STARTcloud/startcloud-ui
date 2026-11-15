@@ -9,4 +9,5 @@ export default {
   'GET /api/auth/logout/frontchannel': { status: 200, file: 'frontchannel.json' },
   'GET /api/auth/link': { status: 200, file: 'link.json' },
   'GET /api/auth/device': { status: 200, file: 'device.json' },
+  'GET /api/auth/accounts': { status: 200, file: 'accounts.json' },
 };

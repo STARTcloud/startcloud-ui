@@ -1868,6 +1868,32 @@
         that follows such a <code>next</code> follows a path with the router and an absolute URL as
         a top-level navigation, and assumes neither the dashboard nor the step after.
       </div>
+      <div class="callout">
+        <strong>Several accounts on one browser.</strong>
+        <code>GET /api/auth/accounts</code> answers the browser's accounts, the signed-in people
+        first and the remembered ones after, each
+        <code>{ id, name, email, picture, active, signed_in }</code>, and <code>pending</code>, the
+        client whose authorize request waits or null; <code>/select-account</code> draws one row per
+        entry, the active and the remembered one marked, the waiting application named, and a Sign
+        in link for the empty answer. A row picked posts
+        <code>POST /api/auth/accounts/{id}/choose</code>, Use another account
+        <code>POST /api/auth/accounts/add</code>, each row's sign-out
+        <code>DELETE /api/auth/accounts/{id}</code> and Sign out all
+        <code>DELETE /api/auth/accounts</code>; every <code>200</code> is a top-level navigation to
+        the answered <code>next</code>, never an in-router move, because the session cookie changes;
+        a <code>204</code> reads the list again, a <code>404 not_found</code> reads it again and
+        draws the problem, a <code>403 csrf</code> draws its problem. The same accounts stand in the
+        user menu's Switch account row and the account switcher modal while
+        <code>features</code> lists <code>switch</code> under <code>accounts</code> and the first
+        <code>auth</code> token is <code>cookie</code>. The switching tab replaces its cached
+        <code>account</code> record in place before it leaves, and a sibling tab that hears the
+        <code>storage</code> event with a record naming another person reloads into the active
+        person; a sibling that hears the key removed reads <code>GET /api/auth/accounts</code> and
+        reloads while the browser still holds an account, signing out through the bus only on the
+        empty answer. The sign-in page the add leads to draws its form while the cookie still names
+        someone. <code>/select-account</code>
+        is an auth path and a bare path, never remembered as a return path.
+      </div>
     </div>
   </div>
 
@@ -3311,7 +3337,7 @@
               style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border)"
             >
               <h1 class="auth-headline" style="font-size: 26px">Device connected</h1>
-              <p class="auth-subhead">You can close this window and return to your device.</p>
+              <p class="auth-subhead">You can close this window or tab and return to your device.</p>
             </div>
           </div>
         </div>
@@ -3367,7 +3393,11 @@
         left counted from the answer's arrival; at zero and on the <code>404</code> it says the code
         has expired and disables Continue. A person who owes terms returns to
         <code>/activate?user_code=</code> with the same code after the acceptance, and a device
-        request with <code>openid</code> draws it as the consent page's locked row.
+        request with <code>openid</code> draws it as the consent page's locked row. While
+        <code>GET /api/auth/accounts</code> holds more than one account the page draws the chooser
+        step first, because a device code is approved by the active person: the active row leads to
+        the code step with no request, another row posts the choice and returns to the device page
+        with its code when <code>next</code> is <code>/</code>.
       </div>
       <div class="callout">
         <strong>CIBA answers JSON.</strong> <code>GET /api/auth/ciba</code> with the token in an
@@ -4214,7 +4244,8 @@
         inside the shared admin feature; the row reads Inbox because the menu's Notifications row
         opens the modal, and the admin row reads "All organizations" with its own glyph so two rows
         never share one word; the column and the app section are hidden on the sign-in, onboarding,
-        interstitial and error routes and on <code>/org/invite</code>.
+        interstitial and error routes, on <code>/org/invite</code> and on
+        <code>/select-account</code>.
       </div>
       <div class="callout">
         <strong>The issuer's home.</strong> <code>/</code> lands on the profile for a signed-in
@@ -6617,6 +6648,31 @@ TypeError: Cannot read properties of undefined (reading 'items')
         ><span class="c"
           >the same; the local session is the SSO session, plain red row; <code>oidc</code> is
           always false</span
+        >
+        <span class="c k">accounts()</span
+        ><span class="c"><code>GET /api/auth/accounts</code>, the browser's accounts</span>
+        <span class="c k">chooseAccount(entry, from)</span
+        ><span class="c"
+          ><code>POST /api/auth/accounts/{id}/choose</code>; replaces the cached
+          <code>account</code> in place, then <code>window.location</code> to <code>next</code>, or
+          to <code>from</code> when <code>next</code> is <code>/</code></span
+        >
+        <span class="c k">addAccount()</span
+        ><span class="c"
+          ><code>POST /api/auth/accounts/add</code>; marks <code>adding_account</code> in
+          sessionStorage, <code>window.location</code> to <code>next</code>; the sign-in page reads
+          the mark once and draws its form while the cookie still names someone</span
+        >
+        <span class="c k">signOutAccount(entry)</span
+        ><span class="c"
+          ><code>DELETE /api/auth/accounts/{id}</code>; <code>204</code> answers false;
+          <code>200</code> drops every key but the visitor's own for the active entry and follows
+          <code>next</code></span
+        >
+        <span class="c k">signOutAccounts()</span
+        ><span class="c"
+          ><code>DELETE /api/auth/accounts</code>; drops every key but the visitor's own, follows
+          <code>next</code></span
         >
       </div>
     </div>

@@ -60,7 +60,8 @@ OIDC interstitials; the signed-in pages; admin, health and errors.
   anonymous visitor to `/login` with the page kept under `intended_url`
   on every page but the auth paths: on the sign-in, onboarding and
   interstitial routes, `/activate` excepted, on `/org/invite`, which
-  posts its token signed in or not, and on `/error` the page itself
+  posts its token signed in or not, on `/select-account`, the chooser of
+  the browser's accounts, and on `/error` the page itself
   draws, so the server's security configuration neither gates nor redirects a
   page GET, because a
   `403` on `/admin/users` or a `302` on `/activate` would otherwise answer
@@ -235,11 +236,18 @@ provider of the session contract, chosen when the UI backend's first
 | `signOut()`                               | `POST /user/logout` with the CSRF header, answering `200 { "next": "/connect/logout/frontchannel" }` while relying parties registered front-channel URIs and `{ "next": "/login?logout" }` otherwise; the provider drops every storage key but `mode`, `theme`, `themes`, `motion` and `language`, the visitor's own, and sets `window.location` to `next`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `signOutEverywhere()`                     | `signOut()`; on the issuer the local session is the SSO session, so the logout row draws the plain red row                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `oidc`                                    | always `false`: a federated sign-in on the issuer still ends in the issuer's own session, so the logout row never offers the two-scope toggle                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `accounts()`                              | `GET /api/auth/accounts` with `Accept: application/json`, the browser's accounts of group 1, answered with or without a session                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `chooseAccount(entry, from)`              | `POST /api/auth/accounts/{id}/choose` with the CSRF header; replaces the cached `account` record in place with the entry's `name`, `email` and `picture`, so a sibling tab hears a written key and never a removed one, then sets `window.location` to the answered `next`, or to `from` when `next` is `/` and the page named one, the device page with its code; never an in-router move, because the session cookie changes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `addAccount()`                            | `POST /api/auth/accounts/add` with the CSRF header; marks `adding_account` in `sessionStorage` and sets `window.location` to the answered `next`, the sign-in page; `addingAccount()` reads the mark once and clears it, the sign-in page drawing its form on that visit while the session cookie still names someone, because everyone on the browser stays signed in                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `signOutAccount(entry)`                   | `DELETE /api/auth/accounts/{id}` with the CSRF header; a `204` answers `false` and moves nobody; a `200` drops every storage key but the visitor's own when the entry is the active one, as `signOut()` drops them, sets `window.location` to `next` and answers `true`; a `404` `not_found` is thrown to the caller                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `signOutAccounts()`                       | `DELETE /api/auth/accounts` with the CSRF header; drops every storage key but the visitor's own and sets `window.location` to `next`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 Storage on the issuer, per the session contract's storage table:
 `account` (the cached display fields and the four `preferred_*` members),
 `intended_url`, `activeOrganization` (uuid), `push_enabled`,
-`login_method` (`password` or `magic_link`), `mode`, `theme`, `themes`,
+`login_method` (`password` or `magic_link`), `adding_account` in
+`sessionStorage` (the one-visit mark `addAccount()` leaves for the
+sign-in page), `mode`, `theme`, `themes`,
 `motion` and `language` (the chrome's own keys, `mode` the person's
 mode, `theme` the chosen theme's name, `themes` the host's offered list
 cached for the pre-paint script and `motion` the person's reduced-motion
@@ -289,6 +297,7 @@ shape:
     "interstitials",
     "policies",
     { "org-console": ["teams"] },
+    { "accounts": ["switch"] },
     "discover",
     "invitations",
     "integrations",
@@ -356,6 +365,15 @@ its one sub flag gates the making of organizations alone:
 | -------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `teams`  | the site's organizations setting is on | Create a team on the organizations page, Convert to a team on a personal organization's console, the account-type step of onboarding |
 
+`accounts` is listed on every site as the one-key object
+`{ "accounts": ["switch"] }`; its one sub flag gates the user switcher of
+the account cluster and the `/select-account` route, the browser's
+accounts of group 1:
+
+| Sub flag | Listed while | Gates                                                                                                                               |
+| -------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `switch` | always       | the Switch account row and the account switcher modal of the user menu, the `/select-account` page, the chooser step of `/activate` |
+
 | Field                           | Rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `role`                          | `auth-server`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | the navbar contract's name for the UI backend whose session is the `cookie` provider                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -366,7 +384,7 @@ its one sub flag gates the making of organizations alone:
 | `brand.repo`, `brand.changelog` | `repo` omitted; `changelog` from `sites.<id>.assets.changelog_url` when set                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | the source is private, so the footer's left slot links to the changelog, the navbar contract's second tier, and is plain text when neither exists                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `auth`                          | `["cookie"]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | the issuer is its own session                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `collections`                   | `[]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | the issuer lists nothing; the navbar contract's search page draws the issuer's own rows, since the issuer advertises `search`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `features`                      | exactly the tokens a contract gates a surface on, no more, no fewer: `local-accounts` (per site, while `self_registration_enabled`), `tfa` as the one-key object carrying its sub flags `app`, `sms`, `passkey` and `email`, `onboarding`, `interstitials`, `policies`, `org-console` on every site, as the one-key object carrying its sub flag `teams` while the site's organizations setting is on and as the plain word otherwise, `discover` while the directory is on, the way BoxVault advertises it, `invitations`, `integrations`, `search`, `inbox`, `admin`, `notifications`, `health`, `events`, and `footer` per site                                                                                                                                                                                                                                                                                                                                            | a token gates a surface a contract names; a token no contract names would gate nothing and mislead the reader of the payload, and a surface the contracts name but the payload omits would never draw. A new token lands in the navbar contract's token table before any payload answers it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `features`                      | exactly the tokens a contract gates a surface on, no more, no fewer: `local-accounts` (per site, while `self_registration_enabled`), `tfa` as the one-key object carrying its sub flags `app`, `sms`, `passkey` and `email`, `onboarding`, `interstitials`, `policies`, `org-console` on every site, as the one-key object carrying its sub flag `teams` while the site's organizations setting is on and as the plain word otherwise, `accounts` on every site as the one-key object carrying its sub flag `switch`, `discover` while the directory is on, the way BoxVault advertises it, `invitations`, `integrations`, `search`, `inbox`, `admin`, `notifications`, `health`, `events`, and `footer` per site                                                                                                                                                                                                                                                             | a token gates a surface a contract names; a token no contract names would gate nothing and mislead the reader of the payload, and a surface the contracts name but the payload omits would never draw. A new token lands in the navbar contract's token table before any payload answers it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `footer`                        | present only while `sites.<id>.ui.footer` is true                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | a white-label site may carry no footer and no "Powered by" line; the switch is per site so one issuer serves branded and white-label sites from the same build, and the chrome draws no footer for a payload that omits the token                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `health`                        | present while the issuer answers `GET /api/health` in the navbar contract's shape, `{ status, timestamp, services: { database, mail, sms, signing_keys } }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | the footer's heart draws only while both `footer` and `health` are listed: no `footer`, no footer at all; `footer` without `health`, a footer without the heart; both, the heart from `/api/health`, refreshed from the events stream rather than a timer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `links`                         | `docs` from `sites.<id>.assets.help_url`, `contact` as `mailto:` of `sites.<id>.mail.support_email`; an unset value answers `""`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | the chrome hides an empty link; the issuer never invents a destination                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -463,18 +481,20 @@ its one sub flag gates the making of organizations alone:
 
 ### Sign-in routes
 
-| Route                   | Page                                                                                                                                                                                                                      | Gate                       | Server routes behind it                                                                                                                                          |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/login`                | LoginPage in its issuer form: the request form, or the sent state when the URL carries `sent`, the address kept in router state and never in the URL, so history and the access log never hold it                         | `cookie` auth token        | `POST /login`, `POST /login/magic/request`, `GET /oauth2/authorization/{id}`, `POST /webauthn/authenticate/options`, `POST /login/webauthn`, `POST /auth-cancel` |
-| `/login/magic`          | MagicLinkPage: reads the mail's `email` and `token` once, replaces the location, posts them and follows `next`; the invalid state with a link to request a new one                                                        | `cookie`                   | `POST /login/magic`                                                                                                                                              |
-| `/login/bootstrap`      | BootstrapLoginPage: reads `email`, `token` and `return` from the seeded link once, replaces the location, posts them and follows `next`, the return validated by the server; the invalid state with "Sign in another way" | `cookie`                   | `POST /login/bootstrap`                                                                                                                                          |
-| `/authenticator`        | TfaCodePage: the code entry for the chosen method, or the passkey prompt                                                                                                                                                  | `cookie`, `tfa`            | `GET /api/auth/tfa`, `POST /api/auth/tfa/send`, `POST /authenticator`, `POST /resend-tfa`                                                                        |
-| `/authenticator-method` | TfaMethodPage: the method picker                                                                                                                                                                                          | `cookie`, `tfa`            | `GET /api/auth/tfa/methods`, `POST /authenticator-method`                                                                                                        |
-| `/passwordRecovery`     | PasswordRecoveryPage: the request form, or the sent state when the URL carries `success`                                                                                                                                  | `cookie`, `local-accounts` | `POST /passwordRecovery`                                                                                                                                         |
-| `/passwordReset`        | PasswordResetPage: the new-password form, `email` and `token` from the URL                                                                                                                                                | `cookie`, `local-accounts` | `POST /passwordReset`                                                                                                                                            |
+| Route                   | Page                                                                                                                                                                                                                      | Gate                               | Server routes behind it                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/login`                | LoginPage in its issuer form: the request form, or the sent state when the URL carries `sent`, the address kept in router state and never in the URL, so history and the access log never hold it                         | `cookie` auth token                | `POST /login`, `POST /login/magic/request`, `GET /oauth2/authorization/{id}`, `POST /webauthn/authenticate/options`, `POST /login/webauthn`, `POST /auth-cancel` |
+| `/login/magic`          | MagicLinkPage: reads the mail's `email` and `token` once, replaces the location, posts them and follows `next`; the invalid state with a link to request a new one                                                        | `cookie`                           | `POST /login/magic`                                                                                                                                              |
+| `/login/bootstrap`      | BootstrapLoginPage: reads `email`, `token` and `return` from the seeded link once, replaces the location, posts them and follows `next`, the return validated by the server; the invalid state with "Sign in another way" | `cookie`                           | `POST /login/bootstrap`                                                                                                                                          |
+| `/authenticator`        | TfaCodePage: the code entry for the chosen method, or the passkey prompt                                                                                                                                                  | `cookie`, `tfa`                    | `GET /api/auth/tfa`, `POST /api/auth/tfa/send`, `POST /authenticator`, `POST /resend-tfa`                                                                        |
+| `/authenticator-method` | TfaMethodPage: the method picker                                                                                                                                                                                          | `cookie`, `tfa`                    | `GET /api/auth/tfa/methods`, `POST /authenticator-method`                                                                                                        |
+| `/passwordRecovery`     | PasswordRecoveryPage: the request form, or the sent state when the URL carries `success`                                                                                                                                  | `cookie`, `local-accounts`         | `POST /passwordRecovery`                                                                                                                                         |
+| `/passwordReset`        | PasswordResetPage: the new-password form, `email` and `token` from the URL                                                                                                                                                | `cookie`, `local-accounts`         | `POST /passwordReset`                                                                                                                                            |
+| `/select-account`       | SelectAccountPage: the chooser of the browser's accounts, one row per account with the active and the remembered one marked, the waiting application named, Use another account and Sign out all                          | `cookie`, `accounts` with `switch` | `GET /api/auth/accounts`, `POST /api/auth/accounts/{id}/choose`, `POST /api/auth/accounts/add`, `DELETE /api/auth/accounts/{id}`, `DELETE /api/auth/accounts`    |
 
-`authenticator`, `authenticator-method`, `passwordRecovery` and
-`passwordReset` join the reserved first segments of the pages contract.
+`authenticator`, `authenticator-method`, `passwordRecovery`,
+`passwordReset` and `select-account` join the reserved first segments of
+the pages contract.
 `/registration`, `/complete-onboarding`, `/oauth2/consent`,
 `/connect/logout/*`, `/activate`, `/user/*`, `/notifications`,
 `/public/*` and `/admin/*` are later groups and are reserved with them.
@@ -761,6 +781,172 @@ Every page that follows `next` from those routes follows a path inside
 the app with the router and an absolute URL as a top-level navigation,
 and assumes neither the dashboard nor the step that comes after.
 
+### Several accounts on one browser
+
+Several people stay signed in on one browser, each in a server session of
+their own, and one of them is active: the one the session cookie names.
+`GET /api/status` lists `{ "accounts": ["switch"] }` in `features` on
+every site of the identity provider. Every route below answers
+`Cache-Control: no-store`, with or without a signed-in session, because
+the browser's own HttpOnly cookie identifies the browser; every write
+carries the `X-XSRF-TOKEN` header the cookie session's other writes carry
+and answers `403` with code `csrf` without it.
+
+`GET /api/auth/accounts` answers `200`, the signed-in people first and the
+remembered people who hold no session after them:
+
+```json
+{
+  "accounts": [
+    {
+      "id": "pX3…",
+      "name": "Ada Lovelace",
+      "email": "ada@example.com",
+      "picture": "/api/user/avatar/3f5a…",
+      "active": true,
+      "signed_in": true
+    },
+    {
+      "id": "rQ9…",
+      "name": null,
+      "email": "grace@example.com",
+      "picture": null,
+      "active": false,
+      "signed_in": false
+    }
+  ],
+  "pending": { "client_name": "Web Mail" }
+}
+```
+
+- `id` is opaque and is the `{id}` of the routes below.
+- `name` and `picture` are the members of the same names on `GET /api/user`,
+  each `null` when the account has none.
+- `active` marks the account the session cookie names; at most one entry
+  carries `true`.
+- `signed_in` is `false` for a remembered person, who is signed in again
+  by the remember-me rules when chosen.
+- `pending` is `null` while no authorize request waits; `client_name` is
+  the client id for a client without a name.
+
+A browser the server does not know answers:
+
+```json
+{ "accounts": [], "pending": null }
+```
+
+`POST /api/auth/accounts/{id}/choose` makes that account the active one
+and answers `200` with the waiting authorize request as a path and query,
+else `/`:
+
+```json
+{ "next": "/oauth2/authorize?response_type=code&client_id=mail&state=s1&prompt=select_account" }
+```
+
+`POST /api/auth/accounts/add` prepares the browser for another person to
+sign in, leaves everyone signed in, and answers `200`:
+
+```json
+{ "next": "/login" }
+```
+
+`DELETE /api/auth/accounts/{id}` signs that one person out of the browser
+and leaves every other account as it is:
+
+| Case                                        | Answer                                             |
+| ------------------------------------------- | -------------------------------------------------- |
+| front-channel frames wait                   | `200` `{ "next": "/connect/logout/frontchannel" }` |
+| the active account, another account remains | `200` `{ "next": "/select-account" }`              |
+| the active account, none remains            | `200` `{ "next": "/login?logout" }`                |
+| another account                             | `204`, no body                                     |
+
+`DELETE /api/auth/accounts` signs everyone on the browser out and answers
+`200`:
+
+```json
+{ "next": "/connect/logout/frontchannel" }
+```
+
+while front-channel frames wait, else:
+
+```json
+{ "next": "/login?logout" }
+```
+
+`choose` and the `DELETE` of one account answer `404` for an id the
+browser does not hold, another browser's id included, and `choose` for an
+account whose session ended:
+
+```json
+{
+  "type": "https://auth.startcloud.com/probs/not-found",
+  "title": "Not found.",
+  "status": 404,
+  "detail": "This browser holds no account under that id.",
+  "code": "not_found"
+}
+```
+
+`GET /oauth2/authorize` with `prompt=select_account` redirects a browser
+that holds at least one account to `/select-account` and the request
+waits; a choice or a sign-in as another person resumes it once.
+
+What the UI draws over those routes:
+
+- **SelectAccountPage** at `/select-account`, the chooser: reads
+  `GET /api/auth/accounts` through the cookie provider's `accounts()` and
+  draws one row per entry of `accounts` with the picture (the identity
+  card's fallback where `picture` is null), the name (the email where
+  `name` is null) and the email, the active account marked with the
+  Active badge, the check and the primary border, a remembered one
+  (`signed_in` false) with the Remembered badge; while `pending` is not
+  null an info alert names `pending.client_name` as the application that
+  waits; the empty answer draws "No account is signed in on this browser."
+  and a Sign in link to `/login`.
+- Choosing a row calls `chooseAccount(entry)`,
+  `POST /api/auth/accounts/{id}/choose`; "Use another account" calls
+  `addAccount()`, `POST /api/auth/accounts/add`. Each is followed by a
+  top-level navigation to the answered `next`, never an in-router move,
+  because the session cookie changes. The sign-in page the add leads to
+  draws its form on that visit while the session cookie still names
+  someone, the one-visit `adding_account` mark telling it so, because
+  everyone on the browser stays signed in.
+- Each row carries a sign-out glyph, `signOutAccount(entry)`,
+  `DELETE /api/auth/accounts/{id}`, and the page carries "Sign out all",
+  `signOutAccounts()`, `DELETE /api/auth/accounts`. A `200` is followed by
+  a top-level navigation to `next`; a `204` reads the list again; a `404`
+  `not_found` reads the list again and draws the problem alert from its
+  code; a `403` `csrf` draws its problem alert; every alert is
+  `auth:errors.<code>`.
+- The user switcher of the navbar contract, the Switch account row of the
+  user menu beside the organization row and the account switcher modal it
+  opens, is drawn only while `features` lists `accounts` with the sub flag
+  `switch` and the first `auth` token is `cookie`; every other backend
+  draws no switcher. It lists the same `accounts`, read when the
+  modal opens, switches through the same `chooseAccount`, and carries "Add
+  another account" (`addAccount`) and "Sign out all" (`signOutAccounts`),
+  each a top-level navigation to `next`; a failed action reads the list
+  again and draws its alert.
+- After a switch the switching tab navigates fully, its cached `account`
+  record replaced in place with the chosen entry's `name`, `email` and
+  `picture` before it leaves, so no page of it ever restores the previous
+  person; the sibling tabs of the origin are told through the same
+  `storage` signal a sign-out uses, the event on the `account` key, and a
+  written record that names another person reloads the tab into the active
+  person; a removed key, the active account's sign-out or Sign out all,
+  makes the sibling read `GET /api/auth/accounts`: while the browser still
+  holds an account the sibling reloads the document, and only the empty
+  answer signs it out through the bus, so no tab posts `/user/logout` for a
+  person still signed in.
+- `/activate` shows the chooser step first while `accounts` holds more
+  than one entry, because a device code is approved by the active person:
+  the active row leads to the code step with no request; another row
+  posts the choice and, when `next` is `/`, returns to the device page
+  with its code as a top-level navigation.
+- `/select-account` belongs to the cookie provider's auth paths and to its
+  bare paths, is drawn without the column and the app section, signed in
+  or not, and is never remembered as a return path.
+
 ### What the sign-in pages draw
 
 **LoginPage** grows from the page every `backend` UI backend draws (the
@@ -820,13 +1006,16 @@ session contract's sign-in page) by the states the issuer has:
   session exists, and a person with a live session who lands on `/login`,
   `/registration`, `/passwordRecovery` or `/passwordReset` is sent to `/`
   or the consumed `intended_url`, because a crafted `/login?logout` above
-  a form is a phishing frame for someone still signed in; `?stepup` is the
+  a form is a phishing frame for someone still signed in; `?stepup` is
   one exception, where the session is live by design and the page exists to
   re-authenticate, so the form draws and the answer's `next` wins, because
   `prompt=login` and a `max_age` past its bound oblige the issuer to
   reauthenticate an already authenticated person or refuse with
   `login_required` (OpenID Connect Core §3.1.2.1), and a page that sends
-  them home instead does neither and strands the parked request. The
+  them home instead does neither and strands the parked request; the visit
+  that follows `POST /api/auth/accounts/add` is the other, read once from
+  the cookie provider's `addingAccount()`, where the form draws for the
+  next person while everyone on the browser stays signed in. The
   session-ended banner is the chrome's, raised on the bus; the page draws
   none of its own.
 - **Foot.** "New to {{app}}? Create an account" while
@@ -971,9 +1160,12 @@ validation follows the validation contract on every field.
 `method.locked`, `continue`); `recovery.*` (`title`, `subhead`,
 `sent.title`, `sent.body`, `sent.ttl`, `sent.resend`, `sent.resendIn`,
 `remembered`, `signIn`, `returnToSite`); `reset.*` (`title`, `subhead`,
-`newPassword`, `continue`, `invalid`); `errors.*` gains one key per `code`
-above.
-`shared.json` gains the shared pieces' own words: `codeInput.digit`,
+`newPassword`, `continue`, `invalid`); `accounts.*` (`title`, `subhead`,
+`pending`, `another`, `signOutAll`, `none`, `deviceSubhead`); `errors.*`
+gains one key per `code` above, `not_found` and `csrf` among them.
+`shared.json` gains the user switcher's words, `navbar.switchAccount` and
+`accountSwitcher.*` (`title`, `add`, `signOutAll`, `active`, `remembered`,
+`signOut`, `none`, `loadError`, `failed`), and the shared pieces' own words: `codeInput.digit`,
 `copyButton.*` (`copy`, `copied`), `passwordField.*` (`show`, `hide`,
 `generate`, `generated`), `stepDots.label`, `pager.*` (`previous`,
 `next`, `page`, `showing`) and `sortable.*` (`handle`, `position`). Every
@@ -1933,7 +2125,11 @@ false never reaches this page at all.
   cancel and answers `next` as the client's `redirect_uri` with
   `error=access_denied` (RFC 6749 §4.1.2.1), so the page never calls
   `session.signOut()` first.
-- **DeviceActivatePage**: the code field with its label, uppercase,
+- **DeviceActivatePage**: the chooser step of the browser's accounts
+  first while `GET /api/auth/accounts` holds more than one entry and the
+  status lists `switch` under `accounts`, the active row leading to the
+  code step and another row posting the choice (group 1, Several accounts
+  on one browser); then the code field with its label, uppercase,
   `XXXX-XXXX`, prefilled from `?user_code`, the `?error=invalid_user_code`
   alert painted on the field, "Continue"; a visitor without a session is
   sent to `/login` with this page, query and all, kept under
@@ -2857,7 +3053,8 @@ row of the column and a destination lives in the column or the menu,
 never both, Preferences being the one named exception because the
 avatar is the one control on every page.
 The column and the app section are hidden on every route of the
-sign-in, onboarding and interstitial groups, on `/org/invite` and on
+sign-in, onboarding and interstitial groups, on `/org/invite`, on
+`/select-account` and on
 `/error`, where the page is the whole screen. On a `backend` UI backend the profile feature
 exports the Account group with the Profile row at `/profile` and its
 children alone, drawn after the catalog's group, because there a

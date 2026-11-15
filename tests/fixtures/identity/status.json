@@ -16,6 +16,7 @@
     "interstitials",
     "policies",
     { "org-console": ["teams"] },
+    { "accounts": ["switch"] },
     "discover",
     "invitations",
     "integrations",

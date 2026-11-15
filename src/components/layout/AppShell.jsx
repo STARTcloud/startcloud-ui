@@ -16,7 +16,7 @@ import { useShortcuts } from '../../hooks/useShortcuts';
 import { useSidebarBadges } from '../../hooks/useSidebarBadges';
 import { useSidebarSize } from '../../hooks/useSidebarSize';
 import { reportRenderError } from '../../lib/logger';
-import { returnTo } from '../../lib/runtime';
+import { returnTo, session } from '../../lib/runtime';
 import { authMethod, hasFeature } from '../../utils/capabilities';
 import { userDisplayName, userSecondaryLine } from '../../utils/identity';
 import {
@@ -83,6 +83,25 @@ const menuLinksFor = ({ status, cookie, issuerUrl }) => {
   };
 };
 
+/**
+ * The account switcher's adapter over the cookie session provider's
+ * account members, handed to the user menu only on a `cookie` host whose
+ * status lists `switch` under `accounts`; null everywhere else, so every
+ * other backend draws no switcher.
+ *
+ * @param {Object} options - The host's status and whether its session is the cookie provider's
+ * @returns {Object|null} `{ list, choose, add, signOutAll }` or null
+ */
+const accountsFor = ({ status, cookie }) =>
+  cookie && hasFeature(status, 'accounts', 'switch')
+    ? {
+        list: session.accounts,
+        choose: session.chooseAccount,
+        add: session.addAccount,
+        signOutAll: session.signOutAccounts,
+      }
+    : null;
+
 const buildUserMenu = ({ account, status, cookie, identity, orgs, menu }) => {
   const { user, activeOrgUuid, issuerUrl, oidc } = account;
   if (!user) {
@@ -100,6 +119,7 @@ const buildUserMenu = ({ account, status, cookie, identity, orgs, menu }) => {
     onPickOrg: account.pickOrg,
     loadOrganizations: orgs.load,
     orgMark: orgs.mark,
+    accounts: accountsFor({ status, cookie }),
     favorites: account.favorites,
     appName: status.brand.name,
     appVersion: hasFeature(status, 'footer') ? '' : status.version,

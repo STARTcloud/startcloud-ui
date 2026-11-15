@@ -45,7 +45,7 @@ Feature: identity contract
     When I open "/activate?error=invalid_user_code"
     And I open "/activated"
     Then I see "Device connected"
-    And I see "You can close this window and return to your device."
+    And I see "You can close this window or tab and return to your device."
 
   Scenario: the interstitials: the CIBA page reads GET /api/auth/ciba with the token from the URL, then replaces the location
     When I open "/ciba/approve?token=ciba-token"

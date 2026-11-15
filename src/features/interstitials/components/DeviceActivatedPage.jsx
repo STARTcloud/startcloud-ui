@@ -5,7 +5,7 @@ import AuthShell from '../../../components/common/AuthShell';
 
 /**
  * `/activated`: the tab closes itself once drawn, and "Device connected"
- * with "You can close this window and return to your device." stands for
+ * with "You can close this window or tab and return to your device." stands for
  * a browser that refuses the close.
  */
 const DeviceActivatedPage = () => {

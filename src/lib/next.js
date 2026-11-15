@@ -22,6 +22,7 @@ const PAGES = [
   '/link-account-consent',
   '/user',
   '/org/invite',
+  '/select-account',
   '/notifications',
   '/profile',
   '/admin',

@@ -3592,6 +3592,10 @@ details.meter .tier-badge {
   color: var(--auth-ink-2, var(--bs-emphasis-color));
 }
 
+.auth-form .code-input-field > .form-label {
+  text-align: center;
+}
+
 .code-input {
   display: flex;
   justify-content: center;

@@ -280,12 +280,24 @@ SSO session, so the logout row draws plain), `claims()`
 `PATCH /api/user/preferences`; the full member table is the
 [Universal Identity Contract](universal-identity/)'s. Its `authPaths`
 are every reserved segment of the identity contract's sign-in, onboarding
-and interstitial groups plus `error`, because a page such as
+and interstitial groups plus `org/invite`, `select-account` and `error`,
+because a page such as
 `/continue?token=` or `/oauth2/code?code=` carries a bearer secret in its
 query and must never be remembered as a return path, all but `activate`,
 whose query carries only the device's user code, so a sign-in begun there
 returns to it with the code prefilled, and which stands with them among
-its `barePaths`, the paths drawn without the column and the app section;
+its `barePaths`, the paths drawn without the column and the app section.
+The browser's accounts of the identity contract are its five members
+`accounts()`, `chooseAccount(entry, from)`, `addAccount()`,
+`signOutAccount(entry)` and `signOutAccounts()` over `/api/auth/accounts`,
+each a top-level navigation to the answered `next` because the session
+cookie changes, `chooseAccount` replacing the cached `account` in place
+with the chosen entry's display fields, so a sibling tab hears a written
+key and never a removed one, `addAccount` leaving the one-visit
+`adding_account` mark in `sessionStorage` that lets the sign-in page draw
+its form while the session cookie still names someone, and the two
+sign-outs that end the active person dropping the storage keys
+`signOut()` drops;
 its cached `account`
 holds the display fields and the four `preferred_*` members; `mode`,
 `theme`, `motion` and `language` are the visitor's own keys, written by
@@ -413,8 +425,16 @@ token and answers `session-terminated` with the provider's
 `endSession()`, which clears the cached record and ends the session on
 the bus, so a back-channel logout at the identity provider reaches every
 open tab; `reset` on the stream re-reads the profile, and a sign-out in
-one tab reaches its siblings through the `storage` event. No provider or
-screen opens a stream of its own.
+one tab reaches its siblings through the `storage` event on the
+provider's own key: a removed key signs the sibling out through the bus's
+`logout`, except on a `cookie` UI backend whose status lists `switch`
+under `accounts`, where the sibling reads `GET /api/auth/accounts` first
+and reloads the document while the browser still holds an account, so no
+tab posts a logout for a person still signed in; a written record that
+names another person than the one the
+sibling holds, both carrying an email and the two differing, reloads the
+document into that person, and any other written record re-reads the
+profile. No provider or screen opens a stream of its own.
 
 ---
 
@@ -557,7 +577,7 @@ the `idp.storage_prefix` the UI backend names for its tokens.
 | terminal preferences              | `terminal_prefs`, one JSON object `{ fontSize, fontFamily, scrollback, cursorStyle, cursorBlink, broadcastNewline }`                                                                                                                                                                                                           | `terminal_prefs`, one JSON object `{ fontSize, fontFamily, scrollback, cursorStyle, cursorBlink, broadcastNewline }`                                                                                                                                       |
 | mode, theme, motion and language  | `mode`, `theme`, `themes`, `motion`, `language`, the chrome's own keys, all five kept across a sign-out; `mode`, `theme`, `motion` and `language` are the visitor's own keys, written by the person's own controls alone and never from the account; the account's values ride the cached record and leave with it at sign-out | the same                                                                                                                                                                                                                                                   |
 
-A `cookie` UI backend (the identity provider) keeps `account` (the cached display fields and the four `preferred_*` members, the account's mode and theme leaving with it at sign-out), `intended_url`, `activeOrganization` (uuid), `push_enabled`, `login_method` (`password` or `magic_link`), `mode`, `theme`, `themes`, `motion`, `language`, `table_prefs_admin_users`, `table_prefs_admin_organizations`, `table_prefs_admin_logins`, `table_prefs_admin_registrations`, `table_prefs_admin_sessions`, `table_prefs_admin_dashboard`, `table_prefs_inbox`, `table_prefs_organizations`, `table_prefs_admin_client_health`, `table_prefs_admin_blocked`, `table_prefs_admin_service_usage`, `table_prefs_org_console_requests`, `table_prefs_org_console_invitations` and the sidebar keys; it has no upstream, so `silent_sso_attempted` is unused.
+A `cookie` UI backend (the identity provider) keeps `account` (the cached display fields and the four `preferred_*` members, the account's mode and theme leaving with it at sign-out), `intended_url`, `activeOrganization` (uuid), `push_enabled`, `login_method` (`password` or `magic_link`), `adding_account` in `sessionStorage` (the one-visit mark `addAccount()` leaves for the sign-in page, read once and cleared), `mode`, `theme`, `themes`, `motion`, `language`, `table_prefs_admin_users`, `table_prefs_admin_organizations`, `table_prefs_admin_logins`, `table_prefs_admin_registrations`, `table_prefs_admin_sessions`, `table_prefs_admin_dashboard`, `table_prefs_inbox`, `table_prefs_organizations`, `table_prefs_admin_client_health`, `table_prefs_admin_blocked`, `table_prefs_admin_service_usage`, `table_prefs_org_console_requests`, `table_prefs_org_console_invitations` and the sidebar keys; it has no upstream, so `silent_sso_attempted` is unused.
 
 ---
 

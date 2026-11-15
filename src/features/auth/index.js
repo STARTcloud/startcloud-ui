@@ -22,4 +22,5 @@ export const OrgInvitePage = lazy(() => import('./components/OrgInvitePage'));
 export const PasswordRecoveryPage = lazy(() => import('./components/PasswordRecoveryPage'));
 export const PasswordResetPage = lazy(() => import('./components/PasswordResetPage'));
 export const RegisterPage = lazy(() => import('./components/RegisterPage'));
+export const SelectAccountPage = lazy(() => import('./components/SelectAccountPage'));
 export const VerifyLinkPage = lazy(() => import('./components/VerifyLinkPage'));

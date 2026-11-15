@@ -1,0 +1,7 @@
+{
+  "type": "https://auth.startcloud.com/probs/not-found",
+  "title": "Not found.",
+  "status": 404,
+  "detail": "This browser holds no account under that id.",
+  "code": "not_found"
+}
