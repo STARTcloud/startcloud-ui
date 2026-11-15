@@ -1,0 +1,70 @@
+{
+  "scope": "client",
+  "name": "hcl-mla",
+  "label": "HCL Master License Agreement",
+  "version": "1.1",
+  "locale": "",
+  "region": null,
+  "person_region": "US",
+  "regions_offered": [null],
+  "step": 1,
+  "total": 1,
+  "client_name": "Domino Integration",
+  "versions": [
+    { "version": "1.1", "published_at": "2026-11-14T06:00:00Z" },
+    { "version": "1.0", "published_at": "2026-06-11T18:00:00Z" }
+  ],
+  "previous": { "version": "1.0", "accepted_at": "2026-06-12T09:00:00Z" },
+  "changes_html": "<p>Changed top for @@field:8f3k2qz1m7c4x9ab:first_name@@, <del>of @@field:8f3k2qz1m7c4x9ab:city@@</del>, <del>at @@field:8f3k2qz1m7c4x9ab:address@@</del>.</p>",
+  "changes_middle_html": "<p>Changed middle, tier <del>basic</del><ins>@@field:8f3k2qz1m7c4x9ab:plan@@</ins>.</p>",
+  "changes_bottom_html": "<p>Changed bottom.</p>",
+  "fields_version": 1,
+  "anchor_key": "8f3k2qz1m7c4x9ab",
+  "collecting": true,
+  "content_html": "<p>Current top for @@field:8f3k2qz1m7c4x9ab:first_name@@.</p>",
+  "content_middle_html": "<p>Current middle, tier @@field:8f3k2qz1m7c4x9ab:plan@@.</p>",
+  "content_bottom_html": "<p>Current bottom.</p>",
+  "fields": [
+    {
+      "name": "first_name",
+      "kind": "text",
+      "group": "identity",
+      "autocomplete": "given-name",
+      "required": true,
+      "value": "Ada"
+    },
+    {
+      "name": "plan",
+      "kind": "choice",
+      "group": "document",
+      "required": true,
+      "label": "Licence tier",
+      "options": ["Gold", "Silver", "Bronze"],
+      "changed": true
+    },
+    {
+      "name": "city",
+      "kind": "text",
+      "group": "address",
+      "autocomplete": "address-level2",
+      "required": false,
+      "removed": true
+    },
+    {
+      "name": "address",
+      "kind": "composite",
+      "parts": ["address_line_1", "city"],
+      "separators": [", "],
+      "required": false,
+      "removed": true
+    },
+    {
+      "name": "address_line_1",
+      "kind": "text",
+      "group": "address",
+      "autocomplete": "address-line1",
+      "required": false,
+      "removed": true
+    }
+  ]
+}

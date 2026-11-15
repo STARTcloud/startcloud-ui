@@ -1,0 +1,66 @@
+{
+  "scope": "client",
+  "name": "hcl-mla",
+  "label": "HCL Master License Agreement",
+  "version": "1.1",
+  "locale": "",
+  "region": null,
+  "person_region": "US",
+  "regions_offered": [null],
+  "step": 1,
+  "total": 1,
+  "client_name": "Domino Integration",
+  "versions": [{ "version": "1.1", "published_at": "2026-11-14T06:00:00Z" }],
+  "fields_version": 1,
+  "anchor_key": "8f3k2qz1m7c4x9ab",
+  "collecting": true,
+  "content_html": "<p>This agreement binds <em>@@field:8f3k2qz1m7c4x9ab:full_name@@</em>.</p>\n<p>Not a blank: @@field:0000000000000000:first_name@@</p>\n<blockquote>\n<p>[!WARNING]\nRead every clause.</p>\n</blockquote>\n<table>\n<thead>\n<tr><th align=\"right\">Tier</th></tr>\n</thead>\n<tbody>\n<tr><td align=\"right\">@@field:8f3k2qz1m7c4x9ab:plan@@</td></tr>\n</tbody>\n</table>\n<p><a href=\"https://example.com/terms\" rel=\"nofollow\">Terms</a> <span class=\"tos-blank\" data-tos-field=\"first_name\">old blank</span></p>",
+  "content_middle_html": "<p><em>I, @@field:8f3k2qz1m7c4x9ab:full_name@@, am of age: @@field:8f3k2qz1m7c4x9ab:over_18@@. Signed: @@field:8f3k2qz1m7c4x9ab:signature@@</em></p>",
+  "content_bottom_html": "<p>By clicking the button below, you agree.</p>",
+  "fields": [
+    {
+      "name": "first_name",
+      "kind": "text",
+      "group": "identity",
+      "autocomplete": "given-name",
+      "required": true,
+      "value": "Ada"
+    },
+    {
+      "name": "last_name",
+      "kind": "text",
+      "group": "identity",
+      "autocomplete": "family-name",
+      "required": true,
+      "value": "Lovelace"
+    },
+    {
+      "name": "full_name",
+      "kind": "composite",
+      "parts": ["first_name", "last_name"],
+      "separators": [" "]
+    },
+    {
+      "name": "plan",
+      "kind": "choice",
+      "group": "document",
+      "required": true,
+      "label": "Licence tier",
+      "options": ["Gold", "Silver", "Bronze"]
+    },
+    {
+      "name": "over_18",
+      "kind": "checkbox",
+      "group": "document",
+      "required": true,
+      "label": "I am 18 or older"
+    },
+    {
+      "name": "signature",
+      "kind": "signature",
+      "group": "document",
+      "required": true,
+      "label": "Type your full name to sign"
+    }
+  ]
+}

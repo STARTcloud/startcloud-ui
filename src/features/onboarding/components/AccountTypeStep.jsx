@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaUser, FaUsers } from 'react-icons/fa6';
@@ -17,7 +18,7 @@ const TEAM_NAME = '/complete-onboarding/team-name';
  * the subhead naming the client when it required an organization, in
  * which case the personal tile is hidden and the team name drawn at once.
  */
-const AccountTypeStep = ({ returnTo }) => {
+const AccountTypeStep = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const navigate = useNavigate();
   const { state } = useOnboarding();
@@ -40,6 +41,8 @@ const AccountTypeStep = ({ returnTo }) => {
     <OnboardingFrame
       state={state}
       current="org"
+      returnTo={returnTo}
+      events={events}
       title={t('onboarding.account.title')}
       subtitle={t('onboarding.account.subhead')}
       problem={problem}
@@ -66,6 +69,7 @@ const AccountTypeStep = ({ returnTo }) => {
 
 AccountTypeStep.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default AccountTypeStep;

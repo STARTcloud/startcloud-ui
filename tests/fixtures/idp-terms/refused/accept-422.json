@@ -1,0 +1,31 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/fields/over_18",
+      "rule": "required",
+      "params": {},
+      "detail": "over_18 is required"
+    },
+    {
+      "pointer": "/fields/signature",
+      "rule": "const",
+      "params": { "const": "full_name" },
+      "detail": "signature must equal the person's full name"
+    },
+    {
+      "pointer": "/fields/phone_number",
+      "rule": "readOnly",
+      "params": {},
+      "detail": "phone_number is verified and cannot change here"
+    },
+    {
+      "pointer": "/fields/start_date",
+      "rule": "format",
+      "params": { "format": "date" },
+      "detail": "start_date must be yyyy-MM-dd"
+    }
+  ]
+}

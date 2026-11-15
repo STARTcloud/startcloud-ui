@@ -9,6 +9,7 @@ import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import MarkdownText from '../../../components/common/MarkdownText';
 import SectionHeading from '../../../components/common/SectionHeading';
+import { errorKeys } from '../../../components/common/StepUpDialog';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
@@ -282,7 +283,7 @@ const DiscoveryPage = ({ session, returnTo, organizations, orgMark, joinIntentKe
         orgName,
         error: error.message,
       });
-      notify('danger', t(error.messageKey || 'errors.request'));
+      notify('danger', t(errorKeys(error)));
     }
   };
 

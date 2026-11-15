@@ -22,23 +22,27 @@ export const LOCALES = ['en', 'es'];
 
 const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
-const ARGUMENT_PATTERN = /\{(?<index>\d+)\}/g;
+const TOKEN_PATTERN = /\{\{(?<name>[^{}]*)\}\}/g;
+
+const VERSION_POINTER = '/version';
 
 const escapeHtml = text => String(text).replace(/[&<>"']/g, char => ENTITIES[char]);
 
+const tokenOf = name => `{{${name}}}`;
+
 /**
- * The sandboxed preview's document: the body with every `{n}` the kind's
- * argument list names replaced by the argument's name, HTML-escaped, and
- * any other brace left as typed (decision 164).
+ * The sandboxed preview's document: the body with every `{{name}}` token
+ * the kind offers replaced by the token's name, HTML-escaped, and every
+ * other text left as typed.
  *
  * @param {string} body - The template body
- * @param {Array} args - The kind's arguments `[{ index, name, description }]`
+ * @param {Array} args - The kind's tokens `[{ name, description }]`
  * @returns {string} The srcdoc
  */
 export const previewDocOf = (body, args) => {
-  const names = Object.fromEntries(args.map(entry => [String(entry.index), entry.name]));
-  return (body || '').replace(ARGUMENT_PATTERN, (match, index) =>
-    names[index] === undefined ? match : escapeHtml(names[index])
+  const offered = args.map(entry => entry.name);
+  return (body || '').replace(TOKEN_PATTERN, (match, name) =>
+    offered.includes(name) ? escapeHtml(name) : match
   );
 };
 
@@ -72,7 +76,6 @@ export const templateShape = PropTypes.shape({
 });
 
 export const argumentShape = PropTypes.shape({
-  index: PropTypes.number.isRequired,
   name: PropTypes.string.isRequired,
   description: PropTypes.string,
 });
@@ -204,7 +207,7 @@ PreviewFrame.propTypes = {
 /**
  * The Preview action on a copy: a list dialog titled by the copy's subject
  * with its version badge, the body drawn in the sandboxed `iframe` with
- * every `{n}` replaced by its argument's name (decision 164).
+ * every `{{name}}` token the kind offers replaced by its name.
  */
 export const PreviewDialog = ({ copy, args, onClose }) => {
   const { t } = useTranslation();
@@ -238,14 +241,15 @@ const ArgumentChips = ({ args, onInsert }) => {
       <span className="me-1">{t('admin.emailTemplates.arguments')}</span>
       {args.map(entry => (
         <button
-          key={entry.index}
+          key={entry.name}
           type="button"
           className="btn btn-sm btn-outline-secondary"
           title={entry.description || ''}
           aria-label={t('admin.emailTemplates.insertArgument', { name: entry.name })}
-          onClick={() => onInsert(entry.index)}
+          data-action="email-template-token"
+          onClick={() => onInsert(entry.name)}
         >
-          {`{${entry.index}} ${entry.name}`}
+          {tokenOf(entry.name)}
         </button>
       ))}
     </div>
@@ -263,9 +267,13 @@ ArgumentChips.propTypes = {
  * copy has already had it, sending
  * `POST /api/admin/email-templates/{kind}/publish?site=&locale=`
  * `{ version, subject, body }`, which writes revision 1 of that version
- * and becomes the live text, notifying nobody (decision 164).
+ * and becomes the live text, notifying nobody; a refusal whose every
+ * pointer names a member other than `version` is handed to `onRefused`
+ * and the dialog closes, so a `422` `token` at `/subject` or `/body` is
+ * painted on the field of the form beneath; a `404` says the copy was
+ * removed by someone else and reloads the list.
  */
-const PublishDialog = ({ template, source, subject, body, onClose, onPublished }) => {
+const PublishDialog = ({ template, source, subject, body, onClose, onPublished, onRefused }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [form, setForm] = useState({ version: '' });
@@ -297,7 +305,18 @@ const PublishDialog = ({ template, source, subject, body, onClose, onPublished }
         onClose();
       })
       .catch(error => {
-        if (!rules.applyServerErrors(error)) {
+        const entries = error.fieldErrors || [];
+        if (error.status === 404) {
+          notify('danger', t('admin.copyRemoved'));
+          onPublished();
+          onClose();
+        } else if (
+          entries.length > 0 &&
+          entries.every(entry => entry.pointer !== VERSION_POINTER)
+        ) {
+          onRefused(error);
+          onClose();
+        } else if (!rules.applyServerErrors(error)) {
           notify('danger', t(error.messageKey || 'errors.request'));
         }
       })
@@ -307,7 +326,7 @@ const PublishDialog = ({ template, source, subject, body, onClose, onPublished }
   return (
     <>
       <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
-        <form onSubmit={publish} noValidate>
+        <form onSubmit={publish} noValidate data-dialog="email-template-publish">
           <Modal.Header closeButton>
             <Modal.Title as="h5">{t('admin.emailTemplates.publishTitle')}</Modal.Title>
           </Modal.Header>
@@ -357,6 +376,7 @@ PublishDialog.propTypes = {
   body: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
   onPublished: PropTypes.func.isRequired,
+  onRefused: PropTypes.func.isRequired,
 };
 
 const siteOptionsOf = (t, sites) => [
@@ -377,15 +397,19 @@ const localeOptionsOf = t => [
  * file labelled by name and id plus "Every site", `locale` over the
  * estate's locales plus "Every language" (both fixed while editing, since
  * a copy is keyed by them), a new copy's version, the subject, and the
- * HTML body in a monospace textarea with the kind's argument chips above
- * it, each inserting its `{n}` at the caret, and beside it the sandboxed
- * preview, saved through `POST /api/admin/email-templates`; a copy being
+ * HTML body in a monospace textarea with the kind's token chips above
+ * it, each labelled `{{name}}`, titled by its description and inserting
+ * its `{{name}}` at the caret, and beside it the sandboxed preview, saved
+ * through `POST /api/admin/email-templates`; a copy being
  * edited draws its `version` read-only instead, since it changes only by
  * publishing, with two footer actions: Save, the default, "Save as a
  * revision of {{version}}", `PATCH /api/admin/email-templates/{kind}?site=&locale=`
  * with `subject` and `body` and never `version`, which writes the next
  * revision under the current version; and Publish, which opens
- * `PublishDialog` for the new version string (decision 164).
+ * `PublishDialog` for the new version string; a `422` `token` at
+ * `/subject` or `/body`, of a save or of a publish, is painted on that
+ * field, and a `404` on the save of a copy being edited says the copy was
+ * removed by someone else and reloads the list.
  */
 export const EmailTemplateCopyDialog = ({
   template,
@@ -421,9 +445,9 @@ export const EmailTemplateCopyDialog = ({
 
   const onChange = (name, value) => setForm(current => ({ ...current, [name]: value }));
 
-  const insertArgument = index => {
+  const insertArgument = name => {
     const field = bodyRef.current;
-    const token = `{${index}}`;
+    const token = tokenOf(name);
     const start = field ? field.selectionStart : form.body.length;
     const end = field ? field.selectionEnd : start;
     onChange('body', `${form.body.slice(0, start)}${token}${form.body.slice(end)}`);
@@ -459,7 +483,11 @@ export const EmailTemplateCopyDialog = ({
         onClose();
       })
       .catch(error => {
-        if (!rules.applyServerErrors(error)) {
+        if (editing && error.status === 404) {
+          notify('danger', t('admin.copyRemoved'));
+          onSaved();
+          onClose();
+        } else if (!rules.applyServerErrors(error)) {
           notify('danger', t(error.messageKey || 'errors.request'));
         }
       })
@@ -483,7 +511,7 @@ export const EmailTemplateCopyDialog = ({
   return (
     <>
       <Modal show onHide={guard.close} dialogClassName="form-modal" scrollable>
-        <form onSubmit={save} noValidate>
+        <form onSubmit={save} noValidate data-dialog="email-template-copy">
           <Modal.Header closeButton>
             <Modal.Title as="h5">{title}</Modal.Title>
           </Modal.Header>
@@ -562,6 +590,7 @@ export const EmailTemplateCopyDialog = ({
                 type="button"
                 className="btn btn-outline-secondary"
                 disabled={busy}
+                data-action="email-template-copy-publish"
                 onClick={() => setPublishing(true)}
               >
                 {t('admin.emailTemplates.publish')}
@@ -585,6 +614,7 @@ export const EmailTemplateCopyDialog = ({
               onSaved();
               onClose();
             }}
+            onRefused={rules.applyServerErrors}
           />
         ) : null}
       </Modal>
@@ -668,7 +698,7 @@ RevisionView.propTypes = {
  * newest first with their revisions beneath (revision, published by,
  * published at, the live one marked Current), each revision opening
  * read-only as its subject over the same sandboxed preview the Preview
- * uses (decision 164).
+ * uses.
  */
 export const EmailTemplateHistoryDialog = ({ template, source, args, onClose }) => {
   const { t } = useTranslation();

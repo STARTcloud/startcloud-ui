@@ -18,6 +18,7 @@ import {
   conditionalMediationAvailable,
   isAbort,
   isSupported,
+  passkeyCodeOf,
   passkeyRequestOptions,
   passkeyVerify,
 } from '../../../lib/passkeys';
@@ -491,7 +492,7 @@ const useLoginActions = ({
       .then(answer => follow(answer?.next))
       .catch(error => {
         if (!isAbort(error)) {
-          setProblem({ ...problemOf(error), code: 'passkey' });
+          setProblem({ ...problemOf(error), code: passkeyCodeOf(error) });
         }
       });
 
@@ -569,7 +570,7 @@ const CookieLogin = ({ session, events, account, returnTo, auth, appName }) => {
   const abortConditional = useConditionalPasskey({
     enabled: conditional && !signedIn,
     onNext: actions.follow,
-    onError: error => setProblem({ ...problemOf(error), code: 'passkey' }),
+    onError: error => setProblem({ ...problemOf(error), code: passkeyCodeOf(error) }),
   });
 
   useEffect(() => {

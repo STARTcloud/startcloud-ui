@@ -16,6 +16,7 @@ const userRowOf = member => ({
   full_name: member.name || '',
   email: member.email || '',
   enabled: !member.suspended,
+  suspended: Boolean(member.suspended),
   roles: roleNamesOf(member),
   organizations: [],
 });
@@ -23,8 +24,8 @@ const userRowOf = member => ({
 /**
  * The users of an organizations-with-users answer in the shape the
  * identity feature's Users page draws: one row per account across every
- * organization, its memberships gathered, `enabled` the inverse of the
- * backend's `suspended`, the roles as names.
+ * organization, its memberships gathered, `suspended` the backend's own
+ * and `enabled` its inverse, the roles as names.
  *
  * @param {Array} organizations - The rows of `GET /api/organizations-with-users`
  * @returns {Array} The user rows

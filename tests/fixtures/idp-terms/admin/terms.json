@@ -1,0 +1,31 @@
+[
+  {
+    "name": "hcl-mla",
+    "friendly_name": "HCL Master License Agreement",
+    "icon": "file-text",
+    "type": "CLIENT",
+    "is_public": false,
+    "copies": [
+      {
+        "id": 7,
+        "regions": [],
+        "locale": "",
+        "version": "1.1",
+        "revision": 1,
+        "content": "Tier: {{field:plan;kind=choice;label=Licence tier;options=Gold|Silver|Bronze}}",
+        "created_by": "ops@example.com",
+        "updated_at": "2026-11-14T06:00:00Z"
+      },
+      {
+        "id": 9,
+        "regions": [],
+        "locale": "es",
+        "version": "1.0",
+        "revision": 2,
+        "content": "Nivel: {{field:plan;kind=choice;label=Nivel;options=Oro|Plata|Bronce}}",
+        "created_by": "ops@example.com",
+        "updated_at": "2026-11-10T12:00:00Z"
+      }
+    ]
+  }
+]

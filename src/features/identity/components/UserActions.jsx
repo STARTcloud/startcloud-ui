@@ -45,21 +45,32 @@ export const roleLabel = role => role.replace(/^ROLE_/, '');
 
 const carries = field => rows => rows.some(row => field in row);
 
+const statusWord = (row, t) => {
+  if (row.suspended) {
+    return t('admin.organizations.suspended');
+  }
+  return t(row.enabled ? 'admin.users.table.active' : 'admin.users.table.disabled');
+};
+
+const statusClass = row => {
+  if (row.suspended) {
+    return 'bg-warning text-dark';
+  }
+  return row.enabled ? 'bg-success' : 'bg-secondary';
+};
+
 /**
- * The status badge of a Users row, Active or Disabled, the one the table's
- * Status column and the record page's heading both draw.
+ * The status badge of a Users row, the one the table's Status column and
+ * the record page's heading both draw: Suspended while the row's
+ * `suspended` is true, else Active while it is `enabled`, else Disabled,
+ * an account that has not confirmed its email.
  *
  * @param {Object} row - The user row
  * @param {Function} t - The translator
  * @returns {import('react').ReactElement} The badge
  */
-const statusWord = (row, t) =>
-  t(row.enabled ? 'admin.users.table.active' : 'admin.users.table.disabled');
-
 export const statusBadge = (row, t) => (
-  <span className={`badge ${row.enabled ? 'bg-success' : 'bg-warning text-dark'}`}>
-    {statusWord(row, t)}
-  </span>
+  <span className={`badge ${statusClass(row)}`}>{statusWord(row, t)}</span>
 );
 
 const tfaWord = (row, t) => t(row.using_2fa ? 'admin.users.table.on' : 'admin.users.table.off');
@@ -186,26 +197,33 @@ export const menuItemsOf = adapter => [
   ...(adapter.rateLimit ? [['rateLimits', 'admin.users.rateLimits.action']] : []),
 ];
 
+const ownAccount = (user, viewer) => Boolean(viewer?.email) && user.username === viewer.email;
+
 /**
  * The actions of one Users row, on the table's row and in the record
- * page's heading: Suspend or Enable, then one `RowMenu` with Roles, Set
- * primary organization, Edit customer ID, Rate limits and Delete, each
- * drawn only while the adapter carries its call.
+ * page's heading: Resume while the row's `suspended` is true and Suspend
+ * otherwise, then one `RowMenu` with Roles, Set primary organization, Edit
+ * customer ID, Rate limits and Delete, each drawn only while the adapter
+ * carries its call; the row of the `viewer`'s own account draws no
+ * Suspend.
  */
-export const RowActions = ({ user, adapter, onAction }) => {
+export const RowActions = ({ user, adapter, onAction, viewer = null }) => {
   const { t } = useTranslation();
   const items = menuItemsOf(adapter);
-  const canToggle = Boolean(adapter.suspend && adapter.resume);
+  const suspended = Boolean(user.suspended);
+  const canToggle =
+    Boolean(adapter.suspend && adapter.resume) && (suspended || !ownAccount(user, viewer));
   const canDelete = Boolean(adapter.remove);
   return (
     <div className="d-flex gap-1 text-nowrap">
       {canToggle ? (
         <button
           type="button"
-          className={`btn btn-sm ${user.enabled ? 'btn-outline-warning' : 'btn-outline-success'}`}
+          className={`btn btn-sm ${suspended ? 'btn-outline-success' : 'btn-outline-warning'}`}
+          data-action={suspended ? 'resume' : 'suspend'}
           onClick={() => onAction('toggle', user)}
         >
-          {user.enabled ? t('admin.users.suspend') : t('admin.users.enable')}
+          {suspended ? t('admin.buttons.resume') : t('admin.users.suspend')}
         </button>
       ) : null}
       {items.length > 0 || canDelete ? (
@@ -231,6 +249,7 @@ RowActions.propTypes = {
   user: adminUserShape.isRequired,
   adapter: usersAdapterShape.isRequired,
   onAction: PropTypes.func.isRequired,
+  viewer: PropTypes.shape({ email: PropTypes.string }),
 };
 
 const dialogOf = ({ open, adapter, catalog, onClose, onSaved, t }) => {
@@ -313,7 +332,8 @@ UserDialogs.propTypes = {
 
 /**
  * The actions of the Users pages over one row: `onAction(kind, user)`
- * suspends or resumes at once and opens every other kind's dialog, `open`
+ * resumes a row whose `suspended` is true and suspends any other at once,
+ * and opens every other kind's dialog, `open`
  * being the dialog in hand and `close` shutting it, `confirmDelete`
  * running the stepped-up delete; every write calls `reload`, the delete
  * `onRemoved`, the reload unless the page hands another.
@@ -335,10 +355,10 @@ export const useUserActions = ({ adapter, reload, onRemoved = reload }) => {
   const close = () => setOpen({ kind: '', user: null });
 
   const toggle = user => {
-    const call = user.enabled ? adapter.suspend(user.id) : adapter.resume(user.id);
+    const call = user.suspended ? adapter.resume(user.id) : adapter.suspend(user.id);
     call
       .then(() => {
-        notify('success', t(user.enabled ? 'admin.users.suspended' : 'admin.users.enabled'));
+        notify('success', t(user.suspended ? 'admin.users.resumed' : 'admin.users.suspended'));
         reload();
       })
       .catch(fail);

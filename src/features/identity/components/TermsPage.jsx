@@ -15,6 +15,7 @@ import { useGuard } from '../../../contexts/GuardContext';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useClientFilters } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
+import { useSelection } from '../../../hooks/useSelection';
 import { useUrlNarrowing } from '../../../hooks/useUrlNarrowing';
 import { deleteTerm, placeholders as readPlaceholders, terms, termsBulk } from '../api/content';
 import { useAdminRead } from '../hooks/useAdminRead';
@@ -23,9 +24,12 @@ import { PLACEHOLDERS, TERMS } from '../utils/examples';
 import AdminLoading from './AdminLoading';
 import DateCell from './DateCell';
 import {
+  copyRefusalKeyOf,
   copyShape,
   defaultCopyOf,
   documentShape,
+  localeLabelOf,
+  localeOfCopy,
   regionOfCopy,
   regionsOf,
   TermCopyDialog,
@@ -102,7 +106,7 @@ const CopyRow = ({ copy, onPreview, onEdit, onCopy, onHistory, onDelete }) => {
   const { t } = useTranslation();
   const regions = regionsOf(copy);
   return (
-    <li className="list-group-item d-flex flex-wrap align-items-center gap-2">
+    <li className="list-group-item d-flex flex-wrap align-items-center gap-2" data-copy={copy.id}>
       <div className="d-flex flex-wrap align-items-center gap-2 flex-grow-1 min-width-0">
         {regions.length > 0 ? (
           regions.map(code => <RegionFlag key={code} region={code} aria-hidden="true" />)
@@ -110,6 +114,9 @@ const CopyRow = ({ copy, onPreview, onEdit, onCopy, onHistory, onDelete }) => {
           <span className="badge bg-secondary">{t('admin.terms.everywhereElse')}</span>
         )}
         {regions.length > 0 ? <span className="small">{regions.join(', ')}</span> : null}
+        <span className="badge bg-secondary" data-badge="locale">
+          {localeLabelOf(t, localeOfCopy(copy))}
+        </span>
         <span className="small text-muted">
           {t('admin.terms.version', { version: copy.version || '' })}{' '}
           {t('admin.terms.revision', { revision: copy.revision })}
@@ -132,6 +139,7 @@ const CopyRow = ({ copy, onPreview, onEdit, onCopy, onHistory, onDelete }) => {
         <button
           type="button"
           className="btn btn-sm btn-outline-secondary"
+          data-action="term-copy-edit"
           onClick={() => onEdit(copy)}
         >
           {t('admin.terms.edit')}
@@ -139,6 +147,7 @@ const CopyRow = ({ copy, onPreview, onEdit, onCopy, onHistory, onDelete }) => {
         <button
           type="button"
           className="btn btn-sm btn-outline-secondary"
+          data-action="term-copy-history"
           onClick={() => onHistory(copy)}
         >
           {t('admin.terms.history')}
@@ -153,6 +162,7 @@ const CopyRow = ({ copy, onPreview, onEdit, onCopy, onHistory, onDelete }) => {
         <button
           type="button"
           className="btn btn-sm btn-outline-danger"
+          data-action="term-copy-delete"
           onClick={() => onDelete(copy)}
         >
           {t('admin.terms.delete')}
@@ -219,6 +229,7 @@ const DocumentCard = ({
           <button
             type="button"
             className="btn btn-sm btn-outline-secondary"
+            data-action="term-copy-add"
             onClick={() => onAddCopy(document)}
           >
             {t('admin.terms.copies.add')}
@@ -236,7 +247,6 @@ const DocumentCard = ({
         {document.copies.map(copy => (
           <CopyRow
             key={copy.id}
-            document={document}
             copy={copy}
             onPreview={onPreviewCopy}
             onEdit={onEditCopy}
@@ -285,47 +295,24 @@ const usePlaceholders = () => {
   return list;
 };
 
-const useSelection = rows => {
-  const [selected, setSelected] = useState(() => new Set());
-  const toggle = key =>
-    setSelected(current => {
-      const next = new Set(current);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  const allSelected = rows.length > 0 && rows.every(row => selected.has(keyOf(row)));
-  const someSelected = selected.size > 0;
-  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map(keyOf)));
-  const clear = () => setSelected(new Set());
-  return { selected, toggle, toggleAll, allSelected, someSelected, clear };
-};
-
 /**
  * The Terms page's bulk actions, drawn in the heading's action pane while
  * cards are picked: Make public, Make private and Delete over
  * `POST /api/admin/terms/bulk` with the picked documents' copy ids, Delete
- * behind the shared confirm and the step-up dialog, the result line naming
- * processed, skipped and each error's code translated (decision 150).
+ * behind the shared confirm and the step-up dialog, the answer handed to
+ * `onDone`, the page drawing its result line.
  */
 const TermsBulkActions = ({ ids, onDone }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
   const [pending, setPending] = useState('');
-  const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const run = action => {
     setBusy(true);
     guard(() => termsBulk({ action, ids }), t('admin.terms.bulk.stepUpReason'))
-      .then(answer => {
-        setResult(answer);
-        onDone();
-      })
+      .then(onDone)
       .catch(error => {
         if (error?.code !== 'step_up_required') {
           notify('danger', t(errorKeys(error)));
@@ -336,8 +323,6 @@ const TermsBulkActions = ({ ids, onDone }) => {
         setPending('');
       });
   };
-
-  const line = resultLineOf(t, 'admin.terms.bulk', result);
 
   return (
     <>
@@ -360,16 +345,12 @@ const TermsBulkActions = ({ ids, onDone }) => {
       <button
         type="button"
         className="btn btn-sm btn-outline-danger"
+        data-action="term-bulk-delete"
         disabled={busy || ids.length === 0}
         onClick={() => setPending('delete')}
       >
         {t('admin.terms.bulk.delete')}
       </button>
-      {line ? (
-        <span className="small text-muted" role="status">
-          {line}
-        </span>
-      ) : null}
       <ConfirmModal
         show={pending === 'delete'}
         handleClose={() => setPending('')}
@@ -393,14 +374,20 @@ TermsBulkActions.propTypes = {
  * Legal › Terms: a `SectionHeading` over the cards, the document count as
  * muted text after the title, Create as the heading's action; one card
  * per document, no drag handles and no order write, its copies listed
- * inside with their flag, regions, version, `r{{revision}}`, updated date
- * and the per-copy actions Preview, Edit, History, Copy (to a new region)
- * and Delete; a "region-only" badge on a document with no default copy;
+ * inside with their flag, regions, language badge ("Default language"
+ * for the copy whose `locale` is empty), version, `r{{revision}}`, updated
+ * date and the per-copy actions Preview, Edit, History, Copy (to a new
+ * region or language) and Delete, each naming the copy by its region and
+ * language; a "region-only" badge on a document with no default copy,
+ * the copy with no regions in the default language; a refused delete
+ * draws the `409` `default_copy` by its own sentence, the default-language
+ * copy staying while language copies depend on it, and a `404` as the
+ * copy removed by someone else with the list read again;
  * History opens a list dialog of the copy's versions and revisions,
  * newest first, each revision readable read-only; Edit draws the version
  * read-only with Save ("Save as a revision of {{version}}", a `PATCH`)
  * and Publish (a small dialog asking the new version, then the publish
- * route), decision 161; Add a copy on
+ * route); Add a copy on
  * the card opening the create dialog prefilled with the document's name;
  * the document-level fields (name, display name, icon, type, public)
  * edited once from the card's Edit and written to every copy; Public
@@ -408,7 +395,10 @@ TermsBulkActions.propTypes = {
  * select-all, the action pane gaining, while cards are picked, "N
  * selected", Clear selection, Make public, Make private and Delete over
  * `POST /api/admin/terms/bulk` with the picked documents' copy ids,
- * Delete behind the confirm and the step-up dialog (decision 150); the
+ * Delete behind the confirm and the step-up dialog, the answer's result
+ * line drawn in the pane beside Create once the selection clears, naming
+ * processed, skipped and each error's code, `default_copy` and
+ * `not_found` among them; the
  * navbar search bound with a query over the cards by name and display
  * name and the Type and Public `toggle` groups narrowing the cards
  * client-side, the query and the groups' values in the URL as `search`,
@@ -436,21 +426,28 @@ const TermsPage = () => {
     groups: filters.groups,
     onClearFilters: filters.clear,
   });
-  const selection = useSelection(shown);
+  const selection = useSelection(shown, { keyOf });
   const [documentDialog, setDocumentDialog] = useState({ open: false, document: null });
   const [copyDialog, setCopyDialog] = useState(null);
   const [previewing, setPreviewing] = useState(null);
   const [viewingHistory, setViewingHistory] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [bulkResult, setBulkResult] = useState(null);
+  const bulkLine = resultLineOf(t, 'admin.terms.bulk', bulkResult);
 
   useEffect(() => {
     document.title = t('admin.terms.title');
   }, [t]);
 
-  const fail = error => notify('danger', t(error.messageKey || 'errors.request'));
+  const fail = error => {
+    notify('danger', t(copyRefusalKeyOf(error)));
+    if (error.status === 404) {
+      reload();
+    }
+  };
 
   const confirmDelete = () => {
-    deleteTerm(deleting.document.name, regionOfCopy(deleting.copy))
+    deleteTerm(deleting.document.name, regionOfCopy(deleting.copy), localeOfCopy(deleting.copy))
       .then(() => {
         notify('success', t('admin.terms.deleted', { name: deleting.document.name }));
         reload();
@@ -487,14 +484,22 @@ const TermsPage = () => {
       </button>
       <TermsBulkActions
         ids={pickedIds}
-        onDone={() => {
+        onDone={answer => {
+          setBulkResult(answer);
           selection.clear();
           reload();
         }}
       />
     </>
   ) : (
-    createAction
+    <>
+      {bulkLine ? (
+        <span className="small text-muted" role="status" data-note="term-bulk-result">
+          {bulkLine}
+        </span>
+      ) : null}
+      {createAction}
+    </>
   );
 
   return (

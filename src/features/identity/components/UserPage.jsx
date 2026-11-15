@@ -37,7 +37,8 @@ const rowsOf = (row, ctx) =>
  * `adapter` as the Users page: the record from the adapter's `get(id)`,
  * the page naming its crumb by the username through `usePageName` and
  * drawing a `SectionHeading` titled by the username with the status badge
- * and, in its action pane, the row actions the Users page draws, then the
+ * and, in its action pane, the row actions the Users page draws, no
+ * Suspend on the `viewer`'s own record, then the
  * record's rows from the table's own columns, each drawn only while the
  * row carries the field, a column's `render` or, without one, its `value`
  * as the row's value, then the editable `UserRecord` sections where
@@ -80,7 +81,7 @@ const UserPage = ({ adapter, viewer = null }) => {
       <SectionHeading
         title={data.username}
         badge={statusBadge(data, t)}
-        actions={<RowActions user={data} adapter={adapter} onAction={onAction} />}
+        actions={<RowActions user={data} adapter={adapter} onAction={onAction} viewer={viewer} />}
       />
       <RecordRows rows={rowsOf(data, ctx)} />
       <UserRecord key={version} user={data} adapter={adapter} viewer={viewer} onSaved={saved} />

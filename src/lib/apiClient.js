@@ -19,6 +19,8 @@ const NOT_MODIFIED = 304;
 
 const textOf = value => (typeof value === 'string' ? value : '');
 
+const leaveUnsettled = () => undefined;
+
 const acceptedStatus = status => (status >= 200 && status < 300) || status === NOT_MODIFIED;
 
 const withEtag = (headers, etag) => (etag ? { ...headers, 'If-None-Match': etag } : headers);
@@ -117,13 +119,16 @@ export class ApiError extends Error {
  * it answered, and `data` `null` on a `304`; every other request resolves
  * to the body as before. A request given `expected`, a list of statuses,
  * still fails with `ApiError` on one of them but reaches `onError` with
- * none of them, for a refusal the caller reads as an answer.
+ * none of them, for a refusal the caller reads as an answer. An `onError`
+ * that answers `true` took the failure over and is moving the page: that
+ * request never settles, so the caller the move unmounts draws no failure;
+ * any other answer leaves the failure thrown.
  *
  * @param {Object} options - The app's side of the client
  * @param {string} options.baseUrl - The public origin the API is reached at, the one the session signs its headers for
  * @param {string} [options.requestOrigin] - Where the browser sends the request, `baseUrl` unless a dev proxy answers same-origin (then empty)
  * @param {Object} options.session - A session provider: `headers(method, url)`, and optionally `retryAuth()`, `adoptResponse(headers)`, `endSession()`
- * @param {(error: ApiError) => void} [options.onError] - Called once per failure before it is thrown
+ * @param {(error: ApiError) => boolean|void} [options.onError] - Called once per failure before it is thrown; `true` keeps the request unsettled
  * @returns {Object} `request`, `get`, `post`, `put`, `patch`, `delete`, `raw`, `resolve`
  */
 export const createApiClient = ({ baseUrl, requestOrigin = baseUrl, session, onError = null }) => {
@@ -214,8 +219,8 @@ export const createApiClient = ({ baseUrl, requestOrigin = baseUrl, session, onE
         throw error;
       }
       const failure = new ApiError({ method, url, cause: error, messageKeys });
-      if (!expected.includes(failure.status)) {
-        onError?.(failure);
+      if (!expected.includes(failure.status) && onError?.(failure) === true) {
+        return new Promise(leaveUnsettled);
       }
       throw failure;
     }

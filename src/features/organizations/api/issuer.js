@@ -39,6 +39,12 @@ export const setMembershipRole = (uuid, userId, role) =>
 
 export const removeMembership = (uuid, userId) => client.delete(at(uuid, 'members', userId));
 
+export const setMembershipSuspended = (uuid, userId, suspended) =>
+  client.put(at(uuid, 'members', userId, 'suspended'), { suspended });
+
+export const bulkMemberships = (uuid, action, userIds) =>
+  client.post(at(uuid, 'members', 'bulk'), { action, user_ids: userIds });
+
 export const leaveOrganization = uuid => client.post(at(uuid, 'leave'), {});
 
 export const deleteOrganization = uuid => client.delete(at(uuid));
@@ -74,13 +80,19 @@ export const discoverIssuerOrganizations = () =>
 /**
  * The identity provider's own `organizations` adapter of the shared
  * organization console, the organizations page and the DiscoveryPage:
- * one read of every membership with the console's fields, the writes of
+ * one read of every membership with the console's fields, each entry
+ * carrying `suspended` and `membership_suspended` and each member row
+ * `suspended`, the writes of
  * the identity contract's group 4 under `/api/user/organizations`, each
- * re-fetching the record afterward, and the directory routes of decision
- * 124 on BoxVault's paths, `discover` over `/api/organizations/discover`
+ * re-fetching the record afterward, `memberSuspended(uuid, userId,
+ * suspended)` over `PUT …/members/{userId}/suspended` and
+ * `membersBulk(uuid, action, userIds)`, `action` `suspend` or `resume`,
+ * over `POST …/members/bulk`, answering `{ processed, skipped, errors }`,
+ * and the directory routes on BoxVault's paths, `discover` over
+ * `/api/organizations/discover`
  * and `join`, `requests`, `approveRequest` and `denyRequest` over
  * `/api/organization/{uuid}/requests`; `resendInvitation` over
- * `POST …/invites/{id}/resend` (decision 152).
+ * `POST …/invites/{id}/resend`.
  */
 export const issuerOrganizations = {
   list: listMemberships,
@@ -93,6 +105,8 @@ export const issuerOrganizations = {
   resendInvitation: resendInvite,
   memberRole: setMembershipRole,
   removeMember: removeMembership,
+  memberSuspended: setMembershipSuspended,
+  membersBulk: bulkMemberships,
   leave: leaveOrganization,
   remove: deleteOrganization,
   setPrimary: setPrimaryOrganization,
@@ -114,6 +128,8 @@ export const issuerOrganizationsShape = PropTypes.shape({
   resendInvitation: PropTypes.func.isRequired,
   memberRole: PropTypes.func.isRequired,
   removeMember: PropTypes.func.isRequired,
+  memberSuspended: PropTypes.func.isRequired,
+  membersBulk: PropTypes.func.isRequired,
   leave: PropTypes.func.isRequired,
   remove: PropTypes.func.isRequired,
   setPrimary: PropTypes.func.isRequired,

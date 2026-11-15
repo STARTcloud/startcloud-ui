@@ -2,7 +2,9 @@ import PropTypes from 'prop-types';
 
 /**
  * One radio card: a native radio inside its label so arrow keys move and
- * Space selects, the label, an optional help line and any extra lines.
+ * Space selects, the label, an optional help line and any extra lines;
+ * `id`, where given, is the radio's own id, the one a form's error
+ * summary links to.
  */
 export const Option = ({
   name,
@@ -12,10 +14,12 @@ export const Option = ({
   label,
   help = null,
   disabled = false,
+  id = '',
   children = null,
 }) => (
   <label className={`option-card${checked ? ' on' : ''}${disabled ? ' off' : ''}`}>
     <input
+      id={id || undefined}
       className="option-card-input"
       type="radio"
       name={name}
@@ -41,6 +45,7 @@ Option.propTypes = {
   label: PropTypes.node.isRequired,
   help: PropTypes.node,
   disabled: PropTypes.bool,
+  id: PropTypes.string,
   children: PropTypes.node,
 };
 

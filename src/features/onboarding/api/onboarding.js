@@ -5,6 +5,9 @@ const PUBLIC = { auth: false };
 
 export const onboardingState = () => client.get('/api/auth/onboarding', OPTIONS);
 
+export const deviceCode = userCode =>
+  client.get('/api/auth/device', { ...OPTIONS, params: { user_code: userCode }, expected: [404] });
+
 export const submitName = body => client.post('/complete-onboarding/name', body, OPTIONS);
 
 export const sendPhoneCode = body =>
@@ -22,6 +25,13 @@ export const resendEmailCode = () =>
 
 export const chooseTfaMethod = body =>
   client.post('/complete-onboarding/choose-2fa-method', body, OPTIONS);
+
+export const passkeyCreationOptions = () =>
+  client.post('/webauthn/register/options', null, OPTIONS);
+
+export const registerPasskey = body => client.post('/webauthn/register', body, OPTIONS);
+
+export const completePasskey = () => client.post('/complete-onboarding/passkey', null, OPTIONS);
 
 export const tfaEnrollment = () => client.get('/api/auth/tfa/enroll', OPTIONS);
 

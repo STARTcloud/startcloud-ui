@@ -1,0 +1,9 @@
+[
+  {
+    "id": 3,
+    "type": "APP",
+    "label": "Authenticator",
+    "display": "Authenticator",
+    "preferred": true
+  }
+]

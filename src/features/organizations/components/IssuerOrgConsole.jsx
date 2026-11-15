@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FaBuilding } from 'react-icons/fa6';
+import { FaBan, FaBuilding } from 'react-icons/fa6';
 
 import AddressFields, { EMPTY_ADDRESS } from '../../../components/common/AddressFields';
 import { resultLineOf } from '../../../components/common/bulkResult';
@@ -101,7 +101,18 @@ const changedFields = (record, org) =>
     Object.entries(record).filter(([field, value]) => value !== (org?.[field] || ''))
   );
 
-const ownerCount = members => members.filter(member => member.role === 'OWNER').length;
+const ADMIN_SUSPENDS = ['MEMBER', 'GUEST'];
+const SUSPENSION_ACTIONS = ['suspend', 'resume'];
+const SUSPENSION_CLASSES = { suspend: 'btn-outline-warning', resume: 'btn-outline-success' };
+
+const ownerCount = members =>
+  members.filter(member => member.role === 'OWNER' && !member.suspended).length;
+
+const held = org => Boolean(org.suspended || org.membership_suspended);
+
+const reasonOf = (org, t) => (org && held(org) ? t('errors.suspended') : '');
+
+const viewerEmailOf = session => session.restore()?.user?.email || '';
 
 const pendingInvitesOf = org => (Array.isArray(org.pending_invites) ? org.pending_invites : []);
 
@@ -158,9 +169,10 @@ BulkResultLine.propTypes = {
   t: PropTypes.func.isRequired,
 };
 
-const RecordTab = ({ org, organizations, onSaved, placesKey }) => {
+const RecordTab = ({ org, organizations, onSaved, placesKey, reason }) => {
   const { t } = useTranslation();
   const notify = useNotify();
+  const locked = Boolean(reason);
   const [record, setRecord] = useState(() => recordOf(org));
   const [address, setAddress] = useState(() => ({ ...EMPTY_ADDRESS, ...(org.address || {}) }));
   const rules = useFormRules({
@@ -202,7 +214,7 @@ const RecordTab = ({ org, organizations, onSaved, placesKey }) => {
             type={type}
             className="form-control"
             value={record[field]}
-            readOnly={!org.can_rename}
+            readOnly={!org.can_rename || locked}
             onChange={event => set(field, event.target.value)}
             onBlur={() => rules.onBlur(field)}
           />
@@ -223,7 +235,7 @@ const RecordTab = ({ org, organizations, onSaved, placesKey }) => {
             {...aria}
             className="form-select"
             value={record[field]}
-            disabled={!enabled}
+            disabled={!enabled || locked}
             onChange={event => set(field, event.target.value)}
             onBlur={() => rules.onBlur(field)}
           >
@@ -269,7 +281,7 @@ const RecordTab = ({ org, organizations, onSaved, placesKey }) => {
         )}
       </div>
       <h5 className="mt-2">{t('orgConsole.organization.address')}</h5>
-      <fieldset disabled={!org.can_rename}>
+      <fieldset disabled={!org.can_rename || locked}>
         <AddressFields
           value={address}
           onChange={setAddress}
@@ -278,9 +290,11 @@ const RecordTab = ({ org, organizations, onSaved, placesKey }) => {
         />
       </fieldset>
       {org.can_rename || org.can_manage || org.is_owner ? (
-        <button type="submit" className="btn btn-primary">
-          {t('orgConsole.organization.updateButton')}
-        </button>
+        <span title={reason || undefined}>
+          <button type="submit" className="btn btn-primary" disabled={locked}>
+            {t('orgConsole.organization.updateButton')}
+          </button>
+        </span>
       ) : null}
     </form>
   );
@@ -291,21 +305,23 @@ RecordTab.propTypes = {
   organizations: issuerOrganizationsShape.isRequired,
   onSaved: PropTypes.func.isRequired,
   placesKey: PropTypes.string.isRequired,
+  reason: PropTypes.string.isRequired,
 };
 
-const RoleControl = ({ member, org, self, lastOwner, onRole }) => {
+const RoleControl = ({ member, org, self, lastOwner, onRole, reason }) => {
   const { t } = useTranslation();
   if (!org.is_owner) {
     return (
       <span className="badge bg-secondary">{t(`roles.${String(member.role).toLowerCase()}`)}</span>
     );
   }
+  const ownLast = lastOwner && self;
   return (
     <select
       className="form-select form-select-sm w-auto"
       value={member.role}
-      disabled={lastOwner && self}
-      title={lastOwner && self ? t('orgConsole.lastOwner') : undefined}
+      disabled={ownLast || Boolean(reason)}
+      title={reason || (ownLast ? t('orgConsole.lastOwner') : undefined)}
       aria-label={t('orgConsole.users.roles')}
       onChange={event => onRole(member, event.target.value)}
     >
@@ -324,37 +340,121 @@ RoleControl.propTypes = {
   self: PropTypes.bool.isRequired,
   lastOwner: PropTypes.bool.isRequired,
   onRole: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
+};
+
+const memberShape = PropTypes.shape({
+  user_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  email: PropTypes.string,
+  name: PropTypes.string,
+  role: PropTypes.string,
+  managed_by: PropTypes.string,
+  suspended: PropTypes.bool,
+});
+
+const MemberBadges = ({ member }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {member.managed_by ? (
+        <span className="badge bg-info text-dark">
+          {t('orgConsole.managedBy', { source: member.managed_by })}
+        </span>
+      ) : null}
+      {member.suspended ? (
+        <span className="badge bg-danger" data-badge="suspended">
+          <FaBan className="me-1" /> {t('orgConsole.users.suspended')}
+        </span>
+      ) : null}
+    </>
+  );
+};
+
+MemberBadges.propTypes = {
+  member: memberShape.isRequired,
+};
+
+/**
+ * Suspend or Resume of one member row by its `suspended`: offered to an
+ * owner on every row but their own and the only owner whose seat is not
+ * suspended, and to an admin on MEMBER and GUEST rows; disabled with
+ * `reason` as its tooltip while the organization or the person's own seat
+ * is suspended.
+ */
+const SuspendControl = ({ member, org, self, lastOwner, onSuspend, reason }) => {
+  const { t } = useTranslation();
+  const ranked = org.is_owner || (org.can_manage && ADMIN_SUSPENDS.includes(member.role));
+  if (self || lastOwner || !ranked) {
+    return null;
+  }
+  return (
+    <span title={reason || undefined}>
+      <button
+        type="button"
+        className={`btn btn-sm ${member.suspended ? 'btn-outline-success' : 'btn-outline-warning'}`}
+        data-action={member.suspended ? 'resume' : 'suspend'}
+        disabled={Boolean(reason)}
+        onClick={() => onSuspend(member)}
+      >
+        {member.suspended ? t('orgConsole.buttons.resume') : t('orgConsole.buttons.suspend')}
+      </button>
+    </span>
+  );
+};
+
+SuspendControl.propTypes = {
+  member: memberShape.isRequired,
+  org: PropTypes.shape({ is_owner: PropTypes.bool, can_manage: PropTypes.bool }).isRequired,
+  self: PropTypes.bool.isRequired,
+  lastOwner: PropTypes.bool.isRequired,
+  onSuspend: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
 };
 
 const MemberRow = ({
   member,
   org,
-  currentUserId,
+  viewerEmail,
   owners,
   onRole,
+  onSuspend,
   onRemove,
+  reason,
   selected,
   onToggleSelect,
 }) => {
   const { t } = useTranslation();
-  const self = String(member.user_id) === String(currentUserId);
-  const lastOwner = member.role === 'OWNER' && owners === 1;
-  const badges = member.managed_by ? (
-    <span className="badge bg-info text-dark">
-      {t('orgConsole.managedBy', { source: member.managed_by })}
-    </span>
-  ) : null;
+  const self = Boolean(viewerEmail) && member.email === viewerEmail;
+  const lastOwner = member.role === 'OWNER' && !member.suspended && owners === 1;
   const actions = member.managed_by ? null : (
     <>
-      <RoleControl member={member} org={org} self={self} lastOwner={lastOwner} onRole={onRole} />
+      <RoleControl
+        member={member}
+        org={org}
+        self={self}
+        lastOwner={lastOwner}
+        onRole={onRole}
+        reason={reason}
+      />
+      <SuspendControl
+        member={member}
+        org={org}
+        self={self}
+        lastOwner={lastOwner}
+        onSuspend={onSuspend}
+        reason={reason}
+      />
       {org.can_manage && !self ? (
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-danger"
-          onClick={() => onRemove(member)}
-        >
-          {t('orgConsole.buttons.removeFromOrg')}
-        </button>
+        <span title={reason || undefined}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger"
+            disabled={Boolean(reason)}
+            onClick={() => onRemove(member)}
+          >
+            {t('orgConsole.buttons.removeFromOrg')}
+          </button>
+        </span>
       ) : null}
     </>
   );
@@ -362,7 +462,7 @@ const MemberRow = ({
     <MethodRow
       label={member.name || member.email}
       subline={member.name ? member.email : null}
-      badges={badges}
+      badges={<MemberBadges member={member} />}
       actions={actions}
       selectable
       selected={selected}
@@ -373,23 +473,19 @@ const MemberRow = ({
 };
 
 MemberRow.propTypes = {
-  member: PropTypes.shape({
-    user_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    email: PropTypes.string,
-    name: PropTypes.string,
-    role: PropTypes.string,
-    managed_by: PropTypes.string,
-  }).isRequired,
+  member: memberShape.isRequired,
   org: PropTypes.object.isRequired,
-  currentUserId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  viewerEmail: PropTypes.string.isRequired,
   owners: PropTypes.number.isRequired,
   onRole: PropTypes.func.isRequired,
+  onSuspend: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
   selected: PropTypes.bool.isRequired,
   onToggleSelect: PropTypes.func.isRequired,
 };
 
-const InviteForm = ({ org, organizations, onChanged }) => {
+const InviteForm = ({ org, organizations, onChanged, reason }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [form, setForm] = useState(EMPTY_INVITE);
@@ -435,6 +531,7 @@ const InviteForm = ({ org, organizations, onChanged }) => {
                 type="email"
                 className="form-control"
                 value={form.email}
+                readOnly={Boolean(reason)}
                 onChange={event =>
                   setForm(previous => ({ ...previous, email: event.target.value }))
                 }
@@ -454,6 +551,7 @@ const InviteForm = ({ org, organizations, onChanged }) => {
                 {...aria}
                 className="form-select"
                 value={form.role}
+                disabled={Boolean(reason)}
                 onChange={event => setForm(previous => ({ ...previous, role: event.target.value }))}
                 onBlur={() => rules.onBlur('role')}
               >
@@ -465,9 +563,11 @@ const InviteForm = ({ org, organizations, onChanged }) => {
           </Field>
         </div>
       </div>
-      <button type="submit" className="btn btn-primary">
-        {t('orgConsole.invitation.sendButton')}
-      </button>
+      <span title={reason || undefined}>
+        <button type="submit" className="btn btn-primary" disabled={Boolean(reason)}>
+          {t('orgConsole.invitation.sendButton')}
+        </button>
+      </span>
     </form>
   );
 };
@@ -476,24 +576,29 @@ InviteForm.propTypes = {
   org: PropTypes.object.isRequired,
   organizations: issuerOrganizationsShape.isRequired,
   onChanged: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
 };
 
-const RevokeButton = ({ invite, onRevoke }) => {
+const RevokeButton = ({ invite, onRevoke, reason }) => {
   const { t } = useTranslation();
   return (
-    <button
-      type="button"
-      className="btn btn-sm btn-outline-danger"
-      onClick={() => onRevoke(invite)}
-    >
-      {t('orgConsole.revokeInvite')}
-    </button>
+    <span title={reason || undefined}>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-danger"
+        disabled={Boolean(reason)}
+        onClick={() => onRevoke(invite)}
+      >
+        {t('orgConsole.revokeInvite')}
+      </button>
+    </span>
   );
 };
 
 RevokeButton.propTypes = {
   invite: PropTypes.object.isRequired,
   onRevoke: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
 };
 
 const useResend = organizations => {
@@ -522,19 +627,23 @@ const useResend = organizations => {
   return { resend, waitSecondsFor };
 };
 
-const ResendButton = ({ invite, org, resend, waitSeconds }) => {
+const ResendButton = ({ invite, org, resend, waitSeconds, reason }) => {
   const { t } = useTranslation();
   const waiting = waitSeconds > 0;
+  const throttled = waiting
+    ? t('orgConsole.invitation.throttled', { seconds: waitSeconds })
+    : undefined;
   return (
-    <button
-      type="button"
-      className="btn btn-sm btn-outline-secondary"
-      disabled={waiting}
-      title={waiting ? t('orgConsole.invitation.throttled', { seconds: waitSeconds }) : undefined}
-      onClick={() => resend(org, invite)}
-    >
-      {t('orgConsole.invitation.resend')}
-    </button>
+    <span title={reason || throttled}>
+      <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary"
+        disabled={waiting || Boolean(reason)}
+        onClick={() => resend(org, invite)}
+      >
+        {t('orgConsole.invitation.resend')}
+      </button>
+    </span>
   );
 };
 
@@ -543,9 +652,10 @@ ResendButton.propTypes = {
   org: PropTypes.object.isRequired,
   resend: PropTypes.func.isRequired,
   waitSeconds: PropTypes.number.isRequired,
+  reason: PropTypes.string.isRequired,
 };
 
-const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke }) => {
+const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke, reason }) => {
   const { t } = useTranslation();
   const invites = pendingInvitesOf(org);
   const selection = useRowSelection();
@@ -583,12 +693,26 @@ const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke }) => {
         <button type="button" className="btn btn-sm btn-link" onClick={selection.clear}>
           {t('orgConsole.bulk.clearSelection')}
         </button>
-        <button type="button" className="btn btn-sm btn-outline-danger" onClick={bulkRevoke}>
-          {t('orgConsole.revokeInvite')}
-        </button>
-        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={bulkResend}>
-          {t('orgConsole.invitation.resend')}
-        </button>
+        <span title={reason || undefined}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger"
+            disabled={Boolean(reason)}
+            onClick={bulkRevoke}
+          >
+            {t('orgConsole.revokeInvite')}
+          </button>
+        </span>
+        <span title={reason || undefined}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            disabled={Boolean(reason)}
+            onClick={bulkResend}
+          >
+            {t('orgConsole.invitation.resend')}
+          </button>
+        </span>
       </>
     ) : null;
 
@@ -600,7 +724,12 @@ const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke }) => {
           folded={folds.folded('invite')}
           onFold={() => folds.toggle('invite')}
         >
-          <InviteForm org={org} organizations={organizations} onChanged={onChanged} />
+          <InviteForm
+            org={org}
+            organizations={organizations}
+            onChanged={onChanged}
+            reason={reason}
+          />
         </SectionCard>
       ) : null}
       <SectionHeading
@@ -639,8 +768,9 @@ const InvitationsTab = ({ org, organizations, folds, onChanged, onRevoke }) => {
                     org={org}
                     resend={resend}
                     waitSeconds={waitSecondsFor(invite.id)}
+                    reason={reason}
                   />
-                  <RevokeButton invite={invite} onRevoke={onRevoke} />
+                  <RevokeButton invite={invite} onRevoke={onRevoke} reason={reason} />
                 </>
               ) : null
             }
@@ -657,6 +787,7 @@ InvitationsTab.propTypes = {
   folds: foldsShape.isRequired,
   onChanged: PropTypes.func.isRequired,
   onRevoke: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
 };
 
 const ConvertDialog = ({ show, org, organizations, onHide, onDone }) => {
@@ -736,10 +867,83 @@ ConvertDialog.propTypes = {
   onDone: PropTypes.func.isRequired,
 };
 
-const ConsoleHeader = ({ org, owners, onRegenerate, onConvert, onLeave, onDelete }) => {
+const SuspensionBadges = ({ org }) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {org.suspended ? (
+        <span className="badge bg-warning text-dark" data-badge="suspended">
+          {t('admin.organizations.suspended')}
+        </span>
+      ) : null}{' '}
+      {org.membership_suspended ? (
+        <span className="badge bg-warning text-dark" data-badge="membership-suspended">
+          {t('organizations.membershipSuspended')}
+        </span>
+      ) : null}
+    </>
+  );
+};
+
+SuspensionBadges.propTypes = {
+  org: PropTypes.shape({
+    suspended: PropTypes.bool,
+    membership_suspended: PropTypes.bool,
+  }).isRequired,
+};
+
+const HeaderActions = ({ org, soloOwner, reason, onConvert, onLeave, onDelete }) => {
+  const { t } = useTranslation();
+  const locked = Boolean(reason);
+  return (
+    <div className="d-flex gap-2" title={reason || undefined}>
+      {org.personal && org.is_owner ? (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-primary"
+          disabled={locked}
+          onClick={onConvert}
+        >
+          {t('orgConsole.convert')}
+        </button>
+      ) : null}
+      {soloOwner ? null : (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          disabled={locked}
+          onClick={onLeave}
+        >
+          {t('orgConsole.leave')}
+        </button>
+      )}
+      {org.is_owner ? (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-danger"
+          disabled={locked}
+          onClick={onDelete}
+        >
+          {t('orgConsole.delete')}
+        </button>
+      ) : null}
+    </div>
+  );
+};
+
+HeaderActions.propTypes = {
+  org: PropTypes.shape({ personal: PropTypes.bool, is_owner: PropTypes.bool }).isRequired,
+  soloOwner: PropTypes.bool.isRequired,
+  reason: PropTypes.string.isRequired,
+  onConvert: PropTypes.func.isRequired,
+  onLeave: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
+const ConsoleHeader = ({ org, owners, reason, onRegenerate, onConvert, onLeave, onDelete }) => {
   const { t } = useTranslation();
   const logo = httpsUrl(org.logo_url);
-  const soloOwner = org.is_owner && owners === 1 && !org.personal;
+  const soloOwner = Boolean(org.is_owner && owners === 1 && !org.personal);
   return (
     <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
       <div className="d-flex align-items-center gap-3">
@@ -763,7 +967,8 @@ const ConsoleHeader = ({ org, owners, onRegenerate, onConvert, onLeave, onDelete
             </span>{' '}
             {org.primary ? (
               <span className="badge bg-primary">{t('organizations.primary')}</span>
-            ) : null}
+            ) : null}{' '}
+            <SuspensionBadges org={org} />
           </h4>
           <small className="text-body-secondary">
             {t('organizations.yourRole', { role: org.my_role || '' })}
@@ -771,35 +976,29 @@ const ConsoleHeader = ({ org, owners, onRegenerate, onConvert, onLeave, onDelete
               <>
                 {' · '}
                 {t('organizations.inviteCode')} <code>{org.invite_code}</code>{' '}
-                <button
-                  type="button"
-                  className="btn btn-link btn-sm p-0 align-baseline"
-                  onClick={onRegenerate}
-                >
-                  {t('organizations.regenerate')}
-                </button>
+                <span title={reason || undefined}>
+                  <button
+                    type="button"
+                    className="btn btn-link btn-sm p-0 align-baseline"
+                    disabled={Boolean(reason)}
+                    onClick={onRegenerate}
+                  >
+                    {t('organizations.regenerate')}
+                  </button>
+                </span>
               </>
             ) : null}
           </small>
         </div>
       </div>
-      <div className="d-flex gap-2">
-        {org.personal && org.is_owner ? (
-          <button type="button" className="btn btn-sm btn-outline-primary" onClick={onConvert}>
-            {t('orgConsole.convert')}
-          </button>
-        ) : null}
-        {soloOwner ? null : (
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onLeave}>
-            {t('orgConsole.leave')}
-          </button>
-        )}
-        {org.is_owner ? (
-          <button type="button" className="btn btn-sm btn-outline-danger" onClick={onDelete}>
-            {t('orgConsole.delete')}
-          </button>
-        ) : null}
-      </div>
+      <HeaderActions
+        org={org}
+        soloOwner={soloOwner}
+        reason={reason}
+        onConvert={onConvert}
+        onLeave={onLeave}
+        onDelete={onDelete}
+      />
     </div>
   );
 };
@@ -807,6 +1006,7 @@ const ConsoleHeader = ({ org, owners, onRegenerate, onConvert, onLeave, onDelete
 ConsoleHeader.propTypes = {
   org: PropTypes.object.isRequired,
   owners: PropTypes.number.isRequired,
+  reason: PropTypes.string.isRequired,
   onRegenerate: PropTypes.func.isRequired,
   onConvert: PropTypes.func.isRequired,
   onLeave: PropTypes.func.isRequired,
@@ -848,9 +1048,10 @@ const tabsFor = (invitationsEnabled, requestsEnabled) => {
   return tabs;
 };
 
-const JoinRequestRow = ({ request, defaultRole, onApprove, onDeny }) => {
+const JoinRequestRow = ({ request, defaultRole, onApprove, onDeny, reason }) => {
   const { t } = useTranslation();
   const [role, setRole] = useState(defaultRole);
+  const locked = Boolean(reason);
   const subline = (
     <>
       {request.user.email}
@@ -865,6 +1066,8 @@ const JoinRequestRow = ({ request, defaultRole, onApprove, onDeny }) => {
       <select
         className="form-select form-select-sm w-auto"
         value={role}
+        disabled={locked}
+        title={reason || undefined}
         aria-label={t('orgConsole.joinRequest.role')}
         onChange={event => setRole(event.target.value)}
       >
@@ -874,20 +1077,26 @@ const JoinRequestRow = ({ request, defaultRole, onApprove, onDeny }) => {
           </option>
         ))}
       </select>
-      <button
-        type="button"
-        className="btn btn-sm btn-primary"
-        onClick={() => onApprove(request, role)}
-      >
-        {t('orgConsole.joinRequest.approve')}
-      </button>
-      <button
-        type="button"
-        className="btn btn-sm btn-outline-danger"
-        onClick={() => onDeny(request)}
-      >
-        {t('orgConsole.joinRequest.deny')}
-      </button>
+      <span title={reason || undefined}>
+        <button
+          type="button"
+          className="btn btn-sm btn-primary"
+          disabled={locked}
+          onClick={() => onApprove(request, role)}
+        >
+          {t('orgConsole.joinRequest.approve')}
+        </button>
+      </span>
+      <span title={reason || undefined}>
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-danger"
+          disabled={locked}
+          onClick={() => onDeny(request)}
+        >
+          {t('orgConsole.joinRequest.deny')}
+        </button>
+      </span>
     </>
   );
   return (
@@ -909,6 +1118,7 @@ JoinRequestRow.propTypes = {
   defaultRole: PropTypes.string.isRequired,
   onApprove: PropTypes.func.isRequired,
   onDeny: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
 };
 
 const useJoinRequests = (organizations, org) => {
@@ -935,7 +1145,7 @@ const useJoinRequests = (organizations, org) => {
   return { rows, load };
 };
 
-const JoinRequestsTab = ({ org, organizations, defaultRole, onApproved }) => {
+const JoinRequestsTab = ({ org, organizations, defaultRole, onApproved, reason }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const { rows, load } = useJoinRequests(organizations, org);
@@ -974,6 +1184,7 @@ const JoinRequestsTab = ({ org, organizations, defaultRole, onApproved }) => {
             defaultRole={defaultRole}
             onApprove={approve}
             onDeny={deny}
+            reason={reason}
           />
         ))}
       </MethodList>
@@ -986,6 +1197,7 @@ JoinRequestsTab.propTypes = {
   organizations: issuerOrganizationsShape.isRequired,
   defaultRole: PropTypes.string.isRequired,
   onApproved: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
 };
 
 const ConsoleTabs = ({ tabs, currentTab, onPick }) => {
@@ -1000,6 +1212,7 @@ const ConsoleTabs = ({ tabs, currentTab, onPick }) => {
           <button
             type="button"
             className={`nav-link ${currentTab === entry.key ? 'active' : ''}`}
+            data-tab={entry.key}
             onClick={() => onPick(entry.key)}
           >
             {t(entry.labelKey)}
@@ -1059,18 +1272,36 @@ const useMemberships = (organizations, org) => {
 /**
  * The Members tab's select column and bulk actions: while rows are
  * picked, "N selected", Clear selection, Change role (a role select,
- * then apply) and Remove, each the existing per-row route
+ * then apply) and Remove, each the per-row route
  * (`organizations.memberRole`, `organizations.removeMember`) once per
  * picked row, the last-owner and managed-row refusals counted per row
- * into a result line naming processed, skipped and each error's code
- * (identity contract decision 152).
+ * into a result line naming processed, skipped and each error's code,
+ * and Suspend and Resume, each behind a plain confirmation and then one
+ * `organizations.membersBulk` call over the picked rows whose answer is
+ * that result line; every row draws the
+ * Suspended badge from its `suspended` and Suspend or Resume by it, and
+ * every write is disabled with `reason` as its tooltip while the
+ * organization or the person's own seat is suspended.
  */
-const MembersTab = ({ org, organizations, currentUserId, owners, onRole, onRemove, onChanged }) => {
+const MembersTab = ({
+  org,
+  organizations,
+  viewerEmail,
+  owners,
+  onRole,
+  onSuspend,
+  onRemove,
+  onChanged,
+  reason,
+}) => {
   const { t } = useTranslation();
+  const notify = useNotify();
+  const locked = Boolean(reason);
   const members = membersOf(org);
   const selection = useRowSelection();
   const [result, setResult] = useState(null);
   const [bulkRole, setBulkRole] = useState('MEMBER');
+  const [pending, setPending] = useState('');
   const ids = members.map(member => member.user_id);
   const allSelected = selection.allSelected(ids);
   const someSelected = selection.someSelected(ids);
@@ -1096,6 +1327,22 @@ const MembersTab = ({ org, organizations, currentUserId, owners, onRole, onRemov
     await onChanged();
   };
 
+  const bulkSuspension = async action => {
+    setResult(null);
+    try {
+      const outcome = await organizations.membersBulk(
+        org.uuid,
+        action,
+        picked.map(member => member.user_id)
+      );
+      setResult(outcome);
+    } catch (error) {
+      notify('danger', t(errorKeys(error)));
+    }
+    selection.clear();
+    await onChanged();
+  };
+
   const headingActions =
     selection.selected.size > 0 ? (
       <>
@@ -1110,6 +1357,8 @@ const MembersTab = ({ org, organizations, currentUserId, owners, onRole, onRemov
           id="org-console-bulk-role"
           className="form-select form-select-sm w-auto"
           value={bulkRole}
+          disabled={locked}
+          title={reason || undefined}
           onChange={event => setBulkRole(event.target.value)}
         >
           {ROLES.map(role => (
@@ -1118,12 +1367,39 @@ const MembersTab = ({ org, organizations, currentUserId, owners, onRole, onRemov
             </option>
           ))}
         </select>
-        <button type="button" className="btn btn-sm btn-outline-primary" onClick={bulkChangeRole}>
-          {t('orgConsole.bulk.changeRole')}
-        </button>
-        <button type="button" className="btn btn-sm btn-outline-danger" onClick={bulkRemove}>
-          {t('orgConsole.buttons.removeFromOrg')}
-        </button>
+        <span title={reason || undefined}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-primary"
+            disabled={locked}
+            onClick={bulkChangeRole}
+          >
+            {t('orgConsole.bulk.changeRole')}
+          </button>
+        </span>
+        {SUSPENSION_ACTIONS.map(action => (
+          <span key={action} title={reason || undefined}>
+            <button
+              type="button"
+              className={`btn btn-sm ${SUSPENSION_CLASSES[action]}`}
+              data-action={`bulk-${action}`}
+              disabled={locked}
+              onClick={() => setPending(action)}
+            >
+              {t(`orgConsole.buttons.${action}`)}
+            </button>
+          </span>
+        ))}
+        <span title={reason || undefined}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger"
+            disabled={locked}
+            onClick={bulkRemove}
+          >
+            {t('orgConsole.buttons.removeFromOrg')}
+          </button>
+        </span>
       </>
     ) : null;
 
@@ -1153,15 +1429,25 @@ const MembersTab = ({ org, organizations, currentUserId, owners, onRole, onRemov
             key={member.user_id}
             member={member}
             org={org}
-            currentUserId={currentUserId}
+            viewerEmail={viewerEmail}
             owners={owners}
             onRole={onRole}
+            onSuspend={onSuspend}
             onRemove={onRemove}
+            reason={reason}
             selected={selection.selected.has(member.user_id)}
             onToggleSelect={selection.toggle}
           />
         ))}
       </MethodList>
+      <ConfirmModal
+        show={pending !== ''}
+        handleClose={() => setPending('')}
+        handleConfirm={() => bulkSuspension(pending)}
+        title={pending ? t(`orgConsole.buttons.${pending}`) : ''}
+        message={confirmMessage(t)}
+        typed={false}
+      />
     </>
   );
 };
@@ -1169,11 +1455,13 @@ const MembersTab = ({ org, organizations, currentUserId, owners, onRole, onRemov
 MembersTab.propTypes = {
   org: PropTypes.object.isRequired,
   organizations: issuerOrganizationsShape.isRequired,
-  currentUserId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  viewerEmail: PropTypes.string.isRequired,
   owners: PropTypes.number.isRequired,
   onRole: PropTypes.func.isRequired,
+  onSuspend: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
   onChanged: PropTypes.func.isRequired,
+  reason: PropTypes.string.isRequired,
 };
 
 /**
@@ -1187,7 +1475,10 @@ MembersTab.propTypes = {
  * (editable while `can_rename`, the access mode while `can_manage`, the
  * default role while `is_owner`), Convert to a team on a personal
  * organization, Leave and Delete, the members with the owner's role select
- * (disabled on the last owner's own row) and Remove while `can_manage`, a
+ * (disabled on the own row of the only owner whose seat is not suspended),
+ * the Suspended badge and Suspend or Resume by each row's `suspended`, and
+ * Remove while `can_manage`, the person's own row the one whose email is
+ * the session's, a
  * managed row's source in place of its controls, the join requests from
  * `organizations.requests` with Approve at a chosen role, the default role
  * preselected, and Deny while `access_mode` is `request` and the person
@@ -1196,7 +1487,12 @@ MembersTab.propTypes = {
  * and the invitation form are `SectionCard`s whose folds are kept under
  * `table_prefs_org_console`, and the members, the join requests and the
  * pending invitations are glass lists under a `SectionHeading`, the pages
- * contract's frame rule; every action re-fetches the record, and one that
+ * contract's frame rule; while the record's `suspended` or
+ * `membership_suspended` is true the heading carries the Suspended or the
+ * "Your membership is suspended" badge and every write control of the
+ * heading and the tabs is disabled with the reason as its tooltip, the
+ * members and the pending invitations still read; every action
+ * re-fetches the record, and one that
  * changes the memberships the session carries awaits `login` on the bus
  * first, so the session is re-read and adopted once.
  */
@@ -1210,7 +1506,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
   const [showConvert, setShowConvert] = useState(false);
   const placesKey = usePlacesKey(places);
   const folds = useFolds(PREFS_KEY);
-  const currentUserId = session.restore()?.user?.id;
+  const viewerEmail = viewerEmailOf(session);
 
   useEffect(() => {
     document.title = t('orgConsole.pageTitle');
@@ -1220,6 +1516,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
   const tabs = tabsOf(status, current);
   const members = membersOf(current);
   const owners = ownerCount(members);
+  const reason = reasonOf(current, t);
   const currentTab = tabs.some(entry => entry.key === tab) ? tab : 'organization';
 
   const reloadSession = () => events.emit('login');
@@ -1254,6 +1551,12 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
   const removeMember = member =>
     confirm(t('orgConsole.buttons.removeFromOrg'), confirmMessage(t), () =>
       act(() => organizations.removeMember(org, member.user_id), 'orgConsole.users.removeSuccess')
+    );
+
+  const suspendMember = member =>
+    act(
+      () => organizations.memberSuspended(org, member.user_id, !member.suspended),
+      'orgConsole.messages.operationSuccessful'
     );
 
   const revokeInvite = invite =>
@@ -1302,6 +1605,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
       <ConsoleHeader
         org={current}
         owners={owners}
+        reason={reason}
         onRegenerate={regenerate}
         onConvert={() => setShowConvert(true)}
         onLeave={leave}
@@ -1323,6 +1627,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
               organizations={organizations}
               onSaved={load}
               placesKey={placesKey}
+              reason={reason}
             />
           </SectionCard>
         ) : null}
@@ -1330,11 +1635,13 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
           <MembersTab
             org={current}
             organizations={organizations}
-            currentUserId={currentUserId}
+            viewerEmail={viewerEmail}
             owners={owners}
             onRole={setRole}
+            onSuspend={suspendMember}
             onRemove={removeMember}
             onChanged={load}
+            reason={reason}
           />
         ) : null}
         {currentTab === 'joinRequests' ? (
@@ -1344,6 +1651,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
             organizations={organizations}
             defaultRole={current.default_role || 'MEMBER'}
             onApproved={load}
+            reason={reason}
           />
         ) : null}
         {currentTab === 'invitations' ? (
@@ -1353,6 +1661,7 @@ const IssuerOrgConsole = ({ session, events, organizations, org, activeOrgKey, p
             folds={folds}
             onChanged={load}
             onRevoke={revokeInvite}
+            reason={reason}
           />
         ) : null}
       </div>

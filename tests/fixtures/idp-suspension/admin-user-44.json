@@ -1,0 +1,11 @@
+{
+  "id": 44,
+  "username": "pat@acme.example",
+  "full_name": "Pat Example",
+  "customer_id": "",
+  "enabled": false,
+  "suspended": true,
+  "using_2fa": false,
+  "roles": ["ROLE_USER"],
+  "organizations": []
+}

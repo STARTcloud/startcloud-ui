@@ -10,6 +10,7 @@ const PATTERN_NAMES = { [NON_BLANK_PATTERN]: 'nonBlank' };
 const PLACEHOLDER_RE = /^\$\{[A-Z0-9_]+(?::[^}]*)?\}$/;
 const DURATION_RE = /^P(?!$)(?:\d+D)?(?:T(?=\d)(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$/;
 const TTL_RE = /^\d+(?:ms|s|m|h|d)$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const PATTERN_KEYS = [
   'nonBlank',
@@ -48,6 +49,24 @@ const RULE_KEYS = [
   'publicAddress',
   'matchesContent',
 ];
+const TOKEN_UNOFFERED = 'unoffered';
+const TOKEN_KEYS = [
+  TOKEN_UNOFFERED,
+  'unknown',
+  'syntax',
+  'name',
+  'reserved',
+  'kind',
+  'label',
+  'required',
+  'options',
+  'attribute',
+  'escape',
+  'duplicate',
+  'undeclared',
+];
+const DEPENDENT_KEYS = ['default_copy'];
+const CONST_KEYS = ['full_name'];
 
 const isUri = value => {
   try {
@@ -62,6 +81,7 @@ const FORMATS = {
   uri: isUri,
   hostname: value => HOSTNAME_RE.test(value),
   ipv4: value => IPV4_RE.test(value),
+  date: value => DATE_RE.test(value),
   duration: value => DURATION_RE.test(value),
   ttl: value => TTL_RE.test(value),
 };
@@ -118,7 +138,7 @@ const isBlank = value => value === undefined || value === null;
 
 /**
  * Whether a value is a `${NAME}` or `${NAME:default}` placeholder of the
- * config contract's decision 87, the leaf text the authorization server's
+ * config contract, the leaf text the authorization server's
  * file holds in place of a value the engine resolves from the environment
  * at `load`; the browser evaluates no value rule against it.
  *
@@ -303,9 +323,10 @@ const firstFailure = (rule, value, patternName, document) => {
  * the non-blank `pattern` alone and skips `type`, `format`, `enum`,
  * `minimum` and `maximum`), `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`
  * (whichever bound was crossed, never a `range`), `enum`, `format` (`uri`,
- * `hostname`, `ipv4`, and the config contract's `duration` and `ttl` as the
- * patterns its ConfigField row fixes, reported with rule `format` and the
- * format name in `params`), `minItems`, `maxItems` and `items` evaluated
+ * `hostname`, `ipv4`, `date` as a `yyyy-MM-dd` full-date, and the config
+ * contract's `duration` and `ttl` as the patterns its ConfigField row
+ * fixes, reported with rule `format` and the format name in `params`),
+ * `minItems`, `maxItems` and `items` evaluated
  * per member, with `$ref`
  * resolved within `document`; a `writeOnly` value is evaluated like any
  * string; a `${NAME:default}` placeholder (`isPlaceholder`) satisfies
@@ -511,12 +532,22 @@ export const validateObject = (schema, values, document = FALLBACK_DOCUMENT) => 
 
 const unknownMessage = (label, t) => t('validation.unknown', { label });
 
+const tokenMessage = (params, label, t) => {
+  const reason = params.reason === undefined ? TOKEN_UNOFFERED : params.reason;
+  return TOKEN_KEYS.includes(reason)
+    ? t(`validation.token.${reason}`, { label, token: `{{${params.token}}}` })
+    : unknownMessage(label, t);
+};
+
 /**
  * The user's text for one error: `validation.<rule>` with the field's label
  * and the rule's params; a pattern by its `$defs` name (`slug`,
  * `identifier`, `email`, `hex`, `orgCode`, `providerName`, `watchId`,
  * `personName`, `iconName`, `languageTag`, `timezone`, `region`) or `nonBlank` for
- * the contract's whitespace rule, a format and a type by theirs; the
+ * the contract's whitespace rule, a format and a type by theirs; a `token`
+ * by its `params.reason` (`unoffered` when the error carries none) with
+ * `params.token` drawn inside its braces; a `dependentRequired` and a
+ * `const` by the name their param carries (`default_copy`, `full_name`); the
  * config contract's `propertyNames` (`params.key`), `readOnly`,
  * `writable` (`params.user`), `reachable` (`params.host`, `params.port`),
  * `placeholder` (`params.name`), the pages' `withinParent`
@@ -550,6 +581,19 @@ export const messageFor = (error, label, t) => {
   }
   if (error.rule === 'enum') {
     return t('validation.enum', { label });
+  }
+  if (error.rule === 'token') {
+    return tokenMessage(params, label, t);
+  }
+  if (error.rule === 'dependentRequired') {
+    return DEPENDENT_KEYS.includes(params.dependentRequired)
+      ? t(`validation.dependentRequired.${params.dependentRequired}`, { label })
+      : unknownMessage(label, t);
+  }
+  if (error.rule === 'const') {
+    return CONST_KEYS.includes(params.const)
+      ? t(`validation.const.${params.const}`, { label })
+      : unknownMessage(label, t);
   }
   if (RULE_KEYS.includes(error.rule)) {
     return t(`validation.${error.rule}`, { label, ...params });

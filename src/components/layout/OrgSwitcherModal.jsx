@@ -6,6 +6,7 @@ import { FaBuilding, FaCheck, FaCrown, FaLayerGroup } from 'react-icons/fa6';
 
 import { useCssVar } from '../../hooks/useCssVar';
 import { gravatarProfile } from '../../utils/gravatar';
+import { isLive } from '../../utils/membership';
 import MarkdownText from '../common/MarkdownText';
 
 const ROLE_CLASSES = {
@@ -25,6 +26,8 @@ export const organizationShape = PropTypes.shape({
   personal: PropTypes.bool,
   logo: PropTypes.string,
   emailHash: PropTypes.string,
+  suspended: PropTypes.bool,
+  membershipSuspended: PropTypes.bool,
 });
 
 const useOrgGravatar = (emailHash, wanted) => {
@@ -107,15 +110,17 @@ export const byPersonalLastThenName = (a, b) =>
 
 const OrgRow = ({ org, active, orgMark, onPick }) => {
   const { t } = useTranslation();
+  const live = isLive(org);
   return (
     <button
       type="button"
       className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
-        active ? 'border-primary border-2' : ''
+        active && live ? 'border-primary border-2' : ''
       }`}
+      disabled={!live}
       onClick={() => onPick(org.uuid)}
     >
-      <div>
+      <div className={live ? undefined : 'opacity-50'}>
         <div className="d-flex align-items-center">
           <OrgLogo org={org} fallback={orgMark} />
           <div>
@@ -125,6 +130,16 @@ const OrgRow = ({ org, active, orgMark, onPick }) => {
         </div>
       </div>
       <div className="d-flex align-items-center">
+        {org.suspended ? (
+          <span className="badge bg-warning text-dark me-2" data-badge="suspended">
+            {t('admin.organizations.suspended')}
+          </span>
+        ) : null}
+        {org.membershipSuspended ? (
+          <span className="badge bg-warning text-dark me-2" data-badge="membership-suspended">
+            {t('organizations.membershipSuspended')}
+          </span>
+        ) : null}
         {(org.roles || []).map(role => (
           <span key={role} className={`badge ${ROLE_CLASSES[role] || 'bg-secondary'} me-2`}>
             {t(`roles.${role.toLowerCase()}`, { defaultValue: role })}
@@ -137,7 +152,7 @@ const OrgRow = ({ org, active, orgMark, onPick }) => {
             aria-label={t('orgSwitcher.primaryOrg')}
           />
         ) : null}
-        {active ? <FaCheck className="text-success" /> : null}
+        {active && live ? <FaCheck className="text-success" /> : null}
       </div>
     </button>
   );
@@ -185,7 +200,10 @@ AllRow.propTypes = {
  * membership, personal organizations last, each its logo, its display
  * name where the membership carries one and its name otherwise, its
  * description, role badges, the crown on the primary and the check on
- * the active one; with `allOrganizations`, on a host that narrows by
+ * the active one; a membership whose organization or whose own seat is
+ * suspended is drawn dimmed with its Suspended or "Your membership is
+ * suspended" badge, is disabled and is never the active one; with
+ * `allOrganizations`, on a host that narrows by
  * organization, the All organizations row first, active while
  * `activeUuid` is empty. Picking a row answers `onPick` with its uuid,
  * the empty uuid for All, and never navigates.

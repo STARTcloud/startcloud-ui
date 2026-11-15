@@ -14,14 +14,16 @@ export const currentPath = () => `${window.location.pathname}${window.location.s
 
 /**
  * Where a sign-in returns to: the page remembered before the redirect,
- * read back by the callback, never an auth page and never another origin.
+ * read back by the callback, never an auth page and never another origin;
+ * `peek` reads the remembered path and leaves it in place, `consume` reads
+ * it and removes it.
  *
  * @param {Object} options - The app's side
  * @param {string} options.storageKey - localStorage key holding the remembered path
  * @param {string} [options.signInPath] - The app's login page, empty when sign-in is one click
  * @param {string[]} [options.authPaths] - Path prefixes that are never remembered
  * @param {string[]} [options.barePaths] - Path prefixes drawn without the column and the app section; the auth paths when absent
- * @returns {Object} remember, consume, fromParams, onAuthPage, onBarePage and signInTo
+ * @returns {Object} remember, peek, consume, fromParams, onAuthPage, onBarePage and signInTo
  */
 export const createReturnTo = ({
   storageKey,
@@ -33,6 +35,10 @@ export const createReturnTo = ({
     if (path) {
       localStorage.setItem(storageKey, path);
     }
+  },
+  peek: () => {
+    const path = localStorage.getItem(storageKey) || '';
+    return isSafePath(path) ? path : '';
   },
   consume: () => {
     const path = localStorage.getItem(storageKey) || '';

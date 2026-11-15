@@ -44,7 +44,13 @@ const membershipShape = PropTypes.shape({
   my_role: PropTypes.string,
   can_manage: PropTypes.bool,
   invite_code: PropTypes.string,
+  suspended: PropTypes.bool,
+  membership_suspended: PropTypes.bool,
 });
+
+const held = org => Boolean(org.suspended || org.membership_suspended);
+
+const reasonOf = (org, t) => (held(org) ? t('errors.suspended') : '');
 
 const CreateForm = ({ value, rules, onChange, onSubmit }) => {
   const { t } = useTranslation();
@@ -92,6 +98,16 @@ const MembershipBadges = ({ org }) => {
         <span className="badge bg-secondary">{t('organizations.personal')}</span>
       ) : null}
       {org.primary ? <span className="badge bg-primary">{t('organizations.primary')}</span> : null}
+      {org.suspended ? (
+        <span className="badge bg-warning text-dark" data-badge="suspended">
+          {t('admin.organizations.suspended')}
+        </span>
+      ) : null}
+      {org.membership_suspended ? (
+        <span className="badge bg-warning text-dark" data-badge="membership-suspended">
+          {t('organizations.membershipSuspended')}
+        </span>
+      ) : null}
     </>
   );
 };
@@ -102,6 +118,7 @@ MembershipBadges.propTypes = {
 
 const MembershipSubline = ({ org, onRegenerate }) => {
   const { t } = useTranslation();
+  const reason = reasonOf(org, t);
   return (
     <>
       {t('organizations.yourRole', { role: org.my_role || '' })}
@@ -109,13 +126,17 @@ const MembershipSubline = ({ org, onRegenerate }) => {
         <>
           {' · '}
           {t('organizations.inviteCode')} <code>{org.invite_code}</code>{' '}
-          <button
-            type="button"
-            className="btn btn-link btn-sm p-0 align-baseline"
-            onClick={() => onRegenerate(org)}
-          >
-            {t('organizations.regenerate')}
-          </button>
+          <span title={reason || undefined}>
+            <button
+              type="button"
+              className="btn btn-link btn-sm p-0 align-baseline"
+              data-action="regenerate"
+              disabled={Boolean(reason)}
+              onClick={() => onRegenerate(org)}
+            >
+              {t('organizations.regenerate')}
+            </button>
+          </span>
         </>
       ) : null}
     </>
@@ -129,24 +150,33 @@ MembershipSubline.propTypes = {
 
 const MembershipActions = ({ org, onMakePrimary, onOpen }) => {
   const { t } = useTranslation();
+  const reason = reasonOf(org, t);
   return (
     <>
       {org.primary ? null : (
+        <span title={reason || undefined}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            data-action="make-primary"
+            disabled={Boolean(reason)}
+            onClick={() => onMakePrimary(org)}
+          >
+            {t('organizations.makePrimary')}
+          </button>
+        </span>
+      )}
+      <span title={reason || undefined}>
         <button
           type="button"
-          className="btn btn-sm btn-outline-secondary"
-          onClick={() => onMakePrimary(org)}
+          className={`btn btn-sm ${org.can_manage ? 'btn-primary' : 'btn-outline-primary'}`}
+          data-action="open"
+          disabled={Boolean(reason)}
+          onClick={() => onOpen(org)}
         >
-          {t('organizations.makePrimary')}
+          {org.can_manage ? t('organizations.manage') : t('organizations.view')}
         </button>
-      )}
-      <button
-        type="button"
-        className={`btn btn-sm ${org.can_manage ? 'btn-primary' : 'btn-outline-primary'}`}
-        onClick={() => onOpen(org)}
-      >
-        {org.can_manage ? t('organizations.manage') : t('organizations.view')}
-      </button>
+      </span>
     </>
   );
 };
@@ -255,7 +285,11 @@ MembershipCards.propTypes = {
  * while the person can manage it, and View or Manage, which makes that
  * organization the active one under `activeOrgKey`, awaits `login` on the
  * bus so the session is re-read and adopted, and opens the shared
- * console; a `#<uuid>` in the URL does the same on load, and the chosen
+ * console; an entry whose `suspended` is true carries the Suspended badge
+ * and one whose `membership_suspended` is true the "Your membership is
+ * suspended" badge, and on either Make primary, Regenerate and View or
+ * Manage are disabled with the reason as their tooltip; a `#<uuid>` in
+ * the URL opens the console of a live entry on load, and the chosen
  * view persists as `view` inside the one prefs object under
  * `table_prefs_organizations`; the navbar search is bound with a query
  * over the memberships by name.
@@ -317,7 +351,7 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
     }
     const uuid = hashUuid(location.hash);
     const org = data.organizations.find(entry => entry.uuid === uuid);
-    if (org) {
+    if (org && !held(org)) {
       open(org);
     }
   }, [data.organizations, loaded, location.hash, open]);

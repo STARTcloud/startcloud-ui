@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { accountMembership, accountMemberships } from '../../src/lib/cookieSession.js';
-import { isManager, routeNameOf } from '../../src/utils/membership.js';
+import { isLive, isManager, routeNameOf } from '../../src/utils/membership.js';
 
 const ACME = '0b7c1d52-6f0e-4c0a-9a54-3c1f6f2a9e11';
 
@@ -28,7 +28,15 @@ describe('accountMembership', () => {
       personal: false,
       logo: 'https://acme.example.com/logo.png',
       emailHash: 'abc123',
+      suspended: false,
+      membershipSuspended: false,
     });
+  });
+
+  it('carries the suspended organization and the suspended seat as booleans', () => {
+    const row = accountMembership({ ...issuerRow, suspended: true, membership_suspended: true });
+    expect(row.suspended).toBe(true);
+    expect(row.membershipSuspended).toBe(true);
   });
 
   it("carries BoxVault's display name beside the name", () => {
@@ -73,5 +81,17 @@ describe('routeNameOf', () => {
     const memberships = accountMemberships({ organizations: [issuerRow] });
     expect(isManager(memberships, routeNameOf(memberships, ACME))).toBe(true);
     expect(isManager(memberships, ACME)).toBe(false);
+  });
+});
+
+describe('isLive', () => {
+  it('answers true while neither the organization nor the seat is suspended', () => {
+    expect(isLive({ uuid: ACME, suspended: false, membershipSuspended: false })).toBe(true);
+    expect(isLive({ uuid: ACME })).toBe(true);
+  });
+
+  it('answers false for a suspended organization and for a suspended seat', () => {
+    expect(isLive({ uuid: ACME, suspended: true, membershipSuspended: false })).toBe(false);
+    expect(isLive({ uuid: ACME, suspended: false, membershipSuspended: true })).toBe(false);
   });
 });

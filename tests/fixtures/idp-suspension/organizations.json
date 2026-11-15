@@ -1,0 +1,89 @@
+{
+  "organizations_enabled": true,
+  "personal_to_team_enabled": true,
+  "organizations": [
+    {
+      "uuid": "0d6b7e2a-1111-4c0a-9a1e-000000000001",
+      "name": "Acme",
+      "logo_url": null,
+      "personal": false,
+      "primary": true,
+      "my_role": "OWNER",
+      "is_owner": true,
+      "can_manage": true,
+      "can_rename": true,
+      "invite_code": "INV-7K3M9QP2",
+      "access_mode": "invite",
+      "default_role": "MEMBER",
+      "suspended": false,
+      "membership_suspended": false,
+      "pending_invites": [],
+      "members": [
+        {
+          "user_id": 42,
+          "email": "mark@m4kr.net",
+          "name": "Mark Gilbert",
+          "role": "OWNER",
+          "suspended": false
+        },
+        {
+          "user_id": 7,
+          "email": "ada@example.com",
+          "name": "Ada Lovelace",
+          "role": "MEMBER",
+          "suspended": false
+        },
+        {
+          "user_id": 8,
+          "email": "linus@example.com",
+          "name": "Linus Torvalds",
+          "role": "ADMIN",
+          "suspended": true
+        },
+        {
+          "user_id": 9,
+          "email": "grace@example.com",
+          "name": "Grace Hopper",
+          "role": "MEMBER",
+          "managed_by": "scim",
+          "suspended": false
+        }
+      ]
+    },
+    {
+      "uuid": "0d6b7e2a-1111-4c0a-9a1e-000000000002",
+      "name": "Globex",
+      "logo_url": null,
+      "personal": false,
+      "primary": false,
+      "my_role": "ADMIN",
+      "is_owner": false,
+      "can_manage": true,
+      "can_rename": true,
+      "invite_code": "INV-2B8XQ4LM",
+      "access_mode": "invite",
+      "default_role": "MEMBER",
+      "suspended": true,
+      "membership_suspended": false,
+      "pending_invites": [],
+      "members": []
+    },
+    {
+      "uuid": "0d6b7e2a-1111-4c0a-9a1e-000000000003",
+      "name": "Initech",
+      "logo_url": null,
+      "personal": false,
+      "primary": false,
+      "my_role": "MEMBER",
+      "is_owner": false,
+      "can_manage": false,
+      "can_rename": false,
+      "access_mode": "invite",
+      "default_role": "MEMBER",
+      "suspended": false,
+      "membership_suspended": true,
+      "pending_invites": [],
+      "members": []
+    }
+  ]
+}

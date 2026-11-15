@@ -3,7 +3,24 @@ import { useCallback, useRef, useState } from 'react';
 import { Button, Form, Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
+import CodeInput from './CodeInput';
+
 const STEP_UP_REQUIRED = 'step_up_required';
+const LABELS = {
+  password: 'profile.stepUp.password',
+  code: 'auth:tfa.code',
+  backup: 'auth:tfa.backupCode',
+};
+const LINKS = {
+  password: 'profile.stepUp.usePassword',
+  code: 'profile.stepUp.useCode',
+  backup: 'profile.stepUp.useBackupCode',
+};
+const OTHER_MODES = {
+  password: ['code'],
+  code: ['backup', 'password'],
+  backup: ['code', 'password'],
+};
 
 const isStepUpRequired = error => error?.status === 403 && error?.code === STEP_UP_REQUIRED;
 
@@ -21,10 +38,12 @@ export const errorKeys = error => [
 
 /**
  * The "Confirm it's you" dialog of the identity contract: a current
- * password while the account has one, else an authenticator or backup
- * code, each with a link to the other; `onConfirm` arms the step-up
- * window with the entered secret and resolves, a refusal painting the
- * answer's `code` inline and keeping the dialog open.
+ * password while the account has one, else an authenticator code drawn
+ * as the shared `CodeInput`, six boxes a paste fills and submits, and a
+ * backup code as a plain text field behind its own link, each mode
+ * linking to the others; `onConfirm` arms the step-up window with the
+ * entered secret, `{ password }` or `{ code }`, and resolves, a refusal
+ * painting the answer's `code` inline and keeping the dialog open.
  */
 const StepUpDialog = ({ show, hasPassword, reason = '', onConfirm, onCancel }) => {
   const { t } = useTranslation();
@@ -33,6 +52,7 @@ const StepUpDialog = ({ show, hasPassword, reason = '', onConfirm, onCancel }) =
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const usePassword = mode === 'password';
+  const others = OTHER_MODES[mode].filter(other => hasPassword || other !== 'password');
 
   const reset = () => {
     setSecret('');
@@ -46,16 +66,15 @@ const StepUpDialog = ({ show, hasPassword, reason = '', onConfirm, onCancel }) =
     onCancel();
   };
 
-  const submit = async event => {
-    event.preventDefault();
-    if (!secret) {
-      setError(t('validation.required', { label: t(`profile.stepUp.${mode}`) }));
+  const send = async value => {
+    if (!value) {
+      setError(t('validation.required', { label: t(LABELS[mode]) }));
       return;
     }
     setBusy(true);
     setError('');
     try {
-      await onConfirm(usePassword ? { password: secret } : { code: secret });
+      await onConfirm(usePassword ? { password: value } : { code: value });
       reset();
     } catch (failure) {
       setBusy(false);
@@ -63,8 +82,13 @@ const StepUpDialog = ({ show, hasPassword, reason = '', onConfirm, onCancel }) =
     }
   };
 
-  const flip = () => {
-    setMode(usePassword ? 'code' : 'password');
+  const submit = event => {
+    event.preventDefault();
+    send(secret);
+  };
+
+  const pick = next => {
+    setMode(next);
     setSecret('');
     setError('');
   };
@@ -82,21 +106,39 @@ const StepUpDialog = ({ show, hasPassword, reason = '', onConfirm, onCancel }) =
               {error}
             </div>
           ) : null}
-          <Form.Group controlId="step-up-secret">
-            <Form.Label>{t(`profile.stepUp.${mode}`)}</Form.Label>
-            <Form.Control
-              type={usePassword ? 'password' : 'text'}
-              autoComplete={usePassword ? 'current-password' : 'one-time-code'}
-              inputMode={usePassword ? undefined : 'numeric'}
+          {mode === 'code' ? (
+            <CodeInput
+              id="step-up-code"
+              label={t(LABELS.code)}
               value={secret}
-              onChange={event => setSecret(event.target.value)}
+              onChange={setSecret}
+              onComplete={send}
+              disabled={busy}
             />
-          </Form.Group>
-          {hasPassword ? (
-            <button type="button" className="btn btn-link btn-sm px-0" onClick={flip}>
-              {usePassword ? t('profile.stepUp.useCode') : t('profile.stepUp.usePassword')}
-            </button>
-          ) : null}
+          ) : (
+            <Form.Group controlId="step-up-secret">
+              <Form.Label>{t(LABELS[mode])}</Form.Label>
+              <Form.Control
+                type={usePassword ? 'password' : 'text'}
+                autoComplete={usePassword ? 'current-password' : 'off'}
+                value={secret}
+                onChange={event => setSecret(event.target.value)}
+              />
+            </Form.Group>
+          )}
+          <div className="d-flex flex-wrap gap-3">
+            {others.map(other => (
+              <button
+                key={other}
+                type="button"
+                className="btn btn-link btn-sm px-0"
+                data-mode={other}
+                onClick={() => pick(other)}
+              >
+                {t(LINKS[other])}
+              </button>
+            ))}
+          </div>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={cancel} disabled={busy}>

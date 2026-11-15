@@ -1,0 +1,13 @@
+{
+  "id": 42,
+  "username": "mark@m4kr.net",
+  "full_name": "Mark Gilbert",
+  "customer_id": "B5E4A2",
+  "enabled": true,
+  "suspended": false,
+  "using_2fa": true,
+  "roles": ["ROLE_USER", "ROLE_ADMIN"],
+  "organizations": [
+    { "uuid": "a1", "name": "Acme", "role": "OWNER", "primary": true, "personal": false }
+  ]
+}

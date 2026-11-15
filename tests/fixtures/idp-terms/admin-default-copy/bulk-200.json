@@ -1,0 +1,8 @@
+{
+  "processed": 0,
+  "skipped": 2,
+  "errors": [
+    { "id": 7, "code": "default_copy" },
+    { "id": 9, "code": "not_found" }
+  ]
+}

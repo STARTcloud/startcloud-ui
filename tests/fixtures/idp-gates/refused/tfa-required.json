@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/conflict",
+  "status": 409,
+  "title": "This site requires two-factor authentication.",
+  "code": "tfa_required"
+}

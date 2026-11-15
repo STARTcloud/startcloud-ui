@@ -1,0 +1,8 @@
+{
+  "next": "/complete-onboarding/choose-2fa-method",
+  "steps": ["tfa"],
+  "done": [],
+  "account": { "email": "mark@m4kr.net", "first_name": "Mark" },
+  "phone": { "purpose": "tfa" },
+  "tfa": { "sms_risk_notice": false, "passkey": false }
+}

@@ -6,6 +6,9 @@ const OPTIONAL = { auth: 'optional', headers: JSON_ACCEPT };
 
 export const consent = params => client.get('/api/auth/consent', { ...SESSION, params });
 
+export const deviceCode = userCode =>
+  client.get('/api/auth/device', { ...SESSION, params: { user_code: userCode }, expected: [404] });
+
 export const ciba = token =>
   client.get('/api/auth/ciba', { headers: { ...JSON_ACCEPT, 'X-Ciba-Token': token } });
 

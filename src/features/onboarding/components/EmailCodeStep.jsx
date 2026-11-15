@@ -40,7 +40,7 @@ ResendCode.propTypes = {
  * `CodeInput`, Verify, and Resend under a countdown from the send route's
  * answer, the gate's countdown in the danger alert.
  */
-const EmailCodeStep = ({ returnTo }) => {
+const EmailCodeStep = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const { state } = useOnboarding();
   const { run, busy, problem } = useStepAction(returnTo);
@@ -91,6 +91,8 @@ const EmailCodeStep = ({ returnTo }) => {
     <OnboardingFrame
       state={state}
       current="email"
+      returnTo={returnTo}
+      events={events}
       title={t('onboarding.email.title')}
       subtitle={sent.at ? t('onboarding.email.sent', { email: state?.account?.email || '' }) : ''}
       problem={problem}
@@ -127,6 +129,7 @@ const EmailCodeStep = ({ returnTo }) => {
 
 EmailCodeStep.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default EmailCodeStep;

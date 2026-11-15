@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -16,10 +17,10 @@ const DATA_IMAGE = /^data:image\/(?:png|svg\+xml|jpeg|gif);base64,/;
 /**
  * `/qrcode`: the QR image and the setup key with its copy button from
  * `GET /api/auth/tfa/enroll`, the `CodeInput`, "Verify code" posting
- * `/qrcode/verify` and following `next`, and "Choose a different method";
- * the onboarding chain's page alone.
+ * `/qrcode/verify` and following `next`, and "Choose a different method"
+ * beside the frame's Cancel; the onboarding chain's page alone.
  */
-const TotpEnrollPage = ({ returnTo }) => {
+const TotpEnrollPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const report = useProblemReporter();
   const { state } = useOnboarding();
@@ -64,9 +65,16 @@ const TotpEnrollPage = ({ returnTo }) => {
     <OnboardingFrame
       state={state}
       current="tfa"
+      returnTo={returnTo}
+      events={events}
       title={t('onboarding.qr.title')}
       subtitle={t('onboarding.qr.scan')}
       problem={problem}
+      foot={
+        <Link to="/complete-onboarding/choose-2fa-method" className="auth-link auth-link-muted">
+          {t('onboarding.phone.chooseOther')}
+        </Link>
+      }
     >
       {enrollment ? (
         <form className="auth-form" onSubmit={submit} noValidate>
@@ -101,17 +109,13 @@ const TotpEnrollPage = ({ returnTo }) => {
           </button>
         </form>
       ) : null}
-      <p className="auth-foot">
-        <Link to="/complete-onboarding/choose-2fa-method" className="auth-link auth-link-muted">
-          {t('onboarding.phone.chooseOther')}
-        </Link>
-      </p>
     </OnboardingFrame>
   );
 };
 
 TotpEnrollPage.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default TotpEnrollPage;

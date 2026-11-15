@@ -281,13 +281,20 @@ MethodActions.propTypes = {
   onRemove: PropTypes.func.isRequired,
 };
 
-const ToggleButton = ({ enabled, count, onEnable, onDisable }) => {
+const ToggleButton = ({ enabled, required, count, onEnable, onDisable }) => {
   const { t } = useTranslation();
   if (enabled) {
     return (
-      <button type="button" className="btn btn-outline-danger" onClick={onDisable}>
-        {t('profile.security.tfa.disable')}
-      </button>
+      <span title={required ? t('errors.tfa_required') : undefined}>
+        <button
+          type="button"
+          className="btn btn-outline-danger"
+          disabled={required}
+          onClick={onDisable}
+        >
+          {t('profile.security.tfa.disable')}
+        </button>
+      </span>
     );
   }
   return (
@@ -301,6 +308,7 @@ const ToggleButton = ({ enabled, count, onEnable, onDisable }) => {
 
 ToggleButton.propTypes = {
   enabled: PropTypes.bool.isRequired,
+  required: PropTypes.bool.isRequired,
   count: PropTypes.number.isRequired,
   onEnable: PropTypes.func.isRequired,
   onDisable: PropTypes.func.isRequired,
@@ -312,7 +320,11 @@ ToggleButton.propTypes = {
  * disabled with a tooltip), the locked-method notices with Re-enroll now,
  * the SMS risk notice, Add phone number and Add authenticator app inline,
  * and Enable or Disable two-factor, the disable dialog stepping up; every
- * change is stepped up and re-reads the methods.
+ * change is stepped up and re-reads the methods. While the profile's
+ * `tfa.required` is true the site refuses turning two-factor off: a
+ * notice row says so and Disable two-factor is disabled with the same
+ * words as its title. A refused change draws its own message from the
+ * answer's `code` and re-reads nothing.
  */
 const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
   const { t } = useTranslation();
@@ -322,6 +334,7 @@ const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
   const [showDisable, setShowDisable] = useState(false);
   const tfa = profile.tfa || {};
   const locked = Array.isArray(tfa.locked) ? tfa.locked : [];
+  const required = Boolean(tfa.required);
   const rows = tfaRows(methods);
 
   const load = useCallback(
@@ -482,8 +495,14 @@ const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
         />
       ) : null}
       <div className="border-top pt-3">
+        {required ? (
+          <div className="alert alert-warning small" role="status">
+            {t('errors.tfa_required')}
+          </div>
+        ) : null}
         <ToggleButton
           enabled={Boolean(tfa.enabled)}
+          required={required}
           count={rows.length}
           onEnable={() => toggle(true)}
           onDisable={() => setShowDisable(true)}
@@ -506,6 +525,7 @@ TfaSection.propTypes = {
   profile: PropTypes.shape({
     tfa: PropTypes.shape({
       enabled: PropTypes.bool,
+      required: PropTypes.bool,
       locked: PropTypes.array,
     }),
   }).isRequired,

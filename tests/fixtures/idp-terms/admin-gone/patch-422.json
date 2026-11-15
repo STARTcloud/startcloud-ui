@@ -1,0 +1,19 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/content",
+      "rule": "token",
+      "params": { "token": "frist_name", "reason": "unknown" },
+      "detail": "content references {{frist_name}}, which is not a placeholder"
+    },
+    {
+      "pointer": "/content",
+      "rule": "token",
+      "params": { "token": "field:plan;kind=slider", "reason": "kind" },
+      "detail": "content declares plan with an unknown kind"
+    }
+  ]
+}

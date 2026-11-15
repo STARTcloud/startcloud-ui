@@ -119,7 +119,7 @@ const appendAnalytics = analytics => {
 
 const onError = error => {
   if (isPendingGate(error)) {
-    return;
+    return Boolean(session.followPendingGate?.(error));
   }
   log.api.error('Request failed', {
     method: error.request.method,
@@ -127,6 +127,7 @@ const onError = error => {
     status: error.status,
     message: error.message,
   });
+  return false;
 };
 
 export const events = createSessionEvents();

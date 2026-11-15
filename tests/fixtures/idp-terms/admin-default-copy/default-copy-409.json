@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/conflict",
+  "title": "The request conflicts with the current state.",
+  "status": 409,
+  "code": "default_copy"
+}

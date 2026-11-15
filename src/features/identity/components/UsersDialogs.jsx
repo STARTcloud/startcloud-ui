@@ -16,6 +16,7 @@ export const adminUserShape = PropTypes.shape({
   full_name: PropTypes.string,
   customer_id: PropTypes.string,
   enabled: PropTypes.bool.isRequired,
+  suspended: PropTypes.bool,
   using_2fa: PropTypes.bool,
   roles: PropTypes.arrayOf(PropTypes.string).isRequired,
   organizations: PropTypes.arrayOf(

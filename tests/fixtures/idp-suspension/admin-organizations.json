@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1,
+    "uuid": "0d6b7e2a-1111-4c0a-9a1e-000000000001",
+    "name": "Acme",
+    "personal": false,
+    "suspended": false,
+    "invite_code": "INV-7K3M9QP2",
+    "customer_id": "A55DF0",
+    "created_at": "2025-01-09T00:00:00Z",
+    "member_count": 4,
+    "access_mode": "invite",
+    "default_role": "MEMBER"
+  },
+  {
+    "id": 2,
+    "uuid": "0d6b7e2a-1111-4c0a-9a1e-000000000002",
+    "name": "Globex",
+    "personal": false,
+    "suspended": true,
+    "invite_code": "INV-2B8XQ4LM",
+    "customer_id": "A55DF1",
+    "created_at": "2024-12-28T00:00:00Z",
+    "member_count": 12,
+    "access_mode": "invite",
+    "default_role": "MEMBER"
+  },
+  {
+    "id": 3,
+    "uuid": "0d6b7e2a-1111-4c0a-9a1e-000000000009",
+    "name": "Mark Gilbert",
+    "personal": true,
+    "suspended": false,
+    "invite_code": "",
+    "customer_id": "",
+    "created_at": "2024-12-28T00:00:00Z",
+    "member_count": 1,
+    "access_mode": "private",
+    "default_role": "MEMBER"
+  }
+]

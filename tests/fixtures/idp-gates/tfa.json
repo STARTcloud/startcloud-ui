@@ -1,0 +1,6 @@
+{
+  "method": "APP",
+  "target": { "label": "Authenticator" },
+  "sent": true,
+  "can_change_method": true
+}

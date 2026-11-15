@@ -1,0 +1,13 @@
+{
+  "type": "https://auth.startcloud.com/probs/conflict",
+  "title": "The request conflicts with the current state.",
+  "status": 409,
+  "errors": [
+    {
+      "pointer": "/version",
+      "rule": "unique",
+      "params": {},
+      "detail": "version 2.0 already exists for this copy"
+    }
+  ]
+}

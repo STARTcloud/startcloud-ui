@@ -5,17 +5,30 @@ import { useTranslation } from 'react-i18next';
 import { organizationShape } from '../components/layout/OrgSwitcherModal';
 import { useNotify } from '../contexts/NoticeContext';
 import { currentPath } from '../lib/returnTo';
+import { isLive } from '../utils/membership';
 
 const EMPTY = { user: null, organizations: [], oidc: false, issuerUrl: '', clientId: '' };
 
-const resolveActiveOrg = (organizations, stored, allOrganizations) => {
-  if (stored && organizations.some(org => org.uuid === stored)) {
+/**
+ * The uuid of the active organization, chosen among the live memberships
+ * alone: the stored uuid while it names one, else empty where All
+ * organizations is a choice, else the primary live membership, then the
+ * first live one, then empty.
+ *
+ * @param {Array<Object>} organizations - The memberships in the chrome's organization shape
+ * @param {string|null} stored - The uuid kept under the app's key
+ * @param {boolean} allOrganizations - Whether All organizations, the empty uuid, is a choice
+ * @returns {string} The uuid, or empty
+ */
+export const resolveActiveOrg = (organizations, stored, allOrganizations) => {
+  const live = organizations.filter(isLive);
+  if (stored && live.some(org => org.uuid === stored)) {
     return stored;
   }
   if (allOrganizations) {
     return '';
   }
-  return (organizations.find(org => org.primary) || organizations[0])?.uuid || '';
+  return (live.find(org => org.primary) || live[0])?.uuid || '';
 };
 
 export const sessionStateShape = PropTypes.shape({
@@ -49,10 +62,11 @@ export const sessionStateShape = PropTypes.shape({
  * an adoption on such a page defers the read, and `readDeferredFavorites`
  * runs it once the app reports the page has left the auth paths),
  * the memberships in the chrome's organization shape,
- * the active organization resolved stored → primary → first and persisted
- * under the app's key (with `allOrganizations`, the option of a host
- * that narrows by organization, All organizations is a choice of its
- * own: the active organization is the empty uuid while nothing stored
+ * the active organization resolved stored → primary → first among the
+ * live memberships alone, a suspended organization or seat never the
+ * active one and never picked, and persisted under the app's key (with
+ * `allOrganizations`, the option of a host that narrows by organization,
+ * All organizations is a choice of its own: the active organization is the empty uuid while nothing stored
  * names a membership, `pickOrg('')` chooses it, and the key is absent
  * while it stands), whether `load()` has confirmed the session, the
  * ended state with the page to return to, the sign-in and sign-out
@@ -218,7 +232,7 @@ export const useSession = ({
 
   const pickOrg = uuid => {
     const all = allOrganizations && uuid === '';
-    if (!all && !session.organizations.some(org => org.uuid === uuid)) {
+    if (!all && !session.organizations.some(org => org.uuid === uuid && isLive(org))) {
       return;
     }
     setActiveOrgUuid(uuid);

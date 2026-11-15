@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -17,10 +18,11 @@ const LABELS = { team_name: 'auth:onboarding.team.name' };
 
 /**
  * `/complete-onboarding/team-name`: the team name, "Create team" posting
- * `{ team_name }` and following `next`, and "Back" to the tiles; the
- * subhead names the client that required an organization.
+ * `{ team_name }` and following `next`, and "Back" to the tiles beside
+ * the frame's Cancel; the subhead names the client that required an
+ * organization.
  */
-const TeamNameStep = ({ returnTo }) => {
+const TeamNameStep = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const { state } = useOnboarding();
   const { run, busy, problem } = useStepAction(returnTo);
@@ -44,6 +46,8 @@ const TeamNameStep = ({ returnTo }) => {
     <OnboardingFrame
       state={state}
       current="org"
+      returnTo={returnTo}
+      events={events}
       title={t('onboarding.team.title')}
       subtitle={
         requiredBy
@@ -51,6 +55,13 @@ const TeamNameStep = ({ returnTo }) => {
           : t('onboarding.team.subhead')
       }
       problem={problem}
+      foot={
+        requiredBy ? null : (
+          <Link to="/complete-onboarding/account-type" className="auth-link auth-link-muted">
+            {t('onboarding.team.back')}
+          </Link>
+        )
+      }
     >
       <form className="auth-form" onSubmit={submit} noValidate>
         <FormErrorSummary errors={rules.summary} />
@@ -82,19 +93,13 @@ const TeamNameStep = ({ returnTo }) => {
           {t('onboarding.team.create')}
         </button>
       </form>
-      {requiredBy ? null : (
-        <p className="auth-foot">
-          <Link to="/complete-onboarding/account-type" className="auth-link auth-link-muted">
-            {t('onboarding.team.back')}
-          </Link>
-        </p>
-      )}
     </OnboardingFrame>
   );
 };
 
 TeamNameStep.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default TeamNameStep;

@@ -201,34 +201,44 @@ const usePhoneStep = returnTo => {
 };
 
 /**
- * `/complete-onboarding/phone-setup`: the `PhoneInput` to E.164, the
- * requirement line with the site's support contact, the consent line
- * worded by `phone.purpose`, "Send verification code", then the
- * `CodeInput` with Resend under the sending countdown; a number edited
- * after a send keeps the code section with "Number changed. Send a new
- * code." and Verify disabled; the policy links and, for a `tfa` step,
- * "Choose a different method".
+ * `/complete-onboarding/phone-setup`: the heading, the subhead and the
+ * consent line worded by `phone.purpose`, the `PhoneInput` to E.164, the
+ * requirement line with the site's support contact, "Send verification
+ * code", then the `CodeInput` with Resend under the sending countdown; a
+ * number edited after a send keeps the code section with "Number changed.
+ * Send a new code." and Verify disabled; the policy links and, for a
+ * `tfa` step, "Choose a different method" beside the frame's Cancel.
  */
-const PhoneStep = ({ returnTo }) => {
+const PhoneStep = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const { state } = useOnboarding();
   const country = useGeoCountry();
   const step = usePhoneStep(returnTo);
   const purpose = state?.phone?.purpose || 'verify';
+  const title = t(purpose === 'tfa' ? 'onboarding.phone.titleTfa' : 'onboarding.phone.title');
 
   useEffect(() => {
-    document.title = t('onboarding.phone.title');
-  }, [t]);
+    document.title = title;
+  }, [title]);
 
   return (
     <OnboardingFrame
       state={state}
       current="phone"
-      title={t('onboarding.phone.title')}
+      returnTo={returnTo}
+      events={events}
+      title={title}
       subtitle={t(
         purpose === 'tfa' ? 'onboarding.phone.subheadTfa' : 'onboarding.phone.subheadVerify'
       )}
       problem={step.problem}
+      foot={
+        purpose === 'tfa' ? (
+          <Link to="/complete-onboarding/choose-2fa-method" className="auth-link auth-link-muted">
+            {t('onboarding.phone.chooseOther')}
+          </Link>
+        ) : null
+      }
     >
       {step.codeReady ? (
         <AuthAlert tone="success">
@@ -270,19 +280,13 @@ const PhoneStep = ({ returnTo }) => {
           {step.sent.to ? t('onboarding.phone.verify') : t('onboarding.phone.send')}
         </button>
       </form>
-      {purpose === 'tfa' ? (
-        <p className="auth-foot">
-          <Link to="/complete-onboarding/choose-2fa-method" className="auth-link auth-link-muted">
-            {t('onboarding.phone.chooseOther')}
-          </Link>
-        </p>
-      ) : null}
     </OnboardingFrame>
   );
 };
 
 PhoneStep.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default PhoneStep;

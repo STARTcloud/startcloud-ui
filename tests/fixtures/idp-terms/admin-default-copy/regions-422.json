@@ -1,0 +1,13 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/regions",
+      "rule": "dependentRequired",
+      "params": { "dependentRequired": "default_copy" },
+      "detail": "a language copy needs the default-language copy of its name and regions"
+    }
+  ]
+}

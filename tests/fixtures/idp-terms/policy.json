@@ -1,0 +1,23 @@
+{
+  "name": "privacy",
+  "label": "Privacy",
+  "version": "1.0",
+  "locale": "es",
+  "region": null,
+  "person_region": "MX",
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-11-14T06:00:00Z",
+  "fields_version": 1,
+  "anchor_key": "5t0pw8hn2d6ry1ve",
+  "content_html": "<h1>Privacy</h1>\n<p>Tier: @@field:5t0pw8hn2d6ry1ve:plan@@</p>",
+  "fields": [
+    {
+      "name": "plan",
+      "kind": "choice",
+      "group": "document",
+      "required": true,
+      "label": "Licence tier",
+      "options": ["Gold", "Silver", "Bronze"]
+    }
+  ]
+}

@@ -22,6 +22,14 @@ export const membershipOf = (organizations, name) =>
 export const routeNameOf = (organizations, uuid) =>
   organizations.find(entry => entry.uuid === uuid)?.name || '';
 
+/**
+ * A live membership: neither the organization nor the person's own seat
+ * in it is suspended. Only a live membership is the active organization.
+ * @param {{ suspended?: boolean, membershipSuspended?: boolean }} entry - One organization of the chrome's list
+ * @returns {boolean}
+ */
+export const isLive = entry => !entry.suspended && !entry.membershipSuspended;
+
 const hasRole = (organizations, name, roles) =>
   (membershipOf(organizations, name)?.roles || []).some(role => roles.includes(role));
 

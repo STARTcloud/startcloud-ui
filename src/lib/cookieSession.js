@@ -2,7 +2,8 @@ import { httpsUrl } from '../components/common/MethodList';
 import { guestOnly } from '../utils/membership';
 
 import { createApiClient } from './apiClient';
-import { isPendingGate, pendingGateNext } from './gates';
+import { isPendingGate, onGatePage, pendingGateNext } from './gates';
+import { currentPath } from './returnTo';
 
 const DISPLAY_FIELDS = ['name', 'email', 'picture', 'roles', 'organizations', 'has_local_auth'];
 const DROPPED_KEYS = [
@@ -32,6 +33,9 @@ const xsrfToken = () => XSRF_COOKIES.map(cookieValue).find(Boolean) || '';
 
 const displayFieldsOf = profile =>
   Object.fromEntries(DISPLAY_FIELDS.map(field => [field, profile?.[field] ?? null]));
+
+const carriesProfile = body =>
+  Boolean(body) && typeof body === 'object' && DISPLAY_FIELDS.some(field => field in body);
 
 const preferredOf = preferences => ({
   preferred_mode: preferences?.mode ?? null,
@@ -65,17 +69,19 @@ const safeNext = (next, origin) => {
 
 /**
  * One membership in the identity provider's shape, `{ uuid, name, roles,
- * primary, personal, logo_url, email_hash }` with `display_name` where
- * the backend answers one, as the chrome's organization: the uuid as the
- * uuid, the name, the display name a page draws where it draws a name,
- * empty where none is answered, the roles list as it is, the primary and
- * personal flags, the stored logo when it is an `https:` URL and the
- * organization's email hash, the switcher's logo chain being the logo,
- * then the Gravatar behind the hash, then the app's mark. The one mapping
- * of that shape, read by the issuer's own session and by a backend
- * session whose profile answers it.
+ * primary, personal, logo_url, email_hash, suspended,
+ * membership_suspended }` with `display_name` where the backend answers
+ * one, as the chrome's organization: the uuid as the uuid, the name, the
+ * display name a page draws where it draws a name, empty where none is
+ * answered, the roles list as it is, the primary and personal flags, the
+ * stored logo when it is an `https:` URL and the organization's email
+ * hash, the switcher's logo chain being the logo, then the Gravatar
+ * behind the hash, then the app's mark, `suspended` whether the
+ * organization is suspended and `membershipSuspended` whether the
+ * person's own seat in it is. The one mapping of that shape, read by the
+ * issuer's own session and by a backend session whose profile answers it.
  * @param {Object} org - The membership row
- * @returns {{ uuid: string, name: string, displayName: string, roles: string[], primary: boolean, personal: boolean, logo: string, emailHash: string }}
+ * @returns {{ uuid: string, name: string, displayName: string, roles: string[], primary: boolean, personal: boolean, logo: string, emailHash: string, suspended: boolean, membershipSuspended: boolean }}
  */
 export const accountMembership = org => ({
   uuid: org.uuid,
@@ -86,13 +92,15 @@ export const accountMembership = org => ({
   personal: Boolean(org.personal),
   logo: httpsUrl(org.logo_url),
   emailHash: typeof org.email_hash === 'string' ? org.email_hash : '',
+  suspended: Boolean(org.suspended),
+  membershipSuspended: Boolean(org.membership_suspended),
 });
 
 /**
  * The memberships of the issuer's profile in the chrome's organization
  * shape, each row through `accountMembership`.
  * @param {Object|null|undefined} user - The cached profile
- * @returns {Array<{ uuid: string, name: string, displayName: string, roles: string[], primary: boolean, personal: boolean, logo: string, emailHash: string }>}
+ * @returns {Array<{ uuid: string, name: string, displayName: string, roles: string[], primary: boolean, personal: boolean, logo: string, emailHash: string, suspended: boolean, membershipSuspended: boolean }>}
  */
 export const accountMemberships = user =>
   (Array.isArray(user?.organizations) ? user.organizations : []).map(accountMembership);
@@ -122,11 +130,19 @@ const cachedOf = profile => {
  * `clientId` empty, the issuer being no client of itself. The API
  * client drives `headers`, `retryAuth`, `adoptResponse` and `endSession`,
  * and its `onError` is the one place every request's failure passes
- * through: a `403` `onboarding_required` or `terms_required` (`isPendingGate`
- * of `gates.js`) caches the pending profile the body carries and moves
- * in-router to its `next` through the `navigate` `setNavigate(fn)` holds,
- * so `load` and every other call the session drives follow the same gate
- * the moment it answers, not only the one that noticed it first.
+ * through: a `403` `onboarding_required`, `terms_required` or
+ * `second_factor_required` (`isPendingGate` of `gates.js`) is handed to
+ * `followPendingGate(error)`, which caches the pending profile only while
+ * the body carries a display field of one, so a body of `type`, `status`,
+ * `code` and `next` alone leaves the cached profile as it is, remembers
+ * the page the person is on through `returnTo.remember` unless it is an
+ * auth page, and moves in-router to its `next` through the `navigate`
+ * `setNavigate(fn)` holds, so `load` and every other call the session
+ * drives follow the same gate the moment it answers, not only the one
+ * that noticed it first; it moves nobody who is already on a page of the
+ * gate's own chain (`onGatePage` of `gates.js`), and answers whether it
+ * moved the page; the provider carries `followPendingGate` so the app's
+ * own API client hands it the same refusals.
  * `load({ navigate })` sets that holder once before reading `GET /api/user`,
  * conditionally on the last `ETag` the issuer answered, a `304` answering
  * the session the last `200` produced, a `200` caching the display fields
@@ -146,17 +162,21 @@ const cachedOf = profile => {
  * `endSession` drop every storage key but the visitor's own, `mode`,
  * `theme`, `themes`, `motion` and `language`, `endSession` only while a
  * profile is cached and nothing while none is, so a visitor who never
- * signed in is never told they were signed out. `begin({ method, navigate })`
+ * signed in is never told they were signed out. `dropProfile()` removes
+ * the cached profile and the state of the last read alone, no other
+ * storage key and nothing on the bus, for a page that ended the session
+ * itself. `begin({ method, navigate })`
  * with no method, `local` or `magic-link` moves in-router to `/login`,
  * while `oidc-<id>` stays a top-level navigation.
  *
  * @param {Object} options - The app's side of the session
  * @param {string} options.baseUrl - The serving origin, the issuer itself
  * @param {Object} options.events - The bus from `createSessionEvents`; `sessionEnded` is emitted when the issuer rejects the session
+ * @param {Object} options.returnTo - The helper from `createReturnTo`; a pending gate remembers the current page through it
  * @param {string} [options.storageKey] - localStorage key of the cached display fields
  * @returns {Object} The session provider `useSession`, the API client and the sign-in page drive
  */
-export const createCookieSession = ({ baseUrl, events, storageKey = 'account' }) => {
+export const createCookieSession = ({ baseUrl, events, returnTo, storageKey = 'account' }) => {
   let claimsPromise = null;
   let navigateHolder = null;
   let lastEtag = '';
@@ -203,12 +223,19 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
   const provider = { headers, retryAuth, adoptResponse, endSession };
 
   const followPendingGate = error => {
-    store(error.data);
+    if (carriesProfile(error.data)) {
+      store(error.data);
+    }
+    const { pathname } = window.location;
+    if (!returnTo.onAuthPage(pathname)) {
+      returnTo.remember(currentPath());
+    }
     const next = pendingGateNext(error);
-    if (!navigateHolder || !next || window.location.pathname === next) {
-      return;
+    if (!navigateHolder || !next || pathname === next || onGatePage(error, pathname)) {
+      return false;
     }
     navigateHolder(next, { replace: true });
+    return true;
   };
 
   const onError = error => {
@@ -328,6 +355,8 @@ export const createCookieSession = ({ baseUrl, events, storageKey = 'account' })
     reload: load,
     refresh: load,
     setNavigate,
+    followPendingGate,
+    dropProfile: clear,
     begin,
     login,
     complete,

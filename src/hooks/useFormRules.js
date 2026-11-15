@@ -136,8 +136,9 @@ const without = (map, name) =>
  * `ApiError`'s `fieldErrors` by pointer (a map's own pointer among the
  * fields, so a `propertyNames` refusal paints on the map and a `readOnly`
  * refusal on its field; an array of objects one field per element member,
- * `servers/0/origin`, beside the array's own), entries matching no field
- * kept for the summary.
+ * `servers/0/origin`, beside the array's own), several entries on one
+ * pointer drawn as one message of every entry's sentence joined by a
+ * space, entries matching no field kept for the summary.
  * `labels` maps a field name to the translation key of its label and must
  * be a stable object; a config schema's `title` is the label when no entry
  * names it. `idFor(name)` answers `${idPrefix}${pointer}` with the pointer
@@ -200,8 +201,11 @@ export const useFormRules = ({ formKey = '', schema, values, labels = null, idPr
     });
     Object.entries(server.fields).forEach(([name, entry]) => {
       if (!shown[name] && readAt(values, name) === entry.value) {
-        const params = { ...(entry.error.params || {}), value: entry.value };
-        shown[name] = messageOf(name, { ...entry.error, params });
+        shown[name] = entry.errors
+          .map(error =>
+            messageOf(name, { ...error, params: { ...(error.params || {}), value: entry.value } })
+          )
+          .join(' ');
       }
     });
     return shown;
@@ -251,7 +255,10 @@ export const useFormRules = ({ formKey = '', schema, values, labels = null, idPr
       entries.forEach(error => {
         const name = String(error.pointer || '').replace(/^\//, '');
         if (names.includes(name)) {
-          fields[name] = { error, value: readAt(values, name) };
+          fields[name] = {
+            errors: [...(fields[name]?.errors || []), error],
+            value: readAt(values, name),
+          };
         } else {
           orphans.push({ ...error, pointer: `/${name}` });
         }

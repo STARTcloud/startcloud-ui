@@ -1,0 +1,18 @@
+{
+  "fields_version": 1,
+  "anchor_key": "k2m9x4c7q1z8f3ab",
+  "collecting": true,
+  "content_html": "<p>Tier: @@field:k2m9x4c7q1z8f3ab:plan@@</p>",
+  "content_middle_html": null,
+  "content_bottom_html": null,
+  "fields": [
+    {
+      "name": "plan",
+      "kind": "choice",
+      "group": "document",
+      "required": true,
+      "label": "Licence tier",
+      "options": ["Gold", "Silver", "Bronze"]
+    }
+  ]
+}

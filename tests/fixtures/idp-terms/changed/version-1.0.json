@@ -1,0 +1,15 @@
+{
+  "fields_version": 1,
+  "anchor_key": "3v9d1m5k7q2x8cab",
+  "content_html": "<p>Version 1.0 for Ada Lovelace, tier @@field:3v9d1m5k7q2x8cab:plan@@.</p>",
+  "fields": [
+    {
+      "name": "plan",
+      "kind": "choice",
+      "group": "document",
+      "required": true,
+      "label": "Licence tier",
+      "options": ["Gold", "Silver", "Bronze"]
+    }
+  ]
+}

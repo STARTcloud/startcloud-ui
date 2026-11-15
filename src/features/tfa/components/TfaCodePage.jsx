@@ -11,7 +11,13 @@ import Field from '../../../components/common/Field';
 import ProblemAlert, { useWait } from '../../../components/common/ProblemAlert';
 import { problemOf, useProblemReporter } from '../../../hooks/useProblemReporter';
 import { followNext } from '../../../lib/next';
-import { authenticate, isAbort, passkeyRequestOptions, passkeyVerify } from '../../../lib/passkeys';
+import {
+  authenticate,
+  isAbort,
+  passkeyCodeOf,
+  passkeyRequestOptions,
+  passkeyVerify,
+} from '../../../lib/passkeys';
 import { cancelSignIn } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
 import { resendTfa, sendTfa, tfaState, verifyTfa } from '../api/tfa';
@@ -239,7 +245,7 @@ const TfaCodePage = ({ returnTo, events }) => {
       .catch(error => {
         setBusy(false);
         if (!isAbort(error)) {
-          setProblem({ ...problemOf(error), code: 'passkey' });
+          setProblem({ ...problemOf(error), code: passkeyCodeOf(error) });
         }
       });
   };

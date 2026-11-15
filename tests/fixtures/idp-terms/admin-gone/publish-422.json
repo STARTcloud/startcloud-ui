@@ -1,0 +1,13 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/content",
+      "rule": "token",
+      "params": { "token": "field:plan", "reason": "undeclared" },
+      "detail": "content repeats {{field:plan}} with no declaration of plan"
+    }
+  ]
+}

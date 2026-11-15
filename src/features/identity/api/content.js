@@ -9,25 +9,31 @@ export const placeholders = () => client.get('/api/admin/terms/placeholders');
 
 export const createTerm = body => client.post('/api/admin/terms', body);
 
-const variant = region => ({ params: region ? { region } : undefined });
+export const previewTerm = body => client.post('/api/admin/terms/preview', body);
 
-export const updateTerm = (name, patch, region = '') =>
-  client.patch(term(name), patch, variant(region));
+const variant = (region, locale) => {
+  const params = { ...(region ? { region } : {}), ...(locale ? { locale } : {}) };
+  return { params: Object.keys(params).length > 0 ? params : undefined };
+};
 
-export const deleteTerm = (name, region = '') => client.delete(term(name), variant(region));
+export const updateTerm = (name, patch, region = '', locale = '') =>
+  client.patch(term(name), patch, variant(region, locale));
+
+export const deleteTerm = (name, region = '', locale = '') =>
+  client.delete(term(name), variant(region, locale));
 
 export const termsBulk = body => client.post('/api/admin/terms/bulk', body);
 
-export const publishTerm = (name, body, region = '') =>
-  client.post(encodePath('api', 'admin', 'terms', name, 'publish'), body, variant(region));
+export const publishTerm = (name, body, region = '', locale = '') =>
+  client.post(encodePath('api', 'admin', 'terms', name, 'publish'), body, variant(region, locale));
 
-export const termHistory = (name, region = '') =>
-  client.get(encodePath('api', 'admin', 'terms', name, 'history'), variant(region));
+export const termHistory = (name, region = '', locale = '') =>
+  client.get(encodePath('api', 'admin', 'terms', name, 'history'), variant(region, locale));
 
-export const termRevision = (name, version, revision, region = '') =>
+export const termRevision = (name, version, revision, region = '', locale = '') =>
   client.get(
     encodePath('api', 'admin', 'terms', name, 'history', version, revision),
-    variant(region)
+    variant(region, locale)
   );
 
 const emailTemplate = kind => encodePath('api', 'admin', 'email-templates', kind);

@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/conflict",
+  "status": 409,
+  "title": "No passkey is registered on your account.",
+  "code": "no_passkey"
+}

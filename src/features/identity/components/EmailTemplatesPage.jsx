@@ -95,6 +95,7 @@ const CopyRow = ({ copy, onPreview, onEdit, onHistory, onDelete }) => {
         <button
           type="button"
           className="btn btn-sm btn-outline-secondary"
+          data-action="email-template-copy-edit"
           onClick={() => onEdit(copy)}
         >
           {t('admin.emailTemplates.edit')}
@@ -111,6 +112,7 @@ const CopyRow = ({ copy, onPreview, onEdit, onHistory, onDelete }) => {
           className="btn btn-sm btn-outline-danger"
           disabled={seeded}
           title={seeded ? t('admin.emailTemplates.errors.default_copy') : undefined}
+          data-action="email-template-copy-delete"
           onClick={() => onDelete(copy)}
         >
           {t('admin.emailTemplates.delete')}
@@ -155,7 +157,11 @@ const TemplateCard = ({
         <strong>{label}</strong>
         <code className="small">{template.kind}</code>
         <span className="small text-muted">
-          {args.map(entry => `{${entry.index}} ${entry.name}`).join(' · ')}
+          {args.map(entry => (
+            <code key={entry.name} className="me-1" title={entry.description || ''}>
+              {`{{${entry.name}}}`}
+            </code>
+          ))}
         </span>
         <div className="d-flex flex-wrap gap-1 ms-auto">
           <button
@@ -243,16 +249,14 @@ const useSites = () => {
  * The Email templates page's bulk action, drawn in the heading's action
  * pane while cards are picked: Delete over
  * `POST /api/admin/email-templates/bulk` with the picked kinds' copy ids,
- * behind the shared confirm and the step-up dialog, the result line
- * naming processed, skipped and each error's code translated
- * (decision 164).
+ * behind the shared confirm and the step-up dialog, the answer handed to
+ * `onDone`, the page drawing its result line.
  */
 const EmailTemplatesBulkActions = ({ ids, onDone }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
   const [pending, setPending] = useState(false);
-  const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const run = () => {
@@ -261,10 +265,7 @@ const EmailTemplatesBulkActions = ({ ids, onDone }) => {
       () => emailTemplatesBulk({ action: 'delete', ids }),
       t('admin.emailTemplates.bulk.stepUpReason')
     )
-      .then(answer => {
-        setResult(answer);
-        onDone();
-      })
+      .then(onDone)
       .catch(error => {
         if (error?.code !== 'step_up_required') {
           notify('danger', t(errorKeys(error)));
@@ -276,23 +277,17 @@ const EmailTemplatesBulkActions = ({ ids, onDone }) => {
       });
   };
 
-  const line = resultLineOf(t, 'admin.emailTemplates.bulk', result);
-
   return (
     <>
       <button
         type="button"
         className="btn btn-sm btn-outline-danger"
+        data-action="email-template-bulk-delete"
         disabled={busy || ids.length === 0}
         onClick={() => setPending(true)}
       >
         {t('admin.emailTemplates.bulk.delete')}
       </button>
-      {line ? (
-        <span className="small text-muted" role="status">
-          {line}
-        </span>
-      ) : null}
       <ConfirmModal
         show={pending}
         handleClose={() => setPending(false)}
@@ -314,18 +309,20 @@ EmailTemplatesBulkActions.propTypes = {
 
 /**
  * Messaging › Email templates: a `SectionHeading` over the cards, the
- * kind count as muted text after the title and no Create, the nine kinds
+ * kind count as muted text after the title and no Create, the kinds
  * being fixed by the server; one card per kind from
- * `GET /api/admin/email-templates` with its argument list from
- * `GET /api/admin/email-templates/arguments` under the title, its copies
+ * `GET /api/admin/email-templates` with its tokens from
+ * `GET /api/admin/email-templates/arguments` under the title, each drawn
+ * as `{{name}}` and titled by its description, its copies
  * listed inside with their site ("Every site" for the default copy) and
  * language ("Every language" for the site's default) badges, version,
  * `r{{revision}}`, updated date and the per-copy actions Preview, Edit,
  * History and Delete, Delete disabled on the default copy (site and
  * locale both empty), the seeded generic text that is edited and never
  * deleted, a `409` `default_copy` from the route or a skipped id in the
- * bulk answer painted by its own sentence; Add a copy on the card
- * opening the copy dialog; History
+ * bulk answer painted by its own sentence, a `404` on the delete of a copy
+ * saying the copy was removed by someone else and reloading the list; Add
+ * a copy on the card opening the copy dialog; History
  * opens a list dialog of the copy's versions and revisions, newest first,
  * each revision readable read-only; Edit draws the version read-only with
  * Save ("Save as a revision of {{version}}", a `PATCH`) and Publish (a
@@ -333,11 +330,13 @@ EmailTemplatesBulkActions.propTypes = {
  * checkbox per card and the heading's select-all, the action pane
  * gaining, while cards are picked, "N selected", Clear selection and
  * Delete over `POST /api/admin/email-templates/bulk` with the picked
- * kinds' copy ids, behind the confirm and the step-up dialog; the navbar
- * search bound with a query over the cards by kind label and key and the
+ * kinds' copy ids, behind the confirm and the step-up dialog, the answer's
+ * result line drawn in the pane once the selection clears, naming
+ * processed, skipped and each error's code, `not_found` among them; the
+ * navbar search bound with a query over the cards by kind label and key and the
  * Site `toggle` group narrowing the cards client-side, the query and the
  * group's values in the URL as `search` and `site` through
- * `useUrlNarrowing` (decision 164).
+ * `useUrlNarrowing`.
  */
 const EmailTemplatesPage = () => {
   const { t } = useTranslation();
@@ -370,6 +369,8 @@ const EmailTemplatesPage = () => {
   const [previewing, setPreviewing] = useState(null);
   const [viewingHistory, setViewingHistory] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [bulkResult, setBulkResult] = useState(null);
+  const bulkLine = resultLineOf(t, 'admin.emailTemplates.bulk', bulkResult);
 
   useEffect(() => {
     document.title = t('admin.emailTemplates.title');
@@ -396,7 +397,14 @@ const EmailTemplatesPage = () => {
         );
         reload();
       })
-      .catch(fail);
+      .catch(error => {
+        if (error.status === 404) {
+          notify('danger', t('admin.copyRemoved'));
+          reload();
+        } else {
+          fail(error);
+        }
+      });
   };
 
   if (loading && !data) {
@@ -416,13 +424,20 @@ const EmailTemplatesPage = () => {
       </button>
       <EmailTemplatesBulkActions
         ids={pickedIds}
-        onDone={() => {
+        onDone={answer => {
+          setBulkResult(answer);
           selection.clear();
           reload();
         }}
       />
     </>
-  ) : null;
+  ) : (
+    bulkLine && (
+      <span className="small text-muted" role="status" data-note="email-template-bulk-result">
+        {bulkLine}
+      </span>
+    )
+  );
 
   return (
     <div>

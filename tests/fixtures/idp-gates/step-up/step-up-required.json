@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/forbidden",
+  "status": 403,
+  "title": "This action is not allowed.",
+  "code": "step_up_required"
+}

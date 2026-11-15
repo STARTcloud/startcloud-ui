@@ -1,0 +1,9 @@
+{
+  "rp": { "name": "STARTcloud" },
+  "user": { "id": "dXNlcg", "name": "mark@m4kr.net", "displayName": "Mark Gilbert" },
+  "challenge": "Y2hhbGxlbmdl",
+  "pubKeyCredParams": [{ "type": "public-key", "alg": -7 }],
+  "timeout": 60000,
+  "attestation": "none",
+  "authenticatorSelection": { "residentKey": "preferred", "userVerification": "preferred" }
+}

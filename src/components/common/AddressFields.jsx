@@ -149,6 +149,20 @@ const useCountries = () => {
 };
 
 /**
+ * The parts of the address block, the names `parts` picks from.
+ */
+export const ADDRESS_FIELD_PARTS = [
+  'line1',
+  'line2',
+  'country_code',
+  'state',
+  'city',
+  'postal_code',
+];
+
+const NO_SUFFIXES = {};
+
+/**
  * The postal address block every address form draws: line 1 (with the
  * Google Places autocomplete while `placesKey` is given, its placeholder
  * drawn only then), line 2, the country select from the shared country
@@ -156,15 +170,29 @@ const useCountries = () => {
  * stores the name alone, selects by that name), the state with the
  * suggestions for the picked country, the city and the postal code;
  * `value` is the identity contract's address record and `onChange`
- * receives the whole record after every edit.
+ * receives the whole record after every edit. `parts` names the parts
+ * drawn, every part by default, `suffixes` maps a part to text drawn
+ * after its label, and `idFor` answers a part's control id for a form
+ * whose rules name the control another way, `${idPrefix}-${part}`
+ * without it.
  */
-const AddressFields = ({ value, onChange, rules = null, idPrefix = 'address', placesKey = '' }) => {
+const AddressFields = ({
+  value,
+  onChange,
+  rules = null,
+  idPrefix = 'address',
+  placesKey = '',
+  parts = ADDRESS_FIELD_PARTS,
+  suffixes = NO_SUFFIXES,
+  idFor = null,
+}) => {
   const { t } = useTranslation();
   const line1Ref = useRef(null);
   const countries = useCountries();
   const address = { ...EMPTY_ADDRESS, ...value };
   const regions = regionsFor(address.country_code);
   const listId = `${idPrefix}-regions`;
+  const idOf = name => (idFor ? idFor(name) : `${idPrefix}-${name}`);
 
   usePlacesAutocomplete({
     inputRef: line1Ref,
@@ -186,10 +214,15 @@ const AddressFields = ({ value, onChange, rules = null, idPrefix = 'address', pl
 
   const storedCountry = address.country_code || address.country || '';
 
+  const labelOf = (name, labelKey) => {
+    const label = t(`profile.address.${labelKey}`);
+    return suffixes[name] ? `${label} ${suffixes[name]}` : label;
+  };
+
   const text = (name, autoComplete, extra = {}) => (
     <Field
-      id={`${idPrefix}-${name}`}
-      label={t(`profile.address.${extra.labelKey || name}`)}
+      id={idOf(name)}
+      label={labelOf(name, extra.labelKey || name)}
       error={rules?.errors?.[name] || ''}
       className="mb-3"
     >
@@ -217,58 +250,68 @@ const AddressFields = ({ value, onChange, rules = null, idPrefix = 'address', pl
     ? countries.find(entry => entry.code === storedCountry || entry.label === storedCountry).code
     : storedCountry;
 
+  const drawn = name => parts.includes(name);
+
   return (
     <div className="row">
-      <div className="col-12">
-        {text('line1', 'address-line1', {
-          ref: line1Ref,
-          placeholder: placesKey ? t('profile.address.searchPlaceholder') : undefined,
-        })}
-      </div>
-      <div className="col-md-6">{text('line2', 'address-line2')}</div>
-      <div className="col-md-6">
-        <Field
-          id={`${idPrefix}-country_code`}
-          label={t('profile.address.country')}
-          error={rules?.errors?.country_code || ''}
-          className="mb-3"
-        >
-          {aria => (
-            <select
-              {...aria}
-              className="form-select"
-              autoComplete="country"
-              value={selectedCountry}
-              onChange={event => setCountry(event.target.value)}
-              onBlur={() => rules?.onBlur?.('country_code')}
-            >
-              <option value="">{t('profile.address.countryNone')}</option>
-              {storedCountry && !knownCountry ? (
-                <option value={storedCountry}>{address.country || storedCountry}</option>
-              ) : null}
-              {countries.map(entry => (
-                <option key={entry.code} value={entry.code}>
-                  {entry.label}
-                </option>
+      {drawn('line1') ? (
+        <div className="col-12">
+          {text('line1', 'address-line1', {
+            ref: line1Ref,
+            placeholder: placesKey ? t('profile.address.searchPlaceholder') : undefined,
+          })}
+        </div>
+      ) : null}
+      {drawn('line2') ? <div className="col-md-6">{text('line2', 'address-line2')}</div> : null}
+      {drawn('country_code') ? (
+        <div className="col-md-6">
+          <Field
+            id={idOf('country_code')}
+            label={labelOf('country_code', 'country')}
+            error={rules?.errors?.country_code || ''}
+            className="mb-3"
+          >
+            {aria => (
+              <select
+                {...aria}
+                className="form-select"
+                autoComplete="country"
+                value={selectedCountry}
+                onChange={event => setCountry(event.target.value)}
+                onBlur={() => rules?.onBlur?.('country_code')}
+              >
+                <option value="">{t('profile.address.countryNone')}</option>
+                {storedCountry && !knownCountry ? (
+                  <option value={storedCountry}>{address.country || storedCountry}</option>
+                ) : null}
+                {countries.map(entry => (
+                  <option key={entry.code} value={entry.code}>
+                    {entry.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        </div>
+      ) : null}
+      {drawn('state') ? (
+        <div className="col-md-6">
+          {text('state', 'address-level1', { list: regions.length > 0 ? listId : undefined })}
+          {regions.length > 0 ? (
+            <datalist id={listId}>
+              {regions.map(region => (
+                <option key={region} value={region} />
               ))}
-            </select>
-          )}
-        </Field>
-      </div>
-      <div className="col-md-6">
-        {text('state', 'address-level1', { list: regions.length > 0 ? listId : undefined })}
-        {regions.length > 0 ? (
-          <datalist id={listId}>
-            {regions.map(region => (
-              <option key={region} value={region} />
-            ))}
-          </datalist>
-        ) : null}
-      </div>
-      <div className="col-md-6">{text('city', 'address-level2')}</div>
-      <div className="col-md-6">
-        {text('postal_code', 'postal-code', { labelKey: 'postalCode' })}
-      </div>
+            </datalist>
+          ) : null}
+        </div>
+      ) : null}
+      {drawn('city') ? <div className="col-md-6">{text('city', 'address-level2')}</div> : null}
+      {drawn('postal_code') ? (
+        <div className="col-md-6">
+          {text('postal_code', 'postal-code', { labelKey: 'postalCode' })}
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -282,6 +325,9 @@ AddressFields.propTypes = {
   }),
   idPrefix: PropTypes.string,
   placesKey: PropTypes.string,
+  parts: PropTypes.arrayOf(PropTypes.oneOf(ADDRESS_FIELD_PARTS)),
+  suffixes: PropTypes.objectOf(PropTypes.string),
+  idFor: PropTypes.func,
 };
 
 export default AddressFields;

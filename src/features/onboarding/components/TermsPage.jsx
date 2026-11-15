@@ -1,14 +1,20 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import AddressFields, { EMPTY_ADDRESS } from '../../../components/common/AddressFields';
-import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
+import AuthShell, { AuthAlert, AuthSpinner } from '../../../components/common/AuthShell';
 import Field from '../../../components/common/Field';
+import FieldError from '../../../components/common/FieldError';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
-import MarkdownArticle from '../../../components/common/MarkdownArticle';
+import MarkdownArticle, {
+  documentBroken,
+  FIELD_KINDS,
+  fieldShape,
+} from '../../../components/common/MarkdownArticle';
+import OptionList, { Option } from '../../../components/common/OptionList';
 import PhoneInput from '../../../components/common/PhoneInput';
 import ProblemAlert from '../../../components/common/ProblemAlert';
 import RegionModal, { regionFlag, regionLabel } from '../../../components/common/RegionModal';
@@ -32,25 +38,15 @@ import {
 const SESSION_EXPIRED = '/login?error=session_expired';
 const SCALES = [0.85, 1, 1.15, 1.3];
 const ADDRESS_PARTS = {
-  'address-line1': 'line1',
-  'address-line2': 'line2',
-  'country-name': 'country',
-  'address-level1': 'state',
-  'address-level2': 'city',
-  'postal-code': 'postal_code',
+  address_line_1: 'line1',
+  address_line_2: 'line2',
+  country: 'country_code',
+  state: 'state',
+  city: 'city',
+  postal_code: 'postal_code',
 };
-const ADDRESS_JOIN = ['line1', 'line2', 'city', 'state', 'postal_code', 'country'];
-
-const fieldShape = PropTypes.shape({
-  param: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
-  autocomplete: PropTypes.string,
-  group: PropTypes.string,
-  control: PropTypes.string,
-  span: PropTypes.string,
-  required: PropTypes.bool,
-  value: PropTypes.string,
-});
+const FULL_KINDS = ['tel', 'checkbox', 'choice', 'signature'];
+const NO_FIELDS = [];
 
 const formatDate = (value, language) => {
   const date = new Date(value);
@@ -60,34 +56,77 @@ const formatDate = (value, language) => {
   return new Intl.DateTimeFormat(language, { dateStyle: 'long' }).format(date);
 };
 
-const schemaFor = fields => ({
+const isAddressPart = field =>
+  field.group === 'address' && Object.hasOwn(ADDRESS_PARTS, field.name);
+
+const inputsOf = fields =>
+  fields.filter(
+    field => FIELD_KINDS.includes(field.kind) && field.kind !== 'composite' && !field.removed
+  );
+
+const labelOf = (field, t) =>
+  field.group === 'document'
+    ? field.label || field.name
+    : t(`terms.field.${field.name}`, { defaultValue: field.label || field.name });
+
+const mustBeTicked = value => (value === true ? null : { rule: 'required', params: {} });
+
+const propertyOf = (field, title) => {
+  if (field.kind === 'checkbox') {
+    return { type: 'boolean', title, ...(field.required ? { custom: mustBeTicked } : {}) };
+  }
+  const base = field.required ? NON_BLANK : { type: 'string' };
+  if (field.kind === 'date') {
+    return { ...base, format: 'date', title };
+  }
+  return field.kind === 'choice'
+    ? { ...base, enum: field.options || [], title }
+    : { ...base, title };
+};
+
+const schemaFor = (inputs, t) => ({
   properties: {
     fields: {
-      required: fields.filter(field => field.required).map(field => field.param),
+      required: inputs.filter(field => field.required).map(field => field.name),
       properties: Object.fromEntries(
-        fields.map(field => [
-          field.param,
-          { ...(field.required ? NON_BLANK : { type: 'string' }), title: field.label },
-        ])
+        inputs.map(field => [field.name, propertyOf(field, labelOf(field, t))])
       ),
     },
   },
 });
 
-const partOf = field => ADDRESS_PARTS[field.autocomplete] || field.param;
+const hasChanges = state => typeof state.changes_html === 'string';
 
-const documentHtmlOf = (state, whatChanged) =>
-  whatChanged && state.previous ? state.changes_html : state.content_html;
+const zonesOf = (state, whatChanged) =>
+  whatChanged && hasChanges(state)
+    ? {
+        top: state.changes_html,
+        middle: state.changes_middle_html || '',
+        bottom: state.changes_bottom_html || '',
+      }
+    : {
+        top: state.content_html,
+        middle: state.content_middle_html || '',
+        bottom: state.content_bottom_html || '',
+      };
+
+const htmlsOf = state => [
+  state.content_html,
+  state.content_middle_html,
+  state.content_bottom_html,
+  state.changes_html,
+  state.changes_middle_html,
+  state.changes_bottom_html,
+];
 
 const initialValues = fields =>
-  Object.fromEntries(fields.map(field => [field.param, field.value || '']));
+  Object.fromEntries(
+    fields.map(field => [field.name, field.kind === 'checkbox' ? false : field.value || ''])
+  );
 
 const initialAddress = fields =>
   fields.reduce(
-    (address, field) => ({
-      ...address,
-      [field.control === 'country' ? 'country_code' : partOf(field)]: field.value || '',
-    }),
+    (address, field) => ({ ...address, [ADDRESS_PARTS[field.name]]: field.value || '' }),
     { ...EMPTY_ADDRESS }
   );
 
@@ -187,47 +226,147 @@ FontSize.propTypes = {
   onScale: PropTypes.func.isRequired,
 };
 
+const TickField = ({ field, label, value, rules, onChange }) => {
+  const name = `fields/${field.name}`;
+  const id = rules.idFor(name);
+  const error = rules.errors[name] || '';
+  const errorId = `${id}-error`;
+  return (
+    <div className={`field${error ? ' field-invalid' : ''} auth-field auth-grid-full`}>
+      <label className="auth-check" htmlFor={id}>
+        <input
+          id={id}
+          type="checkbox"
+          checked={value === true}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          aria-errormessage={error ? errorId : undefined}
+          onChange={event => onChange(field.name, event.target.checked)}
+          onBlur={() => rules.onBlur(name)}
+        />
+        <span>{label}</span>
+      </label>
+      {error ? <FieldError id={errorId} message={error} /> : null}
+    </div>
+  );
+};
+
+TickField.propTypes = {
+  field: fieldShape.isRequired,
+  label: PropTypes.node.isRequired,
+  value: PropTypes.bool.isRequired,
+  rules: PropTypes.object.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+const FieldControl = ({ field, aria, value, country, onChange, onBlur }) => {
+  if (field.kind === 'tel') {
+    return (
+      <PhoneInput
+        id={aria.id}
+        aria={{ ...aria, onBlur }}
+        value={value}
+        initialCountry={country}
+        disabled={Boolean(field.read_only)}
+        onChange={number => {
+          if (!field.read_only) {
+            onChange(field.name, number);
+          }
+        }}
+      />
+    );
+  }
+  if (field.kind === 'choice') {
+    const [first] = field.options || [];
+    return (
+      <div aria-describedby={aria['aria-describedby']}>
+        <OptionList label={field.label || field.name}>
+          {(field.options || []).map(option => (
+            <Option
+              key={option}
+              id={option === first ? aria.id : ''}
+              name={aria.id}
+              value={option}
+              checked={value === option}
+              onChange={picked => onChange(field.name, picked)}
+              label={option}
+            />
+          ))}
+        </OptionList>
+      </div>
+    );
+  }
+  return (
+    <div className="auth-input-wrap">
+      <input
+        {...aria}
+        type={field.kind === 'date' ? 'date' : 'text'}
+        autoComplete={field.autocomplete}
+        value={value}
+        disabled={Boolean(field.read_only)}
+        onChange={event => onChange(field.name, event.target.value)}
+        onBlur={onBlur}
+      />
+    </div>
+  );
+};
+
+FieldControl.propTypes = {
+  field: fieldShape.isRequired,
+  aria: PropTypes.object.isRequired,
+  value: PropTypes.string.isRequired,
+  country: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  onBlur: PropTypes.func.isRequired,
+};
+
 const TermsField = ({ field, value, rules, country, onChange }) => {
   const { t } = useTranslation(['auth']);
-  const name = `fields/${field.param}`;
-  const label = field.required ? field.label : `${field.label} ${t('terms.optional')}`;
-  const onBlur = () => rules.onBlur(name);
+  const name = `fields/${field.name}`;
+  const base = labelOf(field, t);
+  const text = field.required ? base : `${base} ${t('terms.optional')}`;
+  const label = field.changed ? (
+    <>
+      {text} <span className="auth-badge">{t('terms.changed')}</span>
+    </>
+  ) : (
+    text
+  );
+  if (field.kind === 'checkbox') {
+    return (
+      <TickField
+        field={field}
+        label={label}
+        value={value === true}
+        rules={rules}
+        onChange={onChange}
+      />
+    );
+  }
   return (
     <Field
       id={rules.idFor(name)}
       label={label}
       error={rules.errors[name] || ''}
-      className={`auth-field${field.span === 'full' ? ' auth-grid-full' : ''}`}
+      className={`auth-field${FULL_KINDS.includes(field.kind) ? ' auth-grid-full' : ''}`}
     >
-      {aria =>
-        field.autocomplete === 'tel' ? (
-          <PhoneInput
-            id={aria.id}
-            aria={{ ...aria, onBlur }}
-            value={value}
-            initialCountry={country}
-            onChange={number => onChange(field.param, number)}
-          />
-        ) : (
-          <div className="auth-input-wrap">
-            <input
-              {...aria}
-              type={field.control === 'email' ? 'email' : 'text'}
-              autoComplete={field.autocomplete}
-              value={value}
-              onChange={event => onChange(field.param, event.target.value)}
-              onBlur={onBlur}
-            />
-          </div>
-        )
-      }
+      {aria => (
+        <FieldControl
+          field={field}
+          aria={aria}
+          value={String(value || '')}
+          country={country}
+          onChange={onChange}
+          onBlur={() => rules.onBlur(name)}
+        />
+      )}
     </Field>
   );
 };
 
 TermsField.propTypes = {
   field: fieldShape.isRequired,
-  value: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]).isRequired,
   rules: PropTypes.object.isRequired,
   country: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
@@ -243,9 +382,9 @@ const FieldGroup = ({ title, fields, values, rules, country, onChange }) => {
       <div className="auth-grid">
         {fields.map(field => (
           <TermsField
-            key={field.param}
+            key={field.name}
             field={field}
-            value={values[field.param] || ''}
+            value={values[field.name] ?? ''}
             rules={rules}
             country={country}
             onChange={onChange}
@@ -270,21 +409,20 @@ const AddressGroup = ({ fields, address, rules, placesKey, onChange }) => {
   if (fields.length === 0) {
     return null;
   }
-  const paramByPart = Object.fromEntries(fields.map(field => [partOf(field), field.param]));
-  const nameOf = part => {
-    const param = paramByPart[part === 'country_code' ? 'country' : part];
-    return param ? `fields/${param}` : '';
-  };
+  const nameByPart = Object.fromEntries(
+    fields.map(field => [ADDRESS_PARTS[field.name], `fields/${field.name}`])
+  );
   const errors = Object.fromEntries(
-    [...Object.keys(paramByPart), 'country_code'].map(part => [
-      part,
-      rules.errors[nameOf(part)] || '',
-    ])
+    Object.entries(nameByPart).map(([part, name]) => [part, rules.errors[name] || ''])
+  );
+  const suffixes = Object.fromEntries(
+    fields
+      .filter(field => !field.required)
+      .map(field => [ADDRESS_PARTS[field.name], t('terms.optional')])
   );
   const onBlur = part => {
-    const name = nameOf(part);
-    if (name) {
-      rules.onBlur(name);
+    if (nameByPart[part]) {
+      rules.onBlur(nameByPart[part]);
     }
   };
   return (
@@ -297,6 +435,9 @@ const AddressGroup = ({ fields, address, rules, placesKey, onChange }) => {
           rules={{ errors, onBlur }}
           idPrefix="terms-address"
           placesKey={placesKey}
+          parts={Object.keys(nameByPart)}
+          suffixes={suffixes}
+          idFor={part => rules.idFor(nameByPart[part])}
         />
       </div>
     </>
@@ -431,7 +572,13 @@ const VersionsModal = ({ show, versions, current, onClose }) => {
             >
               {t('policy.back')}
             </button>
-            <MarkdownArticle html={viewing.content_html} className="auth-doc-flow" />
+            <MarkdownArticle
+              html={viewing.content_html}
+              anchorKey={viewing.anchor_key || ''}
+              fields={viewing.fields || NO_FIELDS}
+              fieldsVersion={viewing.fields_version}
+              className="auth-doc-flow"
+            />
           </>
         ) : null}
         {!viewing ? (
@@ -509,7 +656,7 @@ TermsHead.propTypes = {
 
 const WhatChangedRow = ({ state, active, onToggle }) => {
   const { t, i18n } = useTranslation(['auth']);
-  if (!state.previous) {
+  if (!hasChanges(state)) {
     return null;
   }
   return (
@@ -522,12 +669,14 @@ const WhatChangedRow = ({ state, active, onToggle }) => {
       >
         {t('terms.whatChanged')}
       </button>
-      <span className="auth-hint">
-        {t('terms.changedSince', {
-          version: state.previous.version,
-          date: formatDate(state.previous.accepted_at, i18n.language),
-        })}
-      </span>
+      {state.previous ? (
+        <span className="auth-hint">
+          {t('terms.changedSince', {
+            version: state.previous.version,
+            date: formatDate(state.previous.accepted_at, i18n.language),
+          })}
+        </span>
+      ) : null}
     </div>
   );
 };
@@ -538,7 +687,7 @@ WhatChangedRow.propTypes = {
   onToggle: PropTypes.func.isRequired,
 };
 
-const useAccept = ({ returnTo, state, setProblem, reload, setBusy, setAnnounce }) => {
+const useAccept = ({ returnTo, events, state, setProblem, reload, setBusy, setAnnounce }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const report = useProblemReporter();
@@ -555,7 +704,7 @@ const useAccept = ({ returnTo, state, setProblem, reload, setBusy, setAnnounce }
           reload();
           return;
         }
-        followNext({ next, navigate, returnTo });
+        followNext({ next, navigate, returnTo, events });
       })
       .catch(error => {
         setBusy(false);
@@ -568,13 +717,10 @@ const useAccept = ({ returnTo, state, setProblem, reload, setBusy, setAnnounce }
   };
 };
 
-const useCollectedFields = (fields, countries) => {
-  const identityFields = useMemo(
-    () => fields.filter(field => (field.group || 'identity') !== 'address'),
-    [fields]
-  );
-  const addressFields = useMemo(() => fields.filter(field => field.group === 'address'), [fields]);
-  const [identity, setIdentity] = useState(() => initialValues(identityFields));
+const useCollectedFields = (inputs, countries) => {
+  const plainFields = useMemo(() => inputs.filter(field => !isAddressPart(field)), [inputs]);
+  const addressFields = useMemo(() => inputs.filter(isAddressPart), [inputs]);
+  const [plain, setPlain] = useState(() => initialValues(plainFields));
   const [address, setAddress] = useState(() => initialAddress(addressFields));
   const record = useMemo(
     () => ({
@@ -593,20 +739,16 @@ const useCollectedFields = (fields, countries) => {
   const values = useMemo(
     () => ({
       fields: {
-        ...identity,
+        ...plain,
         ...Object.fromEntries(
-          addressFields.map(field => [
-            field.param,
-            record[field.control === 'country' ? 'country_code' : partOf(field)] || '',
-          ])
+          addressFields.map(field => [field.name, record[ADDRESS_PARTS[field.name]] || ''])
         ),
       },
     }),
-    [identity, addressFields, record]
+    [plain, addressFields, record]
   );
-  const changeIdentity = (param, value) =>
-    setIdentity(previous => ({ ...previous, [param]: value }));
-  return { identityFields, addressFields, values, record, changeIdentity, setAddress };
+  const changePlain = (name, value) => setPlain(previous => ({ ...previous, [name]: value }));
+  return { plainFields, addressFields, values, record, changePlain, setAddress };
 };
 
 const CollectingTerms = ({
@@ -621,31 +763,43 @@ const CollectingTerms = ({
 }) => {
   const { t } = useTranslation(['auth']);
   const [whatChanged, setWhatChanged] = useState(true);
-  const fields = useMemo(() => state.fields || [], [state.fields]);
-  const schema = useMemo(() => schemaFor(fields), [fields]);
-  const hasAddress = fields.some(field => field.group === 'address');
-  const hasPhone = fields.some(field => field.autocomplete === 'tel');
-  const countries = useCountries(hasAddress);
-  const placesKey = usePlacesKey(hasAddress);
-  const geo = useGeoCountry(hasPhone);
-  const { identityFields, addressFields, values, record, changeIdentity, setAddress } =
-    useCollectedFields(fields, countries);
+  const fields = useMemo(() => state.fields || NO_FIELDS, [state.fields]);
+  const inputs = useMemo(() => inputsOf(fields), [fields]);
+  const schema = useMemo(() => schemaFor(inputs, t), [inputs, t]);
+  const countries = useCountries(inputs.some(isAddressPart));
+  const placesKey = usePlacesKey(inputs.some(isAddressPart));
+  const geo = useGeoCountry(inputs.some(field => field.kind === 'tel'));
+  const { plainFields, addressFields, values, record, changePlain, setAddress } =
+    useCollectedFields(inputs, countries);
   const rules = useFormRules({ schema, values, idPrefix: 'terms' });
-  const fills = useMemo(() => {
-    const { first_name: first = '', last_name: last = '' } = values.fields;
-    return {
-      ...values.fields,
-      full_name: [first, last].filter(Boolean).join(' '),
-      address: ADDRESS_JOIN.map(part => record[part])
-        .filter(Boolean)
-        .join(', '),
-    };
-  }, [values.fields, record]);
-  const documentHtml = documentHtmlOf(state, whatChanged);
+  const { idFor } = rules;
+  const inputId = useCallback(
+    name => (inputs.some(entry => entry.name === name) ? idFor(`fields/${name}`) : ''),
+    [inputs, idFor]
+  );
+  const broken = useMemo(
+    () =>
+      documentBroken({
+        htmls: htmlsOf(state),
+        anchorKey: state.anchor_key || '',
+        fields,
+        fieldsVersion: state.fields_version,
+      }),
+    [state, fields]
+  );
+  const zones = zonesOf(state, whatChanged);
+  const article = {
+    anchorKey: state.anchor_key || '',
+    fields,
+    fieldsVersion: state.fields_version,
+    values: values.fields,
+    inputId,
+    fontScale: scale,
+  };
 
   const submit = event => {
     event.preventDefault();
-    if (!rules.validateAll()) {
+    if (broken || !rules.validateAll()) {
       return;
     }
     onAccept(values.fields, rules);
@@ -666,20 +820,16 @@ const CollectingTerms = ({
         active={whatChanged}
         onToggle={() => setWhatChanged(value => !value)}
       />
-      <MarkdownArticle
-        html={documentHtml}
-        fills={fills}
-        fontScale={scale}
-        className="auth-doc-flow"
-      />
+      {broken ? <AuthAlert tone="danger">{t('terms.blankErrors')}</AuthAlert> : null}
+      <MarkdownArticle html={zones.top} {...article} className="auth-doc-flow" />
       <FormErrorSummary errors={rules.summary} />
       <FieldGroup
-        title={state.identity_group_title || t('terms.yourDetails')}
-        fields={identityFields}
+        title={t('terms.yourDetails')}
+        fields={plainFields.filter(field => field.group !== 'document')}
         values={values.fields}
         rules={rules}
         country={geo}
-        onChange={changeIdentity}
+        onChange={changePlain}
       />
       <AddressGroup
         fields={addressFields}
@@ -688,23 +838,21 @@ const CollectingTerms = ({
         placesKey={placesKey}
         onChange={setAddress}
       />
-      <MarkdownArticle
-        html={state.content_middle_html || ''}
-        fills={fills}
-        fontScale={scale}
-        className="auth-doc-flow auth-doc-fine"
+      <FieldGroup
+        title={t('terms.documentFields')}
+        fields={plainFields.filter(field => field.group === 'document')}
+        values={values.fields}
+        rules={rules}
+        country={geo}
+        onChange={changePlain}
       />
-      <MarkdownArticle
-        html={state.content_bottom_html || ''}
-        fills={fills}
-        fontScale={scale}
-        className="auth-doc-flow auth-doc-fine"
-      />
+      <MarkdownArticle html={zones.middle} {...article} className="auth-doc-flow auth-doc-fine" />
+      <MarkdownArticle html={zones.bottom} {...article} className="auth-doc-flow auth-doc-fine" />
       <div className="auth-ack">{t('terms.acknowledge')}</div>
       <button
         type="submit"
         className={`auth-btn auth-btn-primary auth-btn-block${busy ? ' is-loading' : ''}`}
-        disabled={busy}
+        disabled={busy || broken}
       >
         {t('terms.agree')}
       </button>
@@ -735,7 +883,17 @@ const ClassicTerms = ({
 }) => {
   const { t } = useTranslation(['auth']);
   const [whatChanged, setWhatChanged] = useState(true);
-  const documentHtml = documentHtmlOf(state, whatChanged);
+  const fields = useMemo(() => state.fields || NO_FIELDS, [state.fields]);
+  const broken = useMemo(
+    () =>
+      documentBroken({
+        htmls: htmlsOf(state),
+        anchorKey: state.anchor_key || '',
+        fields,
+        fieldsVersion: state.fields_version,
+      }),
+    [state, fields]
+  );
   return (
     <>
       <TermsHead
@@ -751,13 +909,20 @@ const ClassicTerms = ({
         active={whatChanged}
         onToggle={() => setWhatChanged(value => !value)}
       />
+      {broken ? <AuthAlert tone="danger">{t('terms.blankErrors')}</AuthAlert> : null}
       <div className="auth-doc">
-        <MarkdownArticle html={documentHtml} fontScale={scale} />
+        <MarkdownArticle
+          html={zonesOf(state, whatChanged).top}
+          anchorKey={state.anchor_key || ''}
+          fields={fields}
+          fieldsVersion={state.fields_version}
+          fontScale={scale}
+        />
       </div>
       <button
         type="button"
         className={`auth-btn auth-btn-primary auth-btn-block${busy ? ' is-loading' : ''}`}
-        disabled={busy}
+        disabled={busy || broken}
         onClick={() => onAccept({})}
       >
         {t('terms.accept')}
@@ -789,23 +954,39 @@ const subtitleOf = (state, collecting, t, status) => {
 /**
  * `/oauth2/accept-terms`: one document from `GET /api/auth/terms` in the
  * one wide column, classic (the pane, "I accept and continue") or
- * collecting (the document as page copy, the identity field group and the
- * address as the shared `AddressFields` with the Places lookup, every
- * field prefilled from its `value` and editable, the address parts posted
- * under the listed fields' params, the `tel` field as the shared
- * `PhoneInput`, the blanks in every HTML member filling as the person
- * types, `full_name` joined from the names and `address` from the parts
- * present, the acknowledgment row and "I Agree & Continue"); the head row
- * carries the region flag button (`person_region`, opening a list dialog
- * of `regions_offered`) and, while more than one version exists, a
- * "Versions" link into a read-only version list; a person who accepted an
- * earlier version of the copy sees `changes_html` under a "What changed"
- * toggle instead of the plain text; the subtitle names the site for a
- * site-scope acceptance and the client otherwise. Decline posts
- * `/auth-cancel`; a `next` that is this route again swaps the document,
- * moves focus to the heading and announces the step.
+ * collecting. A collecting document draws its three zones through the
+ * document component, every anchor of the answer's `anchor_key` a blank
+ * that mirrors its input as the person types, and one input per `fields`
+ * entry that is neither `composite` nor `removed`, by `kind`: `text`,
+ * `state`, `country` and `signature` a text field, `tel` the shared
+ * `PhoneInput`, `checkbox` a tick box, `date` a date field and `choice`
+ * the radio cards of its `options`, the first radio carrying the field's
+ * id; `read_only` draws the input disabled and keeps the answer's value
+ * whatever the control reports, and `changed` marks its label. The
+ * inputs sit in three groups by `group`: the identity grid, the address as the shared
+ * `AddressFields` with the Places lookup, and the document's declared
+ * fields; a profile field's label is the page's own by `name`, a declared
+ * field's the answer's `label`, and a field whose `required` is false is
+ * marked optional. A person who accepted an earlier version sees the
+ * three `changes_*` members in the three zones under a "What changed"
+ * toggle, absent when the answer carries none. An anchor with no entry,
+ * a `kind` the page does not know or a `fields_version` it does not know
+ * draws an error in the blank's place and an alert, and "I Agree &
+ * Continue" stays disabled. The post carries every input by `name`, a
+ * tick box as a boolean and a date as `yyyy-MM-dd`; a `422` paints at
+ * `/fields/<name>`, and every input, the address parts included, carries
+ * the id the form's rules name it by, so a link of the error summary
+ * lands on its input. The head row carries the region flag button
+ * (`person_region`, opening a list dialog of `regions_offered`) and,
+ * while more than one version exists, a "Versions" link into a read-only
+ * version list whose documents draw their anchors as blanks with no
+ * input; the subtitle names the site for a site-scope acceptance and the
+ * client otherwise. Decline posts `/auth-cancel`; a `next` that is this
+ * route again swaps the document, moves focus to the heading and
+ * announces the step, and any other `next` is followed with the session
+ * bus as `events`, so the page it lands on in-router draws signed in.
  */
-const TermsPage = ({ returnTo }) => {
+const TermsPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
   const report = useProblemReporter();
@@ -816,7 +997,7 @@ const TermsPage = ({ returnTo }) => {
   const [busy, setBusy] = useState(false);
   const [announce, setAnnounce] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
-  const accept = useAccept({ returnTo, state, setProblem, reload, setBusy, setAnnounce });
+  const accept = useAccept({ returnTo, events, state, setProblem, reload, setBusy, setAnnounce });
 
   useEffect(() => {
     document.title = state?.label || t('terms.pageTitle');
@@ -900,6 +1081,7 @@ const TermsPage = ({ returnTo }) => {
 
 TermsPage.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default TermsPage;

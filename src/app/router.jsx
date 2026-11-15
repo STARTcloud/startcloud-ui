@@ -1370,7 +1370,7 @@ const onboardingRoutes = ({ status, cookie }) => {
   const step = (path, open, Element, token) => ({
     path,
     open,
-    element: <Element returnTo={returnTo} />,
+    element: <Element returnTo={returnTo} events={events} />,
     token,
   });
   return gatedRoutes([

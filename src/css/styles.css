@@ -3420,18 +3420,25 @@ details.meter .tier-badge {
 }
 
 .tos-blank {
-  border-bottom: 1px dashed var(--auth-ink-3);
-  color: var(--auth-ink-2);
+  border-bottom: 1px dashed var(--auth-ink-3, var(--bs-secondary-color));
+  color: var(--auth-ink-2, var(--bs-emphasis-color));
+}
+
+.tos-blank[data-blank='empty'] {
+  display: inline-block;
+  min-width: 8ch;
+  height: 1.2em;
+  vertical-align: text-bottom;
 }
 
 .prose ins {
-  background: var(--auth-success-bg);
-  color: var(--auth-success);
+  background: var(--auth-success-bg, rgba(var(--bs-success-rgb), 0.1));
+  color: var(--auth-success, var(--bs-success));
   text-decoration: none;
 }
 
 .prose del {
-  color: var(--auth-ink-3);
+  color: var(--auth-ink-3, var(--bs-secondary-color));
   text-decoration: line-through;
 }
 

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FaKeyboard, FaLayerGroup, FaRightToBracket, FaSliders, FaTicket } from 'react-icons/fa6';
 
 import { useUnread } from '../../contexts/UnreadContext';
+import { isLive } from '../../utils/membership';
 
 import FavoriteApps from './FavoriteApps';
 import IdentityCard, { localProfileShape } from './IdentityCard';
@@ -162,7 +163,8 @@ AllOrgsItem.propTypes = {
 
 /**
  * The active organization's row, opening the switcher, drawn only while
- * the person belongs to two or more organizations; with
+ * the person belongs to two or more organizations, a suspended membership
+ * never the active one; with
  * `allOrganizations`, on a host that narrows by organization, drawn from
  * one membership on, All organizations being a second choice beside it,
  * and reading All organizations while that is the choice.
@@ -304,7 +306,7 @@ const UserMenu = ({
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [orgsFailed, setOrgsFailed] = useState(false);
 
-  const activeOrg = organizations.find(org => org.uuid === activeOrgUuid) || null;
+  const activeOrg = organizations.find(org => org.uuid === activeOrgUuid && isLive(org)) || null;
   const switcherOrgs = loadedOrgs || organizations;
 
   const openSwitcher = () => {

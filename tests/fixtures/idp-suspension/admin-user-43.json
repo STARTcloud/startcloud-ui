@@ -1,0 +1,11 @@
+{
+  "id": 43,
+  "username": "jgilbert@example.com",
+  "full_name": "Jo Gilbert",
+  "customer_id": "",
+  "enabled": true,
+  "suspended": false,
+  "using_2fa": false,
+  "roles": ["ROLE_USER"],
+  "organizations": []
+}

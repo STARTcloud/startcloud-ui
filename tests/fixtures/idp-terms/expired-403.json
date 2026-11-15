@@ -1,0 +1,7 @@
+{
+  "type": "https://auth.startcloud.com/probs/forbidden",
+  "title": "This action is not allowed.",
+  "status": 403,
+  "detail": "The terms session has ended.",
+  "code": "tos_session_expired"
+}

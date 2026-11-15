@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -30,7 +31,7 @@ const download = codes => {
  * check, and an enabled Continue that refuses with an inline error while
  * the box is unticked, then posts the confirm and follows `next`.
  */
-const BackupCodesPage = ({ returnTo }) => {
+const BackupCodesPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const report = useProblemReporter();
   const { state } = useOnboarding();
@@ -74,6 +75,8 @@ const BackupCodesPage = ({ returnTo }) => {
     <OnboardingFrame
       state={state}
       current="tfa"
+      returnTo={returnTo}
+      events={events}
       title={t('onboarding.codes.title')}
       problem={problem}
     >
@@ -134,6 +137,7 @@ const BackupCodesPage = ({ returnTo }) => {
 
 BackupCodesPage.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default BackupCodesPage;

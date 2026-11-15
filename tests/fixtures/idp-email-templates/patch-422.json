@@ -1,0 +1,25 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/subject",
+      "rule": "token",
+      "params": { "token": "nmae" },
+      "detail": "subject names {{nmae}} but magic_login has no such token"
+    },
+    {
+      "pointer": "/body",
+      "rule": "token",
+      "params": { "token": "frist" },
+      "detail": "body names {{frist}} but magic_login has no such token"
+    },
+    {
+      "pointer": "/body",
+      "rule": "token",
+      "params": { "token": "lnik" },
+      "detail": "body names {{lnik}} but magic_login has no such token"
+    }
+  ]
+}

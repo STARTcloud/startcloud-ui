@@ -72,6 +72,10 @@ describe('validateValue', () => {
     ]);
     expect(validateValue({ type: 'string', format: 'ttl' }, '15m')).toEqual([]);
     expect(validateValue({ type: 'string', format: 'duration' }, 'PT30S')).toEqual([]);
+    expect(validateValue({ type: 'string', format: 'date' }, '2026-12-01')).toEqual([]);
+    expect(validateValue({ type: 'string', format: 'date' }, '12/01/2026')).toEqual([
+      { pointer: '', rule: 'format', params: { format: 'date' } },
+    ]);
   });
 
   it('evaluates items and item counts', () => {
@@ -218,6 +222,55 @@ describe('messageFor', () => {
     expect(messageFor({ rule: 'enum', params: {} }, 'Engine', t)).toBe('validation.enum:Engine');
     expect(messageFor({ rule: 'minLength', params: { minLength: 3 } }, 'Name', t)).toBe(
       'validation.minLength:Name'
+    );
+  });
+
+  it('answers a token by its reason with the token inside its braces', () => {
+    const named = (key, params = {}) => `${key}:${params.label}:${params.token}`;
+    expect(messageFor({ rule: 'token', params: { token: 'nmae' } }, 'Subject', named)).toBe(
+      'validation.token.unoffered:Subject:{{nmae}}'
+    );
+    expect(
+      messageFor(
+        { rule: 'token', params: { token: 'frist_name', reason: 'unknown' } },
+        'Content',
+        named
+      )
+    ).toBe('validation.token.unknown:Content:{{frist_name}}');
+    expect(
+      messageFor({ rule: 'token', params: { token: 'f:x', reason: 'undeclared' } }, 'Content', t)
+    ).toBe('validation.token.undeclared:Content');
+    expect(
+      messageFor({ rule: 'token', params: { token: 'x', reason: 'mystery' } }, 'Content', t)
+    ).toBe('validation.unknown:Content');
+  });
+
+  it('answers dependentRequired, const, readOnly, unique and the date format by their keys', () => {
+    expect(
+      messageFor(
+        { rule: 'dependentRequired', params: { dependentRequired: 'default_copy' } },
+        'Language',
+        t
+      )
+    ).toBe('validation.dependentRequired.default_copy:Language');
+    expect(
+      messageFor({ rule: 'dependentRequired', params: { dependentRequired: 'x' } }, 'Language', t)
+    ).toBe('validation.unknown:Language');
+    expect(messageFor({ rule: 'const', params: { const: 'full_name' } }, 'Signature', t)).toBe(
+      'validation.const.full_name:Signature'
+    );
+    expect(messageFor({ rule: 'const', params: { const: 'x' } }, 'Signature', t)).toBe(
+      'validation.unknown:Signature'
+    );
+    expect(messageFor({ rule: 'readOnly', params: {} }, 'Language', t)).toBe(
+      'validation.readOnly:Language'
+    );
+    expect(messageFor({ rule: 'unique' }, 'Version', t)).toBe('validation.unique:Version');
+    expect(messageFor({ rule: 'format', params: { format: 'date' } }, 'Start date', t)).toBe(
+      'validation.format.date:Start date'
+    );
+    expect(messageFor({ rule: 'type', params: { type: 'boolean' } }, 'Enabled', t)).toBe(
+      'validation.type.boolean:Enabled'
     );
   });
 

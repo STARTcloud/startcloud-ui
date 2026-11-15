@@ -61,11 +61,22 @@ export const deleteOrganization = organizationId => client.delete(organization(o
 
 export const organizationsBulk = body => client.post('/api/admin/organizations/bulk', body);
 
+const bulkOne = action => organizationId =>
+  organizationsBulk({ action, organization_ids: [organizationId] }).then(answer => {
+    const [refusal] = answer?.errors || [];
+    if (refusal) {
+      throw Object.assign(new Error(refusal.code), { code: refusal.code });
+    }
+    return answer;
+  });
+
 /**
  * The identity provider's own `users` adapter of the shared Users page
  * and the user record page: the paged list, the single record by id, the
  * role catalog, the record patch, the whole-set roles write, suspend and
- * resume as `enabled` patches, the stepped-up delete, the bulk route, the
+ * resume as `enabled` patches (`false` suspends, `true` resumes, the rows
+ * carrying `suspended` beside `enabled`, `403 own_account` on the admin's
+ * own id), the stepped-up delete, the bulk route, the
  * rate-limit gates and the export URL of the panel's action; the record
  * page's writes over another account, every one behind the step-up
  * window and refused `403 own_account` on the admin's own id: the detail
@@ -101,13 +112,17 @@ export const issuerUsers = {
 
 /**
  * The identity provider's own `organizations` adapter of the shared All
- * organizations page: the list with every editable field riding it, the
- * record patch, the delete and the bulk route; suspend and resume are the
- * bulk route's on the issuer, so the adapter carries no per-row pair.
+ * organizations page: the list with every editable field and `suspended`
+ * riding it, the record patch, the delete and the bulk route; `suspend`
+ * and `resume` of one row are the bulk route's `suspend` and `resume`
+ * with that one id, rejecting with the `code` of the row's `errors[]`
+ * entry when the route skips it.
  */
 export const issuerOrganizations = {
   list: organizations,
   update: updateOrganization,
   remove: deleteOrganization,
+  suspend: bulkOne('suspend'),
+  resume: bulkOne('resume'),
   bulk: organizationsBulk,
 };

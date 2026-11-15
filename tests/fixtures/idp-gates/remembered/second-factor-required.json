@@ -1,0 +1,8 @@
+{
+  "type": "https://auth.startcloud.com/probs/forbidden",
+  "status": 403,
+  "title": "This action is not allowed.",
+  "detail": "Complete the second factor first.",
+  "code": "second_factor_required",
+  "next": "/authenticator"
+}

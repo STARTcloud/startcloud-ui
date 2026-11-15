@@ -3,17 +3,22 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import AuthShell from '../../../components/common/AuthShell';
+import DeviceCodeTimer, { useDeviceCode } from '../../../components/common/DeviceCodeTimer';
 import Field from '../../../components/common/Field';
 import NativeForm from '../../../components/common/NativeForm';
 import { sessionStateShape } from '../../../hooks/useSession';
 import { returnToShape } from '../../../utils/auth';
+import { deviceCode } from '../api/interstitials';
 
 const CODE = /[^A-Z0-9-]/g;
 
 /**
  * `/activate`: the device code field, uppercase and prefilled from
  * `?user_code`, the `?error=invalid_user_code` alert painted on the field,
- * and Continue as a real form post to `/oauth2/device_verification`; a
+ * the client's name and the time the code has left from
+ * `GET /api/auth/device`, read on load for a prefilled code and when the
+ * field loses focus for a typed one, and Continue as a real form post to
+ * `/oauth2/device_verification`, disabled once the code has expired; a
  * visitor without a session is sent to sign in with this page, query and
  * all, as the return path, so the code is still prefilled when they land
  * back here.
@@ -29,8 +34,10 @@ const DeviceActivatePage = ({ account, returnTo }) => {
   const { pathname, search } = location;
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const [code, setCode] = useState(() => (params.get('user_code') || '').toUpperCase());
+  const [asked, setAsked] = useState(code);
   const mismatch = params.get('error') === 'invalid_user_code';
   const { loaded, user } = account;
+  const device = useDeviceCode(deviceCode, loaded && user ? asked : '');
 
   useEffect(() => {
     document.title = t('device.title');
@@ -46,8 +53,15 @@ const DeviceActivatePage = ({ account, returnTo }) => {
     return null;
   }
 
+  const change = event => {
+    const typed = event.target.value.toUpperCase().replace(CODE, '');
+    setCode(typed);
+    setAsked(held => (held === typed ? held : ''));
+  };
+
   return (
     <AuthShell title={t('device.title')} subtitle={t('device.subhead')}>
+      <DeviceCodeTimer device={device} />
       <NativeForm action="/oauth2/device_verification">
         <Field
           id="device-code"
@@ -66,12 +80,17 @@ const DeviceActivatePage = ({ account, returnTo }) => {
                 autoCapitalize="characters"
                 placeholder="XXXX-XXXX"
                 value={code}
-                onChange={event => setCode(event.target.value.toUpperCase().replace(CODE, ''))}
+                onChange={change}
+                onBlur={() => setAsked(code)}
               />
             </div>
           )}
         </Field>
-        <button type="submit" className="auth-btn auth-btn-primary auth-btn-block">
+        <button
+          type="submit"
+          className="auth-btn auth-btn-primary auth-btn-block"
+          disabled={device.expired}
+        >
           {t('device.continue')}
         </button>
       </NativeForm>

@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,7 +28,7 @@ const LABELS = {
  * `given-name` and `family-name` autofill tokens, the family-name hint,
  * and Continue posting `{ given_name, family_name }`.
  */
-const NameStep = ({ returnTo }) => {
+const NameStep = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const { state } = useOnboarding();
   const { run, busy, problem } = useStepAction(returnTo);
@@ -79,6 +80,8 @@ const NameStep = ({ returnTo }) => {
     <OnboardingFrame
       state={state}
       current="name"
+      returnTo={returnTo}
+      events={events}
       title={t('onboarding.name.title')}
       subtitle={t('onboarding.name.subhead')}
       problem={problem}
@@ -101,6 +104,7 @@ const NameStep = ({ returnTo }) => {
 
 NameStep.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default NameStep;

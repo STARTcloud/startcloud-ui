@@ -17,6 +17,16 @@ const formatDate = (value, language) => {
   return new Intl.DateTimeFormat(language, { dateStyle: 'long' }).format(date);
 };
 
+const NO_FIELDS = [];
+
+const languageName = (tag, language) => {
+  try {
+    return new Intl.DisplayNames([language], { type: 'language' }).of(tag) || tag;
+  } catch {
+    return tag;
+  }
+};
+
 const usePolicy = (name, region) => {
   const { t } = useTranslation();
   const notify = useNotify();
@@ -46,9 +56,13 @@ const usePolicy = (name, region) => {
 
 /**
  * `/public/policies/:name`: the wide article column with the title, the
- * version badge and dates, the prose from `GET /api/policies/{name}`, the
- * URL's `?region=` passed to the read to force a regional variant, and
- * "Back" to the referring page when there is one, else "Back to sign in".
+ * version badge, the badge of the copy's language while the answer names
+ * a `locale`, and the dates, the prose from `GET /api/policies/{name}`
+ * drawn through the document component with every anchor of the answer's
+ * `anchor_key` a blank and no input, the URL's `?region=` passed to the
+ * read to force a regional variant, and "Back" to the referring page when
+ * there is one, else "Back to sign in". The page offers no language
+ * chooser.
  */
 const PolicyPage = () => {
   const { t, i18n } = useTranslation(['auth', 'shared']);
@@ -81,6 +95,11 @@ const PolicyPage = () => {
         state ? (
           <>
             <span className="auth-badge">{t('policy.version', { version: state.version })}</span>
+            {state.locale ? (
+              <span className="auth-badge auth-date" data-badge="locale">
+                {languageName(state.locale, i18n.language)}
+              </span>
+            ) : null}
             {dates.map(line => (
               <span key={line} className="auth-date">
                 {line}
@@ -94,7 +113,15 @@ const PolicyPage = () => {
       wide
     >
       {!state && !failed ? <AuthSpinner label={t('shared:loading')} /> : null}
-      {state ? <MarkdownArticle html={state.content_html} className="auth-doc-flow" /> : null}
+      {state ? (
+        <MarkdownArticle
+          html={state.content_html}
+          anchorKey={state.anchor_key || ''}
+          fields={state.fields || NO_FIELDS}
+          fieldsVersion={state.fields_version}
+          className="auth-doc-flow"
+        />
+      ) : null}
       {hasReferrer ? (
         <button
           type="button"

@@ -1,0 +1,34 @@
+[
+  {
+    "kind": "magic_login",
+    "arguments": [
+      { "name": "name", "description": "The recipient name" },
+      { "name": "link", "description": "The sign-in link" },
+      { "name": "expiry_minutes", "description": "Minutes until the link expires" }
+    ]
+  },
+  {
+    "kind": "account_suspended",
+    "arguments": [
+      { "name": "site_name", "description": "The site name" },
+      { "name": "support_email", "description": "The support address" }
+    ]
+  },
+  {
+    "kind": "org_membership_suspended",
+    "arguments": [{ "name": "organization_name", "description": "The name of the organization" }]
+  },
+  {
+    "kind": "smtp_test",
+    "arguments": [
+      { "name": "host", "description": "The SMTP host" },
+      { "name": "port", "description": "The SMTP port" },
+      { "name": "username", "description": "The SMTP user name" },
+      { "name": "starttls", "description": "Whether STARTTLS is on" },
+      { "name": "implicit_tls", "description": "Whether implicit TLS is on" },
+      { "name": "authentication", "description": "Whether authentication is on" },
+      { "name": "from_address", "description": "The sender address" },
+      { "name": "from_name", "description": "The sender name" }
+    ]
+  }
+]

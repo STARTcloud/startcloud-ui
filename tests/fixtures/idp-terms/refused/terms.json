@@ -1,0 +1,60 @@
+{
+  "scope": "client",
+  "name": "hcl-mla",
+  "label": "HCL Master License Agreement",
+  "version": "1.1",
+  "locale": "",
+  "region": null,
+  "person_region": "US",
+  "regions_offered": [null],
+  "step": 1,
+  "total": 1,
+  "client_name": "Domino Integration",
+  "versions": [{ "version": "1.1", "published_at": "2026-11-14T06:00:00Z" }],
+  "fields_version": 1,
+  "anchor_key": "8f3k2qz1m7c4x9ab",
+  "collecting": true,
+  "content_html": "<p>This agreement binds @@field:8f3k2qz1m7c4x9ab:first_name@@, reachable at @@field:8f3k2qz1m7c4x9ab:phone_number@@.</p>",
+  "content_middle_html": "<p>Starting @@field:8f3k2qz1m7c4x9ab:start_date@@, of age: @@field:8f3k2qz1m7c4x9ab:over_18@@. Signed: @@field:8f3k2qz1m7c4x9ab:signature@@</p>",
+  "content_bottom_html": "<p>By clicking the button below, you agree.</p>",
+  "fields": [
+    {
+      "name": "first_name",
+      "kind": "text",
+      "group": "identity",
+      "autocomplete": "given-name",
+      "required": true,
+      "value": "Ada"
+    },
+    {
+      "name": "phone_number",
+      "kind": "tel",
+      "group": "identity",
+      "autocomplete": "tel",
+      "required": true,
+      "value": "+15555550100",
+      "read_only": true
+    },
+    {
+      "name": "over_18",
+      "kind": "checkbox",
+      "group": "document",
+      "required": true,
+      "label": "I am 18 or older"
+    },
+    {
+      "name": "start_date",
+      "kind": "date",
+      "group": "document",
+      "required": false,
+      "label": "Start date"
+    },
+    {
+      "name": "signature",
+      "kind": "signature",
+      "group": "document",
+      "required": true,
+      "label": "Type your full name to sign"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+[
+  { "name": "full_name", "scope": "identity", "description": "The full name" },
+  {
+    "name": "effective_date",
+    "scope": "document",
+    "description": "The date of the acceptance in the person's time zone and the document's language"
+  }
+]

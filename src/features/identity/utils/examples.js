@@ -399,6 +399,7 @@ export const TERMS = [
       {
         id: 1,
         regions: [],
+        locale: '',
         version: '3.0',
         revision: 2,
         content:
@@ -409,6 +410,7 @@ export const TERMS = [
       {
         id: 5,
         regions: ['EEA', 'UK'],
+        locale: '',
         version: '3.0',
         revision: 1,
         content:
@@ -428,6 +430,7 @@ export const TERMS = [
       {
         id: 2,
         regions: [],
+        locale: '',
         version: '2.0',
         revision: 2,
         content: '## Terms\n\n…',
@@ -446,6 +449,7 @@ export const TERMS = [
       {
         id: 3,
         regions: [],
+        locale: '',
         version: '2.1',
         revision: 3,
         content:
@@ -456,6 +460,7 @@ export const TERMS = [
       {
         id: 4,
         regions: ['EU'],
+        locale: '',
         version: '2.1',
         revision: 1,
         content:
@@ -478,7 +483,11 @@ export const PLACEHOLDERS = [
   { name: 'state', scope: 'address', description: 'The state or region' },
   { name: 'city', scope: 'address', description: 'The city' },
   { name: 'postal_code', scope: 'address', description: 'The postal code' },
-  { name: 'date', scope: 'document', description: 'The acceptance date' },
+  {
+    name: 'effective_date',
+    scope: 'document',
+    description: "The date of the acceptance in the person's time zone and the document's language",
+  },
 ];
 
 const seedCopy = (id, subject, body) => ({
@@ -500,8 +509,8 @@ export const EMAIL_TEMPLATES = [
       {
         ...seedCopy(
           1,
-          'Verify your {2} account',
-          '<p>Hello {0},</p>\n<p>Confirm your {2} account:</p>\n<p><a href="{1}">Verify</a></p>'
+          'Verify your {{company_name}} account',
+          '<p>Hello {{name}},</p>\n<p>Confirm your {{company_name}} account:</p>\n<p><a href="{{link}}">Verify</a></p>'
         ),
         revision: 2,
         updated_at: '2026-09-14T00:00:00Z',
@@ -512,8 +521,8 @@ export const EMAIL_TEMPLATES = [
         locale: 'es',
         version: '1.0',
         revision: 1,
-        subject: 'Verifica tu cuenta de {2}',
-        body: '<p>Hola {0},</p>\n<p>Confirma tu cuenta de {2}:</p>\n<p><a href="{1}">Verificar</a></p>',
+        subject: 'Verifica tu cuenta de {{company_name}}',
+        body: '<p>Hola {{name}},</p>\n<p>Confirma tu cuenta de {{company_name}}:</p>\n<p><a href="{{link}}">Verificar</a></p>',
         created_by: 'mark@m4kr.net',
         updated_at: '2026-09-14T00:00:00Z',
       },
@@ -525,7 +534,7 @@ export const EMAIL_TEMPLATES = [
       seedCopy(
         4,
         'Reset your password',
-        '<p>Hello {0},</p>\n<p><a href="{1}">Reset your password</a> within {2} minutes.</p>'
+        '<p>Hello {{name}},</p>\n<p><a href="{{link}}">Reset your password</a> within {{expiry_minutes}} minutes.</p>'
       ),
     ],
   },
@@ -535,21 +544,23 @@ export const EMAIL_TEMPLATES = [
       seedCopy(
         5,
         'Your sign-in link',
-        '<p>Hello {0},</p>\n<p><a href="{1}">Sign in</a> within {2} minutes.</p>'
+        '<p>Hello {{name}},</p>\n<p><a href="{{link}}">Sign in</a> within {{expiry_minutes}} minutes.</p>'
       ),
     ],
   },
   {
     kind: 'onboarding_verification',
-    copies: [seedCopy(6, 'Your verification code', '<p>Your code is <strong>{0}</strong>.</p>')],
+    copies: [
+      seedCopy(6, 'Your verification code', '<p>Your code is <strong>{{code}}</strong>.</p>'),
+    ],
   },
   {
     kind: 'org_invite',
     copies: [
       seedCopy(
         7,
-        '{0} invited you to {1}',
-        '<p>{0} invited you to join {1}.</p>\n<p><a href="{2}">Accept the invitation</a> within {3} days.</p>'
+        '{{inviter}} invited you to {{organization_name}}',
+        '<p>{{inviter}} invited you to join {{organization_name}}.</p>\n<p><a href="{{link}}">Accept the invitation</a> within {{expiry_days}} days.</p>'
       ),
       {
         id: 3,
@@ -557,8 +568,8 @@ export const EMAIL_TEMPLATES = [
         locale: '',
         version: '2.0',
         revision: 1,
-        subject: '{0} invited you to {1}',
-        body: '<p>{0} invited you to join {1}.</p>\n<p><a href="{2}">Accept the invitation</a> within {3} days.</p>',
+        subject: '{{inviter}} invited you to {{organization_name}}',
+        body: '<p>{{inviter}} invited you to join {{organization_name}}.</p>\n<p><a href="{{link}}">Accept the invitation</a> within {{expiry_days}} days.</p>',
         created_by: 'mark@m4kr.net',
         updated_at: '2026-08-30T00:00:00Z',
       },
@@ -567,20 +578,26 @@ export const EMAIL_TEMPLATES = [
   {
     kind: 'email_change',
     copies: [
-      seedCopy(8, 'Confirm your new email address', '<p>Your code is <strong>{0}</strong>.</p>'),
+      seedCopy(
+        8,
+        'Confirm your new email address',
+        '<p>Your code is <strong>{{code}}</strong>.</p>'
+      ),
     ],
   },
   {
     kind: 'account_event',
-    copies: [seedCopy(9, '{0}', '<p>{1}</p>\n<p>Questions? Write to {2}.</p>')],
+    copies: [
+      seedCopy(9, '{{title}}', '<p>{{message}}</p>\n<p>Questions? Write to {{support_email}}.</p>'),
+    ],
   },
   {
     kind: 'ciba_approval',
     copies: [
       seedCopy(
         10,
-        'Approve a sign-in from {0}',
-        '<p>{0} asks to sign in.</p>\n<p><a href="{1}">Approve</a></p>\n<p>{2}</p>'
+        'Approve a sign-in from {{client_name}}',
+        '<p>{{client_name}} asks to sign in.</p>\n<p><a href="{{approval_link}}">Approve</a></p>\n<p>{{binding_message}}</p>'
       ),
     ],
   },
@@ -589,8 +606,38 @@ export const EMAIL_TEMPLATES = [
     copies: [
       seedCopy(
         11,
-        'New registration: {0}',
-        '<p>{0} ({1}) registered at {2} from {3}, {4}.</p>\n<p><a href="{5}">Open the dashboard</a></p>'
+        'New registration: {{user_name}}',
+        '<p>{{user_name}} ({{email}}) registered at {{timestamp}} from {{ip}}, {{location}}.</p>\n<p><a href="{{dashboard_link}}">Open the dashboard</a></p>'
+      ),
+    ],
+  },
+  {
+    kind: 'account_suspended',
+    copies: [
+      seedCopy(
+        12,
+        'Your {{site_name}} account is suspended',
+        '<p>Your {{site_name}} account is suspended.</p>\n<p>Questions? Write to {{support_email}}.</p>'
+      ),
+    ],
+  },
+  {
+    kind: 'org_membership_suspended',
+    copies: [
+      seedCopy(
+        13,
+        'Your membership of {{organization_name}} is suspended',
+        '<p>Your membership of {{organization_name}} is suspended.</p>'
+      ),
+    ],
+  },
+  {
+    kind: 'smtp_test',
+    copies: [
+      seedCopy(
+        14,
+        'SMTP test message',
+        '<p>This message was sent through {{host}}:{{port}} as {{username}}.</p>\n<p>STARTTLS {{starttls}}, implicit TLS {{implicit_tls}}, authentication {{authentication}}.</p>\n<p>From {{from_name}} ({{from_address}}).</p>'
       ),
     ],
   },
@@ -600,69 +647,93 @@ export const EMAIL_ARGUMENTS = [
   {
     kind: 'account_verification',
     arguments: [
-      { index: 0, name: 'name', description: 'The recipient name' },
-      { index: 1, name: 'link', description: 'The verification link' },
-      { index: 2, name: 'company name', description: 'The site company name' },
+      { name: 'name', description: 'The recipient name' },
+      { name: 'link', description: 'The verification link' },
+      { name: 'company_name', description: 'The site company name' },
     ],
   },
   {
     kind: 'password_reset',
     arguments: [
-      { index: 0, name: 'name', description: 'The recipient name' },
-      { index: 1, name: 'link', description: 'The reset link' },
-      { index: 2, name: 'expiry minutes', description: 'Minutes until the link expires' },
+      { name: 'name', description: 'The recipient name' },
+      { name: 'link', description: 'The reset link' },
+      { name: 'expiry_minutes', description: 'Minutes until the link expires' },
     ],
   },
   {
     kind: 'magic_login',
     arguments: [
-      { index: 0, name: 'name', description: 'The recipient name' },
-      { index: 1, name: 'link', description: 'The sign-in link' },
-      { index: 2, name: 'expiry minutes', description: 'Minutes until the link expires' },
+      { name: 'name', description: 'The recipient name' },
+      { name: 'link', description: 'The sign-in link' },
+      { name: 'expiry_minutes', description: 'Minutes until the link expires' },
     ],
   },
   {
     kind: 'onboarding_verification',
-    arguments: [{ index: 0, name: 'code', description: 'The verification code' }],
+    arguments: [{ name: 'code', description: 'The verification code' }],
   },
   {
     kind: 'org_invite',
     arguments: [
-      { index: 0, name: 'inviter name', description: 'Who sent the invitation' },
-      { index: 1, name: 'organization name', description: 'The organization invited to' },
-      { index: 2, name: 'invite link', description: 'The invitation link' },
-      { index: 3, name: 'expiry days', description: 'Days until the invitation expires' },
+      { name: 'inviter', description: 'The name of the person who sent the invitation' },
+      { name: 'organization_name', description: 'The name of the organization' },
+      { name: 'link', description: 'The invitation link' },
+      { name: 'expiry_days', description: 'Days until the invitation expires' },
     ],
   },
   {
     kind: 'email_change',
-    arguments: [{ index: 0, name: 'code', description: 'The verification code' }],
+    arguments: [{ name: 'code', description: 'The verification code' }],
   },
   {
     kind: 'account_event',
     arguments: [
-      { index: 0, name: 'event title', description: 'The event title' },
-      { index: 1, name: 'event message', description: 'The event message' },
-      { index: 2, name: 'support email', description: 'The support address' },
+      { name: 'title', description: 'The event title' },
+      { name: 'message', description: 'The event message' },
+      { name: 'support_email', description: 'The support address' },
     ],
   },
   {
     kind: 'ciba_approval',
     arguments: [
-      { index: 0, name: 'client name', description: 'The application asking' },
-      { index: 1, name: 'approval link', description: 'The approval link' },
-      { index: 2, name: 'binding message', description: 'The binding message' },
+      { name: 'client_name', description: 'The application asking' },
+      { name: 'approval_link', description: 'The approval link' },
+      { name: 'binding_message', description: 'The binding message' },
     ],
   },
   {
     kind: 'admin_new_registration',
     arguments: [
-      { index: 0, name: 'user name', description: 'The new account name' },
-      { index: 1, name: 'user email', description: 'The new account email' },
-      { index: 2, name: 'timestamp', description: 'When the account registered' },
-      { index: 3, name: 'IP address', description: 'The registering address' },
-      { index: 4, name: 'location', description: 'The registering location' },
-      { index: 5, name: 'dashboard link', description: 'The admin dashboard link' },
+      { name: 'user_name', description: 'The new account name' },
+      { name: 'email', description: 'The new account email' },
+      { name: 'timestamp', description: 'When the account registered' },
+      { name: 'ip', description: 'The registering address' },
+      { name: 'location', description: 'The registering location' },
+      { name: 'dashboard_link', description: 'The admin dashboard link' },
+    ],
+  },
+  {
+    kind: 'account_suspended',
+    arguments: [
+      { name: 'site_name', description: 'The site name' },
+      { name: 'support_email', description: 'The support address' },
+    ],
+  },
+  {
+    kind: 'org_membership_suspended',
+    arguments: [{ name: 'organization_name', description: 'The name of the organization' }],
+  },
+  {
+    kind: 'smtp_test',
+    arguments: [
+      { name: 'host', description: 'The SMTP host' },
+      { name: 'port', description: 'The SMTP port' },
+      { name: 'username', description: 'The SMTP user name' },
+      { name: 'starttls', description: 'Whether STARTTLS is on' },
+      { name: 'implicit_tls', description: 'Whether implicit TLS is on' },
+      { name: 'authentication', description: 'Whether authentication is on' },
+      { name: 'from_address', description: 'The sender address' },
+      { name: 'from_name', description: 'The sender name' },
     ],
   },
 ];

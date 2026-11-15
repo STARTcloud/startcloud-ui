@@ -1,0 +1,58 @@
+{
+  "scope": "client",
+  "name": "hcl-mla",
+  "label": "HCL Master License Agreement",
+  "version": "1.1",
+  "locale": "",
+  "region": null,
+  "person_region": "US",
+  "regions_offered": [null],
+  "step": 1,
+  "total": 1,
+  "client_name": "Domino Integration",
+  "versions": [{ "version": "1.1", "published_at": "2026-11-14T06:00:00Z" }],
+  "fields_version": 1,
+  "anchor_key": "8f3k2qz1m7c4x9ab",
+  "collecting": true,
+  "content_html": "<p>Residing at @@field:8f3k2qz1m7c4x9ab:address@@, in @@field:8f3k2qz1m7c4x9ab:country@@.</p>",
+  "content_middle_html": null,
+  "content_bottom_html": null,
+  "fields": [
+    {
+      "name": "country",
+      "kind": "country",
+      "group": "address",
+      "autocomplete": "country-name",
+      "required": true,
+      "value": "US"
+    },
+    {
+      "name": "city",
+      "kind": "text",
+      "group": "address",
+      "autocomplete": "address-level2",
+      "required": true
+    },
+    {
+      "name": "address_line_1",
+      "kind": "text",
+      "group": "address",
+      "autocomplete": "address-line1",
+      "required": true,
+      "value": "1 Main St"
+    },
+    {
+      "name": "address_line_2",
+      "kind": "text",
+      "group": "address",
+      "autocomplete": "address-line2",
+      "required": false
+    },
+    {
+      "name": "address",
+      "kind": "composite",
+      "parts": ["address_line_1", "address_line_2", "city", "country"],
+      "separators": [", ", ", ", ", "]
+    }
+  ]
+}

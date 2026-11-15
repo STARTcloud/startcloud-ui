@@ -1,0 +1,54 @@
+{
+  "items": [
+    {
+      "id": 42,
+      "username": "mark@m4kr.net",
+      "full_name": "Mark Gilbert",
+      "customer_id": "B5E4A2",
+      "enabled": true,
+      "suspended": false,
+      "using_2fa": true,
+      "roles": ["ROLE_USER", "ROLE_ADMIN"],
+      "organizations": [
+        { "uuid": "a1", "name": "Acme", "role": "OWNER", "primary": true, "personal": false }
+      ]
+    },
+    {
+      "id": 43,
+      "username": "jgilbert@example.com",
+      "full_name": "Jo Gilbert",
+      "customer_id": "",
+      "enabled": false,
+      "suspended": true,
+      "using_2fa": false,
+      "roles": ["ROLE_USER"],
+      "organizations": []
+    },
+    {
+      "id": 44,
+      "username": "pat@acme.example",
+      "full_name": "Pat Example",
+      "customer_id": "",
+      "enabled": false,
+      "suspended": false,
+      "using_2fa": false,
+      "roles": ["ROLE_USER"],
+      "organizations": []
+    },
+    {
+      "id": 45,
+      "username": "lee@moonshine.dev",
+      "full_name": "Lee Example",
+      "customer_id": "",
+      "enabled": true,
+      "suspended": false,
+      "using_2fa": false,
+      "roles": ["ROLE_USER"],
+      "organizations": []
+    }
+  ],
+  "page": 0,
+  "size": 25,
+  "total": 4,
+  "total_pages": 1
+}

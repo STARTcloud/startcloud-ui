@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/forbidden",
+  "status": 403,
+  "code": "onboarding_required",
+  "next": "/complete-onboarding/choose-2fa-method"
+}

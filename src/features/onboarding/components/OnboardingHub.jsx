@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -29,7 +30,7 @@ const LABELS = { password: 'auth:onboarding.password', confirm: 'auth:onboarding
  * is drawn only once the state says the password step is the one owed,
  * the spinner standing alone under "Welcome." until then.
  */
-const OnboardingHub = ({ returnTo }) => {
+const OnboardingHub = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const navigate = useNavigate();
   const { state } = useOnboarding();
@@ -68,6 +69,8 @@ const OnboardingHub = ({ returnTo }) => {
     <OnboardingFrame
       state={here ? state : null}
       current="password"
+      returnTo={returnTo}
+      events={events}
       title={
         firstName ? t('onboarding.welcome', { name: firstName }) : t('onboarding.welcomePlain')
       }
@@ -126,6 +129,7 @@ const OnboardingHub = ({ returnTo }) => {
 
 OnboardingHub.propTypes = {
   returnTo: returnToShape.isRequired,
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
 };
 
 export default OnboardingHub;

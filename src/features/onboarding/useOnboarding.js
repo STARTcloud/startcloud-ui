@@ -40,6 +40,7 @@ export const onboardingShape = PropTypes.shape({
   tfa: PropTypes.shape({
     sms_risk_notice: PropTypes.bool,
     verified_phone: PropTypes.string,
+    passkey: PropTypes.bool,
   }),
   org: PropTypes.shape({
     required_by_client: PropTypes.string,
@@ -51,7 +52,8 @@ export const onboardingShape = PropTypes.shape({
  * fetched on mount and again through `reload`: the answer, or null while
  * it is on its way or after a failure; a `401` sends the visitor to
  * `/login?error=session_expired`, a `403` gate carrying `next`
- * (`terms_required`, `onboarding_required`) moves the page there the way
+ * (`terms_required`, `onboarding_required`, `second_factor_required`)
+ * moves the page there the way
  * the session follows a gate elsewhere, a `403` `not_pending` means the
  * onboarding is over and goes home, and any other failure raises one
  * danger card.

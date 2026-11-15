@@ -159,10 +159,11 @@ const RowActions = ({ org, adapter, onEdit, onToggle, onDelete }) => {
           {t('admin.buttons.edit')}
         </button>
       )}
-      {adapter.suspend && adapter.resume ? (
+      {adapter.suspend && adapter.resume && !org.personal ? (
         <button
           type="button"
           className={`btn btn-sm ${org.suspended ? 'btn-outline-success' : 'btn-outline-warning'}`}
+          data-action={org.suspended ? 'resume' : 'suspend'}
           onClick={() => onToggle(org)}
         >
           {org.suspended ? t('admin.buttons.resume') : t('admin.buttons.suspend')}
@@ -190,6 +191,7 @@ RowActions.propTypes = {
 };
 
 const CONFIRM_ACTIONS = ['suspend', 'resume', 'delete', 'regenerate_invite_code'];
+const TEAM_ACTIONS = ['suspend', 'resume'];
 
 const ACCESS_MODE_KEYS = {
   invite: 'orgConsole.organization.accessModes.inviteOnly',
@@ -261,12 +263,12 @@ SelectDialog.propTypes = {
  * action pane while rows are selected and the adapter carries `bulk`: Set
  * customer id, Set access mode, Set default role and Regenerate invite
  * code beside Suspend, Resume and Delete, Delete behind the typed
- * confirmation and every other behind a plain one, the delete stepped up, a
- * personal organization skipped with `personal`, and the result line
- * naming processed, skipped and each error's code translated (identity
- * contract decisions 139, 147).
+ * confirmation and every other behind a plain one, the delete stepped up,
+ * Suspend and Resume sent for the picked `teams` alone, a personal
+ * organization never suspended, and the result line naming processed,
+ * skipped and each error's code translated.
  */
-const BulkActions = ({ bulk, selected, onDone }) => {
+const BulkActions = ({ bulk, selected, teams, onDone }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const guard = useGuard();
@@ -275,10 +277,12 @@ const BulkActions = ({ bulk, selected, onDone }) => {
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  const idsOf = action => (TEAM_ACTIONS.includes(action) ? teams : selected);
+
   const run = (action, extra = {}) => {
     setBusy(true);
     return guard(
-      () => bulk({ action, organization_ids: selected, ...extra }),
+      () => bulk({ action, organization_ids: idsOf(action), ...extra }),
       t('admin.organizations.bulk.stepUpReason')
     )
       .then(answer => {
@@ -303,7 +307,8 @@ const BulkActions = ({ bulk, selected, onDone }) => {
     <button
       type="button"
       className={`btn btn-sm ${variant}`}
-      disabled={busy || selected.length === 0}
+      data-action={action}
+      disabled={busy || idsOf(action).length === 0}
       onClick={onClick}
     >
       {t(`admin.organizations.bulk.${action}`)}
@@ -373,7 +378,7 @@ const BulkActions = ({ bulk, selected, onDone }) => {
             : 'admin.organizations.bulk.confirmPlainBody',
           {
             action: pending ? t(`admin.organizations.bulk.${pending}`) : '',
-            count: selected.length,
+            count: idsOf(pending).length,
             keyword: t('pages.confirm.keyword'),
           }
         )}
@@ -386,6 +391,7 @@ const BulkActions = ({ bulk, selected, onDone }) => {
 BulkActions.propTypes = {
   bulk: PropTypes.func.isRequired,
   selected: PropTypes.array.isRequired,
+  teams: PropTypes.array.isRequired,
   onDone: PropTypes.func.isRequired,
 };
 
@@ -400,22 +406,26 @@ BulkActions.propTypes = {
  * carries `bulk`, the table (the organization's logo, the row's `logo`
  * or `logo_url` else the Gravatar of its `email_hash` else the building
  * glyph, then the name with the uuid in its tooltip, then, each
- * while the rows carry it, Personal or Team, the suspended state, the
+ * while the rows carry it, Personal or Team, the Suspended or Active
+ * badge from the row's `suspended`, the
  * invite code, the customer id, the created time, and the members), Edit
  * opening the `OrganizationDialog` over the whole record prefilled from
- * the row and saving through `update`, Suspend or Resume per row while
- * the adapter carries `suspend` and `resume`, Delete behind the confirm
+ * the row and saving through `update`, Resume on a team whose `suspended`
+ * is true and Suspend on any other team while the adapter carries
+ * `suspend` and `resume`, the call inside the step-up window and its
+ * refusal drawn by its `code`, a personal organization offering neither,
+ * Delete behind the confirm
  * over `remove` for a team or an empty personal organization, a row the
  * identity provider manages (`managed`) badged so and drawing Suspend or
  * Resume alone, never Edit, Delete or the select column, the
  * service's refusal drawn as a card, and the heading's action pane
  * gaining, while rows are picked and the adapter carries `bulk`, "N
- * selected", Clear selection and the bulk actions, the delete stepped up
- * (identity contract decision 139).
+ * selected", Clear selection and the bulk actions, the delete stepped up.
  */
 const OrganizationsPage = ({ adapter }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
+  const guard = useGuard();
   const { data, loading, reload } = useAdminRead({ read: adapter.list, example: ORGANIZATIONS });
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -459,13 +469,23 @@ const OrganizationsPage = ({ adapter }) => {
   };
 
   const toggle = org => {
-    (org.suspended ? adapter.resume(org.id) : adapter.suspend(org.id))
+    guard(
+      () => (org.suspended ? adapter.resume(org.id) : adapter.suspend(org.id)),
+      t('admin.organizations.bulk.stepUpReason')
+    )
       .then(() => {
         notify('success', t('admin.organizations.saved'));
         reload();
       })
-      .catch(fail);
+      .catch(error => {
+        if (error?.code !== 'step_up_required') {
+          notify('danger', t(errorKeys(error)));
+        }
+      });
   };
+
+  const picked = [...selection.selected];
+  const teams = picked.filter(id => rows.some(row => row.id === id && !row.personal));
 
   if (loading && !data) {
     return <AdminLoading />;
@@ -482,7 +502,8 @@ const OrganizationsPage = ({ adapter }) => {
         </button>
         <BulkActions
           bulk={adapter.bulk}
-          selected={[...selection.selected]}
+          selected={picked}
+          teams={teams}
           onDone={() => {
             selection.clear();
             reload();

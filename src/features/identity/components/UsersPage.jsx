@@ -192,15 +192,16 @@ UsersFoot.propTypes = {
  * `userColumns`, the email cell an in-router link to the row's record page
  * at `/admin/users/<id>`, the
  * row actions and dialogs the record page shares from `UserActions`, each
- * drawn only while the adapter carries its call (Suspend or Enable over
- * `suspend` and `resume`, Roles, Set primary organization, Edit customer
+ * drawn only while the adapter carries its call (Suspend or Resume by the
+ * row's `suspended` over `suspend` and `resume`, no Suspend on the row of
+ * the `viewer`'s own account, Roles, Set primary organization, Edit customer
  * ID, Rate limits, Delete behind the confirm and the step-up over
  * `remove`), the heading's action pane gaining, while rows are picked and
  * the adapter carries `bulk`, "N selected", Clear selection and the bulk
  * actions, and the pager as the section's foot; every action re-fetches
  * the list.
  */
-const UsersPage = ({ adapter }) => {
+const UsersPage = ({ adapter, viewer = null }) => {
   const { t, i18n } = useTranslation();
   const catalog = useRoleCatalog(adapter.roles);
   const url = useUrlNarrowing({ queryKey: 'search', filterKeys: FILTER_KEYS });
@@ -292,7 +293,7 @@ const UsersPage = ({ adapter }) => {
           rows={search.rows}
           rowKey={row => row.id}
           RowActions={RowActions}
-          actionsProps={{ adapter, onAction }}
+          actionsProps={{ adapter, onAction, viewer }}
           rowProp="user"
           sort={search.sort}
           onSort={search.setSort}
@@ -319,6 +320,7 @@ const UsersPage = ({ adapter }) => {
 
 UsersPage.propTypes = {
   adapter: usersAdapterShape.isRequired,
+  viewer: PropTypes.shape({ email: PropTypes.string }),
 };
 
 export default UsersPage;

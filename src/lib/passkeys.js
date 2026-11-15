@@ -1,3 +1,4 @@
+import { ApiError } from './apiClient';
 import { client } from './runtime';
 
 const OPTIONS = { auth: 'optional', headers: { Accept: 'application/json' } };
@@ -150,6 +151,15 @@ export const passkeyVerify = assertion => client.post('/login/webauthn', asserti
  * @returns {boolean}
  */
 export const isAbort = error => error?.name === 'AbortError';
+
+/**
+ * The problem code a failed passkey sign-in or registration draws: the
+ * answer's own `code` when the server refused, `passkey` for a browser or
+ * ceremony failure.
+ * @param {Error} error - The rejection of `authenticate` or `register`
+ * @returns {string} The code
+ */
+export const passkeyCodeOf = error => (error instanceof ApiError && error.code) || 'passkey';
 
 /**
  * One passkey sign-in: fetch the request options, run the browser's `get()`

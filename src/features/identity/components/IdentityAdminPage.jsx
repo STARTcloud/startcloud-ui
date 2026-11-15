@@ -56,7 +56,7 @@ export const adminAdaptersShape = PropTypes.shape({
 const pageProps = (page, adapters, user) => {
   const adapter = ADAPTER_OF[page];
   const props = adapter ? { adapter: adapters[adapter] } : {};
-  return RECORD_PAGES[page] ? { ...props, viewer: user } : props;
+  return RECORD_PAGES[page] || page === 'users' ? { ...props, viewer: user } : props;
 };
 
 /**
@@ -75,7 +75,8 @@ const pageProps = (page, adapters, user) => {
  * home, `allowed` being the app's global-admin flag; `stepUp` arms the
  * step-up window the restart and the deletions need and `user` says
  * whether the account has a password for the dialog and, as `viewer` of
- * a record page, whose record is the admin's own.
+ * the Users list and of a record page, whose row or record is the
+ * admin's own.
  */
 const IdentityAdminPage = ({ session, returnTo, allowed, page, stepUp, adapters, user = null }) => {
   const open = useAdminGate({ session, returnTo, allowed });

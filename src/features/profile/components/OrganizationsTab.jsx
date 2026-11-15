@@ -12,7 +12,7 @@ import { useArrivalQuery } from '../../../hooks/useArrival';
 import { useClientFilters } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
-import { membershipOf } from '../../../utils/membership';
+import { isLive, membershipOf } from '../../../utils/membership';
 
 const ROLE_CLASSES = { owner: 'bg-danger', admin: 'bg-warning' };
 
@@ -85,7 +85,7 @@ MembershipLogo.propTypes = {
   organizations: PropTypes.arrayOf(organizationShape).isRequired,
 };
 
-const MembershipBadges = ({ org }) => {
+const MembershipBadges = ({ org, membership = null }) => {
   const { t } = useTranslation();
   return (
     <>
@@ -97,12 +97,19 @@ const MembershipBadges = ({ org }) => {
           {t(`roles.${org.role}`)}
         </span>
       ) : null}
+      {membership?.suspended ? (
+        <span className="badge bg-warning text-dark">{t('admin.organizations.suspended')}</span>
+      ) : null}
+      {membership?.membershipSuspended ? (
+        <span className="badge bg-warning text-dark">{t('organizations.membershipSuspended')}</span>
+      ) : null}
     </>
   );
 };
 
 MembershipBadges.propTypes = {
   org: PropTypes.shape({ is_primary: PropTypes.bool, role: PropTypes.string }).isRequired,
+  membership: organizationShape,
 };
 
 const MembershipSubline = ({ org }) => {
@@ -197,6 +204,9 @@ CancelButton.propTypes = {
 /**
  * The Organizations section of the profile page: the memberships with
  * their logo, badges, description, joined date, Make primary and Leave,
+ * a membership the session carries as suspended, its organization or the
+ * person's own seat, drawn with its name dimmed and its Suspended or
+ * "Your membership is suspended" badge,
  * and the pending join requests with Cancel, searched from the navbar,
  * the query first the one the page arrived with, the memberships narrowed
  * client-side by the Role and Primary `toggle` groups, Clear filters
@@ -298,6 +308,8 @@ const OrganizationsTab = ({ account, organizations: sessionOrganizations, onSave
         className="mb-4"
       >
         {filters.rows.map(org => {
+          const membership = membershipOf(sessionOrganizations, nameOf(org));
+          const dimmed = membership && !isLive(membership) ? 'opacity-50' : undefined;
           const actions = (
             <MembershipActions
               org={org}
@@ -311,8 +323,8 @@ const OrganizationsTab = ({ account, organizations: sessionOrganizations, onSave
             <MethodRow
               key={keyOf(org)}
               icon={<MembershipLogo org={org} organizations={sessionOrganizations} />}
-              label={nameOf(org)}
-              badges={<MembershipBadges org={org} />}
+              label={<span className={dimmed}>{nameOf(org)}</span>}
+              badges={<MembershipBadges org={org} membership={membership} />}
               subline={<MembershipSubline org={org} />}
               actions={actions}
             />

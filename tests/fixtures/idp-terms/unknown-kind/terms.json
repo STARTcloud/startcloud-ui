@@ -1,0 +1,37 @@
+{
+  "scope": "client",
+  "name": "hcl-mla",
+  "label": "HCL Master License Agreement",
+  "version": "1.1",
+  "locale": "",
+  "region": null,
+  "person_region": "US",
+  "regions_offered": [null],
+  "step": 1,
+  "total": 1,
+  "client_name": "Domino Integration",
+  "versions": [{ "version": "1.1", "published_at": "2026-11-14T06:00:00Z" }],
+  "fields_version": 1,
+  "anchor_key": "8f3k2qz1m7c4x9ab",
+  "collecting": true,
+  "content_html": "<p>This agreement binds @@field:8f3k2qz1m7c4x9ab:first_name@@ at level @@field:8f3k2qz1m7c4x9ab:level@@.</p>",
+  "content_middle_html": null,
+  "content_bottom_html": null,
+  "fields": [
+    {
+      "name": "first_name",
+      "kind": "text",
+      "group": "identity",
+      "autocomplete": "given-name",
+      "required": true,
+      "value": "Ada"
+    },
+    {
+      "name": "level",
+      "kind": "slider",
+      "group": "document",
+      "required": true,
+      "label": "Level"
+    }
+  ]
+}
