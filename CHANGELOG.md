@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.62.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.61.0...v0.62.0) (2026-11-15)
+
+
+### Features
+
+* identity provider asks one to eighteen ([304b5ae](https://github.com/STARTcloud/startcloud-ui/commit/304b5aeec37428b4ecaf8eb46555dd465584b8b7))
+
+
+### Bug Fixes
+
+* item nineteen of the identity provider, the email step's one send and next followed wherever it leads ([a285f2d](https://github.com/STARTcloud/startcloud-ui/commit/a285f2d29df03863387d7133d9281f805d5b46c0))
+* updating indentity compoentns ([533e02c](https://github.com/STARTcloud/startcloud-ui/commit/533e02cccac97116f44a08e361c76cabf6354785))
+
 ## [0.61.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.60.0...v0.61.0) (2026-11-10)
 
 
