@@ -1,0 +1,11 @@
+[
+  {
+    "id": 7,
+    "email": "ada@acme.example",
+    "expires": "2026-12-01T12:00:00Z",
+    "accepted": false,
+    "accepted_at": null,
+    "expired": false,
+    "token": "tok-7"
+  }
+]

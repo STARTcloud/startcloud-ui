@@ -610,6 +610,7 @@
         "irreversible": "Esta acción no se puede deshacer.",
         "destroys": "Tu organización personal, tus sesiones, tus llaves de acceso y tus aplicaciones conectadas se eliminan con tu cuenta. Los equipos que compartes con otros propietarios siguen funcionando sin ti. Los equipos de los que eres el único propietario deben transferirse o eliminarse primero.",
         "confirmEmail": "Escribe {{email}} para confirmar",
+        "confirmWord": "Escribe {{keyword}} para confirmar",
         "understand": "Entiendo que esto eliminará mi cuenta de forma permanente",
         "mismatch": "Escribe {{email}} exactamente para confirmar.",
         "tick": "Marca la casilla para confirmar que lo entiendes.",
@@ -1701,6 +1702,20 @@
       "resend": "Reenviar",
       "resent": "Invitación reenviada.",
       "throttled": "Espera {{seconds}}s antes de reenviar."
+    },
+    "stats": {
+      "total_one": "{{count}} en total",
+      "total_other": "{{count}} en total",
+      "active_one": "{{count}} activo",
+      "active_other": "{{count}} activos",
+      "admins_one": "{{count}} administrador",
+      "admins_other": "{{count}} administradores",
+      "pending_one": "{{count}} pendiente",
+      "pending_other": "{{count}} pendientes",
+      "accepted_one": "{{count}} aceptado",
+      "accepted_other": "{{count}} aceptados",
+      "expired_one": "{{count}} caducado",
+      "expired_other": "{{count}} caducados"
     },
     "website": "Sitio web",
     "logoUrl": "URL del logotipo",

@@ -2069,7 +2069,10 @@ URL once and replaces the location with `/ciba/approve` before the call,
 the way the magic-link and reset pages consume theirs, so the token is
 never left in history: `{ "client_name", "binding_message", "scopes": […], "authorization_details": […] }`,
 or a problem body with `code` one of `not_found`, `expired`,
-`wrong_user`, the page drawing the unavailable state from it.
+`wrong_user`, the page drawing the unavailable state from it. Each
+`authorization_details` item carries, beside `type`, `description` and
+the RFC 9396 members, every field its type registers by the field's own
+name, `{ "type": "pam_sign_in", "description": "Sign in to a machine", "user": "prominic", "host": "host-1162.example", "remote_host": "203.0.113.7", "service": "sshd" }`.
 
 `GET /api/auth/logout/confirm`: `{ "client_name", "logout_text" }` from
 the parameters the logout success handler parked in the session; `404`
@@ -2140,12 +2143,17 @@ false never reaches this page at all.
   this window and return to your device." stand for a browser that
   refuses the close.
 - **CibaApprovePage**: "Sign-in request", "{{client}} is asking to sign
-  you in on another device.", the binding message as "Make sure this
-  matches the code on your other device: {{message}}", since it is
-  compared and never typed, the scope and detail rows, Approve and Deny;
-  after the answer the page draws "Sign-in approved" or "Sign-in denied"
-  in place, and the problem `code` draws "Sign-in request unavailable"
-  with the reason.
+  you in on another device.", the lead line "Approve only if you started
+  this", then the request's facts: every field of each authorization
+  detail beyond `type`, `description` and the RFC 9396 members drawn as
+  one labelled line, the label from `consent.detail.field.<name>` and the
+  field's own name where no key exists, with no branch for any one type,
+  the details the centre of the page and the scope list not drawn while
+  the request carries any, and `binding_message` in the same block above
+  the scope rows while it carries none, since a fact is read and never
+  typed; Approve and Deny; after the answer the page draws "Sign-in
+  approved" or "Sign-in denied" in place, and the problem `code` draws
+  "Sign-in request unavailable" with the reason.
 - **LogoutConfirmPage**: "Sign out?", "You are about to sign out of
   {{client}} and of every app that uses this sign-in.", because
   confirming ends the SSO session and not one app's, the client's
@@ -2204,9 +2212,11 @@ false never reaches this page at all.
 `scope.openid`, `scope.profile`, `scope.email`, `scope.organizations`,
 `scope.offline_access`, `scope.unknown` and one key per standard scope
 the issuer offers, `detail.locations`, `detail.actions`,
-`detail.datatypes`, `detail.identifier`, `detail.privileges`); `device.*` (`title`, `subhead`, `code`, `continue`,
+`detail.datatypes`, `detail.identifier`, `detail.privileges`,
+`detail.field.<name>` one per registered field of a detail type, `user`,
+`host`, `remote_host` and `service` among them); `device.*` (`title`, `subhead`, `code`, `continue`,
 `connected`, `close`, `mismatch`); `ciba.*` (`title`, `subhead`,
-`match`, `approved`, `denied`, `unavailable`, `reason.not_found`,
+`started`, `approved`, `denied`, `unavailable`, `reason.not_found`,
 `reason.expired`, `reason.wrong_user`); `logout.*` (`title`, `subhead`,
 `default`, `confirm`, `cancel`, `signingOut`, `notifying`, `continue`,
 `stay`); `code.*` (`title`, `subhead`, `copy`, `close`, `failed`,

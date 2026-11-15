@@ -605,18 +605,142 @@ JoinRequestActions.propTypes = {
   onDeny: PropTypes.func.isRequired,
 };
 
-const InvitationActions = ({ invitation, onDelete }) => {
+const InvitationActions = ({ invitation, onDelete, onResend = null }) => {
   const { t } = useTranslation();
   return (
-    <button type="button" className="btn btn-danger btn-sm" onClick={() => onDelete(invitation)}>
-      {t('orgConsole.buttons.delete')}
-    </button>
+    <div className="btn-group" role="group">
+      {onResend ? (
+        <button
+          type="button"
+          className="btn btn-outline-secondary btn-sm"
+          onClick={() => onResend(invitation)}
+          data-action="invitation-resend"
+        >
+          {t('orgConsole.invitation.resend')}
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className="btn btn-danger btn-sm"
+        onClick={() => onDelete(invitation)}
+        data-action="invitation-delete"
+      >
+        {t('orgConsole.buttons.delete')}
+      </button>
+    </div>
   );
 };
 
 InvitationActions.propTypes = {
   invitation: PropTypes.object.isRequired,
   onDelete: PropTypes.func.isRequired,
+  onResend: PropTypes.func,
+};
+
+const MEMBER_STATS = [
+  ['total_users', 'total'],
+  ['active_users', 'active'],
+  ['admin_users', 'admins'],
+];
+const INVITATION_STATS = [
+  ['total', 'total'],
+  ['pending', 'pending'],
+  ['accepted', 'accepted'],
+  ['expired', 'expired'],
+];
+
+const countsOf = (source, names) =>
+  names
+    .filter(([member]) => Number.isFinite(source?.[member]))
+    .map(([member, key]) => [key, source[member]]);
+
+/**
+ * The badges the console draws from `GET /api/organization/{name}/stats`:
+ * the members heading's total, active and admins, and the invitations
+ * heading's total, pending, accepted and expired, each `[key, count]` in
+ * the drawn order, a member the answer lacks left out; null while the
+ * answer is none.
+ *
+ * @param {Object|null} stats - The counts answer
+ * @returns {{ members: Array<[string, number]>, invitations: Array<[string, number]> }|null} The rows
+ */
+export const statRowsOf = stats => {
+  if (!stats || typeof stats !== 'object') {
+    return null;
+  }
+  return {
+    members: countsOf(stats, MEMBER_STATS),
+    invitations: countsOf(stats.invitations, INVITATION_STATS),
+  };
+};
+
+const NO_STATS = { members: [], invitations: [] };
+
+const useOrganizationStats = (organizations, org) => {
+  const [stats, setStats] = useState(NO_STATS);
+  const read = organizations.stats || null;
+  useEffect(() => {
+    if (!org || !read) {
+      return undefined;
+    }
+    let active = true;
+    read(org)
+      .then(answer => {
+        if (active) {
+          setStats(statRowsOf(answer) || NO_STATS);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setStats(NO_STATS);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [org, read]);
+  return stats;
+};
+
+const useResendInvitation = ({ organizations, org, onChanged }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  if (!organizations.resendInvitation) {
+    return null;
+  }
+  return async invitation => {
+    try {
+      await organizations.resendInvitation(invitation.id);
+      notify('success', t('orgConsole.invitation.resent'));
+      onChanged(await organizations.invitations(org));
+    } catch (error) {
+      log.component.error('Error resending invitation', {
+        invitationId: invitation.id,
+        error: error.message,
+      });
+      notify('danger', t(error.messageKey || 'errors.request'));
+    }
+  };
+};
+
+const StatBadges = ({ rows }) => {
+  const { t } = useTranslation();
+  if (rows.length === 0) {
+    return null;
+  }
+  return (
+    <span className="d-flex align-items-center flex-wrap gap-1">
+      {rows.map(([key, count]) => (
+        <span key={key} className="badge bg-secondary" data-stat={key} data-count={count}>
+          {t(`orgConsole.stats.${key}`, { count })}
+        </span>
+      ))}
+    </span>
+  );
+};
+
+StatBadges.propTypes = {
+  rows: PropTypes.arrayOf(PropTypes.array).isRequired,
 };
 
 const boundQueryShape = PropTypes.shape({
@@ -687,9 +811,10 @@ JoinRequestsTab.propTypes = {
  * `bound`, the sort, the hidden columns and the widths under
  * `table_prefs_org_console_invitations` through `useDetailSearch`, the
  * link cell drawing the invitation link, the provider link or the
- * managed-by-provider note, and Delete on every row.
+ * managed-by-provider note, Delete on every row and Resend before it
+ * while `onResend` is given.
  */
-const InvitationsTable = ({ invitations, bound, orgIdpLink, onDelete }) => {
+const InvitationsTable = ({ invitations, bound, orgIdpLink, onDelete, onResend = null }) => {
   const { t } = useTranslation();
   const ctx = { t, orgIdpLink };
   const search = useDetailSearch({
@@ -709,7 +834,7 @@ const InvitationsTable = ({ invitations, bound, orgIdpLink, onDelete }) => {
       rows={search.rows}
       rowKey={invitation => invitation.id}
       RowActions={InvitationActions}
-      actionsProps={{ onDelete }}
+      actionsProps={{ onDelete, onResend }}
       rowProp="invitation"
       sort={search.sort}
       onSort={search.setSort}
@@ -727,6 +852,7 @@ InvitationsTable.propTypes = {
   bound: boundQueryShape.isRequired,
   orgIdpLink: PropTypes.string,
   onDelete: PropTypes.func.isRequired,
+  onResend: PropTypes.func,
 };
 
 /**
@@ -754,7 +880,14 @@ InvitationsTable.propTypes = {
  * for new machines, `base_domain` on the one `PUT /api/organization/{name}`
  * with the name, the email and the description, `null` while blank, the
  * `organization` row of the create wizard's domain chain, the IdP-managed
- * profile drawing it as a row; `admin` is the app's global-admin flag,
+ * profile drawing it as a row; while the adapter carries `resendInvitation`
+ * every invitation row carries Resend, one `POST /api/invitations/{id}/resend`
+ * with no body, a success notice and the invitations read again; while it
+ * carries `stats` the members heading carries the total, active and admin
+ * counts and the invitations heading the total, pending, accepted and
+ * expired counts of `GET /api/organization/{name}/stats` as badges, read
+ * once with the record and drawn while the read answers, nothing while it
+ * refuses; `admin` is the app's global-admin flag,
  * and a rename makes the new name the active organization under
  * `activeOrgKey` and refreshes the session.
  */
@@ -791,6 +924,12 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
   const folds = useFolds(PREFS_KEY);
   const memberArrival = useArrival(users);
   const requestArrival = useArrival(joinRequests);
+  const stats = useOrganizationStats(organizations, org);
+  const resendInvitation = useResendInvitation({
+    organizations,
+    org,
+    onChanged: setActiveInvitations,
+  });
   const current = session.restore();
   const currentUser = current ? current.user : null;
   const canManageRoles = isOwner(membershipsOf(current), org, admin);
@@ -1299,6 +1438,7 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
                     organization: org,
                   })}
                   count={users.length}
+                  badge={<StatBadges rows={stats.members} />}
                 />
                 <TabSearch
                   query={searchTerm}
@@ -1409,12 +1549,14 @@ const BackendOrgConsole = ({ session, activeOrgKey, organizations, org, admin, t
               <SectionHeading
                 title={t('orgConsole.invitation.activeTitle')}
                 count={activeInvitations.length}
+                badge={<StatBadges rows={stats.invitations} />}
               />
               <InvitationsTable
                 invitations={activeInvitations}
                 bound={boundOf('orgConsole.search.invitations')}
                 orgIdpLink={orgIdpLink}
                 onDelete={handleDeleteClick}
+                onResend={resendInvitation}
               />
             </>
           )}

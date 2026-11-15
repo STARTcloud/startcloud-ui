@@ -25,7 +25,11 @@ import { isReadOnly } from './components/ManageLink';
  * `password`, `email`, `deletion`, `verification` (the emailed
  * verification link's consume and its resend), `organizations`,
  * `serviceAccounts` and, for a local account, `preferences` (language,
- * mode, theme and motion written through the session).
+ * mode, theme and motion written through the session); a host whose
+ * deletion asks the password and a typed word carries `deletionKeyword`,
+ * the word, and the `hyperweaver-server` role carries `deploy`
+ * (`{ read, save }`), the person's deploy target drawn in the
+ * Preferences section.
  */
 export const accountShape = PropTypes.shape({
   profile: PropTypes.func.isRequired,
@@ -51,6 +55,8 @@ export const accountShape = PropTypes.shape({
   preferences: PropTypes.func,
   integrations: integrationsShape,
   deletion: PropTypes.func,
+  deletionKeyword: PropTypes.string,
+  deploy: PropTypes.shape({ read: PropTypes.func.isRequired, save: PropTypes.func.isRequired }),
   organizations: PropTypes.shape({
     list: PropTypes.func.isRequired,
     leave: PropTypes.func.isRequired,

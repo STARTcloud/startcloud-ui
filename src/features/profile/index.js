@@ -46,7 +46,9 @@ export {
   cancelRequest,
   changeEmail,
   changeName,
+  changeOwnPassword,
   changePassword,
+  deleteOwnAccount,
   leaveOrganization,
   myRequests,
   patchProfile,
@@ -58,5 +60,6 @@ export {
 } from './api/profile';
 export { PROFILE_ROUTE_SECTIONS, accountShape, sectionsFor } from './sections';
 export { searchKinds, sidebar } from './sidebar';
+export { passwordBodyOf, passwordRefusalOf } from './utils/serverAccount';
 
 export const ProfilePage = lazy(() => import('./components/ProfilePage'));

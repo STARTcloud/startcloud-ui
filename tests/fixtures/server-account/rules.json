@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {},
+  "forms": {
+    "deploy": {
+      "type": "object",
+      "properties": {
+        "deploy_target": { "type": "string" }
+      }
+    }
+  }
+}

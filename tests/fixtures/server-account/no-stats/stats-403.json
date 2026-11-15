@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/forbidden",
+  "title": "Only an owner or an admin may read the counts.",
+  "status": 403,
+  "code": "insufficient_role"
+}

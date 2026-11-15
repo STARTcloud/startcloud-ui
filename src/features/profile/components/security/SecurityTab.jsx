@@ -25,8 +25,11 @@ const passwordMinLength = () =>
  * while the `account` adapter carries its calls (`password`, `email`,
  * `tfa`, `passkeys`, `linked`, `backupCodes`, `deletion`), each a
  * `SectionCard` whose fold is kept under `table_prefs_profile_security`,
- * each over the adapter and the step-up guard; `focusEmail` scrolls the
- * email card into view when the Profile section's Change link opened it;
+ * each over the adapter and the step-up guard, the delete-account card
+ * asking the password and the adapter's `deletionKeyword` while the
+ * adapter carries one and the email confirmation otherwise; `focusEmail`
+ * scrolls the email card into view when the Profile section's Change
+ * link opened it;
  * a `readOnly` adapter carries no security call, so the section is not
  * drawn and the Manage at identity provider link of the Profile section
  * is the way to the provider's own.
@@ -95,6 +98,7 @@ const SecurityTab = ({ account, profile, guard, focusEmail, onSaved, onDeleted }
         <DeleteAccountSection
           account={account}
           email={profile.email || ''}
+          keyword={account.deletionKeyword || ''}
           guard={guard}
           onDeleted={onDeleted}
           folds={folds}

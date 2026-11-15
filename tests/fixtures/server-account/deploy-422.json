@@ -1,0 +1,13 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/deploy_target",
+      "rule": "enum",
+      "params": { "enum": ["local", "http://127.0.0.1:4173"] },
+      "detail": "deploy_target must be local or this server's origin"
+    }
+  ]
+}

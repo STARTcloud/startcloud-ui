@@ -19,3 +19,13 @@ export const activeInvitations = organization =>
 
 export const removeInvitation = invitationId =>
   client.delete(encodePath('api', 'invitations', invitationId));
+
+/**
+ * An invitation sent again, `POST /api/invitations/{id}/resend` with no
+ * body, the host's own expiry standing.
+ *
+ * @param {number|string} invitationId - The invitation's id
+ * @returns {Promise<Object>} The answer
+ */
+export const resendInvitation = invitationId =>
+  client.post(`${encodePath('api', 'invitations', invitationId)}/resend`, {});

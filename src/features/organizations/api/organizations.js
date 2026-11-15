@@ -41,3 +41,15 @@ export const approveRequest = (organization, requestId, assignedRole = 'member')
 
 export const denyRequest = (organization, requestId) =>
   client.post(`${org(organization)}${encodePath('requests', requestId)}/deny`, {});
+
+/**
+ * The counts of an organization, `GET /api/organization/{name}/stats`,
+ * `{ total_users, active_users, admin_users, invitations: { total, pending, accepted, expired } }`;
+ * a `403` or a `404` is an answer the console draws nothing for and is
+ * not logged.
+ *
+ * @param {string} organization - The organization's name
+ * @returns {Promise<Object>} The counts
+ */
+export const organizationStats = organization =>
+  client.get(`${org(organization)}/stats`, { expected: [403, 404] });

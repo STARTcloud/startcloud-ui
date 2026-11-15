@@ -23,6 +23,7 @@ export {
   denyRequest,
   discoverOrganizations,
   organizationRequests,
+  organizationStats,
   organizationUsers,
   organizationsWithUsers,
   removeMember,

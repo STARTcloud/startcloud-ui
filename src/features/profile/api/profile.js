@@ -15,6 +15,25 @@ export const verifyMail = token =>
 export const changePassword = (userId, password) =>
   client.put(`${user(userId)}/change-password`, { password });
 
+/**
+ * The caller's own password changed on a host that answers
+ * `POST /api/auth/change-password`.
+ *
+ * @param {{ current_password: string, new_password: string, confirm_password: string }} body - The wire body
+ * @returns {Promise<Object>} The answer
+ */
+export const changeOwnPassword = body => client.post('/api/auth/change-password', body);
+
+/**
+ * The caller's own account deleted on a host that answers
+ * `DELETE /api/auth/delete-account`, the body on the DELETE as the host
+ * takes it.
+ *
+ * @param {{ password: string, confirm_text: string }} body - The password and the typed word
+ * @returns {Promise<Object>} The answer, `next` where the host names where to go
+ */
+export const deleteOwnAccount = body => client.delete('/api/auth/delete-account', { body });
+
 export const changeEmail = (userId, newEmail) =>
   client.put(`${user(userId)}/change-email`, { new_email: newEmail });
 

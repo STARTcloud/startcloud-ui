@@ -1,0 +1,6 @@
+{
+  "total_users": 12,
+  "active_users": 10,
+  "admin_users": 3,
+  "invitations": { "total": 4, "pending": 2, "accepted": 1, "expired": 1 }
+}

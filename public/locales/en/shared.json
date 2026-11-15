@@ -610,6 +610,7 @@
         "irreversible": "This action cannot be undone.",
         "destroys": "Your personal organization, your sessions, your passkeys and your connected applications are deleted with your account. Teams you co-own keep running without you. Teams only you own must be transferred or deleted first.",
         "confirmEmail": "Type {{email}} to confirm",
+        "confirmWord": "Type {{keyword}} to confirm",
         "understand": "I understand this will permanently delete my account",
         "mismatch": "Type {{email}} exactly to confirm.",
         "tick": "Tick the box to confirm you understand.",
@@ -1701,6 +1702,20 @@
       "resend": "Resend",
       "resent": "Invitation sent again.",
       "throttled": "Wait {{seconds}}s before resending."
+    },
+    "stats": {
+      "total_one": "{{count}} total",
+      "total_other": "{{count}} total",
+      "active_one": "{{count}} active",
+      "active_other": "{{count}} active",
+      "admins_one": "{{count}} admin",
+      "admins_other": "{{count}} admins",
+      "pending_one": "{{count}} pending",
+      "pending_other": "{{count}} pending",
+      "accepted_one": "{{count}} accepted",
+      "accepted_other": "{{count}} accepted",
+      "expired_one": "{{count}} expired",
+      "expired_other": "{{count}} expired"
     },
     "website": "Website",
     "logoUrl": "Logo URL",

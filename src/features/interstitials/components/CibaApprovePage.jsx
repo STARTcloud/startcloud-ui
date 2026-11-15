@@ -1,9 +1,13 @@
+import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import AuthShell, { AuthAlert, AuthSpinner } from '../../../components/common/AuthShell';
-import ScopeList, { DetailRow } from '../../../components/common/ScopeList';
+import ScopeList, {
+  DetailRow,
+  authorizationDetailShape,
+} from '../../../components/common/ScopeList';
 import { useProblemReporter } from '../../../hooks/useProblemReporter';
 import { ciba as fetchCiba, cibaApprove, cibaDeny } from '../api/interstitials';
 
@@ -24,11 +28,57 @@ const scopeRows = (scopes, t) =>
   });
 
 /**
+ * The facts of a sign-in request under the lead line "Approve only if you
+ * started this": its authorization details as large rows with the scope
+ * list folded away, or, while it carries none, its binding message in the
+ * same large block above the scope rows.
+ */
+const CibaRequest = ({ answer }) => {
+  const { t } = useTranslation(['auth']);
+  const details = answer.authorization_details || [];
+  if (details.length > 0) {
+    return (
+      <>
+        <p className="auth-group">{t('ciba.started')}</p>
+        <div className="scope-list">
+          {details.map(detail => (
+            <DetailRow key={`${detail.type}-${detail.identifier || ''}`} detail={detail} large />
+          ))}
+        </div>
+      </>
+    );
+  }
+  return (
+    <>
+      {answer.binding_message ? (
+        <>
+          <p className="auth-group">{t('ciba.started')}</p>
+          <div className="scope-row scope-row-large">
+            <span>
+              <span className="scope-row-value">{answer.binding_message}</span>
+            </span>
+          </div>
+        </>
+      ) : null}
+      <p className="auth-group">{t('consent.willBeAbleTo')}</p>
+      <ScopeList scopes={scopeRows(answer.scopes, t)} checked={[]} readOnly />
+    </>
+  );
+};
+
+CibaRequest.propTypes = {
+  answer: PropTypes.shape({
+    binding_message: PropTypes.string,
+    scopes: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.object])),
+    authorization_details: PropTypes.arrayOf(authorizationDetailShape),
+  }).isRequired,
+};
+
+/**
  * `/ciba/approve`: reads the token from the URL once and sends it in the
- * `X-Ciba-Token` header, draws the client, the binding message to compare,
- * the scope and detail rows, Approve and Deny, then "Sign-in approved" or
- * "Sign-in denied" in place; a problem `code` draws the unavailable state
- * with its reason.
+ * `X-Ciba-Token` header, draws the client, the request's facts, Approve and
+ * Deny, then "Sign-in approved" or "Sign-in denied" in place; a problem
+ * `code` draws the unavailable state with its reason.
  */
 const CibaApprovePage = () => {
   const { t } = useTranslation(['auth', 'shared']);
@@ -101,23 +151,7 @@ const CibaApprovePage = () => {
       {!answer ? <AuthSpinner label={t('shared:loading')} /> : null}
       {answer ? (
         <>
-          {answer.binding_message ? (
-            <AuthAlert tone="info">
-              {t('ciba.match', { message: answer.binding_message })}
-            </AuthAlert>
-          ) : null}
-          <p className="auth-group">{t('consent.willBeAbleTo')}</p>
-          <ScopeList scopes={scopeRows(answer.scopes, t)} checked={[]} readOnly />
-          {answer.authorization_details?.length > 0 ? (
-            <>
-              <p className="auth-group">{t('consent.specificAccess')}</p>
-              <div className="scope-list">
-                {answer.authorization_details.map(detail => (
-                  <DetailRow key={`${detail.type}-${detail.identifier || ''}`} detail={detail} />
-                ))}
-              </div>
-            </>
-          ) : null}
+          <CibaRequest answer={answer} />
           <button
             type="button"
             className={`auth-btn auth-btn-primary auth-btn-block${busy ? ' is-loading' : ''}`}

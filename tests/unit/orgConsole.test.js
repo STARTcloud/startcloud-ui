@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { organizationUpdateOf } from '../../src/features/organizations/components/OrgConsolePage.jsx';
+import {
+  organizationUpdateOf,
+  statRowsOf,
+} from '../../src/features/organizations/components/OrgConsolePage.jsx';
 
 const FORM = {
   organization: 'acme',
@@ -25,5 +28,36 @@ describe('organizationUpdateOf', () => {
       email: 'team@acme.example',
       description: 'The Acme team',
     });
+  });
+});
+
+describe('statRowsOf', () => {
+  it('answers the members and invitations rows in the drawn order', () => {
+    expect(
+      statRowsOf({
+        total_users: 12,
+        active_users: 10,
+        admin_users: 3,
+        invitations: { total: 4, pending: 2, accepted: 1, expired: 1 },
+      })
+    ).toEqual({
+      members: [
+        ['total', 12],
+        ['active', 10],
+        ['admins', 3],
+      ],
+      invitations: [
+        ['total', 4],
+        ['pending', 2],
+        ['accepted', 1],
+        ['expired', 1],
+      ],
+    });
+  });
+
+  it('leaves a member the answer lacks out and answers null for no answer', () => {
+    expect(statRowsOf({ total_users: 2 })).toEqual({ members: [['total', 2]], invitations: [] });
+    expect(statRowsOf(null)).toBeNull();
+    expect(statRowsOf(undefined)).toBeNull();
   });
 });

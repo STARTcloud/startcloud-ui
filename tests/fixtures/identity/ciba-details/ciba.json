@@ -1,0 +1,17 @@
+{
+  "client_name": "monitor SSH",
+  "binding_message": "WDJB-MJHT",
+  "scopes": [
+    { "id": "openid", "label": "openid", "description": "Authenticate your identity" }
+  ],
+  "authorization_details": [
+    {
+      "type": "pam_sign_in",
+      "description": "Sign in to a machine",
+      "user": "prominic",
+      "host": "host-1162.example",
+      "remote_host": "203.0.113.7",
+      "service": "sshd"
+    }
+  ]
+}

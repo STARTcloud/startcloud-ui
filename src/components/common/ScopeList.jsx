@@ -63,20 +63,41 @@ ScopeRow.propTypes = {
 };
 
 const DETAIL_LISTS = ['locations', 'actions', 'datatypes', 'privileges'];
+const DETAIL_MEMBERS = new Set(['type', 'description', 'identifier', ...DETAIL_LISTS]);
+
+const fieldText = value => {
+  if (Array.isArray(value)) {
+    return value.map(fieldText).join(', ');
+  }
+  return typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
+};
+
+const detailFields = detail => Object.entries(detail).filter(([name]) => !DETAIL_MEMBERS.has(name));
 
 /**
  * One authorization-details row: the description as the label with the
- * machine `type` in a tooltip, and the locations, actions, data types,
- * identifier and privileges each only when present.
+ * machine `type` in a tooltip, every other member the detail carries as
+ * one labelled line, its label from `consent.detail.field.<name>` or the
+ * member's own name, and the locations, actions, data types, identifier
+ * and privileges each only when present; `large` draws the row as the
+ * centre of a page, the values large and the labels muted.
  */
-export const DetailRow = ({ detail }) => {
+export const DetailRow = ({ detail, large = false }) => {
   const { t } = useTranslation(['auth']);
   return (
-    <div className="scope-row">
+    <div className={large ? 'scope-row scope-row-large' : 'scope-row'}>
       <span>
         <span className="scope-row-label" title={detail.type}>
           {detail.description || detail.type}
         </span>
+        {detailFields(detail).map(([name, value]) => (
+          <span key={name} className="scope-row-field">
+            <span className="scope-row-field-label">
+              {t([`consent.detail.field.${name}`], { defaultValue: name })}
+            </span>
+            <span className="scope-row-value">{fieldText(value)}</span>
+          </span>
+        ))}
         {DETAIL_LISTS.filter(key => detail[key]?.length > 0).map(key => (
           <span key={key} className="scope-row-help">
             {t(`consent.detail.${key}`, { value: detail[key].join(', ') })}
@@ -94,6 +115,7 @@ export const DetailRow = ({ detail }) => {
 
 DetailRow.propTypes = {
   detail: authorizationDetailShape.isRequired,
+  large: PropTypes.bool,
 };
 
 /**

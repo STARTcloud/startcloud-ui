@@ -10,6 +10,7 @@ export {
   isServerRole,
 } from './api/agents';
 export { actionMenu } from './actionMenu';
+export { fetchDeployTarget, saveDeployTarget } from './api/preferences';
 export { apiReference } from './apiReference';
 export { default as ServersProvider } from './components/ServersProvider';
 export { default as HostsPreferencesCard } from './components/HostsPreferencesCard';

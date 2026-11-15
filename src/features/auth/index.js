@@ -7,6 +7,7 @@ export {
   consumeInvite,
   invite,
   removeInvitation,
+  resendInvitation,
   validateInvitation,
 } from './api/invitations';
 export { methods } from './api/methods';

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ConfirmModal from '../../../components/common/ConfirmModal';
@@ -42,6 +42,14 @@ const LABELS = {
   ciba_channel: 'profile.preferences.channel.label',
   ciba_user_code: 'profile.preferences.pin',
 };
+const LOCAL_TARGET = 'local';
+const DEPLOY_TARGET = 'deploy_target';
+const DEPLOY_SCHEMA = { properties: { [DEPLOY_TARGET]: { type: 'string' } } };
+const DEPLOY_LABELS = { [DEPLOY_TARGET]: 'integrations.hyperweaver.deployTarget' };
+const deployShape = PropTypes.shape({
+  read: PropTypes.func.isRequired,
+  save: PropTypes.func.isRequired,
+});
 const NOTICE_WHENS = ['off', 'new', 'all'];
 const NOTICE_CHANNELS = ['email', 'inbox', 'push'];
 const NOTICES = 'sign_in_notices';
@@ -377,7 +385,140 @@ MotionSelect.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
+const ThemeSelect = ({ own, theme, themes, recordTheme, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <SelectField
+      id="profile-preferences-theme"
+      label={t('profile.preferences.theme.label')}
+      hint={own ? t('profile.preferences.themeHint') : ''}
+      value={own ? theme : recordTheme}
+      onChange={event => onChange(event.target.value)}
+    >
+      <option value="">{t('profile.preferences.theme.follow')}</option>
+      {themes.map(entry => (
+        <option key={entry.name} value={entry.name}>
+          {entry.label}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+ThemeSelect.propTypes = {
+  own: PropTypes.bool.isRequired,
+  theme: PropTypes.string.isRequired,
+  themes: PropTypes.arrayOf(
+    PropTypes.shape({ name: PropTypes.string.isRequired, label: PropTypes.string.isRequired })
+  ).isRequired,
+  recordTheme: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
 const themeName = (themes, name) => themes.find(theme => theme.name === name)?.label || name;
+
+/**
+ * The deploy target a `GET /api/user/deploy` answer carries, `local`
+ * while it carries none.
+ *
+ * @param {Object|null|undefined} answer - The answer, `{ deploy_target }`
+ * @returns {string} `local` or the origin
+ */
+export const deployChoiceOf = answer =>
+  typeof answer?.deploy_target === 'string' && answer.deploy_target
+    ? answer.deploy_target
+    : LOCAL_TARGET;
+
+/**
+ * The values the deploy target select offers: `local`, the server's own
+ * origin and, while the stored target is neither, that target too, so a
+ * value the page cannot name is still the one shown.
+ *
+ * @param {string} target - The stored target
+ * @param {string} origin - This server's origin
+ * @returns {string[]} The values in the order drawn
+ */
+export const deployChoicesOf = (target, origin) => [
+  LOCAL_TARGET,
+  origin,
+  ...(target === LOCAL_TARGET || target === origin ? [] : [target]),
+];
+
+const useDeployRow = deploy => {
+  const [target, setTarget] = useState(null);
+  useEffect(() => {
+    let active = true;
+    deploy
+      .read()
+      .then(answer => {
+        if (active) {
+          setTarget(deployChoiceOf(answer));
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setTarget('');
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [deploy]);
+  return [target, setTarget];
+};
+
+const DeployTargetSelect = ({ deploy }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [target, setTarget] = useDeployRow(deploy);
+  const values = useMemo(() => ({ [DEPLOY_TARGET]: target || LOCAL_TARGET }), [target]);
+  const rules = useFormRules({
+    formKey: 'deploy',
+    schema: DEPLOY_SCHEMA,
+    values,
+    labels: DEPLOY_LABELS,
+    idPrefix: 'profile-preferences',
+  });
+  const latest = useRef(rules);
+  useLayoutEffect(() => {
+    latest.current = rules;
+  });
+  if (!target) {
+    return null;
+  }
+  const change = async value => {
+    setTarget(value);
+    try {
+      await deploy.save({ [DEPLOY_TARGET]: value });
+      latest.current.reset();
+    } catch (error) {
+      if (!latest.current.applyServerErrors(error)) {
+        notify('danger', t(errorKeys(error)));
+      }
+    }
+  };
+  return (
+    <SelectField
+      id={rules.idFor(DEPLOY_TARGET)}
+      label={t(DEPLOY_LABELS[DEPLOY_TARGET])}
+      hint={t('integrations.hyperweaver.deployTargetHint')}
+      error={rules.errors[DEPLOY_TARGET] || ''}
+      value={target}
+      onChange={event => change(event.target.value)}
+      onBlur={() => rules.onBlur(DEPLOY_TARGET)}
+    >
+      {deployChoicesOf(target, window.location.origin).map(choice => (
+        <option key={choice} value={choice}>
+          {choice === LOCAL_TARGET ? t('integrations.hyperweaver.local') : choice}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+DeployTargetSelect.propTypes = {
+  deploy: deployShape.isRequired,
+};
 
 const ReadOnlyPreferences = ({ account, profile, folds, after = null }) => {
   const { t, i18n } = useTranslation();
@@ -425,6 +566,11 @@ const ReadOnlyPreferences = ({ account, profile, folds, after = null }) => {
               <ReadOnlyField id={`profile-preferences-${key}`} label={label} value={value} />
             </div>
           ))}
+          {account.deploy ? (
+            <div className="col-md-3">
+              <DeployTargetSelect deploy={account.deploy} />
+            </div>
+          ) : null}
         </div>
       </SectionCard>
       {after}
@@ -433,7 +579,7 @@ const ReadOnlyPreferences = ({ account, profile, folds, after = null }) => {
 };
 
 ReadOnlyPreferences.propTypes = {
-  account: PropTypes.object.isRequired,
+  account: PropTypes.shape({ deploy: deployShape }).isRequired,
   profile: PropTypes.shape({ preferences: PropTypes.object }).isRequired,
   folds: PropTypes.shape({
     folded: PropTypes.func.isRequired,
@@ -642,25 +788,23 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
                 onChange={changeMotion}
               />
             </div>
+            {account.deploy ? (
+              <div className="col-md-3">
+                <DeployTargetSelect deploy={account.deploy} />
+              </div>
+            ) : null}
           </div>
           {themes.length > 0 || zoneField || regionField ? (
             <div className="row">
               {themes.length > 0 ? (
                 <div className="col-md-3">
-                  <SelectField
-                    id="profile-preferences-theme"
-                    label={t('profile.preferences.theme.label')}
-                    hint={own ? t('profile.preferences.themeHint') : ''}
-                    value={own ? theme : settings.theme}
-                    onChange={event => changeTheme(event.target.value)}
-                  >
-                    <option value="">{t('profile.preferences.theme.follow')}</option>
-                    {themes.map(entry => (
-                      <option key={entry.name} value={entry.name}>
-                        {entry.label}
-                      </option>
-                    ))}
-                  </SelectField>
+                  <ThemeSelect
+                    own={own}
+                    theme={theme}
+                    themes={themes}
+                    recordTheme={settings.theme}
+                    onChange={changeTheme}
+                  />
                 </div>
               ) : null}
               {zoneField ? (
@@ -723,7 +867,8 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
 };
 
 EditablePreferences.propTypes = {
-  account: PropTypes.shape({ preferences: PropTypes.func.isRequired }).isRequired,
+  account: PropTypes.shape({ preferences: PropTypes.func.isRequired, deploy: deployShape })
+    .isRequired,
   profile: PropTypes.shape({
     preferences: PropTypes.object,
     mobile_number: PropTypes.shape({ verified: PropTypes.bool }),
@@ -984,12 +1129,21 @@ SignInNoticesCard.propTypes = {
  * for writes nowhere: the identity provider's record carries every one,
  * an `apikey` host's record the time zone alone and a `backend` host's
  * local account none, its section the language, mode, theme and motion
- * alone. While `readOnly`, the record an
+ * alone. While the adapter carries `deploy`, the `hyperweaver-server`
+ * role's own row for every session, the deploy target draws beside them
+ * on the first row, read once from `GET /api/user/deploy`, a select of
+ * `local`, this server's origin and the stored value while it is neither,
+ * written through on change as `PATCH /api/user/deploy` under the host's
+ * `deploy` rules form, a `422` at `/deploy_target` painted on the field
+ * and any other refusal a danger notice, nothing drawn while the read
+ * fails. While `readOnly`, the record an
  * identity provider owns, the language, mode, motion and theme, and the
  * time zone and region while the record carries them, draw as `readonly`
  * fields in the same card with the Manage
  * at identity provider link as its action, the approval channel and PIN
- * being the issuer's own and not drawn. Without a `session`, the record
+ * being the issuer's own and not drawn, the deploy target still the
+ * editable select because the row is the host's own and not the
+ * provider's. Without a `session`, the record
  * another person's on the admin record page, language, mode, theme and
  * motion are the record's own values saved with the rest through
  * `account.preferences` and never the viewer's chrome, and the PIN is not
@@ -1057,8 +1211,11 @@ const PreferencesTab = ({ account, profile, readOnly, onSaved, session = null, e
 };
 
 PreferencesTab.propTypes = {
-  account: PropTypes.shape({ preferences: PropTypes.func, integrations: integrationsShape })
-    .isRequired,
+  account: PropTypes.shape({
+    preferences: PropTypes.func,
+    integrations: integrationsShape,
+    deploy: deployShape,
+  }).isRequired,
   profile: PropTypes.shape({
     preferences: PropTypes.object,
     integrations: PropTypes.array,

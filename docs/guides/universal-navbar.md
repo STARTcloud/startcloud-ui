@@ -2803,15 +2803,31 @@ Each test answers through an in-app notice card, "Test sent." or
   because a file fetched on demand would otherwise join the cache of
   whatever build the worker held and two builds would mix, and
   `skipWaiting`s, its `activate`
-  drops every other build's cache and claims the clients, a
-  notification click
-  focuses an open tab of the app and moves it to the notice's `navigate`,
-  opening a window only while no tab is open, and it answers a page and
-  the build's own files, `/assets/`, `/locales/`, `/brand/`, `/themes/`,
-  `/fonts/` and the manifest, from the cache of the build it was
-  registered with, fetching a file from the server only while that cache
-  lacks it and never keeping it, so one loaded build stays whole and the
-  app opens with no network; `GET /api/status` alone is asked of the
+  drops every other build's cache and claims the clients; a push payload
+  carries `title`, `body`, `icon`, `tag`, `requireInteraction`, a
+  top-level `navigate`, `actions`, the list handed to `showNotification`
+  with its words in the person's language, of which the worker draws no
+  more than `Notification.maxActions`, and `data.actions`, one entry per
+  button keyed by its `action`, either `{ method, url, body }`, a JSON
+  request the worker sends with no page open to a path of its own origin
+  alone, with the session cookie and `X-XSRF-TOKEN` from the
+  `__Host-XSRF-TOKEN` or `XSRF-TOKEN` cookie, succeeding only on a `2xx`
+  answer that carries `status`, or `{ navigate }`, a page the press
+  opens; a press whose request cannot be sent, lacks the cookie or
+  answers anything else, a press with no entry and a click on the body
+  focus an open tab of the app and move it to the payload's `navigate`,
+  opening a window only while no tab is open, and the worker knows no
+  button name, so a new button is a payload change alone; it sends every navigation
+  to the server and answers the server's response, the cached page
+  answering a navigation only while the server cannot be reached, because
+  the server decides which GET is a page and which is its own protocol
+  route, `/oauth2/authorize` among them, and the worker holds no list of
+  paths; it answers the build's own files, `/assets/`, `/locales/`,
+  `/brand/`, `/themes/`, `/fonts/` and the manifest, from the cache of
+  the build it was registered with, fetching a file from the server only
+  while that cache lacks it and never keeping it, so one loaded build
+  stays whole and the app opens with no network; `GET /api/status` alone
+  is asked of the
   server first and answered from its last copy only while the server does
   not answer, that copy stored at install beside the build, because the
   first load's status was asked before the worker held the page, and

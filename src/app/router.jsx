@@ -51,6 +51,7 @@ import {
   methods,
   register,
   removeInvitation,
+  resendInvitation,
   validateInvitation,
 } from '../features/auth';
 import {
@@ -92,9 +93,11 @@ import {
   StandaloneRdpConsole,
   actionMenu as hostsActionMenu,
   controlCommands as hostsControlCommands,
+  fetchDeployTarget,
   footerPane as hostsFooterPane,
   hostCrumbs,
   isServerRole,
+  saveDeployTarget,
   searchKinds as hostsSearchKinds,
   shortcuts as hostsShortcuts,
   sidebar as hostsSidebar,
@@ -147,6 +150,7 @@ import {
   discoverOrganizations,
   issuerOrganizations,
   organizationRequests,
+  organizationStats,
   organizationUsers,
   organizationsWithUsers,
   removeMember,
@@ -163,11 +167,15 @@ import {
   cancelRequest,
   changeEmail,
   changeName,
+  changeOwnPassword,
   changePassword,
+  deleteOwnAccount,
   issuerAccount,
   issuerGuestAccount,
   leaveOrganization,
   myRequests,
+  passwordBodyOf,
+  passwordRefusalOf,
   patchProfile,
   placesKey,
   removeAccount,
@@ -324,28 +332,61 @@ const localAccountMembers = userId => ({
   deletion: () => removeAccount(userId),
 });
 
+const DELETE_KEYWORD = 'DELETE';
+
+const serverDeploy = { read: fetchDeployTarget, save: saveDeployTarget };
+
+const serverPassword = body =>
+  changeOwnPassword(passwordBodyOf(body)).catch(error => {
+    throw passwordRefusalOf(error);
+  });
+
+/**
+ * The account calls of a local account on the `hyperweaver-server` role,
+ * the host's own routes in place of BoxVault's: the password through
+ * `POST /api/auth/change-password` with the current password, the new one
+ * and its confirmation, a refusal re-pointed onto the section's fields;
+ * the deletion through `DELETE /api/auth/delete-account` with the password
+ * and the typed word, `deletionKeyword` the word the dialog asks.
+ *
+ * @param {number} userId - The stored user's id
+ * @returns {Object} The `password`, `email`, `deletion` and `deletionKeyword` members
+ */
+const serverAccountMembers = userId => ({
+  ...localAccountMembers(userId),
+  password: serverPassword,
+  deletion: deleteOwnAccount,
+  deletionKeyword: DELETE_KEYWORD,
+});
+
 /**
  * The profile page's `account` adapter of a `backend` host: read-only
  * for an identity provider's session, its Preferences section drawn
  * read-only with the Manage at identity provider link; read-write for a
  * local account, whose Preferences section writes language, mode, theme
- * and motion through the session's `savePreferences`.
+ * and motion through the session's `savePreferences`; on the
+ * `hyperweaver-server` role the account calls are the host's own and
+ * `deploy` reads and writes the person's deploy target, the server's own
+ * row, for every session.
  *
  * @param {Object} options - The session's side
  * @param {Object|null} options.user - The stored user
  * @param {boolean} options.oidc - Whether the session is the identity provider's
  * @param {string} options.issuerUrl - The identity provider behind the session, empty for a local one
  * @param {boolean} options.localAccounts - Whether the host advertises `local-accounts`
+ * @param {boolean} options.server - Whether the host is the `hyperweaver-server` role
  * @returns {Object} The adapter
  */
-const backendAccountFor = ({ user, oidc, issuerUrl, localAccounts }) => {
+const backendAccountFor = ({ user, oidc, issuerUrl, localAccounts, server }) => {
   const userId = user?.id;
+  const accountMembers = server ? serverAccountMembers : localAccountMembers;
   return {
     profile: backendProfile(oidc),
     mutability: oidc ? 'readOnly' : 'readWrite',
     ...(oidc && issuerUrl ? { manageUrl: `${issuerUrl}/user/profile` } : {}),
     ...(oidc ? {} : localRecordMembers(userId)),
-    ...(localAccounts && !oidc ? localAccountMembers(userId) : {}),
+    ...(localAccounts && !oidc ? accountMembers(userId) : {}),
+    ...(server ? { deploy: serverDeploy } : {}),
     verification: { verify: verifyMail, resend: resendVerification },
     organizations: {
       list: userOrganizations,
@@ -394,6 +435,7 @@ const profileAccountFor = ({ status, account }) => {
     oidc: account.oidc,
     issuerUrl: account.issuerUrl,
     localAccounts: hasFeature(status, 'local-accounts'),
+    server: isServerRole(status),
   });
 };
 
@@ -414,6 +456,20 @@ const organizationsAdapter = {
   join: createJoinRequest,
   gravatarProfile,
 };
+
+/**
+ * The organizations adapter of the `hyperweaver-server` role: BoxVault's
+ * calls plus an invitation's resend and the organization's counts, the
+ * two routes that host answers beyond BoxVault.
+ */
+const serverOrganizationsAdapter = {
+  ...organizationsAdapter,
+  resendInvitation,
+  stats: organizationStats,
+};
+
+const organizationsAdapterFor = status =>
+  isServerRole(status) ? serverOrganizationsAdapter : organizationsAdapter;
 
 const notFoundError = () =>
   Object.assign(new Error('Not found'), { status: 404, messageKey: 'errors.notFound' });
@@ -1490,9 +1546,10 @@ const issuerProfile = ({ account, globalAdmin, status }) => (
 const BackendProfileRoute = ({ account, status, globalAdmin }) => {
   const { user, oidc, issuerUrl } = account;
   const localAccounts = hasFeature(status, 'local-accounts');
+  const server = isServerRole(status);
   const adapter = useMemo(
-    () => backendAccountFor({ user, oidc, issuerUrl, localAccounts }),
-    [user, oidc, issuerUrl, localAccounts]
+    () => backendAccountFor({ user, oidc, issuerUrl, localAccounts, server }),
+    [user, oidc, issuerUrl, localAccounts, server]
   );
   return (
     <ProfilePage
@@ -1555,6 +1612,7 @@ const localProfileFor = ({ backend, apiKey, account, status, globalAdmin }) => {
 
 const OrgConsoleRoute = ({ cookie, account, globalAdmin }) => {
   const { tab = '' } = useParams();
+  const status = useStatus();
   const segment = ORG_CONSOLE_SEGMENTS.includes(tab) ? tab : '';
   if (cookie) {
     return (
@@ -1573,7 +1631,7 @@ const OrgConsoleRoute = ({ cookie, account, globalAdmin }) => {
     <OrgConsolePage
       session={session}
       activeOrgKey={ACTIVE_ORG_KEY}
-      organizations={organizationsAdapter}
+      organizations={organizationsAdapterFor(status)}
       org={routeNameOf(account.organizations, account.activeOrgUuid)}
       admin={globalAdmin}
       tab={segment}
@@ -2023,7 +2081,7 @@ const AppRoutes = ({
             <DiscoveryPage
               session={session}
               returnTo={returnTo}
-              organizations={cookie ? issuerOrganizations : organizationsAdapter}
+              organizations={cookie ? issuerOrganizations : organizationsAdapterFor(status)}
               orgMark={<BrandLogo className="logo-lg icon-with-margin" />}
               joinIntentKey={JOIN_INTENT_KEY}
             />

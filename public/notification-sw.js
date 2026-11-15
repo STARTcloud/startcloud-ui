@@ -66,13 +66,18 @@ const serverFirst = (request, key) =>
     .then(response => store(key, response))
     .catch(() => caches.match(key).then(hit => (hit ? fromCache(hit) : Response.error())));
 
+const navigation = request =>
+  fetch(request).catch(() =>
+    caches.match(SHELL).then(hit => (hit ? fromCache(hit) : Response.error()))
+  );
+
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET') {
     return;
   }
   if (request.mode === 'navigate') {
-    event.respondWith(cacheFirst(request, SHELL));
+    event.respondWith(navigation(request));
     return;
   }
   const url = new URL(request.url);
@@ -97,33 +102,85 @@ self.addEventListener('push', event => {
     return;
   }
 
-  const { title, body, icon, tag, data, actions } = payload;
+  const { title, body, icon, tag, data, actions, navigate, requireInteraction } = payload;
+  const maxActions = self.Notification?.maxActions || 0;
 
   event.waitUntil(
     self.registration.showNotification(title || APP_NAME, {
       body,
       icon,
       tag,
-      data,
-      actions,
+      requireInteraction,
+      data: { ...data, navigate },
+      actions: Array.isArray(actions) ? actions.slice(0, maxActions) : [],
     })
   );
 });
 
+const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
+
+const openPage = target =>
+  self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+    const open = clients.find(client => 'focus' in client);
+    if (!open) {
+      return self.clients.openWindow(target);
+    }
+    return open
+      .focus()
+      .then(focused => (focused && 'navigate' in focused ? focused.navigate(target) : focused));
+  });
+
+const ownPath = url =>
+  typeof url === 'string' &&
+  url.startsWith('/') &&
+  !url.startsWith('//') &&
+  new URL(url, self.location.origin).origin === self.location.origin;
+
+const xsrfToken = () =>
+  Promise.all(XSRF_COOKIES.map(name => self.cookieStore.get(name))).then(
+    cookies => cookies.find(cookie => cookie?.value)?.value || ''
+  );
+
+const answered = response =>
+  response.ok ? response.json().then(answer => Boolean(answer?.status)) : false;
+
+const send = (entry, token) =>
+  fetch(entry.url, {
+    method: entry.method,
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+    body: JSON.stringify(entry.body),
+  }).then(answered);
+
+const request = entry =>
+  Promise.resolve()
+    .then(xsrfToken)
+    .then(token => (token ? send(entry, token) : false))
+    .catch(() => false);
+
+const sendOrOpen = (entry, fallback) => {
+  if (!ownPath(entry.url)) {
+    return openPage(fallback);
+  }
+  return request(entry).then(sent => (sent ? null : openPage(fallback)));
+};
+
+const pressed = (data, action) => {
+  const fallback = data?.navigate || '/';
+  const actions = data?.actions || {};
+  const entry = action && Object.hasOwn(actions, action) ? actions[action] : null;
+  if (entry?.navigate) {
+    return openPage(entry.navigate);
+  }
+  if (entry?.url) {
+    return sendOrOpen(entry, fallback);
+  }
+  return openPage(fallback);
+};
+
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = event.notification.data?.navigate || '/';
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-      const open = clients.find(client => 'focus' in client);
-      if (!open) {
-        return self.clients.openWindow(target);
-      }
-      return open
-        .focus()
-        .then(focused => (focused && 'navigate' in focused ? focused.navigate(target) : focused));
-    })
-  );
+  event.waitUntil(pressed(event.notification.data, event.action));
 });
 
 self.addEventListener('pushsubscriptionchange', event => {

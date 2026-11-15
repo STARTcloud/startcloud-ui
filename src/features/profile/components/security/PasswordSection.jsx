@@ -28,8 +28,9 @@ const EMPTY = { current_password: '', password: '', confirm: '' };
  * The password section of the Security tab: the current password while
  * the account has one, the "No password set" notice and Set password
  * wording otherwise, the new password with its reveal and the passphrase
- * generator, the confirmation as the page's `equals` rule, over
- * `PUT /api/user/password`, stepped up.
+ * generator, the confirmation as the page's `equals` rule, over the
+ * adapter's `password`, `PUT /api/user/password` on the identity provider,
+ * stepped up.
  */
 const PasswordSection = ({ account, hasPassword, minLength, guard, onSaved, folds }) => {
   const { t } = useTranslation();
@@ -130,7 +131,7 @@ const PasswordSection = ({ account, hasPassword, minLength, guard, onSaved, fold
           onToggleReveal={toggleReveal}
           error={rules.errors.confirm || ''}
         />
-        <button type="submit" className="btn btn-primary mt-2">
+        <button type="submit" className="btn btn-primary mt-2" data-action="change-password">
           {hasPassword ? t('profile.security.password.change') : t('profile.security.password.set')}
         </button>
       </form>
