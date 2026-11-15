@@ -1,6 +1,7 @@
 [
   {
     "kind": "sign_in_notice",
+    "family": "email",
     "copies": [
       {
         "id": 15,
@@ -15,8 +16,8 @@
       }
     ]
   },
-  { "kind": "device_approval_notice", "copies": [] },
-  { "kind": "ciba_approval_notice", "copies": [] },
-  { "kind": "sign_in_notice_changed", "copies": [] },
-  { "kind": "sign_in_email_code", "copies": [] }
+  { "kind": "device_approval_notice", "family": "email", "copies": [] },
+  { "kind": "ciba_approval_notice", "family": "email", "copies": [] },
+  { "kind": "sign_in_notice_changed", "family": "email", "copies": [] },
+  { "kind": "sign_in_email_code", "family": "email", "copies": [] }
 ]

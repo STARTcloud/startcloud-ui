@@ -1,6 +1,7 @@
 [
   {
     "kind": "magic_login",
+    "family": "email",
     "arguments": [
       { "name": "name", "description": "The recipient name" },
       { "name": "link", "description": "The sign-in link" },
@@ -9,6 +10,7 @@
   },
   {
     "kind": "account_suspended",
+    "family": "email",
     "arguments": [
       { "name": "site_name", "description": "The site name" },
       { "name": "support_email", "description": "The support address" }
@@ -16,10 +18,12 @@
   },
   {
     "kind": "org_membership_suspended",
+    "family": "email",
     "arguments": [{ "name": "organization_name", "description": "The name of the organization" }]
   },
   {
     "kind": "smtp_test",
+    "family": "email",
     "arguments": [
       { "name": "host", "description": "The SMTP host" },
       { "name": "port", "description": "The SMTP port" },
@@ -29,6 +33,36 @@
       { "name": "authentication", "description": "Whether authentication is on" },
       { "name": "from_address", "description": "The sender address" },
       { "name": "from_name", "description": "The sender name" }
+    ]
+  },
+  {
+    "kind": "account_event_email_changed",
+    "family": "email",
+    "arguments": [
+      { "name": "site_name", "description": "The site name" },
+      { "name": "new_email", "description": "The new email address" },
+      { "name": "support_email", "description": "The support address" }
+    ]
+  },
+  {
+    "kind": "notify_org_join_requested",
+    "family": "notification",
+    "arguments": [
+      { "name": "person_name", "description": "The name of the person asking to join" },
+      { "name": "organization_name", "description": "The name of the organization" }
+    ]
+  },
+  {
+    "kind": "notify_tfa_enabled",
+    "family": "notification",
+    "arguments": [{ "name": "site_name", "description": "The site name" }]
+  },
+  {
+    "kind": "sms_ciba_approval",
+    "family": "sms",
+    "arguments": [
+      { "name": "client_name", "description": "The application asking" },
+      { "name": "approval_link", "description": "The approval link" }
     ]
   }
 ]

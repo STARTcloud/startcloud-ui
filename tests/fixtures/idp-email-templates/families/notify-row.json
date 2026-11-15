@@ -1,0 +1,17 @@
+{
+  "kind": "notify_org_join_requested",
+  "family": "notification",
+  "copies": [
+    {
+      "id": 21,
+      "site": "",
+      "locale": "",
+      "version": "1.0",
+      "revision": 2,
+      "subject": "Join request",
+      "body": "{{person_name}} asks to join {{organization_name}}.",
+      "created_by": "seed",
+      "updated_at": "2026-11-15T00:00:00Z"
+    }
+  ]
+}

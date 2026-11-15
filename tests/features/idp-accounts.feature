@@ -170,7 +170,8 @@ Feature: several accounts on one browser, the chooser page and the account switc
     Given the host answers the idp-accounts fixture
     And the browser answers "**/oauth2/authorize**" with an empty page
     When I open "/user/profile"
-    And I open "/user/profile" in a second tab
+    Then the chrome draws the account menu
+    When I open "/user/profile" in a second tab
     Then the sibling tab draws the account menu
     When I open the account menu
     And I press the account menu's account switcher

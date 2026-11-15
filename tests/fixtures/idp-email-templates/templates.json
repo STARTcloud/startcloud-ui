@@ -1,6 +1,7 @@
 [
   {
     "kind": "magic_login",
+    "family": "email",
     "copies": [
       {
         "id": 7,
@@ -15,7 +16,11 @@
       }
     ]
   },
-  { "kind": "account_suspended", "copies": [] },
-  { "kind": "org_membership_suspended", "copies": [] },
-  { "kind": "smtp_test", "copies": [] }
+  { "kind": "account_suspended", "family": "email", "copies": [] },
+  { "kind": "org_membership_suspended", "family": "email", "copies": [] },
+  { "kind": "smtp_test", "family": "email", "copies": [] },
+  { "kind": "account_event_email_changed", "family": "email", "copies": [] },
+  { "kind": "notify_org_join_requested", "family": "notification", "copies": [] },
+  { "kind": "notify_tfa_enabled", "family": "notification", "copies": [] },
+  { "kind": "sms_ciba_approval", "family": "sms", "copies": [] }
 ]

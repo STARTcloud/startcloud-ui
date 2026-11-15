@@ -1,0 +1,41 @@
+[
+  {
+    "kind": "magic_login",
+    "family": "email",
+    "arguments": [
+      { "name": "name", "description": "The recipient name" },
+      { "name": "link", "description": "The sign-in link" },
+      { "name": "expiry_minutes", "description": "Minutes until the link expires" }
+    ]
+  },
+  {
+    "kind": "account_event_email_changed",
+    "family": "email",
+    "arguments": [
+      { "name": "site_name", "description": "The site name" },
+      { "name": "new_email", "description": "The new email address" },
+      { "name": "support_email", "description": "The support address" }
+    ]
+  },
+  {
+    "kind": "notify_org_join_requested",
+    "family": "notification",
+    "arguments": [
+      { "name": "person_name", "description": "The name of the person asking to join" },
+      { "name": "organization_name", "description": "The name of the organization" }
+    ]
+  },
+  {
+    "kind": "notify_tfa_enabled",
+    "family": "notification",
+    "arguments": [{ "name": "site_name", "description": "The site name" }]
+  },
+  {
+    "kind": "sms_ciba_approval",
+    "family": "sms",
+    "arguments": [
+      { "name": "client_name", "description": "The application asking" },
+      { "name": "approval_link", "description": "The approval link" }
+    ]
+  }
+]

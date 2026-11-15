@@ -4095,6 +4095,13 @@ a.stat-card:focus-visible {
   height: 24rem;
 }
 
+.email-preview-text {
+  max-height: 24rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .term-document-copies {
   border-left: 2px solid var(--bs-border-color);
   margin-left: 0.75rem;

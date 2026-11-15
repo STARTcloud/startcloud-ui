@@ -1,6 +1,7 @@
 [
   {
     "kind": "sign_in_notice",
+    "family": "email",
     "arguments": [
       { "name": "name", "description": "The recipient name" },
       { "name": "time", "description": "When it happened" },
@@ -15,6 +16,7 @@
   },
   {
     "kind": "device_approval_notice",
+    "family": "email",
     "arguments": [
       { "name": "name", "description": "The recipient name" },
       { "name": "time", "description": "When it happened" },
@@ -30,6 +32,7 @@
   },
   {
     "kind": "ciba_approval_notice",
+    "family": "email",
     "arguments": [
       { "name": "name", "description": "The recipient name" },
       { "name": "time", "description": "When it happened" },
@@ -45,6 +48,7 @@
   },
   {
     "kind": "sign_in_notice_changed",
+    "family": "email",
     "arguments": [
       { "name": "name", "description": "The recipient name" },
       { "name": "when", "description": "When notices are sent after the change" },
@@ -55,6 +59,7 @@
   },
   {
     "kind": "sign_in_email_code",
+    "family": "email",
     "arguments": [
       { "name": "name", "description": "The recipient name" },
       { "name": "code", "description": "The sign-in code" },

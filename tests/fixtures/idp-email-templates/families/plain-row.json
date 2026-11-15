@@ -1,0 +1,17 @@
+{
+  "kind": "account_event_email_changed",
+  "family": "email",
+  "copies": [
+    {
+      "id": 20,
+      "site": "",
+      "locale": "",
+      "version": "1.0",
+      "revision": 2,
+      "subject": "Your email address changed",
+      "body": "Your address is now {{new_email}} <b>.",
+      "created_by": "seed",
+      "updated_at": "2026-11-15T00:00:00Z"
+    }
+  ]
+}

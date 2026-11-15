@@ -1,0 +1,55 @@
+[
+  { "kind": "magic_login", "family": "email", "copies": [] },
+  {
+    "kind": "account_event_email_changed",
+    "family": "email",
+    "copies": [
+      {
+        "id": 20,
+        "site": "",
+        "locale": "",
+        "version": "1.0",
+        "revision": 1,
+        "subject": "Your email address changed",
+        "body": "Your address is now {{new_email}} <b>.",
+        "created_by": "seed",
+        "updated_at": "2026-11-14T00:00:00Z"
+      }
+    ]
+  },
+  {
+    "kind": "notify_org_join_requested",
+    "family": "notification",
+    "copies": [
+      {
+        "id": 21,
+        "site": "",
+        "locale": "",
+        "version": "1.0",
+        "revision": 1,
+        "subject": "Join request",
+        "body": "{{person_name}} asks to join {{organization_name}}.",
+        "created_by": "seed",
+        "updated_at": "2026-11-14T00:00:00Z"
+      }
+    ]
+  },
+  { "kind": "notify_tfa_enabled", "family": "notification", "copies": [] },
+  {
+    "kind": "sms_ciba_approval",
+    "family": "sms",
+    "copies": [
+      {
+        "id": 22,
+        "site": "",
+        "locale": "",
+        "version": "1.0",
+        "revision": 1,
+        "subject": "",
+        "body": "{{client_name}} is asking to sign you in. Review the request: {{approval_link}}",
+        "created_by": "seed",
+        "updated_at": "2026-11-14T00:00:00Z"
+      }
+    ]
+  }
+]

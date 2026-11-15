@@ -1,0 +1,13 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/subject",
+      "rule": "maxLength",
+      "params": { "maxLength": 0 },
+      "detail": "sms_ciba_approval is a text message and carries no subject"
+    }
+  ]
+}

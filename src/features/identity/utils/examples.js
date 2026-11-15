@@ -502,9 +502,281 @@ const seedCopy = (id, subject, body) => ({
   updated_at: '2026-09-01T00:00:00Z',
 });
 
+const TOKEN_DESCRIPTIONS = {
+  site_name: 'The site name',
+  support_email: 'The support address',
+  new_email: 'The new email address',
+  phone: 'The phone number',
+  app_name: 'The authenticator app name',
+  method: 'The method disabled',
+  client_name: 'The application',
+  time: 'When it happened',
+  scope: 'The permission removed',
+  document_name: 'The document name',
+  version: 'The new version',
+  organization_name: 'The name of the organization',
+  role: 'The new role',
+  inviter: 'The name of the person who sent the invitation',
+  owner_name: 'The name of the new owner',
+  person_name: 'The name of the person asking to join',
+  passkey_name: 'The passkey name',
+  approval_link: 'The approval link',
+};
+
+const plainKind = (id, kind, family, subject, body, tokens) => ({
+  id,
+  kind,
+  family,
+  subject,
+  body,
+  tokens,
+});
+
+const accountEventKind = (id, kind, subject, body, tokens) =>
+  plainKind(id, kind, 'email', subject, body, tokens);
+
+const noticeKind = (id, kind, subject, body, tokens) =>
+  plainKind(id, kind, 'notification', subject, body, tokens);
+
+const FAMILY_KINDS = [
+  accountEventKind(
+    20,
+    'account_event_email_changed',
+    'Your email address changed',
+    'Your {{site_name}} email address is now {{new_email}}. If this was not you, write to {{support_email}}.',
+    ['site_name', 'new_email', 'support_email']
+  ),
+  accountEventKind(
+    21,
+    'account_event_phone_changed',
+    'Your phone number changed',
+    'Your {{site_name}} phone number is now {{phone}}.',
+    ['site_name', 'phone']
+  ),
+  accountEventKind(
+    22,
+    'account_event_phone_removed',
+    'Your phone number was removed',
+    'The phone number {{phone}} was removed from your {{site_name}} account.',
+    ['site_name', 'phone']
+  ),
+  accountEventKind(
+    23,
+    'account_event_app_removed',
+    'An authenticator app was removed',
+    'The authenticator app {{app_name}} was removed from your {{site_name}} account.',
+    ['site_name', 'app_name']
+  ),
+  accountEventKind(
+    24,
+    'account_event_contact_phone_changed',
+    'Your contact phone changed',
+    'Your {{site_name}} contact phone is now {{phone}}.',
+    ['site_name', 'phone']
+  ),
+  accountEventKind(
+    25,
+    'account_event_password_change_required',
+    'A password change is required',
+    'An administrator asks you to change your {{site_name}} password at your next sign-in.',
+    ['site_name']
+  ),
+  noticeKind(
+    26,
+    'notify_tfa_method_disabled',
+    'Two-factor method disabled',
+    '{{method}} was disabled by its lockout.',
+    ['method']
+  ),
+  noticeKind(
+    27,
+    'notify_session_revoked',
+    'Session revoked',
+    'Your {{client_name}} session ended.',
+    ['client_name']
+  ),
+  noticeKind(
+    28,
+    'notify_backup_codes_generated',
+    'Backup codes generated',
+    'New backup codes were generated at {{time}}; the old ones no longer work.',
+    ['time']
+  ),
+  noticeKind(
+    29,
+    'notify_tfa_enabled',
+    'Two-factor sign-in enabled',
+    'Two-factor sign-in is on for your {{site_name}} account.',
+    ['site_name']
+  ),
+  noticeKind(
+    30,
+    'notify_tfa_disabled',
+    'Two-factor sign-in disabled',
+    'Two-factor sign-in is off for your {{site_name}} account.',
+    ['site_name']
+  ),
+  noticeKind(
+    31,
+    'notify_sessions_revoked_all',
+    'All sessions revoked',
+    'Every session of your {{site_name}} account ended.',
+    ['site_name']
+  ),
+  noticeKind(
+    32,
+    'notify_password_changed',
+    'Password changed',
+    'Your {{site_name}} password was changed at {{time}}.',
+    ['site_name', 'time']
+  ),
+  noticeKind(
+    33,
+    'notify_app_access_revoked',
+    'Application access revoked',
+    '{{client_name}} no longer has access to your account.',
+    ['client_name']
+  ),
+  noticeKind(
+    34,
+    'notify_app_permission_removed',
+    'Application permission removed',
+    '{{client_name}} lost the permission {{scope}}.',
+    ['client_name', 'scope']
+  ),
+  noticeKind(
+    35,
+    'notify_tos_updated',
+    'Terms updated',
+    '{{document_name}} changed to version {{version}}; you are asked to accept it at your next sign-in.',
+    ['document_name', 'version']
+  ),
+  noticeKind(
+    36,
+    'notify_org_role_changed',
+    'Organization role changed',
+    'Your role in {{organization_name}} is now {{role}}.',
+    ['organization_name', 'role']
+  ),
+  noticeKind(
+    37,
+    'notify_org_invited',
+    'Organization invitation',
+    '{{inviter}} invited you to {{organization_name}}.',
+    ['inviter', 'organization_name']
+  ),
+  noticeKind(
+    38,
+    'notify_org_deleted',
+    'Organization deleted',
+    '{{organization_name}} was deleted.',
+    ['organization_name']
+  ),
+  noticeKind(
+    39,
+    'notify_org_ownership_transferred',
+    'Organization ownership transferred',
+    '{{organization_name}} is now owned by {{owner_name}}.',
+    ['organization_name', 'owner_name']
+  ),
+  noticeKind(
+    40,
+    'notify_org_join_requested',
+    'Join request',
+    '{{person_name}} asks to join {{organization_name}}.',
+    ['person_name', 'organization_name']
+  ),
+  noticeKind(
+    41,
+    'notify_org_join_approved',
+    'Join request approved',
+    'Your request to join {{organization_name}} was approved.',
+    ['organization_name']
+  ),
+  noticeKind(
+    42,
+    'notify_org_join_denied',
+    'Join request denied',
+    'Your request to join {{organization_name}} was denied.',
+    ['organization_name']
+  ),
+  noticeKind(
+    43,
+    'notify_email_changed',
+    'Email address changed',
+    'Your email address is now {{new_email}}.',
+    ['new_email']
+  ),
+  noticeKind(
+    44,
+    'notify_phone_changed',
+    'Phone number changed',
+    'Your phone number is now {{phone}}.',
+    ['phone']
+  ),
+  noticeKind(
+    45,
+    'notify_phone_removed',
+    'Phone number removed',
+    'The phone number {{phone}} was removed.',
+    ['phone']
+  ),
+  noticeKind(
+    46,
+    'notify_app_removed',
+    'Authenticator app removed',
+    'The authenticator app {{app_name}} was removed.',
+    ['app_name']
+  ),
+  noticeKind(
+    47,
+    'notify_contact_phone_changed',
+    'Contact phone changed',
+    'Your contact phone is now {{phone}}.',
+    ['phone']
+  ),
+  noticeKind(
+    48,
+    'notify_passkey_added',
+    'Passkey added',
+    'The passkey {{passkey_name}} was added.',
+    ['passkey_name']
+  ),
+  noticeKind(
+    49,
+    'notify_passkey_removed',
+    'Passkey removed',
+    'The passkey {{passkey_name}} was removed.',
+    ['passkey_name']
+  ),
+  noticeKind(
+    50,
+    'notify_password_change_required',
+    'Password change required',
+    'Change your {{site_name}} password at your next sign-in.',
+    ['site_name']
+  ),
+  noticeKind(
+    51,
+    'notify_ciba_approval',
+    'Sign-in request',
+    '{{client_name}} is asking to sign you in. Review the request: {{approval_link}}',
+    ['client_name', 'approval_link']
+  ),
+  plainKind(
+    52,
+    'sms_ciba_approval',
+    'sms',
+    '',
+    '{{client_name}} is asking to sign you in. Review the request: {{approval_link}}',
+    ['client_name', 'approval_link']
+  ),
+];
+
 export const EMAIL_TEMPLATES = [
   {
     kind: 'account_verification',
+    family: 'email',
     copies: [
       {
         ...seedCopy(
@@ -530,6 +802,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'password_reset',
+    family: 'email',
     copies: [
       seedCopy(
         4,
@@ -540,6 +813,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'magic_login',
+    family: 'email',
     copies: [
       seedCopy(
         5,
@@ -550,12 +824,14 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'onboarding_verification',
+    family: 'email',
     copies: [
       seedCopy(6, 'Your verification code', '<p>Your code is <strong>{{code}}</strong>.</p>'),
     ],
   },
   {
     kind: 'org_invite',
+    family: 'email',
     copies: [
       seedCopy(
         7,
@@ -577,6 +853,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'email_change',
+    family: 'email',
     copies: [
       seedCopy(
         8,
@@ -587,12 +864,14 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'account_event',
+    family: 'email',
     copies: [
       seedCopy(9, '{{title}}', '<p>{{message}}</p>\n<p>Questions? Write to {{support_email}}.</p>'),
     ],
   },
   {
     kind: 'ciba_approval',
+    family: 'email',
     copies: [
       seedCopy(
         10,
@@ -603,6 +882,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'admin_new_registration',
+    family: 'email',
     copies: [
       seedCopy(
         11,
@@ -613,6 +893,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'account_suspended',
+    family: 'email',
     copies: [
       seedCopy(
         12,
@@ -623,6 +904,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'org_membership_suspended',
+    family: 'email',
     copies: [
       seedCopy(
         13,
@@ -633,6 +915,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'smtp_test',
+    family: 'email',
     copies: [
       seedCopy(
         14,
@@ -643,6 +926,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'sign_in_notice',
+    family: 'email',
     copies: [
       seedCopy(
         15,
@@ -653,6 +937,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'device_approval_notice',
+    family: 'email',
     copies: [
       seedCopy(
         16,
@@ -663,6 +948,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'ciba_approval_notice',
+    family: 'email',
     copies: [
       seedCopy(
         17,
@@ -673,6 +959,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'sign_in_notice_changed',
+    family: 'email',
     copies: [
       seedCopy(
         18,
@@ -683,6 +970,7 @@ export const EMAIL_TEMPLATES = [
   },
   {
     kind: 'sign_in_email_code',
+    family: 'email',
     copies: [
       seedCopy(
         19,
@@ -691,6 +979,11 @@ export const EMAIL_TEMPLATES = [
       ),
     ],
   },
+  ...FAMILY_KINDS.map(entry => ({
+    kind: entry.kind,
+    family: entry.family,
+    copies: [seedCopy(entry.id, entry.subject, entry.body)],
+  })),
 ];
 
 const NOTICE_ARGUMENTS = [
@@ -713,6 +1006,7 @@ const APPROVAL_ARGUMENTS = [
 export const EMAIL_ARGUMENTS = [
   {
     kind: 'account_verification',
+    family: 'email',
     arguments: [
       { name: 'name', description: 'The recipient name' },
       { name: 'link', description: 'The verification link' },
@@ -721,6 +1015,7 @@ export const EMAIL_ARGUMENTS = [
   },
   {
     kind: 'password_reset',
+    family: 'email',
     arguments: [
       { name: 'name', description: 'The recipient name' },
       { name: 'link', description: 'The reset link' },
@@ -729,6 +1024,7 @@ export const EMAIL_ARGUMENTS = [
   },
   {
     kind: 'magic_login',
+    family: 'email',
     arguments: [
       { name: 'name', description: 'The recipient name' },
       { name: 'link', description: 'The sign-in link' },
@@ -737,10 +1033,12 @@ export const EMAIL_ARGUMENTS = [
   },
   {
     kind: 'onboarding_verification',
+    family: 'email',
     arguments: [{ name: 'code', description: 'The verification code' }],
   },
   {
     kind: 'org_invite',
+    family: 'email',
     arguments: [
       { name: 'inviter', description: 'The name of the person who sent the invitation' },
       { name: 'organization_name', description: 'The name of the organization' },
@@ -750,10 +1048,12 @@ export const EMAIL_ARGUMENTS = [
   },
   {
     kind: 'email_change',
+    family: 'email',
     arguments: [{ name: 'code', description: 'The verification code' }],
   },
   {
     kind: 'account_event',
+    family: 'email',
     arguments: [
       { name: 'title', description: 'The event title' },
       { name: 'message', description: 'The event message' },
@@ -762,6 +1062,7 @@ export const EMAIL_ARGUMENTS = [
   },
   {
     kind: 'ciba_approval',
+    family: 'email',
     arguments: [
       { name: 'client_name', description: 'The application asking' },
       { name: 'approval_link', description: 'The approval link' },
@@ -770,6 +1071,7 @@ export const EMAIL_ARGUMENTS = [
   },
   {
     kind: 'admin_new_registration',
+    family: 'email',
     arguments: [
       { name: 'user_name', description: 'The new account name' },
       { name: 'email', description: 'The new account email' },
@@ -781,6 +1083,7 @@ export const EMAIL_ARGUMENTS = [
   },
   {
     kind: 'account_suspended',
+    family: 'email',
     arguments: [
       { name: 'site_name', description: 'The site name' },
       { name: 'support_email', description: 'The support address' },
@@ -788,10 +1091,12 @@ export const EMAIL_ARGUMENTS = [
   },
   {
     kind: 'org_membership_suspended',
+    family: 'email',
     arguments: [{ name: 'organization_name', description: 'The name of the organization' }],
   },
   {
     kind: 'smtp_test',
+    family: 'email',
     arguments: [
       { name: 'host', description: 'The SMTP host' },
       { name: 'port', description: 'The SMTP port' },
@@ -803,11 +1108,12 @@ export const EMAIL_ARGUMENTS = [
       { name: 'from_name', description: 'The sender name' },
     ],
   },
-  { kind: 'sign_in_notice', arguments: NOTICE_ARGUMENTS },
-  { kind: 'device_approval_notice', arguments: APPROVAL_ARGUMENTS },
-  { kind: 'ciba_approval_notice', arguments: APPROVAL_ARGUMENTS },
+  { kind: 'sign_in_notice', family: 'email', arguments: NOTICE_ARGUMENTS },
+  { kind: 'device_approval_notice', family: 'email', arguments: APPROVAL_ARGUMENTS },
+  { kind: 'ciba_approval_notice', family: 'email', arguments: APPROVAL_ARGUMENTS },
   {
     kind: 'sign_in_notice_changed',
+    family: 'email',
     arguments: [
       { name: 'name', description: 'The recipient name' },
       { name: 'when', description: 'When notices are sent after the change' },
@@ -818,6 +1124,7 @@ export const EMAIL_ARGUMENTS = [
   },
   {
     kind: 'sign_in_email_code',
+    family: 'email',
     arguments: [
       { name: 'name', description: 'The recipient name' },
       { name: 'code', description: 'The sign-in code' },
@@ -826,6 +1133,11 @@ export const EMAIL_ARGUMENTS = [
       { name: 'support_email', description: 'The support address' },
     ],
   },
+  ...FAMILY_KINDS.map(entry => ({
+    kind: entry.kind,
+    family: entry.family,
+    arguments: entry.tokens.map(name => ({ name, description: TOKEN_DESCRIPTIONS[name] })),
+  })),
 ];
 
 export const SITES_CONFIG = {

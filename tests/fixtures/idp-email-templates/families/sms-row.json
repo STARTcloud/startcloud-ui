@@ -1,0 +1,17 @@
+{
+  "kind": "sms_ciba_approval",
+  "family": "sms",
+  "copies": [
+    {
+      "id": 22,
+      "site": "",
+      "locale": "",
+      "version": "1.0",
+      "revision": 2,
+      "subject": "",
+      "body": "Review: {{approval_link}}",
+      "created_by": "seed",
+      "updated_at": "2026-11-15T00:00:00Z"
+    }
+  ]
+}

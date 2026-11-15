@@ -30,6 +30,9 @@ import {
   copyShape,
   EmailTemplateCopyDialog,
   EmailTemplateHistoryDialog,
+  familyGroupsOf,
+  familyLabelOf,
+  KindHelp,
   kindLabelOf,
   localeLabelOf,
   PreviewDialog,
@@ -173,6 +176,7 @@ const TemplateCard = ({
           </button>
         </div>
       </div>
+      <KindHelp template={template} className="mt-1" />
       <ul className="list-group list-group-flush mt-2 term-document-copies">
         {template.copies.map(copy => (
           <CopyRow
@@ -310,10 +314,16 @@ EmailTemplatesBulkActions.propTypes = {
 /**
  * Messaging › Email templates: a `SectionHeading` over the cards, the
  * kind count as muted text after the title and no Create, the kinds
- * being fixed by the server; one card per kind from
+ * being fixed by the server; the cards grouped by `family` under three
+ * headings, mail, notifications and text messages, each a
+ * `SectionHeading` with the family's label and its kind count over its
+ * cards, the kinds inside a group in the order the server lists them, a
+ * family with no shown kind drawing no heading; one card per kind from
  * `GET /api/admin/email-templates` with its tokens from
  * `GET /api/admin/email-templates/arguments` under the title, each drawn
- * as `{{name}}` and titled by its description, its copies
+ * as `{{name}}` and titled by its description, one of the six
+ * `account_event_*` kinds carrying the note that its title and message
+ * are placed inside the `account_event` mail, its copies
  * listed inside with their site ("Every site" for the default copy) and
  * language ("Every language" for the site's default) badges, version,
  * `r{{revision}}`, updated date and the per-copy actions Preview, Edit,
@@ -455,22 +465,33 @@ const EmailTemplatesPage = () => {
       {shown.length === 0 ? (
         <div className="text-muted">{narrowing ? t('pages.noMatches') : t('pages.empty')}</div>
       ) : null}
-      <ul className="list-group">
-        {shown.map(template => (
-          <TemplateCard
-            key={keyOf(template)}
-            template={template}
-            args={argumentsOf(argumentList, template.kind)}
-            selected={selection.selected.has(keyOf(template))}
-            onToggle={() => selection.toggle(keyOf(template))}
-            onAddCopy={entry => setCopyDialog({ template: entry, source: null, editing: false })}
-            onPreviewCopy={copy => setPreviewing({ template, copy })}
-            onEditCopy={copy => setCopyDialog({ template, source: copy, editing: true })}
-            onHistoryCopy={copy => setViewingHistory({ template, copy })}
-            onDeleteCopy={copy => setDeleting({ template, copy })}
+      {familyGroupsOf(shown).map(group => (
+        <section key={group.family} className="mb-4" data-family={group.family}>
+          <SectionHeading
+            title={familyLabelOf(t, group.family)}
+            count={group.templates.length}
+            className="mb-2"
           />
-        ))}
-      </ul>
+          <ul className="list-group">
+            {group.templates.map(template => (
+              <TemplateCard
+                key={keyOf(template)}
+                template={template}
+                args={argumentsOf(argumentList, template.kind)}
+                selected={selection.selected.has(keyOf(template))}
+                onToggle={() => selection.toggle(keyOf(template))}
+                onAddCopy={entry =>
+                  setCopyDialog({ template: entry, source: null, editing: false })
+                }
+                onPreviewCopy={copy => setPreviewing({ template, copy })}
+                onEditCopy={copy => setCopyDialog({ template, source: copy, editing: true })}
+                onHistoryCopy={copy => setViewingHistory({ template, copy })}
+                onDeleteCopy={copy => setDeleting({ template, copy })}
+              />
+            ))}
+          </ul>
+        </section>
+      ))}
       {copyDialog ? (
         <EmailTemplateCopyDialog
           template={copyDialog.template}
@@ -484,6 +505,7 @@ const EmailTemplatesPage = () => {
       ) : null}
       {previewing ? (
         <PreviewDialog
+          template={previewing.template}
           copy={previewing.copy}
           args={argumentsOf(argumentList, previewing.template.kind)}
           onClose={() => setPreviewing(null)}

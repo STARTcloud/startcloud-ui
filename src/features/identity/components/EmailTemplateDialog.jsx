@@ -20,6 +20,21 @@ import DateCell from './DateCell';
 
 export const LOCALES = ['en', 'es'];
 
+/**
+ * The template families in the order the page draws them: mail,
+ * notifications, text messages.
+ */
+export const FAMILIES = ['email', 'notification', 'sms'];
+
+const PLAIN_EMAIL_KINDS = [
+  'account_event_email_changed',
+  'account_event_phone_changed',
+  'account_event_phone_removed',
+  'account_event_app_removed',
+  'account_event_contact_phone_changed',
+  'account_event_password_change_required',
+];
+
 const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
 const TOKEN_PATTERN = /\{\{(?<name>[^{}]*)\}\}/g;
@@ -30,6 +45,13 @@ const escapeHtml = text => String(text).replace(/[&<>"']/g, char => ENTITIES[cha
 
 const tokenOf = name => `{{${name}}}`;
 
+const fillTokens = (text, args, render) => {
+  const offered = args.map(entry => entry.name);
+  return (text || '').replace(TOKEN_PATTERN, (match, name) =>
+    offered.includes(name) ? render(name) : match
+  );
+};
+
 /**
  * The sandboxed preview's document: the body with every `{{name}}` token
  * the kind offers replaced by the token's name, HTML-escaped, and every
@@ -39,12 +61,53 @@ const tokenOf = name => `{{${name}}}`;
  * @param {Array} args - The kind's tokens `[{ name, description }]`
  * @returns {string} The srcdoc
  */
-export const previewDocOf = (body, args) => {
-  const offered = args.map(entry => entry.name);
-  return (body || '').replace(TOKEN_PATTERN, (match, name) =>
-    offered.includes(name) ? escapeHtml(name) : match
-  );
-};
+export const previewDocOf = (body, args) => fillTokens(body, args, escapeHtml);
+
+/**
+ * The plain preview's text: the body with every `{{name}}` token the kind
+ * offers replaced by the token's name as it is, and every other text left
+ * as typed.
+ *
+ * @param {string} body - The template body
+ * @param {Array} args - The kind's tokens `[{ name, description }]`
+ * @returns {string} The text
+ */
+export const previewTextOf = (body, args) => fillTokens(body, args, name => name);
+
+/**
+ * Whether a kind's subject and body are plain text: every `notification`
+ * and `sms` kind, and the six `account_event_*` mail kinds whose title and
+ * message are placed inside the `account_event` mail.
+ *
+ * @param {{ kind: string, family: string }} template - The kind row
+ * @returns {boolean}
+ */
+export const isPlainKind = template =>
+  template.family !== 'email' || PLAIN_EMAIL_KINDS.includes(template.kind);
+
+/**
+ * Whether a kind is one of the six `account_event_*` mail kinds.
+ *
+ * @param {string} kind - The kind
+ * @returns {boolean}
+ */
+export const isAccountEventKind = kind => PLAIN_EMAIL_KINDS.includes(kind);
+
+/**
+ * The kind rows grouped by `family` in the order `FAMILIES` names them,
+ * the rows inside a group in the order given, a family with no row left
+ * out.
+ *
+ * @param {Array<{ kind: string, family: string }>} templates - The kind rows
+ * @returns {Array<{ family: string, templates: Array }>} The groups
+ */
+export const familyGroupsOf = templates =>
+  FAMILIES.map(family => ({
+    family,
+    templates: templates.filter(template => template.family === family),
+  })).filter(group => group.templates.length > 0);
+
+export const familyLabelOf = (t, family) => t(`admin.emailTemplates.family.${family}`);
 
 export const kindLabelOf = (t, kind) =>
   t(`admin.emailTemplates.kind.${kind}`, { defaultValue: kind });
@@ -72,6 +135,7 @@ export const copyShape = PropTypes.shape({
 
 export const templateShape = PropTypes.shape({
   kind: PropTypes.string.isRequired,
+  family: PropTypes.oneOf(FAMILIES).isRequired,
   copies: PropTypes.arrayOf(copyShape).isRequired,
 });
 
@@ -93,26 +157,66 @@ const COPY_LABELS = {
   body: 'admin.emailTemplates.field.body',
 };
 
-const COPY_SCHEMA = {
-  required: ['version', 'subject', 'body'],
-  properties: {
-    site: { type: 'string' },
-    locale: { type: 'string' },
-    version: { type: 'string' },
-    subject: { type: 'string' },
-    body: { type: 'string' },
-  },
+const PLAIN_LABELS = { ...COPY_LABELS, body: 'admin.emailTemplates.field.text' };
+
+const NOTIFICATION_LABELS = {
+  ...COPY_LABELS,
+  subject: 'admin.emailTemplates.field.title',
+  body: 'admin.emailTemplates.field.message',
 };
 
-const SAVE_SCHEMA = {
-  required: ['subject', 'body'],
-  properties: {
-    site: { type: 'string' },
-    locale: { type: 'string' },
-    subject: { type: 'string' },
-    body: { type: 'string' },
-  },
+const SMS_LABELS = PLAIN_LABELS;
+
+const LIMITS = { notification: { subject: 255, body: 1000 } };
+
+const TEXT_PROPERTIES = {
+  email: ['subject', 'body'],
+  notification: ['subject', 'body'],
+  sms: ['body'],
 };
+
+const labelsOf = template => {
+  if (template.family === 'notification') {
+    return NOTIFICATION_LABELS;
+  }
+  if (template.family === 'sms') {
+    return SMS_LABELS;
+  }
+  return isPlainKind(template) ? PLAIN_LABELS : COPY_LABELS;
+};
+
+const textPropertiesOf = template => TEXT_PROPERTIES[template.family] || TEXT_PROPERTIES.email;
+
+const schemaOf = (template, editing) => {
+  const text = textPropertiesOf(template);
+  const properties = Object.fromEntries(
+    ['site', 'locale', ...(editing ? [] : ['version']), ...text].map(name => [
+      name,
+      { type: 'string' },
+    ])
+  );
+  return { required: [...(editing ? [] : ['version']), ...text], properties };
+};
+
+const openedOf = (template, source) => ({
+  site: source?.site || '',
+  locale: source?.locale || '',
+  version: source?.version || '',
+  ...Object.fromEntries(textPropertiesOf(template).map(name => [name, source?.[name] || ''])),
+});
+
+/**
+ * The text members a write carries for a kind: `subject` and `body` for a
+ * mail or a notification kind, `body` alone for an sms kind.
+ *
+ * @param {{ family: string }} template - The kind row
+ * @param {Object} form - The form's values
+ * @returns {Object} The members
+ */
+export const copyBodyOf = (template, form) =>
+  Object.fromEntries(textPropertiesOf(template).map(name => [name, form[name]]));
+
+const limitOf = (template, name) => LIMITS[template.family]?.[name];
 
 const PUBLISH_SCHEMA = {
   required: ['version'],
@@ -123,10 +227,15 @@ const PUBLISH_SCHEMA = {
 
 const PUBLISH_LABELS = { version: 'admin.emailTemplates.field.version' };
 
-const TextField = ({ name, form, rules, onChange, labels, readOnly = false }) => {
+const TextField = ({ name, form, rules, onChange, labels, readOnly = false, hint = '' }) => {
   const { t } = useTranslation();
   return (
-    <Field id={rules.idFor(name)} label={t(labels[name])} error={rules.errors[name] || ''}>
+    <Field
+      id={rules.idFor(name)}
+      label={t(labels[name])}
+      hint={hint}
+      error={rules.errors[name] || ''}
+    >
       {aria => (
         <input
           {...aria}
@@ -149,6 +258,7 @@ TextField.propTypes = {
   onChange: PropTypes.func.isRequired,
   labels: PropTypes.object.isRequired,
   readOnly: PropTypes.bool,
+  hint: PropTypes.string,
 };
 
 const SelectField = ({ name, form, rules, onChange, labels, options, disabled = false }) => {
@@ -205,30 +315,73 @@ PreviewFrame.propTypes = {
 };
 
 /**
- * The Preview action on a copy: a list dialog titled by the copy's subject
- * with its version badge, the body drawn in the sandboxed `iframe` with
- * every `{{name}}` token the kind offers replaced by its name.
+ * The preview of a body: the sandboxed `iframe` for an HTML mail kind, the
+ * filled text itself for a plain kind.
  */
-export const PreviewDialog = ({ copy, args, onClose }) => {
+const PreviewPane = ({ template, body, args }) =>
+  isPlainKind(template) ? (
+    <div className="border rounded p-3 email-preview-text" data-pane="email-template-preview-text">
+      {previewTextOf(body, args)}
+    </div>
+  ) : (
+    <PreviewFrame body={body} args={args} />
+  );
+
+PreviewPane.propTypes = {
+  template: templateShape.isRequired,
+  body: PropTypes.string.isRequired,
+  args: PropTypes.arrayOf(argumentShape).isRequired,
+};
+
+/**
+ * The help line of one of the six `account_event_*` kinds: its title and
+ * message are placed inside the `account_event` mail; nothing for any
+ * other kind.
+ */
+export const KindHelp = ({ template, className = '' }) => {
+  const { t } = useTranslation();
+  if (!isAccountEventKind(template.kind)) {
+    return null;
+  }
+  return (
+    <div className={`small text-muted ${className}`} data-note="email-template-kind-help">
+      {t('admin.emailTemplates.accountEventHelp', { name: kindLabelOf(t, 'account_event') })}
+    </div>
+  );
+};
+
+KindHelp.propTypes = {
+  template: templateShape.isRequired,
+  className: PropTypes.string,
+};
+
+/**
+ * The Preview action on a copy: a list dialog titled by the copy's subject,
+ * or by the kind's label while the subject is empty, with its version
+ * badge, the body drawn through the kind's preview with every `{{name}}`
+ * token the kind offers replaced by its name.
+ */
+export const PreviewDialog = ({ template, copy, args, onClose }) => {
   const { t } = useTranslation();
   return (
     <Modal show onHide={onClose} dialogClassName="list-modal" scrollable>
       <Modal.Header closeButton>
         <Modal.Title as="h5" className="d-flex flex-wrap align-items-center gap-2">
-          <span>{copy.subject || ''}</span>
+          <span>{copy.subject || kindLabelOf(t, template.kind)}</span>
           <span className="badge bg-secondary">
             {t('admin.emailTemplates.version', { version: copy.version || '' })}
           </span>
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <PreviewFrame body={copy.body || ''} args={args} />
+        <PreviewPane template={template} body={copy.body || ''} args={args} />
       </Modal.Body>
     </Modal>
   );
 };
 
 PreviewDialog.propTypes = {
+  template: templateShape.isRequired,
   copy: copyShape.isRequired,
   args: PropTypes.arrayOf(argumentShape).isRequired,
   onClose: PropTypes.func.isRequired,
@@ -266,14 +419,15 @@ ArgumentChips.propTypes = {
  * version string, `409 unique` at `/version` painted on the field when the
  * copy has already had it, sending
  * `POST /api/admin/email-templates/{kind}/publish?site=&locale=`
- * `{ version, subject, body }`, which writes revision 1 of that version
- * and becomes the live text, notifying nobody; a refusal whose every
- * pointer names a member other than `version` is handed to `onRefused`
- * and the dialog closes, so a `422` `token` at `/subject` or `/body` is
- * painted on the field of the form beneath; a `404` says the copy was
- * removed by someone else and reloads the list.
+ * `{ version, subject, body }`, `{ version, body }` for an sms kind, which
+ * writes revision 1 of that version and becomes the live text, notifying
+ * nobody; a refusal whose every pointer names a member other than
+ * `version` is handed to `onRefused` and the dialog closes, so a `422`
+ * `token` at `/subject` or `/body` is painted on the field of the form
+ * beneath; a `404` says the copy was removed by someone else and reloads
+ * the list.
  */
-const PublishDialog = ({ template, source, subject, body, onClose, onPublished, onRefused }) => {
+const PublishDialog = ({ template, source, text, onClose, onPublished, onRefused }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [form, setForm] = useState({ version: '' });
@@ -295,7 +449,7 @@ const PublishDialog = ({ template, source, subject, body, onClose, onPublished, 
     setBusy(true);
     publishEmailTemplate(
       template.kind,
-      { version: form.version, subject, body },
+      { version: form.version, ...text },
       source.site || '',
       source.locale || ''
     )
@@ -372,8 +526,8 @@ const PublishDialog = ({ template, source, subject, body, onClose, onPublished, 
 PublishDialog.propTypes = {
   template: templateShape.isRequired,
   source: copyShape.isRequired,
-  subject: PropTypes.string.isRequired,
-  body: PropTypes.string.isRequired,
+  text: PropTypes.shape({ subject: PropTypes.string, body: PropTypes.string.isRequired })
+    .isRequired,
   onClose: PropTypes.func.isRequired,
   onPublished: PropTypes.func.isRequired,
   onRefused: PropTypes.func.isRequired,
@@ -400,16 +554,24 @@ const localeOptionsOf = t => [
  * HTML body in a monospace textarea with the kind's token chips above
  * it, each labelled `{{name}}`, titled by its description and inserting
  * its `{{name}}` at the caret, and beside it the sandboxed preview, saved
- * through `POST /api/admin/email-templates`; a copy being
+ * through `POST /api/admin/email-templates`; the fields follow the kind's
+ * family: a `notification` kind labels the subject Title and the body
+ * Message with their limits, 255 and 1000 characters, as hints, an `sms`
+ * kind draws no subject and sends no `subject` member, and a plain kind,
+ * every notification and sms kind and the six `account_event_*` mail
+ * kinds, edits plain text in a plain textarea with the filled text as its
+ * preview and no frame, the six carrying the note that their title and
+ * message are placed inside the `account_event` mail; a copy being
  * edited draws its `version` read-only instead, since it changes only by
  * publishing, with two footer actions: Save, the default, "Save as a
  * revision of {{version}}", `PATCH /api/admin/email-templates/{kind}?site=&locale=`
- * with `subject` and `body` and never `version`, which writes the next
+ * with the kind's text members and never `version`, which writes the next
  * revision under the current version; and Publish, which opens
- * `PublishDialog` for the new version string; a `422` `token` at
- * `/subject` or `/body`, of a save or of a publish, is painted on that
- * field, and a `404` on the save of a copy being edited says the copy was
- * removed by someone else and reloads the list.
+ * `PublishDialog` for the new version string; a `422` at `/subject` or
+ * `/body`, of a save or of a publish, is painted on that field, in the
+ * summary when the form draws no such field, and a `404` on the save of a
+ * copy being edited says the copy was removed by someone else and reloads
+ * the list.
  */
 export const EmailTemplateCopyDialog = ({
   template,
@@ -423,25 +585,27 @@ export const EmailTemplateCopyDialog = ({
   const { t } = useTranslation();
   const notify = useNotify();
   const bodyRef = useRef(null);
-  const [opened] = useState(() => ({
-    site: source?.site || '',
-    locale: source?.locale || '',
-    version: source?.version || '',
-    subject: source?.subject || '',
-    body: source?.body || '',
-  }));
+  const [opened] = useState(() => openedOf(template, source));
+  const [schema] = useState(() => schemaOf(template, editing));
   const [form, setForm] = useState(opened);
   const [busy, setBusy] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const guard = useDiscardGuard(JSON.stringify(form) !== JSON.stringify(opened), onClose);
-  const schema = editing ? SAVE_SCHEMA : COPY_SCHEMA;
+  const labels = labelsOf(template);
+  const plain = isPlainKind(template);
+  const withSubject = textPropertiesOf(template).includes('subject');
   const rules = useFormRules({
     formKey: 'emailTemplates',
     schema,
     values: form,
-    labels: COPY_LABELS,
+    labels,
     idPrefix: 'email-template-copy',
   });
+
+  const hintOf = name => {
+    const limit = limitOf(template, name);
+    return limit ? t('admin.emailTemplates.limit', { max: limit }) : '';
+  };
 
   const onChange = (name, value) => setForm(current => ({ ...current, [name]: value }));
 
@@ -468,7 +632,7 @@ export const EmailTemplateCopyDialog = ({
     const call = editing
       ? updateEmailTemplate(
           template.kind,
-          { subject: form.subject, body: form.body },
+          copyBodyOf(template, form),
           source.site || '',
           source.locale || ''
         )
@@ -499,13 +663,13 @@ export const EmailTemplateCopyDialog = ({
     : t('admin.emailTemplates.addTitle', { name: kindLabelOf(t, template.kind) });
 
   const versionField = editing ? (
-    <Field id="email-template-copy-version-readonly" label={t(COPY_LABELS.version)}>
+    <Field id="email-template-copy-version-readonly" label={t(labels.version)}>
       {aria => (
         <input {...aria} type="text" className="form-control" value={source.version} readOnly />
       )}
     </Field>
   ) : (
-    <TextField name="version" form={form} rules={rules} onChange={onChange} labels={COPY_LABELS} />
+    <TextField name="version" form={form} rules={rules} onChange={onChange} labels={labels} />
   );
 
   return (
@@ -517,6 +681,7 @@ export const EmailTemplateCopyDialog = ({
           </Modal.Header>
           <Modal.Body>
             <FormErrorSummary errors={rules.summary} />
+            <KindHelp template={template} />
             <div className="row">
               <div className="col-md-4">
                 <SelectField
@@ -524,7 +689,7 @@ export const EmailTemplateCopyDialog = ({
                   form={form}
                   rules={rules}
                   onChange={onChange}
-                  labels={COPY_LABELS}
+                  labels={labels}
                   options={siteOptionsOf(t, sites)}
                   disabled={editing}
                 />
@@ -535,33 +700,37 @@ export const EmailTemplateCopyDialog = ({
                   form={form}
                   rules={rules}
                   onChange={onChange}
-                  labels={COPY_LABELS}
+                  labels={labels}
                   options={localeOptionsOf(t)}
                   disabled={editing}
                 />
               </div>
               <div className="col-md-4">{versionField}</div>
             </div>
-            <TextField
-              name="subject"
-              form={form}
-              rules={rules}
-              onChange={onChange}
-              labels={COPY_LABELS}
-            />
+            {withSubject ? (
+              <TextField
+                name="subject"
+                form={form}
+                rules={rules}
+                onChange={onChange}
+                labels={labels}
+                hint={hintOf('subject')}
+              />
+            ) : null}
             <ArgumentChips args={args} onInsert={insertArgument} />
             <div className="row">
               <div className="col-md-6">
                 <Field
                   id={rules.idFor('body')}
-                  label={t(COPY_LABELS.body)}
+                  label={t(labels.body)}
+                  hint={hintOf('body')}
                   error={rules.errors.body || ''}
                 >
                   {aria => (
                     <textarea
                       {...aria}
                       ref={bodyRef}
-                      className="form-control font-monospace"
+                      className={plain ? 'form-control' : 'form-control font-monospace'}
                       rows="12"
                       value={form.body}
                       onChange={event => onChange('body', event.target.value)}
@@ -572,7 +741,7 @@ export const EmailTemplateCopyDialog = ({
               </div>
               <div className="col-md-6">
                 <div className="form-label">{t('admin.emailTemplates.previewTitle')}</div>
-                <PreviewFrame body={form.body} args={args} />
+                <PreviewPane template={template} body={form.body} args={args} />
               </div>
             </div>
           </Modal.Body>
@@ -607,8 +776,7 @@ export const EmailTemplateCopyDialog = ({
           <PublishDialog
             template={template}
             source={source}
-            subject={form.subject}
-            body={form.body}
+            text={copyBodyOf(template, form)}
             onClose={() => setPublishing(false)}
             onPublished={() => {
               onSaved();
@@ -678,7 +846,7 @@ const RevisionView = ({ template, source, args, version, revision, onBack }) => 
         ) : null}
       </div>
       <div className="fw-bold mb-2">{row.subject || ''}</div>
-      <PreviewFrame body={row.body || ''} args={args} />
+      <PreviewPane template={template} body={row.body || ''} args={args} />
     </>
   );
 };
@@ -697,8 +865,8 @@ RevisionView.propTypes = {
  * /api/admin/email-templates/{kind}/history?site=&locale=`, versions
  * newest first with their revisions beneath (revision, published by,
  * published at, the live one marked Current), each revision opening
- * read-only as its subject over the same sandboxed preview the Preview
- * uses.
+ * read-only as its subject over the same preview the Preview uses, the
+ * kind's family deciding the frame or the filled text.
  */
 export const EmailTemplateHistoryDialog = ({ template, source, args, onClose }) => {
   const { t } = useTranslation();
