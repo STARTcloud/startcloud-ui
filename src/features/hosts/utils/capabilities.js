@@ -1,8 +1,11 @@
+import { hasFeatureStrict } from '../../../utils/capabilities';
+
 const listOf = value => (Array.isArray(value) ? value : []);
 
 /**
  * Whether a host's row names a feature token in its
- * `capabilities.features`, checked strictly: a row without the list names
+ * `capabilities.features`, an entry matched as the status's own features
+ * are, checked strictly: a row without the list names
  * nothing, because a row the Controls menu draws fires an agent request
  * that an agent without the surface answers 404.
  *
@@ -10,8 +13,7 @@ const listOf = value => (Array.isArray(value) ? value : []);
  * @param {string} token - The feature token, e.g. `machine-suspend`
  * @returns {boolean} True only when the list names the token
  */
-export const hostHasFeature = (server, token) =>
-  listOf(server?.capabilities?.features).includes(token);
+export const hostHasFeature = (server, token) => hasFeatureStrict(server?.capabilities, token);
 
 /**
  * Whether a host's row names a console token in its

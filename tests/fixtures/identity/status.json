@@ -11,11 +11,11 @@
   "collections": [],
   "features": [
     "local-accounts",
-    "tfa",
+    { "tfa": ["app", "sms", "passkey", "email"] },
     "onboarding",
     "interstitials",
     "policies",
-    "org-console",
+    { "org-console": ["teams"] },
     "discover",
     "invitations",
     "integrations",

@@ -1,0 +1,11 @@
+{
+  "type": "https://auth.startcloud.com/probs/conflict",
+  "title": "SMS verification is not available on this site.",
+  "status": 409,
+  "code": "sms_unavailable",
+  "sms": [],
+  "app": [{ "id": 11, "label": "Phone app" }],
+  "passkey": false,
+  "backup_codes": true,
+  "email": true
+}

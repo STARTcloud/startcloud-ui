@@ -30,6 +30,7 @@ import {
   useTerminalPrefsOpen,
 } from '../hooks/useTerminal';
 import { useZoneTerminal } from '../hooks/useZoneTerminal';
+import { hostHasFeature } from '../utils/capabilities';
 import { performRdpTyping } from '../utils/rdpUtils';
 import { footerConsoles, isHeldKind, receivers } from '../utils/terminals';
 import { performTyping } from '../utils/vncUtils';
@@ -206,7 +207,7 @@ const ConsolesPane = ({ active, height }) => {
   const [menu, setMenu] = useState(null);
   const tabs = useMemo(() => footerConsoles(consoles), [consoles]);
   const accepting = receivers(consoles).length;
-  const shellOffered = focus.kind === 'host' && focus.features.includes('host-terminal');
+  const shellOffered = focus.kind === 'host' && hostHasFeature(focus.server, 'host-terminal');
 
   const strip = tabs.map(entry => ({
     key: entry.key,

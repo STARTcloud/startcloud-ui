@@ -1,0 +1,11 @@
+{
+  "type": "https://auth.startcloud.com/probs/send-failed",
+  "title": "The code could not be sent.",
+  "status": 503,
+  "code": "send_failed",
+  "sms": [],
+  "app": [{ "id": 11, "label": "Phone app" }],
+  "passkey": false,
+  "backup_codes": false,
+  "email": true
+}

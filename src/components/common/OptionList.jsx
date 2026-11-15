@@ -4,7 +4,8 @@ import PropTypes from 'prop-types';
  * One radio card: a native radio inside its label so arrow keys move and
  * Space selects, the label, an optional help line and any extra lines;
  * `id`, where given, is the radio's own id, the one a form's error
- * summary links to.
+ * summary links to; `after` is drawn under the card and outside its
+ * label, the place for a field of its own that the choice opens.
  */
 export const Option = ({
   name,
@@ -16,25 +17,29 @@ export const Option = ({
   disabled = false,
   id = '',
   children = null,
+  after = null,
 }) => (
-  <label className={`option-card${checked ? ' on' : ''}${disabled ? ' off' : ''}`}>
-    <input
-      id={id || undefined}
-      className="option-card-input"
-      type="radio"
-      name={name}
-      value={value}
-      checked={checked}
-      disabled={disabled}
-      onChange={() => onChange(value)}
-    />
-    <span className="option-card-radio" aria-hidden="true" />
-    <span className="option-card-text">
-      <span className="option-card-label">{label}</span>
-      {help ? <span className="option-card-help">{help}</span> : null}
-      {children}
-    </span>
-  </label>
+  <>
+    <label className={`option-card${checked ? ' on' : ''}${disabled ? ' off' : ''}`}>
+      <input
+        id={id || undefined}
+        className="option-card-input"
+        type="radio"
+        name={name}
+        value={value}
+        checked={checked}
+        disabled={disabled}
+        onChange={() => onChange(value)}
+      />
+      <span className="option-card-radio" aria-hidden="true" />
+      <span className="option-card-text">
+        <span className="option-card-label">{label}</span>
+        {help ? <span className="option-card-help">{help}</span> : null}
+        {children}
+      </span>
+    </label>
+    {after}
+  </>
 );
 
 Option.propTypes = {
@@ -47,6 +52,7 @@ Option.propTypes = {
   disabled: PropTypes.bool,
   id: PropTypes.string,
   children: PropTypes.node,
+  after: PropTypes.node,
 };
 
 /**

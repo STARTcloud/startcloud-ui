@@ -1,114 +1,71 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import AuthShell, { AuthSpinner } from '../../../components/common/AuthShell';
 import OptionList, { Option } from '../../../components/common/OptionList';
 import ProblemAlert from '../../../components/common/ProblemAlert';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useProblemReporter } from '../../../hooks/useProblemReporter';
 import { followNext } from '../../../lib/next';
 import { cancelSignIn } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
 import { pickTfaMethod, tfaMethods } from '../api/tfa';
+import { buildOptions, membersOf, parseKey, preferredKey, queryProblemOf } from '../utils/methods';
 
-const keyOf = (method, id) => (id ? `${method}:${id}` : method);
+const EMAIL = 'EMAIL';
 
-const parseKey = key => {
-  const [tfaMethod, authenticatorId = ''] = key.split(':');
-  return { tfaMethod, authenticatorId };
-};
-
-const buildOptions = (answer, t) => {
-  const locked = answer.locked || [];
-  const options = [];
-  (answer.sms || []).forEach(entry => {
-    options.push({
-      key: keyOf('SMS', entry.id),
-      method: 'SMS',
-      label: t('tfa.method.sms', { label: entry.label }),
-      help: entry.masked,
-      extra: answer.sms_risk_notice ? t('tfa.method.smsRisk') : '',
-    });
-  });
-  (answer.app || []).forEach(entry => {
-    options.push({
-      key: keyOf('APP', entry.id),
-      method: 'APP',
-      label: t('tfa.method.app', { label: entry.label }),
-      help: '',
-      extra: '',
-    });
-  });
-  if (answer.passkey) {
-    options.push({
-      key: 'PASSKEY',
-      method: 'PASSKEY',
-      label: t('tfa.method.passkey'),
-      help: t('tfa.method.passkeyHelp'),
-      extra: '',
-    });
-  }
-  options.push({
-    key: 'BACKUP_CODE',
-    method: 'BACKUP_CODE',
-    label: t('tfa.method.backup'),
-    help: answer.backup_codes ? t('tfa.method.backupHelp') : t('tfa.method.backupNone'),
-    extra: '',
-    disabled: !answer.backup_codes,
-  });
-  return options
-    .map(option => {
-      if (locked.includes(option.method)) {
-        return { ...option, disabled: true, help: t('tfa.method.locked') };
-      }
-      return option;
-    })
-    .sort((a, b) => Number(Boolean(a.disabled)) - Number(Boolean(b.disabled)));
-};
-
-const preferredKey = (answer, options) => {
-  const preferred = answer.preferred
-    ? keyOf(answer.preferred.method, answer.preferred.authenticator_id)
-    : '';
-  const enabled = options.filter(option => !option.disabled);
-  if (enabled.some(option => option.key === preferred)) {
-    return preferred;
-  }
-  return enabled[0]?.key || '';
-};
+const codePath = tfaMethod => `/authenticator?tfa_method=${encodeURIComponent(tfaMethod)}`;
 
 /**
  * `/authenticator-method`: the radio cards of every second-factor method
- * the account holds, the enabled ones first and a locked one last and
- * disabled, the preferred checked or else the first enabled, Continue
- * posting the choice and moving to `/authenticator?tfa_method=`, and Cancel
- * posting `/auth-cancel`.
+ * the account can use now, the enabled ones first and a locked one last
+ * and disabled, the preferred checked or else the first enabled, Continue
+ * posting the choice and moving to `/authenticator?tfa_method=`, the
+ * emailed code moving there without a post since the code page sends it,
+ * and Cancel posting `/auth-cancel`. The cards come from
+ * `GET /api/auth/tfa/methods`, or, when the code page arrives with the
+ * methods a refused send carried in router state, from those with no
+ * request, the router state cleared once it is read so a reload asks the
+ * route again; a refused choice that carries them redraws the cards from them.
+ * `?error=<code>` and the refusal the code page handed over draw the
+ * problem alert.
  */
 const TfaMethodPage = ({ returnTo }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const navigate = useNavigate();
+  const location = useLocation();
+  const status = useStatus();
   const report = useProblemReporter();
-  const [answer, setAnswer] = useState(null);
-  const [options, setOptions] = useState([]);
-  const [chosen, setChosen] = useState('');
+  const { pathname, search } = location;
+  const [handed] = useState(() => location.state?.methods || null);
+  const [answer, setAnswer] = useState(handed);
+  const [picked, setPicked] = useState('');
   const [busy, setBusy] = useState(false);
-  const [problem, setProblem] = useState(null);
+  const [problem, setProblem] = useState(() => location.state?.problem || queryProblemOf(search));
+  const options = useMemo(
+    () => (answer ? buildOptions(answer, status, t) : []),
+    [answer, status, t]
+  );
+  const chosen = options.some(option => option.key === picked && !option.disabled)
+    ? picked
+    : preferredKey(answer || {}, options);
 
   useEffect(() => {
     document.title = t('tfa.choose.title');
   }, [t]);
 
   useEffect(() => {
+    if (handed) {
+      navigate(`${pathname}${search}`, { replace: true, state: null });
+      return undefined;
+    }
     let active = true;
     tfaMethods()
       .then(result => {
-        if (!active) {
-          return;
+        if (active) {
+          setAnswer(result);
         }
-        const built = buildOptions(result, t);
-        setAnswer(result);
-        setOptions(built);
-        setChosen(preferredKey(result, built));
       })
       .catch(error => {
         if (active) {
@@ -118,10 +75,14 @@ const TfaMethodPage = ({ returnTo }) => {
     return () => {
       active = false;
     };
-  }, [report, t]);
+  }, [handed, navigate, pathname, report, search]);
 
   const fail = error => {
+    const members = membersOf(error);
     setBusy(false);
+    if (members) {
+      setAnswer(previous => ({ ...previous, ...members }));
+    }
     setProblem(report(error));
   };
 
@@ -131,10 +92,14 @@ const TfaMethodPage = ({ returnTo }) => {
       return;
     }
     const choice = parseKey(chosen);
+    if (choice.tfaMethod === EMAIL) {
+      navigate(codePath(EMAIL));
+      return;
+    }
     setProblem(null);
     setBusy(true);
     pickTfaMethod(choice)
-      .then(() => navigate(`/authenticator?tfa_method=${encodeURIComponent(choice.tfaMethod)}`))
+      .then(() => navigate(codePath(choice.tfaMethod)))
       .catch(fail);
   };
 
@@ -157,7 +122,7 @@ const TfaMethodPage = ({ returnTo }) => {
                 value={option.key}
                 checked={chosen === option.key}
                 disabled={Boolean(option.disabled)}
-                onChange={setChosen}
+                onChange={setPicked}
                 label={option.label}
                 help={option.help || null}
               >

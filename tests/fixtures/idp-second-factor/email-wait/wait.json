@@ -1,0 +1,7 @@
+{
+  "type": "https://auth.startcloud.com/probs/too-many-requests",
+  "title": "A code was sent a moment ago.",
+  "status": 429,
+  "code": "email_code_send",
+  "wait_seconds": 40
+}

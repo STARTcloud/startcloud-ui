@@ -1,0 +1,11 @@
+{
+  "language": "en",
+  "mode": "dark",
+  "theme": null,
+  "motion": null,
+  "timezone": "America/Chicago",
+  "region": null,
+  "ciba_channel": "PUSH",
+  "ciba_user_code_set": false,
+  "sign_in_notices": { "when": "all", "channels": ["email", "push"] }
+}

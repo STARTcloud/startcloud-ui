@@ -93,6 +93,13 @@ const addressOf = place => {
   };
 };
 
+const storedCountryOf = address => address.country_code || address.country || '';
+
+const countryChoiceOf = (countries, stored) => {
+  const entry = countries.find(country => country.code === stored || country.label === stored);
+  return { known: Boolean(entry), selected: entry ? entry.code : stored };
+};
+
 const usePlacesAutocomplete = ({ inputRef, placesKey, onPlace }) => {
   const onPlaceRef = useRef(onPlace);
 
@@ -212,7 +219,7 @@ const AddressFields = ({
     });
   };
 
-  const storedCountry = address.country_code || address.country || '';
+  const storedCountry = storedCountryOf(address);
 
   const labelOf = (name, labelKey) => {
     const label = t(`profile.address.${labelKey}`);
@@ -243,12 +250,10 @@ const AddressFields = ({
     </Field>
   );
 
-  const knownCountry = countries.some(
-    entry => entry.code === storedCountry || entry.label === storedCountry
+  const { known: knownCountry, selected: selectedCountry } = countryChoiceOf(
+    countries,
+    storedCountry
   );
-  const selectedCountry = knownCountry
-    ? countries.find(entry => entry.code === storedCountry || entry.label === storedCountry).code
-    : storedCountry;
 
   const drawn = name => parts.includes(name);
 

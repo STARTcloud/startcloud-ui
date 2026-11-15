@@ -2,9 +2,15 @@ import axios from 'axios';
 import PropTypes from 'prop-types';
 import { createContext, useContext } from 'react';
 
+import { isFeatureEntry } from '../utils/capabilities';
 import { sortShape } from '../utils/itemShape';
 
 const StatusContext = createContext(null);
+
+const featureEntry = (entries, index, componentName, location, propFullName) =>
+  isFeatureEntry(entries[index])
+    ? null
+    : new Error(`Invalid ${location} \`${propFullName}\` supplied to \`${componentName}\`.`);
 
 /**
  * The hosting backend's answer to `GET /api/status`, asked of the origin
@@ -137,7 +143,7 @@ export const statusShape = PropTypes.shape({
     path: PropTypes.string.isRequired,
     topics: PropTypes.arrayOf(PropTypes.string).isRequired,
   }),
-  features: PropTypes.arrayOf(PropTypes.string),
+  features: PropTypes.arrayOf(featureEntry),
   links: PropTypes.shape({
     docs: PropTypes.string.isRequired,
     contact: PropTypes.string.isRequired,

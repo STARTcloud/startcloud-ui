@@ -26,7 +26,7 @@ import { issuerOrganizationsShape } from '../api/issuer';
 
 const CREATE_SCHEMA = { required: ['name'], properties: { name: NON_BLANK } };
 const CREATE_LABELS = { name: 'organizations.name' };
-const EMPTY = { organizations: [], organizations_enabled: false, personal_to_team_enabled: false };
+const EMPTY = { organizations: [], personal_to_team_enabled: false };
 const PREFS_KEY = 'table_prefs_organizations';
 const VIEWS = ['table', 'cards'];
 const NO_COLUMNS = [];
@@ -274,8 +274,8 @@ MembershipCards.propTypes = {
 /**
  * The organizations page of the identity contract at `/user/organizations`:
  * Create a team, a name required, in a `SectionCard` whose fold lives
- * under `table_prefs_organizations`, while the answer says
- * `organizations_enabled` and the session's account is not guest-only
+ * under `table_prefs_organizations`, while the host lists `teams` as a
+ * sub flag of `org-console` and the session's account is not guest-only
  * (`guestOnly`, the shared download login), a Find an organization link to the directory
  * at `/organizations/discover` beside the view toggle while the host
  * advertises `discover`, no join-by-code form, then the memberships as a
@@ -424,7 +424,8 @@ const OrganizationsPage = ({ session, events, organizations, activeOrgKey }) => 
   const loadedEmpty = needle ? t('pages.noMatches') : t('organizations.none');
   const empty = loaded ? loadedEmpty : t('loading');
   const canCreate =
-    data.organizations_enabled && !guestOnly(session.restore()?.organizations || []);
+    hasFeature(status, 'org-console', 'teams') &&
+    !guestOnly(session.restore()?.organizations || []);
   const actions = (
     <>
       {hasFeature(status, 'discover') ? (

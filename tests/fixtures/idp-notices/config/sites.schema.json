@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sites",
+  "schemaVersion": 1,
+  "sections": {
+    "sites": { "title": "Sites", "order": 1 }
+  },
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "readOnly": true,
+      "default": 1,
+      "title": "Schema version"
+    },
+    "sites": {
+      "type": "object",
+      "title": "Sites",
+      "section": "sites",
+      "properties": {
+        "sites": {
+          "type": "object",
+          "title": "Sites",
+          "additionalProperties": {
+            "type": "object",
+            "title": "Site",
+            "properties": {
+              "name": {
+                "type": "string",
+                "title": "Site name",
+                "order": 1
+              },
+              "domains": {
+                "type": "array",
+                "items": { "type": "string" },
+                "title": "Site domains",
+                "order": 2
+              },
+              "security": {
+                "type": "object",
+                "title": "Security",
+                "properties": {
+                  "sign_in_notice": {
+                    "type": "string",
+                    "enum": ["off", "new", "all"],
+                    "title": "Sign-in notices by default",
+                    "description": "When people who chose nothing are told of a sign-in: never, from a new device or place, or every time."
+                  }
+                }
+              }
+            },
+            "required": ["name"]
+          },
+          "propertyNames": { "pattern": "^[a-z0-9][a-z0-9_-]*$" }
+        }
+      }
+    }
+  }
+}

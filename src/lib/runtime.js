@@ -117,19 +117,6 @@ const appendAnalytics = analytics => {
   document.head.appendChild(script);
 };
 
-const onError = error => {
-  if (isPendingGate(error)) {
-    return Boolean(session.followPendingGate?.(error));
-  }
-  log.api.error('Request failed', {
-    method: error.request.method,
-    url: error.request.url,
-    status: error.status,
-    message: error.message,
-  });
-  return false;
-};
-
 export const events = createSessionEvents();
 
 export const eventHub = createEventHub();
@@ -142,6 +129,19 @@ export let rules = null;
 
 let apiOrigin = '';
 let rulesPromise = null;
+
+const onError = error => {
+  if (isPendingGate(error)) {
+    return Boolean(session.followPendingGate?.(error));
+  }
+  log.api.error('Request failed', {
+    method: error.request.method,
+    url: error.request.url,
+    status: error.status,
+    message: error.message,
+  });
+  return false;
+};
 
 export const fetchHealth = () => client.get('/api/health', PUBLIC);
 

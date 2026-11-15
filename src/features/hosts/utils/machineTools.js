@@ -1,3 +1,5 @@
+import { hasFeatureStrict } from '../../../utils/capabilities';
+
 import { pickDefaultSource, sourceKeyOf } from './boxCatalog';
 import { hostHasFeature, hostHasHypervisor } from './capabilities';
 import { canCreateMachines } from './permissions';
@@ -112,8 +114,7 @@ export const machineToolGates = ({ server, machine, role }) => {
 };
 
 const streamsTopic = (row, topic) =>
-  Array.isArray(row?.features) &&
-  row.features.includes('events') &&
+  hasFeatureStrict(row, 'events') &&
   Array.isArray(row.events?.topics) &&
   row.events.topics.includes(topic);
 

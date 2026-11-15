@@ -3311,6 +3311,10 @@ details.meter .tier-badge {
   color: var(--auth-danger);
 }
 
+.auth-alert-info + .auth-alert-timer {
+  color: var(--auth-ink-2);
+}
+
 .auth-policy {
   padding-top: 12px;
   border-top: 1px solid var(--auth-line);

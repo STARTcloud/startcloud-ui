@@ -1,0 +1,40 @@
+{
+  "id": 8,
+  "uuid": "8f2c0000-0000-4000-8000-000000000008",
+  "email": "tbaker@example.com",
+  "email_verified": true,
+  "name": "Tom Baker",
+  "given_name": "Tom",
+  "family_name": "Baker",
+  "picture": null,
+  "has_local_auth": true,
+  "requires_password_setup": false,
+  "tfa": {
+    "enabled": false,
+    "preferred_method": null,
+    "preferred_authenticator_id": null,
+    "locked": []
+  },
+  "roles": ["ROLE_USER"],
+  "organizations": [
+    {
+      "uuid": "0d6b7e2a-1111-4c0a-9a1e-000000000001",
+      "name": "Acme",
+      "roles": ["GUEST"],
+      "primary": true,
+      "personal": false,
+      "logo_url": null,
+      "email_hash": "",
+      "suspended": false,
+      "membership_suspended": false
+    }
+  ],
+  "preferences": {
+    "language": "en",
+    "mode": "dark",
+    "theme": null,
+    "timezone": "America/Chicago",
+    "region": null
+  },
+  "favorite_apps": []
+}

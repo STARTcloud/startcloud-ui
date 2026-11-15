@@ -1,0 +1,9 @@
+{
+  "sites": {
+    "default_site": "startcloud",
+    "sites": {
+      "startcloud": { "name": "STARTcloud" },
+      "prominic": { "name": "Prominic" }
+    }
+  }
+}

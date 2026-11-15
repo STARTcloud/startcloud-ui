@@ -20,6 +20,7 @@ import {
   useConsoleOpens,
   useConsoles,
 } from './hooks/useTerminal';
+import { hostHasFeature } from './utils/capabilities';
 import { consoleDoorsOf } from './utils/consoles';
 import { consoleOf, footerConsoles, isHeldKind } from './utils/terminals';
 
@@ -46,7 +47,7 @@ const TASKS_VIEW = {
   menu: TASKS_ROWS,
 };
 
-const listsToken = (focus, token) => focus.kind === 'host' && focus.features.includes(token);
+const listsToken = (focus, token) => focus.kind === 'host' && hostHasFeature(focus.server, token);
 
 const shellRow = (focus, actions) =>
   listsToken(focus, 'host-terminal')

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Application",
+  "schemaVersion": 1,
+  "sections": {
+    "network": { "title": "Network", "order": 1 }
+  },
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "readOnly": true,
+      "default": 1,
+      "title": "Schema version"
+    },
+    "application": {
+      "type": "object",
+      "title": "Application",
+      "section": "network",
+      "properties": {
+        "outbound": {
+          "type": "object",
+          "title": "Outbound",
+          "properties": {
+            "proxy": {
+              "type": "object",
+              "title": "Proxy for outbound connections",
+              "subsection": "outboundProxy",
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": ["none", "system", "manual"],
+                  "default": "system",
+                  "title": "Proxy mode",
+                  "description": "Connect directly, follow the machine's own proxy, or use the proxy named here.",
+                  "order": 1
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["http", "socks4", "socks5"],
+                  "title": "Proxy type",
+                  "order": 2,
+                  "dependsOn": "mode",
+                  "showWhen": ["manual"]
+                },
+                "host": {
+                  "type": "string",
+                  "title": "Proxy host",
+                  "order": 3,
+                  "dependsOn": "mode",
+                  "showWhen": ["manual"]
+                },
+                "port": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65535,
+                  "title": "Proxy port",
+                  "order": 4,
+                  "dependsOn": "mode",
+                  "showWhen": ["manual"]
+                },
+                "username": {
+                  "type": "string",
+                  "title": "Proxy user name",
+                  "order": 5,
+                  "dependsOn": "mode",
+                  "showWhen": ["manual"]
+                },
+                "password": {
+                  "type": "string",
+                  "writeOnly": true,
+                  "title": "Proxy password",
+                  "order": 6,
+                  "dependsOn": "mode",
+                  "showWhen": ["manual"]
+                },
+                "no_proxy": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "title": "Never through the proxy",
+                  "description": "Host names, domain suffixes with a leading dot, IP addresses and CIDR blocks.",
+                  "order": 7,
+                  "dependsOn": "mode",
+                  "showWhen": ["system", "manual"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

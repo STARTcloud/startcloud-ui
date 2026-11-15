@@ -641,6 +641,73 @@ export const EMAIL_TEMPLATES = [
       ),
     ],
   },
+  {
+    kind: 'sign_in_notice',
+    copies: [
+      seedCopy(
+        15,
+        'New sign-in to your {{site_name}} account',
+        '<p>Hello {{name}},</p>\n<p>Your account signed in at {{time}} from {{ip}}, {{location}}, with {{browser}} ({{method}}).</p>\n<p><a href="{{sessions_link}}">Review your sessions</a> or write to {{support_email}}.</p>'
+      ),
+    ],
+  },
+  {
+    kind: 'device_approval_notice',
+    copies: [
+      seedCopy(
+        16,
+        'A device code was approved on {{site_name}}',
+        '<p>Hello {{name}},</p>\n<p>A device code of {{client_name}} was approved at {{time}} from {{ip}}, {{location}}, with {{browser}} ({{method}}).</p>\n<p><a href="{{sessions_link}}">Review your sessions</a> or write to {{support_email}}.</p>'
+      ),
+    ],
+  },
+  {
+    kind: 'ciba_approval_notice',
+    copies: [
+      seedCopy(
+        17,
+        'A sign-in request was approved on {{site_name}}',
+        '<p>Hello {{name}},</p>\n<p>A sign-in request of {{client_name}} was approved at {{time}} from {{ip}}, {{location}}, with {{browser}} ({{method}}).</p>\n<p><a href="{{sessions_link}}">Review your sessions</a> or write to {{support_email}}.</p>'
+      ),
+    ],
+  },
+  {
+    kind: 'sign_in_notice_changed',
+    copies: [
+      seedCopy(
+        18,
+        'Your {{site_name}} sign-in notices changed',
+        '<p>Hello {{name}},</p>\n<p>Sign-in notices: {{when}}. Channels: {{channels}}.</p>\n<p>Questions? Write to {{support_email}}.</p>'
+      ),
+    ],
+  },
+  {
+    kind: 'sign_in_email_code',
+    copies: [
+      seedCopy(
+        19,
+        'Your {{site_name}} sign-in code',
+        '<p>Hello {{name}},</p>\n<p>Your code is <strong>{{code}}</strong>. It expires in {{expiry_minutes}} minutes.</p>\n<p>Questions? Write to {{support_email}}.</p>'
+      ),
+    ],
+  },
+];
+
+const NOTICE_ARGUMENTS = [
+  { name: 'name', description: 'The recipient name' },
+  { name: 'time', description: 'When it happened' },
+  { name: 'ip', description: 'The address it came from' },
+  { name: 'location', description: 'The location of that address' },
+  { name: 'browser', description: 'The browser and operating system' },
+  { name: 'method', description: 'The method names of the session' },
+  { name: 'site_name', description: 'The site name' },
+  { name: 'sessions_link', description: 'The link to the account sessions' },
+  { name: 'support_email', description: 'The support address' },
+];
+
+const APPROVAL_ARGUMENTS = [
+  ...NOTICE_ARGUMENTS,
+  { name: 'client_name', description: 'The application approved' },
 ];
 
 export const EMAIL_ARGUMENTS = [
@@ -734,6 +801,29 @@ export const EMAIL_ARGUMENTS = [
       { name: 'authentication', description: 'Whether authentication is on' },
       { name: 'from_address', description: 'The sender address' },
       { name: 'from_name', description: 'The sender name' },
+    ],
+  },
+  { kind: 'sign_in_notice', arguments: NOTICE_ARGUMENTS },
+  { kind: 'device_approval_notice', arguments: APPROVAL_ARGUMENTS },
+  { kind: 'ciba_approval_notice', arguments: APPROVAL_ARGUMENTS },
+  {
+    kind: 'sign_in_notice_changed',
+    arguments: [
+      { name: 'name', description: 'The recipient name' },
+      { name: 'when', description: 'When notices are sent after the change' },
+      { name: 'channels', description: 'The channels after the change' },
+      { name: 'site_name', description: 'The site name' },
+      { name: 'support_email', description: 'The support address' },
+    ],
+  },
+  {
+    kind: 'sign_in_email_code',
+    arguments: [
+      { name: 'name', description: 'The recipient name' },
+      { name: 'code', description: 'The sign-in code' },
+      { name: 'expiry_minutes', description: 'Minutes until the code expires' },
+      { name: 'site_name', description: 'The site name' },
+      { name: 'support_email', description: 'The support address' },
     ],
   },
 ];

@@ -2,23 +2,18 @@ import { useMemo } from 'react';
 import { matchPath, useLocation } from 'react-router-dom';
 
 import { useStatus } from '../../../contexts/StatusContext';
+import { hostHasFeature } from '../utils/capabilities';
 import { SELF, isServerRole } from '../utils/hosts';
 
 import { useServers } from './useServers';
 
 const HOST_ROUTE = { path: '/hosts/:id', end: false };
 
-const featuresOf = server => {
-  const features = server?.capabilities?.features;
-  return Array.isArray(features) ? features : [];
-};
-
 const oneHost = (id, server) => ({
   kind: 'host',
   key: `host:${id}`,
   id,
   server,
-  features: featuresOf(server),
   hosts: [],
 });
 
@@ -32,10 +27,11 @@ const oneHost = (id, server) => ({
  * row the server answered, so its focus holds under any chosen
  * organization; the hosts of `all` are the ones the choice narrows to.
  * `key` names the focus, so a read is made again only when the focus
- * itself changed.
+ * itself changed. A token of the host in focus is asked of its row,
+ * `hostHasFeature(focus.server, token)`.
  *
  * @param {Object} options - The status, the servers and the held rows of `useServers` and the pathname
- * @returns {{ kind: string, key: string, id: string, server: Object|null, features: Array<string>, hosts: Array<Object> }} The focus
+ * @returns {{ kind: string, key: string, id: string, server: Object|null, hosts: Array<Object> }} The focus
  */
 export const focusOf = ({ status, servers, held, pathname }) => {
   if (!isServerRole(status)) {
@@ -46,13 +42,12 @@ export const focusOf = ({ status, servers, held, pathname }) => {
     const { id } = match.params;
     return oneHost(id, held.find(row => String(row.id) === id) || null);
   }
-  const hosts = servers.filter(row => featuresOf(row).includes('tasks'));
+  const hosts = servers.filter(row => hostHasFeature(row, 'tasks'));
   return {
     kind: 'all',
     key: `all:${hosts.map(row => row.id).join(',')}`,
     id: '',
     server: null,
-    features: [],
     hosts,
   };
 };

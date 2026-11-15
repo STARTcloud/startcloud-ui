@@ -1974,15 +1974,28 @@
     </div>
     <div class="callouts">
       <div class="callout">
-        <strong>The picker</strong> draws <code>GET /api/auth/tfa/methods</code>: one radio card per
-        SMS and APP authenticator, each a native radio inside its label so arrow keys move and Space
-        selects, Passkey while the user has one, Backup code while codes exist ("You have no backup
-        codes; use another method." otherwise), the enabled rows first and a locked method last,
-        disabled, with its help; the preferred one checked, or the first enabled one when the
-        preferred is locked, so Continue always has a choice.
+        <strong>The picker</strong> draws <code>GET /api/auth/tfa/methods</code>, the one source for
+        the choice: one radio card per SMS and APP authenticator, each a native radio inside its
+        label so arrow keys move and Space selects, Passkey while <code>passkey</code>, Backup code
+        while <code>backup_codes</code>, "Email me a code" while <code>email</code>, each only while
+        its member allows it and its sub flag of the <code>tfa</code> feature is listed, the enabled
+        rows first and a locked method last, disabled, with its help, <code>EMAIL</code> among the
+        locked; the preferred one checked, or the first enabled one when the preferred is locked, so
+        Continue always has a choice, and the code step always offers "Choose a different method".
         <code>POST /authenticator-method</code> sends the code for SMS and answers the code page's
-        state. Cancel posts <code>/auth-cancel</code>, the one meaning Cancel has on every sign-in
-        page.
+        state; <code>503 send_failed</code> and <code>409 sms_unavailable</code> carry
+        <code>sms</code>, <code>app</code>, <code>passkey</code>, <code>backup_codes</code> and
+        <code>email</code> beside <code>code</code>, so the page offers the other methods at once
+        with no second read. The emailed code is the last resort, offered only while the site allows
+        it, mail can be sent, the address is verified, the sign-in did not come through the mailbox
+        and the account has no app, no phone that can be texted and no passkey the site offers:
+        <code>POST /api/auth/tfa/email/send</code> answers the code page's state with
+        <code>method: "EMAIL"</code> and <code>target.masked</code>, or
+        <code>429 email_code_send</code> with <code>wait_seconds</code>, <code>409 locked</code> or
+        <code>409 email_code_unavailable</code>;
+        <code>POST /api/auth/tfa/email/verify { code }</code> answers <code>next</code>. Both pages
+        draw <code>?error=&lt;code&gt;</code> as that problem. Cancel posts
+        <code>/auth-cancel</code>, the one meaning Cancel has on every sign-in page.
       </div>
       <div class="callout">
         <strong>The code entry</strong> draws <code>GET /api/auth/tfa</code>: the subhead by method,
@@ -2344,9 +2357,15 @@
         <code>reset_invalid</code>, <code>magic_link_invalid</code>,
         <code>magic_link_account_disabled</code>, <code>throttled</code> and
         <code>quota</code> (<code>429</code> with <code>wait_seconds</code> and
-        <code>Retry-After</code>); <code>tos_session_expired</code> and
-        <code>registration_disabled</code> reach the page as <code>?error=</code> from other flows
-        (decision 2).
+        <code>Retry-After</code>), <code>account_suspended</code> (<code>403</code> from the passkey
+        sign-in, the second-factor step and the linking decision, and <code>?error=</code> from the
+        redirecting flows, a session of a suspended account ending with <code>401</code>
+        <code>session_expired</code>), <code>sms_unavailable</code> (<code>409</code>, and
+        <code>?error=</code> on the two second-factor pages),
+        <code>email_code_unavailable</code> (<code>409</code>) and
+        <code>email_code_send</code> (<code>429</code> with <code>wait_seconds</code>);
+        <code>tos_session_expired</code> and <code>registration_disabled</code> reach the page as
+        <code>?error=</code> from other flows (decision 2).
       </div>
     </div>
   </div>
@@ -2617,7 +2636,28 @@
         to the enumerated onboarding routes and the open ones, and every other authenticated route
         answers <code>403</code> <code>onboarding_required</code> with <code>next</code>, the shell
         navigating there and drawing no column and no menu while pending. The
-        <code>/oauth2/authorize</code> filter is untouched.
+        <code>/oauth2/authorize</code> filter is untouched. Three codes are gates the shell follows
+        from any route, for any session, keeping the page the person asked for as the place to
+        return to: <code>onboarding_required</code>, <code>terms_required</code> and
+        <code>second_factor_required</code> with <code>next: "/authenticator"</code>, the last two
+        arriving mid-session too, on a site whose <code>security.require_2fa</code> applies and for
+        a remembered sign-in on a site whose <code>remembered_device_2fa</code> is
+        <code>challenge</code>; none is drawn as a failure.
+      </div>
+      <div class="callout">
+        <strong>Cancel on every step.</strong> Every step page draws Cancel in its foot whatever the
+        client's <code>hide-cancel</code> says: <code>POST /auth-cancel</code> ends the session,
+        stores nothing and answers <code>{ next }</code>, the client's
+        <code>redirect_uri</code> with <code>error=access_denied</code> or <code>/</code>, followed
+        as a top-level navigation when it leaves the issuer, and the page drops its cached pending
+        profile. Every step follows the <code>next</code> its answer carries wherever it leads.
+        <code>phone.purpose</code> is <code>verify</code> while the session owes the phone step and
+        <code>tfa</code> otherwise, and the heading, helper and consent follow it; with
+        <code>sms</code> not a sub flag of <code>tfa</code> no onboarding owes the phone step and
+        the phone routes answer <code>409 sms_unavailable</code>. While the remembered return path
+        is <code>/activate</code> with a <code>user_code</code> every step draws the device code's
+        client name and time left from <code>GET /api/auth/device?user_code=</code>, and a session
+        that owes a step approves no device code.
       </div>
       <div class="callout">
         <strong>The phone step</strong> exists only on a site whose flag requires it, so a site that
@@ -2690,8 +2730,16 @@
                   ></span
                 >
               </div>
+              <div class="opt">
+                <span class="rd"></span
+                ><span class="t"
+                  ><span class="l">Passkey</span
+                  ><span class="h">Use this device's fingerprint, face or screen lock.</span></span
+                >
+              </div>
             </div>
             <button class="a-btn p" type="button">Continue</button>
+            <p class="a-foot"><span class="a-link muted">Cancel</span></p>
           </div>
         </div>
         <div class="auth-page">
@@ -2787,7 +2835,11 @@
         consumed by a prefetch, and are held in the session and answered again on every call until
         the confirm clears them, so a reload never shows an empty page; Continue stays enabled and
         refuses with the inline error while the box is unticked, because a disabled button hides
-        why.
+        why. The SMS option draws while <code>sms</code> is a sub flag of <code>tfa</code> and the
+        Passkey option, with its name field, while <code>passkey</code> is: the page runs the
+        passkey registration, then <code>POST /complete-onboarding/passkey</code> with no body,
+        which turns two-factor sign-in on with the passkey preferred and answers <code>next</code>,
+        <code>/complete-onboarding/backup-codes</code>, or <code>409 no_passkey</code>.
       </div>
       <div class="callout changed">
         <strong>Changed: one look.</strong> <code>qrcode.html</code>, <code>backupCodes.html</code>,
@@ -3033,13 +3085,21 @@
       </div>
       <div class="callout">
         <strong>Collecting mode</strong> is the server's decision:
-        <code>collecting: true</code> with the <code>fields</code> the document references, every
-        one drawn prefilled and editable so a wrong stored name is corrected here rather than baked
-        into the attestation, optional fields marked "(optional)" and no asterisks, the document
-        split on its rules into <code>content_html</code>, <code>content_middle_html</code> and
-        <code>content_bottom_html</code>, the blanks as <code>tos-blank</code> spans the page fills
-        with <code>textContent</code> as the person types. The values land on the real profile
-        columns.
+        <code>collecting: true</code> with the <code>fields</code> the document references or
+        declares, each <code>{ name, kind, group, … }</code>, every profile field drawn prefilled
+        and editable so a wrong stored name is corrected here rather than baked into the
+        attestation, optional fields marked "(optional)" and no asterisks, the document in three
+        zones, <code>content_html</code>, <code>content_middle_html</code> and
+        <code>content_bottom_html</code>, every blank the literal text
+        <code>@@field:&lt;anchor_key&gt;:&lt;name&gt;@@</code>, which the page replaces in text
+        nodes, after sanitizing, with DOM nodes that mirror the input of that name, a
+        <code>composite</code> its join, a <code>checkbox</code> a tick, a <code>date</code> a date,
+        a <code>choice</code> the chosen option, a <code>signature</code> the typed text, a
+        <code>removed</code> entry struck through; only the answer's <code>anchor_key</code> marks a
+        blank, and a blank with no entry, an unknown <code>kind</code> or a
+        <code>fields_version</code> above 1 draws an error and holds "I Agree &amp; Continue". The
+        post carries every input by <code>name</code> and a <code>422</code> lands at
+        <code>/fields/&lt;name&gt;</code>. The values land on the real profile columns.
       </div>
       <div class="callout changed">
         <strong>Changed: the legal pages.</strong> <code>/oauth/terms</code> and
@@ -3049,12 +3109,17 @@
         referring page when there is one and "Back to sign in" otherwise.
       </div>
       <div class="callout">
-        <strong>HTML, not markdown.</strong> The server renders the templates with raw HTML kept and
-        passes the result through an allowlist sanitizer that keeps every formatting element, link,
-        table and image and strips script, event handlers and <code>javascript:</code> URLs; the
-        page sanitizes every <code>*_html</code> member the same way before injecting it through
-        <code>MarkdownArticle</code>; the placeholder vocabulary stays on the server and is
-        substituted as escaped text, never evaluated (decision 6).
+        <strong>HTML, not markdown.</strong> The server renders the templates with raw HTML escaped
+        as text, link destinations sanitized and <code>rel="nofollow"</code> on every link, tables
+        as <code>table</code> markup with <code>align</code> on <code>th</code> and <code>td</code>,
+        a callout a plain <code>blockquote</code> opening with <code>[!NOTE]</code>,
+        <code>[!TIP]</code>, <code>[!IMPORTANT]</code>, <code>[!WARNING]</code> or
+        <code>[!CAUTION]</code>; the page sanitizes every <code>*_html</code> member before
+        injecting it through <code>MarkdownArticle</code>, admitting the table elements,
+        <code>align</code> and <code>rel</code> and dropping <code>span[data-tos-field]</code> and
+        the <code>tos-blank</code> class; the placeholder vocabulary stays on the server and is
+        substituted as escaped text, never evaluated, and the versions dialog and the policy page
+        draw anchors read-only with <code>locale</code> as a badge.
       </div>
     </div>
   </div>
@@ -3129,6 +3194,16 @@
             <div class="auth-heading">
               <h1 class="auth-headline">Connect a device</h1>
               <p class="auth-subhead">Enter the code shown on your device to continue.</p>
+            </div>
+            <div class="a-alert info">
+              <div>
+                Web 01 SSH is waiting for you to approve this code.<span
+                  class="timer"
+                  role="timer"
+                  aria-live="off"
+                  >Expires in 3:32</span
+                >
+              </div>
             </div>
             <div class="auth-form">
               <div class="a-field invalid">
@@ -3206,7 +3281,13 @@
         <code>type</code> in a tooltip, and "Not you? Sign out" signs out and posts
         <code>/auth-cancel</code>. A wrong device code comes back as
         <code>?error=invalid_user_code</code> painted on the field, and a guessing run meets
-        <code>429</code> with <code>Retry-After</code> (RFC 8628 §5.1).
+        <code>429</code> with <code>Retry-After</code> (RFC 8628 §5.1). The page reads
+        <code>GET /api/auth/device?user_code=</code> for the code it holds,
+        <code>{ client_name, expires_in_seconds }</code>, and draws the client's name and the time
+        left counted from the answer's arrival; at zero and on the <code>404</code> it says the code
+        has expired and disables Continue. A person who owes terms returns to
+        <code>/activate?user_code=</code> with the same code after the acceptance, and a device
+        request with <code>openid</code> draws it as the consent page's locked row.
       </div>
       <div class="callout">
         <strong>CIBA answers JSON.</strong> <code>GET /api/auth/ciba</code> with the token in an
@@ -3567,7 +3648,12 @@
               <span class="a-hint"
                 >the last method's Remove is disabled with "Remove another method first" as its
                 tooltip; a locked method draws a notice with "Re-enroll now"; the app enrolls inline
-                here with the QR, the setup key, the code and a label</span
+                here with the QR, the setup key, the code and a label; Disable two-factor is
+                disabled with a notice saying the site requires it while <code>tfa.required</code>;
+                a prompt to add an authenticator app or a passkey draws while
+                <code>tfa.sms_only</code>; Add phone number and the phone rows draw while
+                <code>sms</code> is a sub flag of <code>tfa</code>, and the Add passkey form while
+                <code>passkey</code> is</span
               >
               <h3 style="margin-top: 8px">Recovery <span class="a-badge">6 remaining</span></h3>
               <div class="actions" style="padding: 0"><span class="btn sm">Regenerate</span></div>
@@ -3826,14 +3912,26 @@
         <strong>Changed: organizations.</strong> Today one long page holds every membership's whole
         console (rename, profile, address, invite code, members, invites, leave, delete) as fourteen
         form posts each redirecting with a flash. Now the memberships here under the pages
-        contract's one view toggle, list or cards, every input labeled, the invite code shown and
+        contract's one view toggle, list or cards, every input labeled, Create a team drawn while
+        <code>teams</code> is a sub flag of <code>org-console</code>, the invite code shown and
         regenerable only while <code>can_manage</code>, and the shared OrgConsolePage over the
         active organization, grown by the issuer's fields; every row or card opens the console,
         Manage for a manager and View for a plain member, who sees the record and the members
         read-only; <code>#&lt;uuid&gt;</code> in the URL sets the active organization so the
         estate's "manage at the provider" links still land (decision 13). The switcher on the issuer
         is console context only; Make primary here is the one place the primary organization
-        changes.
+        changes. An entry whose <code>suspended</code> or <code>membership_suspended</code> is true
+        is not live: it draws a Suspended or "Your membership is suspended" badge, dimmed in the
+        switcher and never the active organization, its Make primary, Regenerate and Manage disabled
+        with the reason; the console's member rows draw Suspended from each row's
+        <code>suspended</code> and offer Suspend or Resume, an OWNER on every row but their own and
+        the only live owner, an ADMIN on MEMBER and GUEST rows, a <code>managed_by</code> row
+        neither, per row and on a selection, both through the bulk <code>POST …/members/bulk</code>,
+        a row's press sending its one id, the result line drawn as the admin users bulk result is. A
+        person with no membership sees the empty state and no row,
+        <code>GET /api/user/organizations</code> answering
+        <code>{ "organizations": [], "personal_to_team_enabled": false }</code>; no sign-up makes a
+        personal organization.
       </div>
       <div class="callout">
         <strong>Integrations</strong> reads one <code>GET /api/user/integrations</code>; linking
@@ -4315,7 +4413,13 @@
         with Light, Dark and Auto and no second "not chosen" value; the <code>Intl</code> zone list,
         the approval channel with SMS only while a verified number exists, the PIN with its status
         line, "A PIN is set · Clear" or "No PIN · Set", and one Save for those three through
-        <code>PATCH /api/user/preferences</code>.
+        <code>PATCH /api/user/preferences</code>; a Sign-in notices card over
+        <code>preferences.sign_in_notices { when, channels, default? }</code>, <code>when</code> one
+        of <code>off</code>, <code>new</code> and <code>all</code>, the three channels
+        <code>email</code>, <code>inbox</code> and <code>push</code> as switches, "Following the
+        site's default" while <code>default</code> is true and a way back that sends
+        <code>null</code>, its Save sending only the members that changed, its four refusals drawn
+        on the control their pointer names.
       </div>
       <div class="callout">
         <strong>Favorites</strong> is the ordered list with drag handles over
@@ -4417,12 +4521,14 @@
       </div>
       <div class="callout">
         <strong>Disable two-factor</strong> steps up and calls <code>PUT /api/user/tfa</code> with
-        <code>enabled: false</code>; <strong>Delete account</strong> is the email confirmation over
-        an empty field labeled with the address, the understanding box and a line naming exactly
-        what is destroyed, then <code>POST /api/user/deletion</code>, stepped up; the server
-        invalidates every session of the account before answering <code>{ next: "/login" }</code>,
-        and the page drops its cache and navigates there; a sole-owner refusal is <code>409</code>
-        <code>sole_owner</code> naming the teams, painted in the dialog.
+        <code>enabled: false</code>, refused <code>409 tfa_required</code> on a site that requires
+        two-factor sign-in, the badge staying On and nothing re-read;
+        <strong>Delete account</strong> is the email confirmation over an empty field labeled with
+        the address, the understanding box and a line naming exactly what is destroyed, then
+        <code>POST /api/user/deletion</code>, stepped up; the server invalidates every session of
+        the account before answering <code>{ next: "/login" }</code>, and the page drops its cache
+        and navigates there; a sole-owner refusal is <code>409</code> <code>sole_owner</code> naming
+        the teams, painted in the dialog.
       </div>
       <div class="callout">
         <strong>The other confirms</strong> (Revoke session, Revoke all sessions, Unlink account,
@@ -4674,7 +4780,9 @@
                 </div>
                 <h3 style="margin-top: 8px">Convert to a team</h3>
                 <span class="a-hint"
-                  >Shown on a personal organization only: a team name and Convert to team.</span
+                  >Shown on a <code>personal</code> row only, one made before sign-up stopped making
+                  personal organizations, while <code>teams</code> is a sub flag of
+                  <code>org-console</code>: a team name and Convert to team.</span
                 >
               </div>
             </div>
@@ -5015,7 +5123,7 @@
               ><span class="btn sm">Export</span>
             </div>
             <div class="bulk">
-              <strong>2</strong> selected <span class="btn sm">Enable</span
+              <strong>2</strong> selected <span class="btn sm">Resume</span
               ><span class="btn sm">Suspend</span><span class="btn sm">Add role…</span
               ><span class="btn sm">Remove role…</span
               ><span class="btn sm" style="color: var(--danger); border-color: var(--danger)"
@@ -5050,7 +5158,7 @@
                 ><span class="c k">jgilbert@example.com</span><span class="c">Jo Gilbert</span
                 ><span class="c"><span class="a-badge">Not set</span></span
                 ><span class="c"
-                  ><span class="status" style="background: var(--warning)">Disabled</span></span
+                  ><span class="status" style="background: var(--warning)">Suspended</span></span
                 ><span class="c"><span class="a-badge">USER</span></span
                 ><span class="c"
                   ><span class="a-badge" style="background: var(--warning-bg)"
@@ -5058,13 +5166,18 @@
                   ></span
                 ><span class="c"><span class="status">Off</span></span
                 ><span class="c"
-                  ><span class="btn sm">Enable</span> <span class="btn sm">More ▾</span></span
+                  ><span class="btn sm">Resume</span> <span class="btn sm">More ▾</span></span
                 >
               </div>
             </div>
             <span class="a-hint"
               >the row menu: Roles, Set primary organization, Edit customer ID, Rate limits, Delete;
-              a badge never acts on its own</span
+              a badge never acts on its own; the Suspended badge, Suspend and Resume read the row's
+              <code>suspended</code>, never <code>enabled</code> alone, an account that has not
+              confirmed its email reading Disabled; Suspend and Resume are offered per row and on a
+              selection, both through <code>POST /api/admin/users/bulk</code>, a row's press sending
+              its one id; the acting admin's own row offers no Suspend and the bulk suspend skips it
+              with <code>self</code></span
             >
             <div class="a-row" style="justify-content: center; gap: 6px">
               <span class="btn sm">‹</span><span class="btn sm primary">1</span
@@ -5417,7 +5530,11 @@
         <code>GET /api/admin/organizations</code>; the customer id dialog behind Edit is
         <code>PATCH /api/admin/organizations/{id}</code> (empty clears), Delete is
         <code>DELETE /api/admin/organizations/{id}</code> with the service's refusal as
-        <code>409</code>.
+        <code>409</code>; the Suspended badge and Suspend or Resume read the row's
+        <code>suspended</code>, offered per row and on a selection, both through
+        <code>POST /api/admin/organizations/bulk</code>, a row's press sending its one id, a
+        <code>personal</code> row, one made before sign-up stopped making personal organizations,
+        offering neither.
       </div>
       <div class="callout">
         <strong>Registrations</strong> is <code>admin/registrations.html</code>: the presets, the
@@ -5786,8 +5903,8 @@
                     </div>
                   </div>
                   <div class="a-field sm">
-                    <label>Display order</label>
-                    <div class="a-wrap"><input value="100" /></div>
+                    <label>Language</label>
+                    <div class="a-wrap"><input value="Default language" readonly /></div>
                   </div>
                   <label class="a-check full"
                     ><input type="checkbox" /> Publicly accessible at
@@ -5798,7 +5915,9 @@
                     ><span class="a-hint"
                       >Placeholders: {{first_name}}, {{last_name}}, {{full_name}}, {{email}},
                       {{phone}}, {{address}}, {{country}}, {{state}}, {{city}}, {{postal_code}},
-                      {{date}}</span
+                      {{effective_date}} · Declare a field:
+                      {{field:&lt;name&gt;;kind=&lt;kind&gt;;label=&lt;text&gt;;required=&lt;true|false&gt;;options=&lt;a|b|c&gt;}}
+                      · Repeat it with: {{field:&lt;name&gt;}}</span
                     >
                     <div class="grid2">
                       <div class="a-wrap">
@@ -5893,9 +6012,18 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
         and never the browser's prompt, Edit and Create in one dialog whose fields are the
         template's (name as a slug, display name, the icon picked from the estate's glyph set,
         version, type, public, order, the markdown in a textarea with its preview beside it and the
-        placeholder help from <code>GET /api/admin/terms/placeholders</code>), Delete behind a
-        confirm; every change saved as it is made, the batched <code>pendingToSChanges</code> gone;
-        the placeholders are string-substituted, never evaluated.
+        placeholder help from <code>GET /api/admin/terms/placeholders</code> with the declared-field
+        syntax beside it, the preview from <code>POST /api/admin/terms/preview</code> over the
+        unsaved content drawn with the acceptance page's component, a language picker on Create and
+        Add a copy, "Default language" for <code>""</code>, read-only on Edit, each copy row badged
+        with its <code>locale</code>, every save, publish, history, revision and delete sent with
+        <code>?region=&amp;locale=</code>), Delete behind a confirm; every change saved as it is
+        made, the batched <code>pendingToSChanges</code> gone; the placeholders are
+        string-substituted, never evaluated; a bad token paints the <code>422</code> rule
+        <code>token</code> on the content by <code>params.reason</code>, a language copy without its
+        default-language copy <code>dependentRequired</code> on the language picker or the regions
+        field, <code>default_copy</code> its own sentence, and a <code>404</code> on save, publish
+        or delete reads as removed by someone else and reloads the list.
       </div>
       <div class="callout">
         <strong>Configuration</strong> is drawn in the config contract's mockup, not here; the
@@ -5918,7 +6046,7 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
           <div style="display: flex; flex-direction: column; gap: 10px">
             <div class="a-row">
               <div class="crumbs">Admin<span class="sep">›</span>Email templates</div>
-              <span class="a-hint">9 kinds</span>
+              <span class="a-hint">17 kinds</span>
             </div>
             <div class="tcard" style="flex-direction: column; align-items: stretch; gap: 8px">
               <div class="a-row">
@@ -5926,7 +6054,7 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
                   ><span class="l"
                     ><input type="checkbox" /> ✉ Account verification
                     <code style="font-size: 11px">account_verification</code></span
-                  ><span class="h">{0} name · {1} link · {2} company name</span></span
+                  ><span class="h">{{name}} · {{link}} · {{company_name}}</span></span
                 ><span class="m-act"><span class="btn sm">+ Add a copy</span></span>
               </div>
               <div class="a-row" style="padding-left: 22px">
@@ -5965,7 +6093,7 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
                   ><span class="l"
                     ><input type="checkbox" /> ✉ Password reset
                     <code style="font-size: 11px">password_reset</code></span
-                  ><span class="h">{0} name · {1} link · {2} expiry minutes</span></span
+                  ><span class="h">{{name}} · {{link}} · {{expiry_minutes}}</span></span
                 ><span class="m-act"><span class="btn sm">+ Add a copy</span></span>
               </div>
               <div class="a-row" style="padding-left: 22px">
@@ -5989,8 +6117,7 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
                     ><input type="checkbox" /> ✉ Organization invitation
                     <code style="font-size: 11px">org_invite</code></span
                   ><span class="h"
-                    >{0} inviter name · {1} organization name · {2} invite link · {3} expiry
-                    days</span
+                    >{{inviter}} · {{organization_name}} · {{link}} · {{expiry_days}}</span
                   ></span
                 ><span class="m-act"><span class="btn sm">+ Add a copy</span></span>
               </div>
@@ -6051,15 +6178,17 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
                   </div>
                   <div class="a-field sm full">
                     <label>Subject</label>
-                    <div class="a-wrap"><input value="Verifica tu cuenta de {2}" /></div>
+                    <div class="a-wrap">
+                      <input value="Verifica tu cuenta de {{company_name}}" />
+                    </div>
                   </div>
                   <div class="a-field sm full">
                     <label>Body (HTML)</label
                     ><span class="a-hint"
-                      >Arguments: <span class="btn sm">{0} name</span>
-                      <span class="btn sm">{1} link</span>
-                      <span class="btn sm">{2} company name</span> — a chip inserts its
-                      <code>{n}</code> at the caret</span
+                      >Tokens: <span class="btn sm">{{name}}</span>
+                      <span class="btn sm">{{link}}</span>
+                      <span class="btn sm">{{company_name}}</span> — a chip inserts its
+                      <code>{{name}}</code> at the caret</span
                     >
                     <div class="grid2">
                       <div class="a-wrap">
@@ -6077,9 +6206,9 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
                             resize: vertical;
                           "
                         >
-&lt;p&gt;Hola {0},&lt;/p&gt;
-&lt;p&gt;Confirma tu cuenta de {2}:&lt;/p&gt;
-&lt;p&gt;&lt;a href="{1}"&gt;Verificar&lt;/a&gt;&lt;/p&gt;</textarea>
+&lt;p&gt;Hola {{name}},&lt;/p&gt;
+&lt;p&gt;Confirma tu cuenta de {{company_name}}:&lt;/p&gt;
+&lt;p&gt;&lt;a href="{{link}}"&gt;Verificar&lt;/a&gt;&lt;/p&gt;</textarea>
                       </div>
                       <div class="a-doc" style="max-height: 170px; font-size: 13px">
                         <p>Hola <span class="a-blank">name</span>,</p>
@@ -6118,14 +6247,15 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
     </div>
     <div class="callouts">
       <div class="callout">
-        <strong>Email templates</strong> are documents the way terms are (decision 164): the nine
-        kinds fixed by the server, one card per kind from
-        <code>GET /api/admin/email-templates</code>, its argument list under the title from
-        <code>GET /api/admin/email-templates/arguments</code>, a row per copy naming its site
-        ("Every site" for the default copy) and language ("Every language" for the site's default),
-        <code>v{version} r{revision}</code> beside it, Preview, Edit, History and Delete per row and
-        Add a copy on the card; every kind carries its seeded default copy, the generic text, edited
-        like any copy and never deleted: its Delete is drawn disabled, a
+        <strong>Email templates</strong> are documents the way terms are (decision 164): the
+        seventeen kinds fixed by the server, one card per kind from
+        <code>GET /api/admin/email-templates</code>, its tokens under the title from
+        <code>GET /api/admin/email-templates/arguments</code>, each
+        <code>{ name, description }</code> with no <code>index</code>, a row per copy naming its
+        site ("Every site" for the default copy) and language ("Every language" for the site's
+        default), <code>v{version} r{revision}</code> beside it, Preview, Edit, History and Delete
+        per row and Add a copy on the card; every kind carries its seeded default copy, the generic
+        text, edited like any copy and never deleted: its Delete is drawn disabled, a
         <code>409 default_copy</code> from the route or a skipped id in the bulk answer is painted
         by its own sentence, and the default copy's id is never sent in a bulk delete.
       </div>
@@ -6133,13 +6263,17 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
         <strong>The copy dialog</strong> is the terms copy dialog's shape: Site over the keys of the
         <code>sites</code> config file labelled by name and id, Language over the estate's locales
         plus "Every language", Version read-only while editing, Subject, the body in a monospace
-        textarea with the argument chips above it inserting <code>{n}</code> at the caret, and
-        beside it the preview, the body in a sandboxed <code>iframe srcdoc</code> with every
-        <code>{n}</code> replaced by its argument's name so no script or link runs; Save as a
-        revision (<code>PATCH</code>), Publish asking the new version (<code
-          >POST …/{kind}/publish</code
-        >), History from <code>…/{kind}/history</code>; a <code>{n}</code> the kind does not carry
-        paints the <code>422 format</code> on the field.
+        textarea with the token chips above it, keyed by <code>name</code>, labelled
+        <code>{{name}}</code>, titled by the description and inserting <code>{{name}}</code> at the
+        caret, and beside it the preview, the body in a sandboxed <code>iframe srcdoc</code> with
+        every <code>{{name}}</code> the kind offers replaced by its name and every other text left
+        as typed so no script or link runs; Save as a revision (<code>PATCH</code>), Publish asking
+        the new version (<code>POST …/{kind}/publish</code>), History from
+        <code>…/{kind}/history</code>; a token the kind does not offer paints the
+        <code>422</code> rule <code>token</code> with <code>params.token</code> on the Subject or
+        Body field, a <code>404</code> on save, publish or delete reads as removed by someone else
+        and reloads the list, and a <code>409 unique</code> of a simultaneous save paints on its
+        pointer's field.
       </div>
     </div>
   </div>

@@ -93,4 +93,4 @@ Feature: identity contract, email templates
     And I press the page's "email-template-bulk-delete" action
     And I confirm the open dialog
     Then the host was sent POST to "/api/admin/email-templates/bulk" carrying "action" as "delete"
-    And the email template bulk result reads "Removed by someone else (1)"
+    And the email template bulk result reads "no longer exists (1)"

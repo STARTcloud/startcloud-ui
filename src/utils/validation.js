@@ -349,26 +349,65 @@ export const validateValue = (schema, value, document = FALLBACK_DOCUMENT) => {
   return failure ? [{ pointer: '', ...failure }] : [];
 };
 
+const shownAt = (scope, defaults, key) => {
+  const held = Boolean(scope) && typeof scope === 'object' && scope[key] !== undefined;
+  if (held) {
+    return { found: true, value: scope[key] };
+  }
+  const given = Boolean(defaults) && Object.hasOwn(defaults, key);
+  return { found: given, value: given ? defaults[key] : undefined };
+};
+
 /**
  * Whether a property is drawn and evaluated: without `dependsOn` always,
  * else while the nearest enclosing object carrying the named key holds a
  * value equal by JSON value to one of the `showWhen` values, so
  * `showWhen: [true]` matches the boolean `true` and never the string
- * `"true"`.
+ * `"true"`. A key an object lacks takes the `default` its schema gives
+ * it, the filled document of the config contract; a stored null or blank
+ * is the value held and takes none.
  *
  * @param {Object} rule - The property's schema
  * @param {Array<Object>} scopes - The value objects from the root down to the property's parent
+ * @param {Array<Object>} [defaults] - Per scope, the schema defaults of that object's properties by key
  * @returns {boolean}
  */
-export const isVisible = (rule, scopes) => {
+export const isVisible = (rule, scopes, defaults = []) => {
   if (!rule.dependsOn) {
     return true;
   }
-  const scope = [...scopes]
+  const level = scopes
+    .map((scope, index) => shownAt(scope, defaults[index], rule.dependsOn))
     .reverse()
-    .find(entry => entry && typeof entry === 'object' && Object.hasOwn(entry, rule.dependsOn));
-  const current = scope ? scope[rule.dependsOn] : undefined;
+    .find(entry => entry.found);
+  const current = level ? level.value : undefined;
   return (rule.showWhen || []).some(expected => jsonEqual(expected, current));
+};
+
+const parentOf = pointer => pointer.slice(0, pointer.lastIndexOf('/'));
+
+/**
+ * The schema defaults `isVisible` reads beside the scopes of a JSON
+ * Pointer, one object per scope from the root down to the property's
+ * parent, drawn from the fields of `schemaSections`.
+ *
+ * @param {Array<{ pointer: string, key: string, default: * }>} fields - Every field of the file
+ * @param {string} pointer - The property's JSON Pointer
+ * @returns {Array<Object>} Per scope, the defaults of that object's fields by key
+ */
+export const defaultsFor = (fields, pointer) => {
+  const parents = pointer
+    .split('/')
+    .filter(Boolean)
+    .slice(0, -1)
+    .reduce((list, segment) => [...list, `${list[list.length - 1]}/${segment}`], ['']);
+  return parents.map(parent =>
+    Object.fromEntries(
+      fields
+        .filter(field => !isBlank(field.default) && parentOf(field.pointer) === parent)
+        .map(field => [field.key, field.default])
+    )
+  );
 };
 
 /**
@@ -427,7 +466,14 @@ const mapSchemas = (rule, document) => ({
       : null,
 });
 
-const walkMap = ({ item, keys, values, scopes, base, document, errors, walk }) => {
+const defaultsOf = (schema, document) =>
+  Object.fromEntries(
+    Object.entries(schema.properties || {})
+      .map(([key, property]) => [key, resolve(property, document).rule.default])
+      .filter(([, value]) => !isBlank(value))
+  );
+
+const walkMap = ({ item, keys, values, scopes, defaults, base, document, errors, walk }) => {
   Object.entries(values && typeof values === 'object' ? values : {}).forEach(([key, entry]) => {
     const pointer = `${base}/${key}`;
     if (keys && validateValue(keys, key, document).length > 0) {
@@ -439,6 +485,8 @@ const walkMap = ({ item, keys, values, scopes, base, document, errors, walk }) =
         schema: item,
         values: child,
         scopes: [...scopes, child],
+        defaults: [...defaults, {}],
+        fill: false,
         base: pointer,
         document,
         errors,
@@ -447,7 +495,7 @@ const walkMap = ({ item, keys, values, scopes, base, document, errors, walk }) =
     }
     if (item.additionalProperties && typeof item.additionalProperties === 'object') {
       const next = { ...mapSchemas(item, document), values: entry, scopes: [...scopes, entry] };
-      walkMap({ ...next, base: pointer, document, errors, walk });
+      walkMap({ ...next, defaults: [...defaults, {}], base: pointer, document, errors, walk });
       return;
     }
     validateValue(item, entry, document).forEach(error => errors.push({ ...error, pointer }));
@@ -457,13 +505,15 @@ const walkMap = ({ item, keys, values, scopes, base, document, errors, walk }) =
 const itemSchemaOf = (rule, document) =>
   rule.items && typeof rule.items === 'object' ? resolve(rule.items, document).rule : null;
 
-const walkItems = ({ item, values, scopes, base, document, errors, walk }) => {
+const walkItems = ({ item, values, scopes, defaults, base, document, errors, walk }) => {
   values.forEach((entry, index) => {
     const child = entry || {};
     walk({
       schema: item,
       values: child,
       scopes: [...scopes, child],
+      defaults: [...defaults, {}],
+      fill: false,
       base: `${base}/${index}`,
       document,
       errors,
@@ -471,30 +521,32 @@ const walkItems = ({ item, values, scopes, base, document, errors, walk }) => {
   });
 };
 
-const walkObject = ({ schema, values, scopes, base, document, errors }) => {
+const walkObject = ({ schema, values, scopes, defaults, fill, base, document, errors }) => {
   const required = requiredOf(schema, values);
   Object.entries(schema.properties || {}).forEach(([name, property]) => {
     const { rule } = resolve(property, document);
-    if (!isVisible(rule, scopes)) {
+    if (!isVisible(rule, scopes, defaults)) {
       return;
     }
     const value = values[name];
     const pointer = `${base}/${name}`;
+    const shared = { base: pointer, document, errors };
     if (rule.properties) {
       const child = value || {};
-      const next = { schema: rule, values: child, scopes: [...scopes, child], base: pointer };
-      walkObject({ ...next, document, errors });
+      const next = { schema: rule, values: child, scopes: [...scopes, child], fill };
+      const below = fill ? defaultsOf(rule, document) : {};
+      walkObject({ ...shared, ...next, defaults: [...defaults, below] });
       return;
     }
     if (rule.additionalProperties && typeof rule.additionalProperties === 'object') {
       const next = { ...mapSchemas(rule, document), values: value, scopes: [...scopes, value] };
-      walkMap({ ...next, base: pointer, document, errors, walk: walkObject });
+      walkMap({ ...shared, ...next, defaults: [...defaults, {}], walk: walkObject });
       return;
     }
     const item = itemSchemaOf(rule, document);
     if (item?.properties && Array.isArray(value)) {
-      const next = { item, values: value, scopes: [...scopes, value], base: pointer };
-      walkItems({ ...next, document, errors, walk: walkObject });
+      const next = { item, values: value, scopes: [...scopes, value], defaults: [...defaults, {}] };
+      walkItems({ ...shared, ...next, walk: walkObject });
     }
     const own = validateValue({ ...property, required: required.has(name) }, value, document);
     const failure = own.length > 0 ? own[0] : clientFailure(rule, value, values);
@@ -515,8 +567,10 @@ const walkObject = ({ schema, values, scopes, base, document, errors }) => {
  * schema walked one element at a time, pointers `/servers/0/origin`, the
  * array itself then evaluated for `minItems`, `maxItems` and its own
  * client entries), a property hidden by
- * `dependsOn`/`showWhen` skipped, and the client-only `equals` and `custom`
- * entries a form schema may carry.
+ * `dependsOn`/`showWhen` skipped, the named sibling read as the value it
+ * holds or, while the object lacks the key, its schema `default`, never
+ * inside a map entry or an array element, and the
+ * client-only `equals` and `custom` entries a form schema may carry.
  *
  * @param {Object} schema - The object schema
  * @param {Object} values - The object
@@ -526,7 +580,8 @@ const walkObject = ({ schema, values, scopes, base, document, errors }) => {
 export const validateObject = (schema, values, document = FALLBACK_DOCUMENT) => {
   const errors = [];
   const root = values || {};
-  walkObject({ schema, values: root, scopes: [root], base: '', document, errors });
+  const filled = { defaults: [defaultsOf(schema, document)], fill: true };
+  walkObject({ ...filled, schema, values: root, scopes: [root], base: '', document, errors });
   return errors;
 };
 

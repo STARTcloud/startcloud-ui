@@ -1,0 +1,6 @@
+{
+  "method": "EMAIL",
+  "target": { "masked": "a***@example.com" },
+  "sent": true,
+  "resend_after_seconds": 30
+}

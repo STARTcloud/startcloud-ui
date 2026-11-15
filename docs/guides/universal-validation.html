@@ -1298,6 +1298,17 @@
         >
         <span class="c k">minimum, maximum</span><span class="c">numeric bounds, inclusive</span>
         <span class="c k">enum</span><span class="c">the allowed values</span>
+        <span class="c k">const</span
+        ><span class="c"
+          >the one allowed value; the identity provider's terms acceptance answers it at
+          <code>/fields/signature</code> with <code>{ "const": "full_name" }</code></span
+        >
+        <span class="c k">dependentRequired</span
+        ><span class="c"
+          >properties required when another is present; the identity provider's terms routes answer
+          it with <code>{ "dependentRequired": "default_copy" }</code> for a language copy without
+          its default-language copy</span
+        >
         <span class="c k">format</span
         ><span class="c"
           ><code>email</code>, <code>uri</code>, <code>hostname</code>, <code>ipv4</code>; asserted
@@ -1308,6 +1319,19 @@
         ><span class="c"
           >the estate's one extension: the value must not already exist in its scope; the server
           decides, the UI only paints; always 409</span
+        >
+        <span class="c k">token</span
+        ><span class="c"
+          >a named rule outside the vocabulary: a <code>{{name}}</code> in a text names what the
+          text may not, an email template's unoffered token with <code>params: { token }</code>, a
+          terms document's bad placeholder or declared field with
+          <code>params: { token, reason }</code>, one entry per offending token; 422</span
+        >
+        <span class="c k">readOnly</span
+        ><span class="c"
+          >a named rule outside the vocabulary: the member is answered but never written by this
+          route, <code>version</code> and <code>locale</code> on a terms <code>PATCH</code>, a
+          changed verified phone number on a terms acceptance; 422</span
         >
       </div>
       <h2>Error body — RFC 9457 with one extension</h2>

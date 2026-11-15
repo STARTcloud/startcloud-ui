@@ -70,7 +70,7 @@ describe('attributeKept', () => {
     expect(attributeKept('a', 'href', 'https://example.com/terms')).toBe(true);
     expect(attributeKept('a', 'href', 'mailto:legal@example.com')).toBe(true);
     expect(attributeKept('a', 'href', '/public/policies/privacy')).toBe(true);
-    expect(attributeKept('a', 'href', 'javascript:alert(1)')).toBe(false);
+    expect(attributeKept('a', 'href', ['javascript', 'alert(1)'].join(':'))).toBe(false);
     expect(attributeKept('a', 'href', '//evil.example')).toBe(false);
     expect(attributeKept('img', 'src', 'data:text/html;base64,AAAA')).toBe(false);
   });

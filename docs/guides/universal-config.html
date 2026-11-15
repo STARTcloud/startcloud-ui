@@ -842,7 +842,9 @@
         The SQLite path replacing the SQL block was a special case in the setup page; now the host,
         port, user and password of the connection carry <code>dependsOn: database_type</code>,
         <code>showWhen: [mysql]</code> and the storage path <code>showWhen: [sqlite]</code>, and the
-        page only follows the schema.
+        page only follows the schema; a sibling the file lacks takes its schema
+        <code>default</code>, so a field shown for the default value draws before the administrator
+        has ever set it.
       </div>
       <div class="callout changed">
         <strong>Changed: <code>enum</code> is enforced.</strong> A select's value must be one of its
@@ -1608,8 +1610,9 @@
         >
         <span class="c k">dependsOn, showWhen, requiresRestart, restartReason</span
         ><span class="c"
-          >the one conditional form, equal by JSON value; the restart flag and its sentence on a
-          leaf, listed by the 200 and by <code>restart-status</code></span
+          >the one conditional form, equal by JSON value, a sibling the file lacks taking its schema
+          <code>default</code>; the restart flag and its sentence on a leaf, listed by the 200 and
+          by <code>restart-status</code></span
         >
         <span class="c k">x-…</span
         ><span class="c">a UI backend's own annotation, ignored by the shared UI</span>

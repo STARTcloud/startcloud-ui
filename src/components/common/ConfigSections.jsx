@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useFolds } from '../../hooks/useFolds';
 import { formRulesShape } from '../../hooks/useFormRules';
 import { valueAt } from '../../utils/schemaSections';
-import { isVisible, scopesFor } from '../../utils/validation';
+import { defaultsFor, isVisible, scopesFor } from '../../utils/validation';
 
 import ConfigAction, { refusalOf } from './ConfigAction';
 import ConfigField, { configFieldShape } from './ConfigField';
@@ -36,7 +36,24 @@ const drawingShape = {
   guard: PropTypes.func,
   Sections: PropTypes.elementType.isRequired,
   nested: PropTypes.bool,
+  defaultFields: PropTypes.arrayOf(configFieldShape),
 };
+
+/**
+ * Every field of the sections, the list a field's `dependsOn` sibling is
+ * found in for its schema `default`.
+ *
+ * @param {Array<Object>} sections - From `schemaSections`
+ * @returns {Array<Object>} The fields of every section and subsection
+ */
+export const fieldsOf = sections =>
+  sections.flatMap(section => [
+    ...section.fields,
+    ...section.subsections.flatMap(subsection => subsection.fields),
+  ]);
+
+const shows = (field, config, defaultFields) =>
+  isVisible(field, scopesFor(config, field.pointer), defaultsFor(defaultFields, field.pointer));
 
 const matchesField = (field, term) =>
   !term || field.title.toLowerCase().includes(term) || field.key.toLowerCase().includes(term);
@@ -166,10 +183,11 @@ const ConfigFields = ({
   guard,
   Sections,
   nested = false,
+  defaultFields,
 }) => (
   <div className="row">
     {fields
-      .filter(field => isVisible(field, scopesFor(config, field.pointer)))
+      .filter(field => shows(field, config, defaultFields))
       .map(field =>
         field.additionalProperties ? (
           <div key={field.pointer} className="col-12">
@@ -209,9 +227,9 @@ ConfigFields.propTypes = {
   fields: PropTypes.arrayOf(configFieldShape).isRequired,
 };
 
-const SettingsBadge = ({ fields, config }) => {
+const SettingsBadge = ({ fields, config, defaultFields }) => {
   const { t } = useTranslation();
-  const shown = fields.filter(field => isVisible(field, scopesFor(config, field.pointer)));
+  const shown = fields.filter(field => shows(field, config, defaultFields));
   return (
     <span className="badge bg-light text-dark">
       {t('configManager.settingsCount', { count: settingCount(shown, config) })}
@@ -222,6 +240,7 @@ const SettingsBadge = ({ fields, config }) => {
 SettingsBadge.propTypes = {
   fields: PropTypes.arrayOf(configFieldShape).isRequired,
   config: PropTypes.object.isRequired,
+  defaultFields: PropTypes.arrayOf(configFieldShape).isRequired,
 };
 
 const Subsection = ({ subsection, folds, foldId, ...drawing }) => {
@@ -238,10 +257,17 @@ const Subsection = ({ subsection, folds, foldId, ...drawing }) => {
         }
       />
     ) : null;
+  const badge = (
+    <SettingsBadge
+      fields={subsection.fields}
+      config={drawing.config}
+      defaultFields={drawing.defaultFields}
+    />
+  );
   return (
     <SectionCard
       title={subsection.title}
-      badge={<SettingsBadge fields={subsection.fields} config={drawing.config} />}
+      badge={badge}
       actions={action}
       className="mb-4"
       folded={folds.folded(foldId)}
@@ -272,12 +298,19 @@ const Section = ({ section, folds, foldKey, ...drawing }) => {
         onRefused={error => drawing.rules.applyServerErrors(refusalOf(error, '', drawing.nameFor))}
       />
     ) : null;
+  const badge = (
+    <SettingsBadge
+      fields={section.fields}
+      config={drawing.config}
+      defaultFields={drawing.defaultFields}
+    />
+  );
   return (
     <div>
       {section.fields.length > 0 || action ? (
         <SectionCard
           title={section.title}
-          badge={<SettingsBadge fields={section.fields} config={drawing.config} />}
+          badge={badge}
           actions={action}
           className="mb-4"
           folded={folds.folded(foldId)}
@@ -329,10 +362,22 @@ Section.propTypes = {
  * `nested` (false at the page's own call) tells every map field below it
  * that it is drawn inside a form dialog and to draw as a list rather than
  * cards (config contract decision 90), and is carried unchanged into the
- * `Sections` an item dialog draws its own fields through.
+ * `Sections` an item dialog draws its own fields through. A field's
+ * `dependsOn` sibling is read as the value `config` holds or, while
+ * `config` lacks the key, the sibling's schema `default`, found among
+ * `defaultFields`, every field of the file, the fields of `sections` when
+ * none is given; a page that narrows `sections` hands the whole file's
+ * fields, and a `nested` call, a map entry's dialog, reads no default.
  */
-const ConfigSections = ({ sections, prefsKey = '', foldKey = '', ...drawing }) => {
+const ConfigSections = ({
+  sections,
+  prefsKey = '',
+  foldKey = '',
+  defaultFields = null,
+  ...drawing
+}) => {
   const folds = useFolds(prefsKey);
+  const known = defaultFields || (drawing.nested ? [] : fieldsOf(sections));
   return sections.map(section => (
     <Section
       key={section.key}
@@ -340,6 +385,7 @@ const ConfigSections = ({ sections, prefsKey = '', foldKey = '', ...drawing }) =
       folds={folds}
       foldKey={foldKey}
       Sections={ConfigSections}
+      defaultFields={known}
       {...drawing}
     />
   ));
@@ -356,6 +402,7 @@ ConfigSections.propTypes = {
   prefsKey: PropTypes.string,
   foldKey: PropTypes.string,
   nested: PropTypes.bool,
+  defaultFields: PropTypes.arrayOf(configFieldShape),
 };
 
 export default ConfigSections;

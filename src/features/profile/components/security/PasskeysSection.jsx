@@ -8,7 +8,9 @@ import MethodList, { MethodRow } from '../../../../components/common/MethodList'
 import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
 import { useNotify } from '../../../../contexts/NoticeContext';
+import { useStatus } from '../../../../contexts/StatusContext';
 import { isSupported, register } from '../../../../lib/passkeys';
+import { hasFeature } from '../../../../utils/capabilities';
 import { formatRelativeTime } from '../../../../utils/relativeTime';
 
 const isStepUp = error => error?.code === 'step_up_required';
@@ -81,15 +83,18 @@ PasskeyActions.propTypes = {
  * passkey is a first factor too: the list with the rp id and dates,
  * Rename over `PATCH /api/user/passkeys/{id}`, Remove over the DELETE,
  * stepped up, and Add with a name through the shared WebAuthn calls,
- * stepped up.
+ * stepped up, drawn only while the host lists the `passkey` sub flag of
+ * `tfa`; the passkeys the account holds stay listed without it.
  */
 const PasskeysSection = ({ account, guard, onSaved, folds }) => {
   const { t } = useTranslation();
   const notify = useNotify();
+  const status = useStatus();
   const [rows, setRows] = useState([]);
   const [name, setName] = useState('');
   const [renaming, setRenaming] = useState(null);
   const supported = isSupported();
+  const offered = hasFeature(status, 'tfa', 'passkey');
 
   const load = useCallback(
     () =>
@@ -204,7 +209,7 @@ const PasskeysSection = ({ account, guard, onSaved, folds }) => {
           </div>
         </form>
       ) : null}
-      {supported ? (
+      {offered && supported ? (
         <form onSubmit={add} noValidate className="mt-3">
           <Field
             id="profile-passkey-name"
@@ -227,11 +232,12 @@ const PasskeysSection = ({ account, guard, onSaved, folds }) => {
             )}
           </Field>
         </form>
-      ) : (
+      ) : null}
+      {offered && !supported ? (
         <p className="small text-body-secondary mb-0">
           {t('profile.security.passkeys.unsupported')}
         </p>
-      )}
+      ) : null}
     </SectionCard>
   );
 };

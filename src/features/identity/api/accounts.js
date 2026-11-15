@@ -83,9 +83,11 @@ const bulkOne = action => organizationId =>
  * members and `password_change_required` through `update`, the address
  * `PUT`, the email `PUT` (`409` on a taken address), the plain phone
  * `PUT`, the preferences `PATCH` (language, mode, theme, motion, timezone,
- * region, ciba_channel) and, under `tfa`, the read of the account's second-factor
- * methods (passkeys included, no step-up) and the `DELETE` of an SMS or
- * APP method (`409 last_method` on the last while two-factor is on);
+ * region, ciba_channel, sign_in_notices) and, under `tfa`, the read of the
+ * account's second-factor methods (passkeys included, no step-up) and the
+ * `DELETE` of an SMS or APP method, `204` for the last one too, which
+ * turns the account's two-factor sign-in off and ends its sessions and
+ * remembered devices;
  * `places` answers the Google Places key the address block loads with.
  * The page draws an action or a column only while the adapter carries
  * its call.

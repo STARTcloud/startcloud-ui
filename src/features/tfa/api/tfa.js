@@ -21,6 +21,10 @@ export const verifyTfa = ({ code, tfaMethod }) =>
 
 export const resendTfa = () => client.post('/resend-tfa', null, OPTIONS);
 
+export const sendEmailTfa = () => client.post('/api/auth/tfa/email/send', null, OPTIONS);
+
+export const verifyEmailTfa = body => client.post('/api/auth/tfa/email/verify', body, OPTIONS);
+
 export const tfaMethods = () => client.get('/api/auth/tfa/methods', OPTIONS);
 
 export const pickTfaMethod = ({ tfaMethod, authenticatorId }) =>

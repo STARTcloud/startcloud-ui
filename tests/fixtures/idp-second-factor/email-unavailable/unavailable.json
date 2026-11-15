@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/conflict",
+  "title": "An emailed code is not available.",
+  "status": 409,
+  "code": "email_code_unavailable"
+}

@@ -12,7 +12,7 @@ import { log } from '../../lib/logger';
 import { patchOf, schemaSections, setValueAt, valueAt } from '../../utils/schemaSections';
 
 import { ConfigArrivalContext } from './ConfigMap';
-import ConfigSections, { countFields, filterSections } from './ConfigSections';
+import ConfigSections, { countFields, fieldsOf, filterSections } from './ConfigSections';
 import ConfirmModal from './ConfirmModal';
 import FormErrorSummary from './FormErrorSummary';
 import PageHeader from './PageHeader';
@@ -85,7 +85,9 @@ ConfigHeading.propTypes = {
  * heading with Restart and Update as its actions and the file's
  * `schemaVersion` as the muted line under it, the `RestartCard` fed by
  * `restartStatus`, the sections through `ConfigSections` with their folds
- * under `table_prefs_admin_config`, searched from the navbar; every value
+ * under `table_prefs_admin_config`, searched from the navbar, a field's
+ * `dependsOn` sibling read with its schema `default` from the whole file's
+ * fields while the search narrows the sections; every value
  * is validated through the schema on blur and on Update, the `PUT` sends
  * `patchOf(before, after)`, a refused write is painted by pointer, the
  * URL's hash opens the map item it names, Restart is offered at all times
@@ -180,6 +182,7 @@ const ConfigPage = ({ config: configApi = null, names = null, name = null }) => 
   }, [selectedConfig, fetchConfig]);
 
   const sections = useMemo(() => schemaSections(schema || EMPTY_SCHEMA), [schema]);
+  const defaultFields = useMemo(() => fieldsOf(sections), [sections]);
 
   const handleFieldChange = (pointer, value) => {
     setLoaded(current => ({ ...current, config: setValueAt(current.config, pointer, value) }));
@@ -284,6 +287,7 @@ const ConfigPage = ({ config: configApi = null, names = null, name = null }) => 
               guard={guard}
               prefsKey={PREFS_KEY}
               foldKey={`${selectedConfig}/`}
+              defaultFields={defaultFields}
             />
           </ConfigArrivalContext.Provider>
         ) : (

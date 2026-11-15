@@ -181,7 +181,9 @@ export const classesKept = value =>
  * @returns {string} The `rel` drawn
  */
 export const relFor = rel => {
-  const sent = String(rel || '').toLowerCase().split(/\s+/);
+  const sent = String(rel || '')
+    .toLowerCase()
+    .split(/\s+/);
   return [...(sent.includes(KEPT_REL) ? [KEPT_REL] : []), ...NEW_TAB_REL].join(' ');
 };
 

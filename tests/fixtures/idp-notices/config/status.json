@@ -1,0 +1,16 @@
+{
+  "role": "boxvault",
+  "version": "0.78.0",
+  "brand": {
+    "name": "BoxVault",
+    "logo_url": "/brand/boxvault/mark.svg",
+    "repo": "https://github.com/Makr91/BoxVault"
+  },
+  "auth": ["cookie"],
+  "features": ["admin", "local-accounts"],
+  "links": {
+    "docs": "/docs",
+    "contact": ""
+  },
+  "config": ["application", "sites"]
+}

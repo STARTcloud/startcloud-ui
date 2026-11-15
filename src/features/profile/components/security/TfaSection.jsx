@@ -12,6 +12,8 @@ import PhoneInput from '../../../../components/common/PhoneInput';
 import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
 import { useNotify } from '../../../../contexts/NoticeContext';
+import { useStatus } from '../../../../contexts/StatusContext';
+import { hasFeature } from '../../../../utils/capabilities';
 
 const METHOD_ICONS = { SMS: FaCommentSms, APP: FaMobileScreen };
 
@@ -84,6 +86,7 @@ const AddPhone = ({ account, guard, onDone, onFail }) => {
       <button
         type="button"
         className="btn btn-sm btn-outline-primary"
+        data-action="tfa-phone-send"
         onClick={send}
         disabled={!number}
       >
@@ -320,7 +323,11 @@ ToggleButton.propTypes = {
  * disabled with a tooltip), the locked-method notices with Re-enroll now,
  * the SMS risk notice, Add phone number and Add authenticator app inline,
  * and Enable or Disable two-factor, the disable dialog stepping up; every
- * change is stepped up and re-reads the methods. While the profile's
+ * change is stepped up and re-reads the methods. The phone rows, the SMS
+ * notices and Add phone number draw only while the host lists the `sms`
+ * sub flag of `tfa`; a phone the account holds still counts as a method.
+ * While the profile's `tfa.sms_only` is true a notice row asks the person
+ * to add an authenticator app or a passkey and blocks nothing. While the profile's
  * `tfa.required` is true the site refuses turning two-factor off: a
  * notice row says so and Disable two-factor is disabled with the same
  * words as its title. A refused change draws its own message from the
@@ -329,13 +336,18 @@ ToggleButton.propTypes = {
 const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
   const { t } = useTranslation();
   const notify = useNotify();
+  const status = useStatus();
   const [methods, setMethods] = useState([]);
   const [adding, setAdding] = useState('');
   const [showDisable, setShowDisable] = useState(false);
   const tfa = profile.tfa || {};
-  const locked = Array.isArray(tfa.locked) ? tfa.locked : [];
+  const sms = hasFeature(status, 'tfa', 'sms');
+  const locked = (Array.isArray(tfa.locked) ? tfa.locked : []).filter(
+    method => sms || method !== 'SMS'
+  );
   const required = Boolean(tfa.required);
   const rows = tfaRows(methods);
+  const shown = rows.filter(method => sms || method.type !== 'SMS');
 
   const load = useCallback(
     () =>
@@ -410,6 +422,7 @@ const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
 
   return (
     <SectionCard
+      id="profile-tfa"
       title={t('profile.security.tfa.title')}
       badge={stateBadge}
       folded={folds.folded('tfa')}
@@ -432,13 +445,18 @@ const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
         </div>
       ))}
       <h6>{t('profile.security.tfa.methods')}</h6>
-      {rows.some(method => method.type === 'SMS') ? (
+      {shown.some(method => method.type === 'SMS') ? (
         <div className="alert alert-warning small" role="status">
           {t('profile.security.tfa.smsRisk')}
         </div>
       ) : null}
+      {tfa.sms_only ? (
+        <div className="alert alert-warning small" role="status" data-note="tfa-sms-only">
+          {t('profile.security.tfa.smsOnly')}
+        </div>
+      ) : null}
       <MethodList empty={t('profile.security.tfa.noMethods')} className="mb-3">
-        {rows.map(method => {
+        {shown.map(method => {
           const Icon = METHOD_ICONS[method.type] || FaMobileScreen;
           const actions = (
             <MethodActions
@@ -467,13 +485,16 @@ const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
         })}
       </MethodList>
       <div className="d-flex flex-wrap gap-2 mb-3">
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-secondary"
-          onClick={() => setAdding('phone')}
-        >
-          {t('profile.security.tfa.addPhone')}
-        </button>
+        {sms ? (
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            data-action="tfa-add-phone"
+            onClick={() => setAdding('phone')}
+          >
+            {t('profile.security.tfa.addPhone')}
+          </button>
+        ) : null}
         <button
           type="button"
           className="btn btn-sm btn-outline-secondary"
@@ -482,7 +503,7 @@ const TfaSection = ({ account, profile, guard, onSaved, folds }) => {
           {t('profile.security.tfa.addApp')}
         </button>
       </div>
-      {adding === 'phone' ? (
+      {sms && adding === 'phone' ? (
         <AddPhone account={account} guard={guard} onDone={finishAdding} onFail={fail} />
       ) : null}
       {adding === 'app' ? (
@@ -526,6 +547,7 @@ TfaSection.propTypes = {
     tfa: PropTypes.shape({
       enabled: PropTypes.bool,
       required: PropTypes.bool,
+      sms_only: PropTypes.bool,
       locked: PropTypes.array,
     }),
   }).isRequired,

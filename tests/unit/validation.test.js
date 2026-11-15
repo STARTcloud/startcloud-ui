@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFS,
+  defaultsFor,
   isPlaceholder,
   isVisible,
   messageFor,
@@ -204,6 +205,92 @@ describe('validateObject', () => {
       { a: { b: { c: 1 } } },
       { b: { c: 1 } },
       { c: 1 },
+    ]);
+  });
+
+  it('reads a dependsOn sibling as its schema default only while the key is missing', () => {
+    const rule = { dependsOn: 'mode', showWhen: ['system', 'manual'] };
+    const defaults = [{ mode: 'system' }];
+    expect(isVisible(rule, [{}], defaults)).toBe(true);
+    expect(isVisible(rule, [{ mode: undefined }], defaults)).toBe(true);
+    expect(isVisible(rule, [{ mode: null }], defaults)).toBe(false);
+    expect(isVisible(rule, [{ mode: '' }], defaults)).toBe(false);
+    expect(isVisible(rule, [{ mode: 'none' }], defaults)).toBe(false);
+    expect(isVisible(rule, [{ mode: 'manual' }], [{ mode: 'none' }])).toBe(true);
+    expect(isVisible(rule, [{}])).toBe(false);
+    expect(isVisible(rule, [{}], [{}])).toBe(false);
+    expect(isVisible({ dependsOn: 'on', showWhen: [true] }, [{ on: false }], [{ on: true }])).toBe(
+      false
+    );
+  });
+
+  it('answers the defaults of the fields of each scope of a pointer', () => {
+    const fields = [
+      { pointer: '/level', key: 'level', default: 'info' },
+      { pointer: '/proxy/mode', key: 'mode', default: 'system' },
+      { pointer: '/proxy/host', key: 'host', default: null },
+      { pointer: '/proxy/auth/kind', key: 'kind', default: 'basic' },
+    ];
+    expect(defaultsFor(fields, '/proxy/no_proxy')).toEqual([{ level: 'info' }, { mode: 'system' }]);
+    expect(defaultsFor(fields, '/level')).toEqual([{ level: 'info' }]);
+  });
+
+  it('evaluates a property its sibling default shows and skips one it hides', () => {
+    const proxy = {
+      properties: {
+        proxy: {
+          type: 'object',
+          properties: {
+            mode: { type: 'string', enum: ['none', 'system', 'manual'], default: 'system' },
+            host: { type: 'string', dependsOn: 'mode', showWhen: ['manual'] },
+            no_proxy: {
+              type: 'array',
+              items: { type: 'string' },
+              maxItems: 1,
+              dependsOn: 'mode',
+              showWhen: ['system', 'manual'],
+            },
+          },
+          required: ['host'],
+        },
+      },
+    };
+    expect(validateObject(proxy, { proxy: { no_proxy: ['a', 'b'] } })).toEqual([
+      { pointer: '/proxy/no_proxy', rule: 'maxItems', params: { maxItems: 1 } },
+    ]);
+    expect(validateObject(proxy, { proxy: { mode: 'none', no_proxy: ['a', 'b'] } })).toEqual([]);
+    expect(validateObject(proxy, { proxy: { mode: 'manual' } })).toEqual([
+      { pointer: '/proxy/host', rule: 'required', params: {} },
+    ]);
+    expect(validateObject(proxy, { proxy: { mode: null, no_proxy: ['a', 'b'] } })).toEqual([]);
+    expect(validateObject(proxy, { proxy: { mode: '', no_proxy: ['a', 'b'] } })).toEqual([]);
+  });
+
+  it('reads no schema default inside a map entry', () => {
+    const sites = {
+      properties: {
+        sites: {
+          type: 'object',
+          additionalProperties: {
+            type: 'object',
+            properties: {
+              mode: { type: 'string', default: 'system' },
+              no_proxy: {
+                type: 'array',
+                items: { type: 'string' },
+                maxItems: 1,
+                dependsOn: 'mode',
+                showWhen: ['system'],
+              },
+            },
+          },
+        },
+      },
+    };
+    const stored = { sites: { a: { mode: 'system', no_proxy: ['x', 'y'] } } };
+    expect(validateObject(sites, { sites: { a: { no_proxy: ['x', 'y'] } } })).toEqual([]);
+    expect(validateObject(sites, stored)).toEqual([
+      { pointer: '/sites/a/no_proxy', rule: 'maxItems', params: { maxItems: 1 } },
     ]);
   });
 });

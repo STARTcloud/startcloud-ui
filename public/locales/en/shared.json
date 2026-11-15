@@ -314,6 +314,8 @@
     "sole_owner": "You are the only owner of {{teams}}; transfer or delete those teams first.",
     "last_login_method": "This is the only way you can sign in; set a password or link another account first.",
     "last_owner": "A team needs an owner; make someone else an owner first.",
+    "insufficient_role": "Your role in this organization does not allow that.",
+    "target_not_a_member": "That person is not a member of this organization.",
     "own_account": "Change your own account from your profile page.",
     "guest_only": "This shared account cannot be changed here.",
     "invite_wrong_account": "Sign in as the invited address to accept this invitation.",
@@ -324,6 +326,11 @@
     "personal": "a personal organization",
     "not_blocked": "not currently blocked",
     "throttled": "too many attempts; try again shortly",
+    "tfa_required": "This site requires two-factor authentication. It cannot be turned off here.",
+    "suspended": "This organization is suspended, or your membership in it is.",
+    "own_membership": "You cannot suspend or resume your own membership.",
+    "admins_suspend_members_only": "Admins can suspend members and guests only.",
+    "sms_unavailable": "Text messages are not available on this site.",
     "title": {
       "403": "You don't have access to this page",
       "404": "Page not found",
@@ -388,7 +395,8 @@
       "hostname": "Enter {{label}} as a hostname.",
       "ipv4": "Enter {{label}} as an IPv4 address, such as 192.168.1.10.",
       "duration": "Enter {{label}} as an ISO 8601 duration, such as PT1H or P7D.",
-      "ttl": "Enter {{label}} as a number and a unit, such as 30m, 4h or 2d."
+      "ttl": "Enter {{label}} as a number and a unit, such as 30m, 4h or 2d.",
+      "date": "Enter {{label}} as a date, like 2026-07-16."
     },
     "minItems": "Enter at least {{minItems}} entries for {{label}}.",
     "maxItems": "Enter at most {{maxItems}} entries for {{label}}.",
@@ -404,6 +412,27 @@
     "withinParent": "Keep {{label}} within {{parent}}, the setting one level up.",
     "publicAddress": "{{label}} must be a public address.",
     "matchesContent": "{{label}} does not match the content.",
+    "token": {
+      "unoffered": "Use only the tokens listed in {{label}}; {{token}} is not one of them.",
+      "unknown": "Use only the placeholders listed in {{label}}; {{token}} is not one of them.",
+      "syntax": "Write {{token}} in {{label}} as a placeholder or a field tag.",
+      "name": "Name the field in {{token}} in lower-case words joined by underscores, up to 64 characters.",
+      "reserved": "Give the field in {{token}} a name no placeholder uses.",
+      "kind": "Give {{token}} a kind of checkbox, date, choice or signature.",
+      "label": "Give {{token}} a label on one line of up to 500 characters.",
+      "required": "Set required in {{token}} to true or false.",
+      "options": "Give the choice in {{token}} two or more different options of up to 255 characters each; only a choice takes options.",
+      "attribute": "Write each attribute of {{token}} once, as name=value, using kind, label, required or options.",
+      "escape": "Use a backslash in {{token}} only before a backslash, a semicolon or a bar.",
+      "duplicate": "Declare the field in {{token}} one way only in {{label}}.",
+      "undeclared": "Declare the field in {{token}} before repeating it."
+    },
+    "dependentRequired": {
+      "default_copy": "Create the default-language copy first, then set {{label}}."
+    },
+    "const": {
+      "full_name": "Enter your full name in {{label}}."
+    },
     "unknown": "Check {{label}}."
   },
   "session": {
@@ -513,7 +542,8 @@
         "enableReason": "Enabling two-factor changes how you sign in.",
         "disableReason": "Disabling two-factor changes how you sign in.",
         "enabledDone": "Two-factor authentication enabled.",
-        "disabledDone": "Two-factor authentication disabled."
+        "disabledDone": "Two-factor authentication disabled.",
+        "smsOnly": "Text messages are the only second step on this account. Add an authenticator app or a passkey."
       },
       "passkeys": {
         "title": "Passkeys",
@@ -698,6 +728,7 @@
       "code": "Authenticator or backup code",
       "usePassword": "Use your password instead",
       "useCode": "Use an authenticator or backup code instead",
+      "useBackupCode": "Use a backup code instead",
       "confirm": "Confirm"
     },
     "preferences": {
@@ -749,7 +780,28 @@
       "set": "Set",
       "clear": "Clear",
       "save": "Save preferences",
-      "saved": "Preferences saved."
+      "saved": "Preferences saved.",
+      "signInNotices": {
+        "title": "Sign-in notices",
+        "followingDefault": "Following the site's default",
+        "useDefault": "Use the site's default",
+        "useDefaultTitle": "Use the site's default?",
+        "useDefaultBody": "The choice made here is cleared and sign-in notices follow the site's default.",
+        "when": {
+          "label": "When a notice is sent",
+          "off": "Never",
+          "new": "Only from a new device or place",
+          "all": "Every time"
+        },
+        "whenHint": "A notice is sent when a sign-in to this account completes and when a device code or an application's sign-in request is approved.",
+        "channels": {
+          "label": "Where a notice is sent",
+          "email": "Email",
+          "inbox": "Inbox",
+          "push": "Push notification"
+        },
+        "channelsHint": "Turning notices off, or taking email out, sends one email to the account."
+      }
     },
     "favorites": {
       "title": "Favorites",
@@ -796,6 +848,7 @@
   "admin": {
     "pageTitle": "Admin",
     "title": "Admin Panel",
+    "copyRemoved": "This copy was removed by someone else.",
     "tabs": {
       "configManagement": "Configuration Management",
       "system": "System"
@@ -844,7 +897,9 @@
         "passwordChangeSaved": "Sign-in saved.",
         "emailTitle": "Change the email address",
         "emailSaved": "Email address saved.",
-        "stepUpReason": "Changing another person's account changes how they sign in."
+        "stepUpReason": "Changing another person's account changes how they sign in.",
+        "lastMethodTitle": "Remove the last method?",
+        "lastMethodBody": "This is the account's last second-factor method. Removing it turns their two-factor sign-in off and signs them out everywhere."
       },
       "filter": {
         "status": "Status",
@@ -873,6 +928,7 @@
       "more": "More",
       "suspended": "The account is suspended.",
       "enabled": "The account is enabled.",
+      "resumed": "Account resumed.",
       "roles": {
         "action": "Roles",
         "title": "Roles of {{user}}",
@@ -918,7 +974,7 @@
       },
       "bulk": {
         "selected": "{{count}} selected",
-        "enable": "Enable",
+        "enable": "Resume",
         "suspend": "Suspend",
         "add_role": "Add role",
         "remove_role": "Remove role",
@@ -1243,6 +1299,13 @@
       "editTitle": "Edit · {{name}}",
       "createTitle": "Create a document",
       "placeholders": "Placeholders:",
+      "defaultLanguage": "Default language",
+      "refreshPreview": "Refresh preview",
+      "declareField": "Declare a field:",
+      "repeatField": "Repeat it with:",
+      "errors": {
+        "default_copy": "The default-language copy stays while language copies depend on it."
+      },
       "copies": {
         "add": "Add a copy",
         "addTitle": "Add a copy · {{name}}",
@@ -1258,7 +1321,8 @@
         "type": "Type",
         "public": "Public",
         "publicAt": "Publicly accessible at /public/policies/{{name}}",
-        "content": "Content (Markdown)"
+        "content": "Content (Markdown)",
+        "locale": "Language"
       },
       "type": {
         "client": "Client (OAuth apps)",
@@ -1282,6 +1346,7 @@
         "confirmBody": "{{count}} selected documents are deleted with every acceptance record that names them. Type \"{{keyword}}\" to confirm.",
         "stepUpReason": "Deleting documents removes them for good.",
         "errors": {
+          "default_copy": "Default-language copy still needed",
           "not_found": "no longer exists"
         }
       }
@@ -1298,7 +1363,15 @@
         "email_change": "Email change",
         "account_event": "Account event",
         "ciba_approval": "CIBA approval",
-        "admin_new_registration": "New registration (admin)"
+        "admin_new_registration": "New registration (admin)",
+        "account_suspended": "Account suspended",
+        "org_membership_suspended": "Organization membership suspended",
+        "smtp_test": "SMTP test message",
+        "sign_in_notice": "Sign-in notice",
+        "device_approval_notice": "Device approval notice",
+        "ciba_approval_notice": "Sign-in request approval notice",
+        "sign_in_notice_changed": "Sign-in notices changed",
+        "sign_in_email_code": "Sign-in email code"
       },
       "edit": "Edit",
       "preview": "Preview",
@@ -1331,8 +1404,8 @@
       "errors": {
         "default_copy": "The default copy is the kind's generic text; edit it, it cannot be deleted."
       },
-      "arguments": "Arguments:",
-      "insertArgument": "Insert {{name}}",
+      "arguments": "Tokens:",
+      "insertArgument": "Insert the token {{name}}",
       "previewTitle": "Preview",
       "previewFrame": "Preview of the email body",
       "field": {
@@ -1490,7 +1563,11 @@
       "clearSelection": "Clear selection",
       "role": "Role",
       "changeRole": "Change role",
-      "result": "Processed {{processed}}, skipped {{skipped}}."
+      "result": "Processed {{processed}}, skipped {{skipped}}.",
+      "errors": {
+        "own_membership": "Own membership",
+        "admins_suspend_members_only": "Admins suspend members and guests only"
+      }
     },
     "organization": {
       "title": "Organization Details",
@@ -4244,6 +4321,7 @@
     "personal": "Personal",
     "primary": "Primary",
     "yourRole": "Your role {{role}}",
+    "membershipSuspended": "Your membership is suspended",
     "none": "You are not a member of any organization yet.",
     "search": "Search organizations"
   },

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "application": {
+    "outbound": {
+      "proxy": {
+        "mode": "none"
+      }
+    }
+  }
+}

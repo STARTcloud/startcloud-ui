@@ -1,0 +1,22 @@
+[
+  {
+    "kind": "sign_in_notice",
+    "copies": [
+      {
+        "id": 15,
+        "site": "",
+        "locale": "",
+        "version": "1.0",
+        "revision": 1,
+        "subject": "New sign-in to your {{site_name}} account",
+        "body": "<p>Hello {{name}},</p><p>Your account signed in at {{time}} from {{ip}}.</p>",
+        "created_by": "seed",
+        "updated_at": "2026-11-14T00:00:00Z"
+      }
+    ]
+  },
+  { "kind": "device_approval_notice", "copies": [] },
+  { "kind": "ciba_approval_notice", "copies": [] },
+  { "kind": "sign_in_notice_changed", "copies": [] },
+  { "kind": "sign_in_email_code", "copies": [] }
+]

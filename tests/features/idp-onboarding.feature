@@ -36,12 +36,12 @@ Feature: identity provider onboarding and device code
     Then I see "Choose a different method"
     And I see "Cancel"
 
-  Scenario: onboarding: the two-factor choice offers no Passkey while `tfa.passkey` is false
+  Scenario: onboarding: the two-factor choice offers no Passkey while `passkey` is no sub flag of `tfa`
     Given the host answers the idp-onboarding/no-passkey fixture
     When I open "/complete-onboarding/choose-2fa-method"
     Then the page offers 2 options
 
-  Scenario: onboarding: the two-factor choice offers Passkey beside the app and the phone while `tfa.passkey` is true, and Continue waits for its name
+  Scenario: onboarding: the two-factor choice offers Passkey beside the app and the phone while `passkey` is a sub flag of `tfa`, and Continue waits for its name
     When I open "/complete-onboarding/choose-2fa-method"
     Then the page offers 3 options
     And the button "Continue" is enabled

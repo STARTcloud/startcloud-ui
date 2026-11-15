@@ -1,0 +1,7 @@
+{
+  "method": "APP",
+  "target": { "label": "Phone app" },
+  "sent": true,
+  "wait_seconds": 30,
+  "can_change_method": true
+}

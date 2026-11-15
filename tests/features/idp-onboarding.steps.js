@@ -36,18 +36,19 @@ Given(
 Given("the browser's passkey prompt answers a credential", async ({ page }) => {
   await page.addInitScript(() => {
     const bytes = () => new Uint8Array([1, 2, 3, 4]).buffer;
-    navigator.credentials.create = async () => ({
-      id: 'AQIDBA',
-      rawId: bytes(),
-      type: 'public-key',
-      authenticatorAttachment: 'platform',
-      response: {
-        attestationObject: bytes(),
-        clientDataJSON: bytes(),
-        getTransports: () => ['internal'],
-      },
-      getClientExtensionResults: () => ({}),
-    });
+    navigator.credentials.create = () =>
+      Promise.resolve({
+        id: 'AQIDBA',
+        rawId: bytes(),
+        type: 'public-key',
+        authenticatorAttachment: 'platform',
+        response: {
+          attestationObject: bytes(),
+          clientDataJSON: bytes(),
+          getTransports: () => ['internal'],
+        },
+        getClientExtensionResults: () => ({}),
+      });
   });
 });
 

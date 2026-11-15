@@ -1,0 +1,66 @@
+[
+  {
+    "kind": "sign_in_notice",
+    "arguments": [
+      { "name": "name", "description": "The recipient name" },
+      { "name": "time", "description": "When it happened" },
+      { "name": "ip", "description": "The address it came from" },
+      { "name": "location", "description": "The location of that address" },
+      { "name": "browser", "description": "The browser and operating system" },
+      { "name": "method", "description": "The method names of the session" },
+      { "name": "site_name", "description": "The site name" },
+      { "name": "sessions_link", "description": "The link to the account sessions" },
+      { "name": "support_email", "description": "The support address" }
+    ]
+  },
+  {
+    "kind": "device_approval_notice",
+    "arguments": [
+      { "name": "name", "description": "The recipient name" },
+      { "name": "time", "description": "When it happened" },
+      { "name": "ip", "description": "The address it came from" },
+      { "name": "location", "description": "The location of that address" },
+      { "name": "browser", "description": "The browser and operating system" },
+      { "name": "method", "description": "The method names of the session" },
+      { "name": "site_name", "description": "The site name" },
+      { "name": "sessions_link", "description": "The link to the account sessions" },
+      { "name": "support_email", "description": "The support address" },
+      { "name": "client_name", "description": "The application approved" }
+    ]
+  },
+  {
+    "kind": "ciba_approval_notice",
+    "arguments": [
+      { "name": "name", "description": "The recipient name" },
+      { "name": "time", "description": "When it happened" },
+      { "name": "ip", "description": "The address it came from" },
+      { "name": "location", "description": "The location of that address" },
+      { "name": "browser", "description": "The browser and operating system" },
+      { "name": "method", "description": "The method names of the session" },
+      { "name": "site_name", "description": "The site name" },
+      { "name": "sessions_link", "description": "The link to the account sessions" },
+      { "name": "support_email", "description": "The support address" },
+      { "name": "client_name", "description": "The application approved" }
+    ]
+  },
+  {
+    "kind": "sign_in_notice_changed",
+    "arguments": [
+      { "name": "name", "description": "The recipient name" },
+      { "name": "when", "description": "When notices are sent after the change" },
+      { "name": "channels", "description": "The channels after the change" },
+      { "name": "site_name", "description": "The site name" },
+      { "name": "support_email", "description": "The support address" }
+    ]
+  },
+  {
+    "kind": "sign_in_email_code",
+    "arguments": [
+      { "name": "name", "description": "The recipient name" },
+      { "name": "code", "description": "The sign-in code" },
+      { "name": "expiry_minutes", "description": "Minutes until the code expires" },
+      { "name": "site_name", "description": "The site name" },
+      { "name": "support_email", "description": "The support address" }
+    ]
+  }
+]

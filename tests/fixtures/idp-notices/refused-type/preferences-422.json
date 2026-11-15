@@ -1,0 +1,13 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/sign_in_notices",
+      "rule": "type",
+      "params": { "type": "object" },
+      "detail": "not an object or null"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "personal_to_team_enabled": true,
+  "organizations": [
+    {
+      "uuid": "0d6b7e2a-1111-4c0a-9a1e-000000000001",
+      "name": "Acme",
+      "logo_url": null,
+      "personal": false,
+      "primary": true,
+      "my_role": "GUEST",
+      "is_owner": false,
+      "can_manage": false,
+      "can_rename": false,
+      "access_mode": "invite",
+      "default_role": "MEMBER",
+      "suspended": false,
+      "membership_suspended": false,
+      "pending_invites": [],
+      "members": []
+    }
+  ]
+}

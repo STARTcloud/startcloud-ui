@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "sites": {
+    "sites": {
+      "startcloud": {
+        "name": "STARTcloud",
+        "domains": ["auth.example.com"],
+        "security": {
+          "sign_in_notice": "new"
+        }
+      }
+    }
+  }
+}

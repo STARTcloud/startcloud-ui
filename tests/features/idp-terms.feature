@@ -130,7 +130,7 @@ Feature: terms documents of the identity contract
     And I submit the terms form
     Then the terms post to "/oauth2/accept-terms" carried the field "plan" as the string "Gold"
     And the terms page holds 1 element matching ".auth-alert-danger"
-    And I see "Your terms session has ended. Sign in again to continue."
+    And I see "Your session expired before the terms were accepted. Sign in again."
     And the terms page holds 1 element matching "form.auth-form"
 
   Scenario: terms: an address input carries the id its rule names, so the error summary's link lands on it, and a plain country blank mirrors its input while the composite names the country in English
@@ -307,7 +307,7 @@ Feature: terms documents of the identity contract
     Then the host was sent POST to "/api/admin/terms/bulk" carrying "action" as "delete"
     And the terms page holds 1 element matching "[data-note='term-bulk-result']"
     And I see "Default-language copy still needed (1)"
-    And I see "Removed by someone else (1)"
+    And I see "no longer exists (1)"
 
   Scenario: admin, terms: the `dependentRequired` refusal of a language copy with no default-language copy is drawn on the language picker
     Given the host answers the identity-admin fixture

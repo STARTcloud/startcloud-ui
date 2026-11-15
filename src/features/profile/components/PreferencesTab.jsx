@@ -2,7 +2,9 @@ import PropTypes from 'prop-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import ConfirmModal from '../../../components/common/ConfirmModal';
 import Field from '../../../components/common/Field';
+import FieldError from '../../../components/common/FieldError';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import SectionCard from '../../../components/common/SectionCard';
 import { errorKeys } from '../../../components/common/StepUpDialog';
@@ -39,6 +41,67 @@ const LABELS = {
   region: 'profile.preferences.region',
   ciba_channel: 'profile.preferences.channel.label',
   ciba_user_code: 'profile.preferences.pin',
+};
+const NOTICE_WHENS = ['off', 'new', 'all'];
+const NOTICE_CHANNELS = ['email', 'inbox', 'push'];
+const NOTICES = 'sign_in_notices';
+const NOTICES_WHEN = `${NOTICES}/when`;
+const NOTICES_CHANNELS = `${NOTICES}/channels`;
+const NOTICES_SCHEMA = {
+  properties: {
+    [NOTICES]: {
+      type: 'object',
+      properties: {
+        when: { type: 'string', enum: NOTICE_WHENS },
+        channels: { type: 'array', items: { type: 'string', enum: NOTICE_CHANNELS } },
+      },
+    },
+  },
+};
+const NOTICES_LABELS = {
+  [NOTICES]: 'profile.preferences.signInNotices.title',
+  [NOTICES_WHEN]: 'profile.preferences.signInNotices.when.label',
+  [NOTICES_CHANNELS]: 'profile.preferences.signInNotices.channels.label',
+};
+
+const inOrder = channels => NOTICE_CHANNELS.filter(channel => channels.includes(channel));
+
+/**
+ * The sign-in notices of a record's preferences: `when`, the channels in
+ * the order the card draws them and `following`, true while the person
+ * follows the site's default; null for a record that carries no
+ * `sign_in_notices`.
+ *
+ * @param {Object|undefined} preferences - `preferences` of the record
+ * @returns {{ when: string, channels: string[], following: boolean }|null} The setting, or null
+ */
+export const signInNoticesOf = preferences => {
+  const notices = preferences?.sign_in_notices;
+  if (!notices || typeof notices !== 'object') {
+    return null;
+  }
+  return {
+    when: notices.when,
+    channels: inOrder(notices.channels),
+    following: notices.default === true,
+  };
+};
+
+/**
+ * The preferences patch that saves the sign-in notices: `when` and
+ * `channels` where each differs from the record, never `default`.
+ *
+ * @param {{ when: string, channels: string[] }} draft - The card's choice
+ * @param {{ when: string, channels: string[] }} stored - The record's setting
+ * @returns {{ sign_in_notices: { when?: string, channels?: string[] } }|null} The patch, null while nothing differs
+ */
+export const signInNoticesPatch = (draft, stored) => {
+  const channels = inOrder(draft.channels);
+  const changed = {
+    ...(draft.when === stored.when ? {} : { when: draft.when }),
+    ...(channels.join() === inOrder(stored.channels).join() ? {} : { channels }),
+  };
+  return Object.keys(changed).length > 0 ? { [NOTICES]: changed } : null;
 };
 
 const timeZones = () => {
@@ -576,6 +639,219 @@ EditablePreferences.propTypes = {
   after: PropTypes.node,
 };
 
+const withError = (aria, errorId) =>
+  errorId
+    ? { ...aria, 'aria-invalid': true, 'aria-describedby': errorId, 'aria-errormessage': errorId }
+    : aria;
+
+const NoticeChannels = ({ rules, channels, onToggle }) => {
+  const { t } = useTranslation();
+  const groupId = rules.idFor(NOTICES_CHANNELS);
+  const error = rules.errors[NOTICES_CHANNELS] || '';
+  const errorId = error ? `${groupId}-error` : '';
+  return (
+    <div
+      className={`field${error ? ' field-invalid' : ''} border-top pt-3`}
+      role="group"
+      aria-labelledby={`${groupId}-label`}
+      data-panel="sign-in-notices-channels"
+    >
+      <div className="form-label" id={`${groupId}-label`}>
+        {t(NOTICES_LABELS[NOTICES_CHANNELS])}
+      </div>
+      <div className="row">
+        {NOTICE_CHANNELS.map((channel, index) => (
+          <div key={channel} className="col-md-4">
+            <Field
+              id={index === 0 ? groupId : `${groupId}/${channel}`}
+              label={t(`profile.preferences.signInNotices.channels.${channel}`)}
+              className="mb-2"
+            >
+              {aria => (
+                <div className="form-check form-switch">
+                  <input
+                    {...withError(aria, errorId)}
+                    type="checkbox"
+                    role="switch"
+                    className="form-check-input"
+                    checked={channels.includes(channel)}
+                    onChange={() => onToggle(channel)}
+                    data-channel={channel}
+                  />
+                </div>
+              )}
+            </Field>
+          </div>
+        ))}
+      </div>
+      <div className="mb-3">
+        {error ? (
+          <FieldError id={errorId} message={error} />
+        ) : (
+          <div className="form-text">{t('profile.preferences.signInNotices.channelsHint')}</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+NoticeChannels.propTypes = {
+  rules: PropTypes.object.isRequired,
+  channels: PropTypes.arrayOf(PropTypes.string).isRequired,
+  onToggle: PropTypes.func.isRequired,
+};
+
+const useSignInNotices = ({ account, stored, onSaved }) => {
+  const { t } = useTranslation();
+  const notify = useNotify();
+  const [draft, setDraft] = useState(() => ({ when: stored.when, channels: stored.channels }));
+  const [busy, setBusy] = useState(false);
+  const values = useMemo(() => ({ [NOTICES]: draft }), [draft]);
+  const rules = useFormRules({
+    formKey: 'preferences',
+    schema: NOTICES_SCHEMA,
+    values,
+    labels: NOTICES_LABELS,
+    idPrefix: 'profile-preferences',
+  });
+
+  const write = async patch => {
+    setBusy(true);
+    try {
+      await account.preferences(patch);
+      rules.reset();
+      notify('success', t('profile.preferences.saved'));
+      await onSaved();
+    } catch (error) {
+      if (!rules.applyServerErrors(error)) {
+        notify('danger', t(errorKeys(error)));
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const save = event => {
+    event.preventDefault();
+    if (!rules.validateAll()) {
+      return Promise.resolve();
+    }
+    const patch = signInNoticesPatch(draft, stored);
+    if (!patch) {
+      notify('success', t('profile.preferences.saved'));
+      return Promise.resolve();
+    }
+    return write(patch);
+  };
+
+  const followDefault = () => write({ [NOTICES]: null });
+
+  const setWhen = when => setDraft(current => ({ ...current, when }));
+
+  const toggleChannel = channel =>
+    setDraft(current => ({
+      ...current,
+      channels: current.channels.includes(channel)
+        ? current.channels.filter(entry => entry !== channel)
+        : inOrder([...current.channels, channel]),
+    }));
+
+  return { draft, busy, rules, save, followDefault, setWhen, toggleChannel };
+};
+
+const SignInNoticesCard = ({ account, stored, folds, onSaved }) => {
+  const { t } = useTranslation();
+  const [confirming, setConfirming] = useState(false);
+  const form = useSignInNotices({ account, stored, onSaved });
+  const { draft, busy, rules } = form;
+  const badge = stored.following ? (
+    <span className="badge bg-secondary" data-badge="sign-in-notices-default">
+      {t('profile.preferences.signInNotices.followingDefault')}
+    </span>
+  ) : null;
+  const actions = stored.following ? null : (
+    <button
+      type="button"
+      className="btn btn-sm btn-outline-warning"
+      disabled={busy}
+      onClick={() => setConfirming(true)}
+      data-action="sign-in-notices-default"
+    >
+      {t('profile.preferences.signInNotices.useDefault')}
+    </button>
+  );
+
+  return (
+    <SectionCard
+      title={t(NOTICES_LABELS[NOTICES])}
+      badge={badge}
+      actions={actions}
+      className="mt-3 mb-0"
+      folded={folds.folded('signInNotices')}
+      onFold={() => folds.toggle('signInNotices')}
+      id="sign-in-notices"
+    >
+      <div data-panel="sign-in-notices">
+        <form onSubmit={form.save} noValidate>
+          <FormErrorSummary errors={rules.summary} />
+          <div className="row">
+            <div className="col-md-4">
+              <SelectField
+                id={rules.idFor(NOTICES_WHEN)}
+                label={t(NOTICES_LABELS[NOTICES_WHEN])}
+                hint={t('profile.preferences.signInNotices.whenHint')}
+                error={rules.errors[NOTICES_WHEN] || ''}
+                value={draft.when}
+                onChange={event => form.setWhen(event.target.value)}
+                onBlur={() => rules.onBlur(NOTICES_WHEN)}
+              >
+                {NOTICE_WHENS.map(when => (
+                  <option key={when} value={when}>
+                    {t(`profile.preferences.signInNotices.when.${when}`)}
+                  </option>
+                ))}
+              </SelectField>
+            </div>
+          </div>
+          <NoticeChannels rules={rules} channels={draft.channels} onToggle={form.toggleChannel} />
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={busy}
+            data-action="save-sign-in-notices"
+          >
+            {t('profile.preferences.save')}
+          </button>
+        </form>
+        <ConfirmModal
+          show={confirming}
+          handleClose={() => setConfirming(false)}
+          handleConfirm={form.followDefault}
+          title={t('profile.preferences.signInNotices.useDefaultTitle')}
+          message={t('profile.preferences.signInNotices.useDefaultBody')}
+          variant="restart"
+          typed={false}
+          confirmText={t('profile.preferences.signInNotices.useDefault')}
+        />
+      </div>
+    </SectionCard>
+  );
+};
+
+SignInNoticesCard.propTypes = {
+  account: PropTypes.shape({ preferences: PropTypes.func.isRequired }).isRequired,
+  stored: PropTypes.shape({
+    when: PropTypes.string.isRequired,
+    channels: PropTypes.arrayOf(PropTypes.string).isRequired,
+    following: PropTypes.bool.isRequired,
+  }).isRequired,
+  folds: PropTypes.shape({
+    folded: PropTypes.func.isRequired,
+    toggle: PropTypes.func.isRequired,
+  }).isRequired,
+  onSaved: PropTypes.func.isRequired,
+};
+
 /**
  * The Preferences section of the identity contract at
  * `/user/profile/preferences`, one `SectionCard` titled General, the
@@ -611,7 +887,21 @@ EditablePreferences.propTypes = {
  * another person's on the admin record page, language, mode, theme and
  * motion are the record's own values saved with the rest through
  * `account.preferences` and never the viewer's chrome, and the PIN is not
- * drawn because the admin route takes none. Under the Preferences card,
+ * drawn because the admin route takes none. Under the General card,
+ * while the record's `preferences` carry `sign_in_notices` and the tab is
+ * not `readOnly`, the Sign-in notices card draws, its fold under the same
+ * key, one form with one Save preferences at its foot: when a notice is
+ * sent as a select of `off`, `new` and `all`, the `email`, `inbox` and
+ * `push` channels as three switches, the badge "Following the site's
+ * default" while the member's `default` is true and, while it is not, Use
+ * the site's default in the card's heading behind a plain confirmation,
+ * which sends `"sign_in_notices": null`; Save sends `when` and `channels`
+ * where each differs from the record, never `default`, through
+ * `account.preferences`, and sends nothing while neither differs, the
+ * saved notice drawn all the same, and a `422` is painted on the
+ * control its pointer names, `/sign_in_notices/when` on the select,
+ * `/sign_in_notices/channels` on the switches and `/sign_in_notices` in
+ * the card's summary. Under that card,
  * while the adapter carries `integrations` and the record carries the
  * `integrations` rows the issuer answers for a person who connected a
  * service, the Hyperweaver card draws over its `hyperweaver` row, its
@@ -633,9 +923,14 @@ const PreferencesTab = ({ account, profile, readOnly, onSaved, session = null, e
         className="mt-3 mb-0"
       />
     ) : null;
+  const notices = readOnly ? null : signInNoticesOf(profile.preferences);
+  const signInNotices = notices ? (
+    <SignInNoticesCard account={account} stored={notices} folds={folds} onSaved={onSaved} />
+  ) : null;
   const after =
-    hyperweaver || extra ? (
+    signInNotices || hyperweaver || extra ? (
       <>
+        {signInNotices}
         {hyperweaver}
         {extra}
       </>

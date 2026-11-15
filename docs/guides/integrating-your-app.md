@@ -196,6 +196,22 @@ activates at `https://<issuer>/activate` and your app polls
 `/oauth2/token` with `urn:ietf:params:oauth:grant-type:device_code`.
 Honor `slow_down`.
 
+- `POST /oauth2/device_authorization` accepts `openid` among its scopes
+  for a client registered with it, and answers `invalid_scope` for a
+  client that is not.
+- With `openid` among the approved scopes, the token response of
+  `urn:ietf:params:oauth:grant-type:device_code` carries `id_token`
+  beside `access_token` and `refresh_token`.
+- `GET /userinfo` answers that access token: `sub` always, and the claims
+  of each further approved scope.
+- A refresh of that grant answers a new `id_token`.
+- A device request without `openid` is answered an access token alone,
+  and `/userinfo` refuses that token with `insufficient_scope`.
+
+A device client reads identity from the ID token or from `/userinfo`
+when it asks for `openid`, and from the access token's claims when it
+does not.
+
 ### CIBA (decoupled)
 
 `POST /oauth2/bc-authorize` (confidential clients, when

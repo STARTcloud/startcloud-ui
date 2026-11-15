@@ -1,0 +1,13 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/sign_in_notices/channels",
+      "rule": "enum",
+      "params": { "enum": ["email", "inbox", "push"] },
+      "detail": "an unknown or repeated channel, or not an array"
+    }
+  ]
+}

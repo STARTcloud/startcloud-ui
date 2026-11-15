@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/send-failed",
+  "title": "The code could not be sent.",
+  "status": 503,
+  "code": "send_failed"
+}

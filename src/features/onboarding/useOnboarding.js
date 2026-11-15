@@ -40,7 +40,6 @@ export const onboardingShape = PropTypes.shape({
   tfa: PropTypes.shape({
     sms_risk_notice: PropTypes.bool,
     verified_phone: PropTypes.string,
-    passkey: PropTypes.bool,
   }),
   org: PropTypes.shape({
     required_by_client: PropTypes.string,

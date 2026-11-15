@@ -1,0 +1,19 @@
+{
+  "type": "https://auth.startcloud.com/probs/validation",
+  "title": "The request did not pass validation.",
+  "status": 422,
+  "errors": [
+    {
+      "pointer": "/sign_in_notices/when",
+      "rule": "enum",
+      "params": { "enum": ["off", "new", "all"] },
+      "detail": "another value"
+    },
+    {
+      "pointer": "/sign_in_notices/channels",
+      "rule": "minItems",
+      "params": { "minItems": 1 },
+      "detail": "no channel while notices are sent"
+    }
+  ]
+}

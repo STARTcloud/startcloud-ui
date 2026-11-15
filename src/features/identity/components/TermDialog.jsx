@@ -51,8 +51,7 @@ export const localeOfCopy = copy => copy?.locale || '';
  * @returns {Object|null} The copy, or null when the document has none
  */
 export const defaultCopyOf = document =>
-  (document.copies || []).find(copy => regionsOf(copy).length === 0 && !localeOfCopy(copy)) ||
-  null;
+  (document.copies || []).find(copy => regionsOf(copy).length === 0 && !localeOfCopy(copy)) || null;
 
 /**
  * The badge of a copy's language: "Default language" for `""`, else the

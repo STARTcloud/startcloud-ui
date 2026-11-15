@@ -894,10 +894,12 @@ SuspensionBadges.propTypes = {
 
 const HeaderActions = ({ org, soloOwner, reason, onConvert, onLeave, onDelete }) => {
   const { t } = useTranslation();
+  const status = useStatus();
   const locked = Boolean(reason);
+  const teams = hasFeature(status, 'org-console', 'teams');
   return (
     <div className="d-flex gap-2" title={reason || undefined}>
-      {org.personal && org.is_owner ? (
+      {teams && org.personal && org.is_owner ? (
         <button
           type="button"
           className="btn btn-sm btn-outline-primary"
@@ -1474,7 +1476,8 @@ MembersTab.propTypes = {
  * the shared record grown by the issuer's fields and the address block
  * (editable while `can_rename`, the access mode while `can_manage`, the
  * default role while `is_owner`), Convert to a team on a personal
- * organization, Leave and Delete, the members with the owner's role select
+ * organization while the host lists `teams` as a sub flag of
+ * `org-console`, Leave and Delete, the members with the owner's role select
  * (disabled on the own row of the only owner whose seat is not suspended),
  * the Suspended badge and Suspend or Resume by each row's `suspended`, and
  * Remove while `can_manage`, the person's own row the one whose email is

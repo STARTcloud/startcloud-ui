@@ -1,0 +1,7 @@
+{
+  "method": "SMS",
+  "target": { "masked": "+1******4242" },
+  "sent": true,
+  "resend_after_seconds": 0,
+  "can_change_method": false
+}

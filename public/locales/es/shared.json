@@ -314,6 +314,8 @@
     "sole_owner": "Eres el único propietario de {{teams}}; transfiere o elimina esos equipos primero.",
     "last_login_method": "Es la única forma en que puedes iniciar sesión; establece una contraseña o vincula otra cuenta primero.",
     "last_owner": "Un equipo necesita un propietario; nombra a otra persona propietaria primero.",
+    "insufficient_role": "Tu rol en esta organización no permite hacer eso.",
+    "target_not_a_member": "Esa persona no es miembro de esta organización.",
     "own_account": "Cambia tu propia cuenta desde tu página de perfil.",
     "guest_only": "Esta cuenta compartida no se puede cambiar aquí.",
     "invite_wrong_account": "Inicia sesión con la dirección invitada para aceptar esta invitación.",
@@ -324,6 +326,11 @@
     "personal": "una organización personal",
     "not_blocked": "no está bloqueada actualmente",
     "throttled": "demasiados intentos; vuelve a intentarlo en un momento",
+    "tfa_required": "Este sitio exige la verificación en dos pasos. No se puede desactivar aquí.",
+    "suspended": "Esta organización está suspendida, o tu membresía en ella lo está.",
+    "own_membership": "No puedes suspender ni reanudar tu propia membresía.",
+    "admins_suspend_members_only": "Los administradores solo pueden suspender a miembros e invitados.",
+    "sms_unavailable": "Los mensajes de texto no están disponibles en este sitio.",
     "title": {
       "403": "No tienes acceso a esta página",
       "404": "Página no encontrada",
@@ -388,7 +395,8 @@
       "hostname": "Introduce {{label}} como un nombre de host.",
       "ipv4": "Introduce {{label}} como una dirección IPv4, como 192.168.1.10.",
       "duration": "Introduce {{label}} como una duración ISO 8601, como PT1H o P7D.",
-      "ttl": "Introduce {{label}} como un número y una unidad, como 30m, 4h o 2d."
+      "ttl": "Introduce {{label}} como un número y una unidad, como 30m, 4h o 2d.",
+      "date": "Introduce {{label}} como una fecha, como 2026-07-16."
     },
     "minItems": "Introduce al menos {{minItems}} entradas para {{label}}.",
     "maxItems": "Introduce como máximo {{maxItems}} entradas para {{label}}.",
@@ -404,6 +412,27 @@
     "withinParent": "Mantén {{label}} dentro de {{parent}}, el ajuste del nivel superior.",
     "publicAddress": "{{label}} debe ser una dirección pública.",
     "matchesContent": "{{label}} no coincide con el contenido.",
+    "token": {
+      "unoffered": "Usa solo los tokens indicados en {{label}}; {{token}} no es uno de ellos.",
+      "unknown": "Usa solo los marcadores indicados en {{label}}; {{token}} no es uno de ellos.",
+      "syntax": "Escribe {{token}} en {{label}} como un marcador o una etiqueta de campo.",
+      "name": "Nombra el campo de {{token}} con palabras en minúsculas unidas por guiones bajos, hasta 64 caracteres.",
+      "reserved": "Da al campo de {{token}} un nombre que ningún marcador use.",
+      "kind": "Da a {{token}} un kind de checkbox, date, choice o signature.",
+      "label": "Da a {{token}} un label de una sola línea de hasta 500 caracteres.",
+      "required": "Establece required en {{token}} como true o false.",
+      "options": "Da al campo choice de {{token}} dos o más options distintas de hasta 255 caracteres cada una; solo choice admite options.",
+      "attribute": "Escribe cada atributo de {{token}} una sola vez, como name=value, usando kind, label, required u options.",
+      "escape": "Usa una barra invertida en {{token}} solo antes de una barra invertida, un punto y coma o una barra vertical.",
+      "duplicate": "Declara el campo de {{token}} de una sola forma en {{label}}.",
+      "undeclared": "Declara el campo de {{token}} antes de repetirlo."
+    },
+    "dependentRequired": {
+      "default_copy": "Crea primero la copia en el idioma predeterminado y luego define {{label}}."
+    },
+    "const": {
+      "full_name": "Introduce tu nombre completo en {{label}}."
+    },
     "unknown": "Revisa {{label}}."
   },
   "session": {
@@ -513,7 +542,8 @@
         "enableReason": "Activar la verificación en dos pasos cambia cómo inicias sesión.",
         "disableReason": "Desactivar la verificación en dos pasos cambia cómo inicias sesión.",
         "enabledDone": "Verificación en dos pasos activada.",
-        "disabledDone": "Verificación en dos pasos desactivada."
+        "disabledDone": "Verificación en dos pasos desactivada.",
+        "smsOnly": "Los mensajes de texto son el único segundo paso de esta cuenta. Añade una aplicación de autenticación o una llave de acceso."
       },
       "passkeys": {
         "title": "Llaves de acceso",
@@ -698,6 +728,7 @@
       "code": "Código de la aplicación o de respaldo",
       "usePassword": "Usar tu contraseña en su lugar",
       "useCode": "Usar un código de la aplicación o de respaldo en su lugar",
+      "useBackupCode": "Usar un código de respaldo en su lugar",
       "confirm": "Confirmar"
     },
     "preferences": {
@@ -749,7 +780,28 @@
       "set": "Establecer",
       "clear": "Borrar",
       "save": "Guardar preferencias",
-      "saved": "Preferencias guardadas."
+      "saved": "Preferencias guardadas.",
+      "signInNotices": {
+        "title": "Avisos de inicio de sesión",
+        "followingDefault": "Siguiendo el valor predeterminado del sitio",
+        "useDefault": "Usar el valor predeterminado del sitio",
+        "useDefaultTitle": "¿Usar el valor predeterminado del sitio?",
+        "useDefaultBody": "Se borra la elección hecha aquí y los avisos de inicio de sesión siguen el valor predeterminado del sitio.",
+        "when": {
+          "label": "Cuándo se envía un aviso",
+          "off": "Nunca",
+          "new": "Solo desde un dispositivo o lugar nuevo",
+          "all": "Siempre"
+        },
+        "whenHint": "Se envía un aviso cuando se completa un inicio de sesión en esta cuenta y cuando se aprueba un código de dispositivo o una solicitud de inicio de sesión de una aplicación.",
+        "channels": {
+          "label": "Dónde se envía un aviso",
+          "email": "Correo electrónico",
+          "inbox": "Bandeja de entrada",
+          "push": "Notificación push"
+        },
+        "channelsHint": "Desactivar los avisos, o quitar el correo, envía un correo a la cuenta."
+      }
     },
     "favorites": {
       "title": "Favoritos",
@@ -796,6 +848,7 @@
   "admin": {
     "pageTitle": "Admin",
     "title": "Panel de Administración",
+    "copyRemoved": "Otra persona eliminó esta copia.",
     "tabs": {
       "configManagement": "Gestión de Configuración",
       "system": "Sistema"
@@ -844,7 +897,9 @@
         "passwordChangeSaved": "Inicio de sesión guardado.",
         "emailTitle": "Cambiar la dirección de correo",
         "emailSaved": "Dirección de correo guardada.",
-        "stepUpReason": "Cambiar la cuenta de otra persona cambia cómo inicia sesión."
+        "stepUpReason": "Cambiar la cuenta de otra persona cambia cómo inicia sesión.",
+        "lastMethodTitle": "¿Quitar el último método?",
+        "lastMethodBody": "Este es el último método de segundo factor de la cuenta. Quitarlo desactiva su inicio de sesión en dos pasos y cierra sus sesiones en todas partes."
       },
       "filter": {
         "status": "Estado",
@@ -873,6 +928,7 @@
       "more": "Más",
       "suspended": "La cuenta está suspendida.",
       "enabled": "La cuenta está activada.",
+      "resumed": "Cuenta reanudada.",
       "roles": {
         "action": "Roles",
         "title": "Roles de {{user}}",
@@ -918,7 +974,7 @@
       },
       "bulk": {
         "selected": "{{count}} seleccionados",
-        "enable": "Activar",
+        "enable": "Reanudar",
         "suspend": "Suspender",
         "add_role": "Añadir rol",
         "remove_role": "Quitar rol",
@@ -1243,6 +1299,13 @@
       "editTitle": "Editar · {{name}}",
       "createTitle": "Crear un documento",
       "placeholders": "Marcadores:",
+      "defaultLanguage": "Idioma predeterminado",
+      "refreshPreview": "Actualizar vista previa",
+      "declareField": "Declara un campo:",
+      "repeatField": "Repítelo con:",
+      "errors": {
+        "default_copy": "La copia en el idioma predeterminado permanece mientras otras copias dependan de ella."
+      },
       "copies": {
         "add": "Añadir una copia",
         "addTitle": "Añadir una copia · {{name}}",
@@ -1258,7 +1321,8 @@
         "type": "Tipo",
         "public": "Público",
         "publicAt": "Accesible públicamente en /public/policies/{{name}}",
-        "content": "Contenido (Markdown)"
+        "content": "Contenido (Markdown)",
+        "locale": "Idioma"
       },
       "type": {
         "client": "Cliente (aplicaciones OAuth)",
@@ -1282,6 +1346,7 @@
         "confirmBody": "{{count}} documentos seleccionados se eliminan con todos los registros de aceptación que los nombran. Escribe \"{{keyword}}\" para confirmar.",
         "stepUpReason": "Eliminar documentos los quita para siempre.",
         "errors": {
+          "default_copy": "Aún se necesita la copia en el idioma predeterminado",
           "not_found": "ya no existe"
         }
       }
@@ -1298,7 +1363,15 @@
         "email_change": "Cambio de correo",
         "account_event": "Evento de la cuenta",
         "ciba_approval": "Aprobación CIBA",
-        "admin_new_registration": "Registro nuevo (admin)"
+        "admin_new_registration": "Registro nuevo (admin)",
+        "account_suspended": "Cuenta suspendida",
+        "org_membership_suspended": "Membresía de la organización suspendida",
+        "smtp_test": "Mensaje de prueba SMTP",
+        "sign_in_notice": "Aviso de inicio de sesión",
+        "device_approval_notice": "Aviso de aprobación de dispositivo",
+        "ciba_approval_notice": "Aviso de aprobación de solicitud de inicio de sesión",
+        "sign_in_notice_changed": "Avisos de inicio de sesión cambiados",
+        "sign_in_email_code": "Código de inicio de sesión por correo"
       },
       "edit": "Editar",
       "preview": "Vista previa",
@@ -1331,8 +1404,8 @@
       "errors": {
         "default_copy": "La copia predeterminada es el texto genérico del tipo; edítala, no se puede eliminar."
       },
-      "arguments": "Argumentos:",
-      "insertArgument": "Insertar {{name}}",
+      "arguments": "Tokens:",
+      "insertArgument": "Insertar el token {{name}}",
       "previewTitle": "Vista previa",
       "previewFrame": "Vista previa del cuerpo del correo",
       "field": {
@@ -1490,7 +1563,11 @@
       "clearSelection": "Limpiar selección",
       "role": "Rol",
       "changeRole": "Cambiar rol",
-      "result": "Procesados {{processed}}, omitidos {{skipped}}."
+      "result": "Procesados {{processed}}, omitidos {{skipped}}.",
+      "errors": {
+        "own_membership": "Membresía propia",
+        "admins_suspend_members_only": "Los administradores solo suspenden a miembros e invitados"
+      }
     },
     "organization": {
       "title": "Detalles de la Organización",
@@ -4244,6 +4321,7 @@
     "personal": "Personal",
     "primary": "Principal",
     "yourRole": "Tu rol {{role}}",
+    "membershipSuspended": "Tu membresía está suspendida",
     "none": "Todavía no eres miembro de ninguna organización.",
     "search": "Buscar organizaciones"
   },

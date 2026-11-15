@@ -1,3 +1,5 @@
+import { hasFeatureStrict } from '../../../utils/capabilities';
+
 const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '[::1]'];
 
 const CODE_SSO_TOKEN = 'oidc-code';
@@ -21,7 +23,7 @@ export const agentSignInsOf = status => {
   const apiKey = auth[0] === 'apikey';
   return {
     apiKey,
-    sso: apiKey && auth.includes('oidc') && listOf(status?.features).includes(CODE_SSO_TOKEN),
+    sso: apiKey && auth.includes('oidc') && hasFeatureStrict(status, CODE_SSO_TOKEN),
     tray: apiKey,
     bootstrap: apiKey && Boolean(status?.bootstrapAvailable),
   };

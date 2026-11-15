@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { AuthAlert } from '../../../components/common/AuthShell';
 import CodeInput from '../../../components/common/CodeInput';
@@ -11,7 +11,9 @@ import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import PhoneInput from '../../../components/common/PhoneInput';
 import { useStatus } from '../../../contexts/StatusContext';
 import { formRulesShape, useFormRules } from '../../../hooks/useFormRules';
+import { followNext } from '../../../lib/next';
 import { returnToShape } from '../../../utils/auth';
+import { hasFeature } from '../../../utils/capabilities';
 import { geoCountry, sendPhoneCode, verifyPhone } from '../api/onboarding';
 import { useOnboarding, useStepAction } from '../useOnboarding';
 
@@ -23,6 +25,8 @@ const SCHEMA = {
 };
 const LABELS = { mobile_number: 'auth:onboarding.phone.number' };
 const SAFE_PATH = /^\/(?![/\\])/;
+const PHONE_PATH = '/complete-onboarding/phone-setup';
+const UNAVAILABLE = { code: 'sms_unavailable', status: 409, wait: 0, since: 0 };
 
 const useGeoCountry = () => {
   const [country, setCountry] = useState('');
@@ -91,12 +95,14 @@ PolicyLinks.propTypes = {
   ).isRequired,
 };
 
-const PhoneField = ({ rules, value, country, onChange }) => {
+const PhoneField = ({ rules, value, country, purpose, onChange }) => {
   const { t } = useTranslation(['auth']);
   const status = useStatus();
   const hint = (
     <>
-      {t('onboarding.phone.required', { site: status.brand.name })}{' '}
+      {t(purpose === 'tfa' ? 'onboarding.phone.requiredTfa' : 'onboarding.phone.required', {
+        site: status.brand.name,
+      })}{' '}
       {status.links.contact ? (
         <a href={status.links.contact} className="auth-link">
           {t('onboarding.phone.support')}
@@ -129,6 +135,7 @@ PhoneField.propTypes = {
   rules: formRulesShape.isRequired,
   value: PropTypes.string.isRequired,
   country: PropTypes.string.isRequired,
+  purpose: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
 };
 
@@ -200,46 +207,10 @@ const usePhoneStep = returnTo => {
   };
 };
 
-/**
- * `/complete-onboarding/phone-setup`: the heading, the subhead and the
- * consent line worded by `phone.purpose`, the `PhoneInput` to E.164, the
- * requirement line with the site's support contact, "Send verification
- * code", then the `CodeInput` with Resend under the sending countdown; a
- * number edited after a send keeps the code section with "Number changed.
- * Send a new code." and Verify disabled; the policy links and, for a
- * `tfa` step, "Choose a different method" beside the frame's Cancel.
- */
-const PhoneStep = ({ returnTo, events }) => {
+const PhoneForm = ({ step, phone, country, purpose }) => {
   const { t } = useTranslation(['auth']);
-  const { state } = useOnboarding();
-  const country = useGeoCountry();
-  const step = usePhoneStep(returnTo);
-  const purpose = state?.phone?.purpose || 'verify';
-  const title = t(purpose === 'tfa' ? 'onboarding.phone.titleTfa' : 'onboarding.phone.title');
-
-  useEffect(() => {
-    document.title = title;
-  }, [title]);
-
   return (
-    <OnboardingFrame
-      state={state}
-      current="phone"
-      returnTo={returnTo}
-      events={events}
-      title={title}
-      subtitle={t(
-        purpose === 'tfa' ? 'onboarding.phone.subheadTfa' : 'onboarding.phone.subheadVerify'
-      )}
-      problem={step.problem}
-      foot={
-        purpose === 'tfa' ? (
-          <Link to="/complete-onboarding/choose-2fa-method" className="auth-link auth-link-muted">
-            {t('onboarding.phone.chooseOther')}
-          </Link>
-        ) : null
-      }
-    >
+    <>
       {step.codeReady ? (
         <AuthAlert tone="success">
           {t('onboarding.phone.found', { number: step.sent.to })}
@@ -252,6 +223,7 @@ const PhoneStep = ({ returnTo, events }) => {
           rules={step.rules}
           value={step.values.mobile_number}
           country={country}
+          purpose={purpose}
           onChange={step.setNumber}
         />
         {step.sent.to ? (
@@ -265,13 +237,13 @@ const PhoneStep = ({ returnTo, events }) => {
               disabled={step.busy || !step.codeReady}
             />
             <ResendCode
-              after={step.changed ? 0 : state?.phone?.resend_after_seconds || 0}
+              after={step.changed ? 0 : phone.resend_after_seconds || 0}
               since={step.sent.at}
               onResend={step.send}
             />
           </>
         ) : null}
-        <ConsentLine purpose={purpose} policies={state?.phone?.policies || []} />
+        <ConsentLine purpose={purpose} policies={phone.policies || []} />
         <button
           type="submit"
           className={`auth-btn auth-btn-primary auth-btn-block${step.busy ? ' is-loading' : ''}`}
@@ -280,6 +252,79 @@ const PhoneStep = ({ returnTo, events }) => {
           {step.sent.to ? t('onboarding.phone.verify') : t('onboarding.phone.send')}
         </button>
       </form>
+    </>
+  );
+};
+
+PhoneForm.propTypes = {
+  step: PropTypes.object.isRequired,
+  phone: PropTypes.shape({
+    resend_after_seconds: PropTypes.number,
+    policies: PropTypes.array,
+  }).isRequired,
+  country: PropTypes.string.isRequired,
+  purpose: PropTypes.string.isRequired,
+};
+
+/**
+ * `/complete-onboarding/phone-setup`, its form drawn while the host lists
+ * the `sms` sub flag of `tfa`. The heading, the subhead, the requirement
+ * line and the consent line are worded by `phone.purpose`, the
+ * `PhoneInput` to E.164, the requirement line with the site's support
+ * contact, "Send verification code", then the `CodeInput` with Resend
+ * under the sending countdown; a number edited after a send keeps the
+ * code section with "Number changed. Send a new code." and Verify
+ * disabled; the policy links and, for a `tfa` step, "Choose a different
+ * method" beside the frame's Cancel. Without the sub flag the page draws
+ * no form: it follows the state's own `next`, and where `next` is this
+ * page itself it draws the `sms_unavailable` problem in the frame's alert
+ * above the foot's links.
+ */
+const PhoneStep = ({ returnTo, events }) => {
+  const { t } = useTranslation(['auth']);
+  const { state } = useOnboarding();
+  const status = useStatus();
+  const navigate = useNavigate();
+  const country = useGeoCountry();
+  const step = usePhoneStep(returnTo);
+  const offered = hasFeature(status, 'tfa', 'sms');
+  const next = state?.next || '';
+  const stuck = !offered && next.split(/[?#]/)[0] === PHONE_PATH;
+  const purpose = state?.phone?.purpose || 'verify';
+  const title = t(purpose === 'tfa' ? 'onboarding.phone.titleTfa' : 'onboarding.phone.title');
+
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
+
+  useEffect(() => {
+    if (!offered && !stuck && next) {
+      followNext({ next, navigate, returnTo });
+    }
+  }, [offered, stuck, next, navigate, returnTo]);
+
+  return (
+    <OnboardingFrame
+      state={offered || stuck ? state : null}
+      current="phone"
+      returnTo={returnTo}
+      events={events}
+      title={title}
+      subtitle={t(
+        purpose === 'tfa' ? 'onboarding.phone.subheadTfa' : 'onboarding.phone.subheadVerify'
+      )}
+      problem={stuck ? UNAVAILABLE : step.problem}
+      foot={
+        purpose === 'tfa' ? (
+          <Link to="/complete-onboarding/choose-2fa-method" className="auth-link auth-link-muted">
+            {t('onboarding.phone.chooseOther')}
+          </Link>
+        ) : null
+      }
+    >
+      {offered ? (
+        <PhoneForm step={step} phone={state?.phone || {}} country={country} purpose={purpose} />
+      ) : null}
     </OnboardingFrame>
   );
 };

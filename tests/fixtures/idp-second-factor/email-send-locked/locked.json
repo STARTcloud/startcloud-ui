@@ -1,0 +1,7 @@
+{
+  "type": "https://auth.startcloud.com/probs/conflict",
+  "title": "This method is locked.",
+  "status": 409,
+  "code": "locked",
+  "method": "EMAIL"
+}

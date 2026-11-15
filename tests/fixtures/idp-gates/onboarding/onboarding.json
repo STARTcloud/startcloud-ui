@@ -4,5 +4,5 @@
   "done": [],
   "account": { "email": "mark@m4kr.net", "first_name": "Mark" },
   "phone": { "purpose": "tfa" },
-  "tfa": { "sms_risk_notice": false, "passkey": false }
+  "tfa": { "sms_risk_notice": false }
 }

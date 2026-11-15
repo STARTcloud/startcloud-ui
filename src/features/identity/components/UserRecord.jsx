@@ -4,6 +4,7 @@ import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { FaCommentSms, FaKey, FaMobileScreen } from 'react-icons/fa6';
 
+import ConfirmModal from '../../../components/common/ConfirmModal';
 import DiscardPrompt, { useDiscardGuard } from '../../../components/common/DiscardPrompt';
 import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
@@ -41,6 +42,8 @@ const TfaMethods = ({ userId, tfa, guard, reason, onSaved }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [methods, setMethods] = useState([]);
+  const [releasing, setReleasing] = useState(null);
+  const last = methods.length === 1;
 
   const load = useCallback(
     () =>
@@ -69,35 +72,49 @@ const TfaMethods = ({ userId, tfa, guard, reason, onSaved }) => {
       });
 
   return (
-    <MethodList empty={t('profile.security.tfa.noMethods')}>
-      {methods.map(method => {
-        const Icon = METHOD_ICONS[method.type] || FaMobileScreen;
-        return (
-          <MethodRow
-            key={method.id}
-            icon={<Icon aria-hidden />}
-            label={methodLabel(method, t)}
-            badges={
-              method.preferred ? (
-                <span className="badge bg-primary">{t('profile.security.tfa.preferredBadge')}</span>
-              ) : null
-            }
-            subline={method.display || method.label}
-            actions={
-              REMOVABLE.includes(method.type) ? (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-danger"
-                  onClick={() => remove(method)}
-                >
-                  {t('profile.security.tfa.remove')}
-                </button>
-              ) : null
-            }
-          />
-        );
-      })}
-    </MethodList>
+    <>
+      <MethodList empty={t('profile.security.tfa.noMethods')}>
+        {methods.map(method => {
+          const Icon = METHOD_ICONS[method.type] || FaMobileScreen;
+          return (
+            <MethodRow
+              key={method.id}
+              icon={<Icon aria-hidden />}
+              label={methodLabel(method, t)}
+              badges={
+                method.preferred ? (
+                  <span className="badge bg-primary">
+                    {t('profile.security.tfa.preferredBadge')}
+                  </span>
+                ) : null
+              }
+              subline={method.display || method.label}
+              actions={
+                REMOVABLE.includes(method.type) ? (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-danger"
+                    data-action="tfa-method-remove"
+                    onClick={() => (last ? setReleasing(method) : remove(method))}
+                  >
+                    {t('profile.security.tfa.remove')}
+                  </button>
+                ) : null
+              }
+            />
+          );
+        })}
+      </MethodList>
+      <ConfirmModal
+        show={Boolean(releasing)}
+        handleClose={() => setReleasing(null)}
+        handleConfirm={() => remove(releasing)}
+        title={t('admin.users.record.lastMethodTitle')}
+        message={t('admin.users.record.lastMethodBody')}
+        typed={false}
+        confirmText={t('profile.security.tfa.remove')}
+      />
+    </>
   );
 };
 
@@ -255,10 +272,16 @@ PasswordChangeSwitch.propTypes = {
  * through the phone `PUT`, the email through its own dialog over the
  * email `PUT`), the Preferences card drawing the shared preferences
  * section with the record's own language, mode, theme and motion saved with the rest
- * through the preferences `PATCH` while the adapter carries it, the
+ * through the preferences `PATCH` while the adapter carries it, its
+ * Sign-in notices card over the record's `sign_in_notices` among them, the
  * Two-factor card listing the record's methods from the adapter's `tfa`
  * read the way the Security section lists them, passkeys included,
- * Remove on the SMS and APP rows alone through its `DELETE`, and the
+ * Remove on the SMS and APP rows alone through its `DELETE`, the Remove
+ * of the last method, the one row the list holds, passkeys counted,
+ * waiting behind a plain confirmation that says it turns their
+ * two-factor sign-in off and signs them out everywhere, and a notice row
+ * asking for an authenticator app or a passkey while the record's
+ * `profile.tfa.sms_only` is true, and the
  * Sign-in card with the "Require a password change at next sign-in"
  * switch writing `password_change_required` through the record
  * `PATCH`; drawn only while the record carries `profile` and the
@@ -344,6 +367,11 @@ const UserRecord = ({ user, adapter, viewer, onSaved }) => {
           folded={folds.folded('tfa')}
           onFold={() => folds.toggle('tfa')}
         >
+          {user.profile.tfa?.sms_only ? (
+            <div className="alert alert-warning small" role="status" data-note="tfa-sms-only">
+              {t('profile.security.tfa.smsOnly')}
+            </div>
+          ) : null}
           <TfaMethods
             userId={user.id}
             tfa={adapter.tfa}

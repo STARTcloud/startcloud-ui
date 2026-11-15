@@ -6,6 +6,7 @@ import { useStatus } from '../../../contexts/StatusContext';
 import { useEventStream } from '../../../hooks/useEventStream';
 import { log } from '../../../lib/logger';
 import { getTask } from '../api/tasks';
+import { hostHasFeature } from '../utils/capabilities';
 import { agentIdOf, withoutAgentId } from '../utils/hosts';
 import { hostStreamsTasks, queuedTaskOf } from '../utils/machineTools';
 import { TERMINAL_TASK_STATUSES } from '../utils/tasks';
@@ -113,9 +114,7 @@ export const useManageSend = id => {
   const server = useHostRow(id);
   const [busy, setBusy] = useState(false);
   const [task, setTask] = useState(null);
-  const listsTasks = Array.isArray(server?.capabilities?.features)
-    ? server.capabilities.features.includes('tasks')
-    : false;
+  const listsTasks = hostHasFeature(server, 'tasks');
 
   const send = useCallback(
     async ({ call, doneKey, values = {}, failKey = '' }) => {

@@ -1,0 +1,10 @@
+{
+  "sms": [],
+  "app": [],
+  "passkey": false,
+  "backup_codes": true,
+  "email": true,
+  "locked": [],
+  "preferred": { "method": "SMS", "authenticator_id": 12 },
+  "sms_risk_notice": true
+}

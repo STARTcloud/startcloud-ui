@@ -1,0 +1,18 @@
+[
+  {
+    "id": 12,
+    "type": "SMS",
+    "label": "Work phone",
+    "display": "+1******4242",
+    "enabled": true,
+    "preferred": true
+  },
+  {
+    "id": 31,
+    "type": "PASSKEY",
+    "label": "Laptop",
+    "display": "Laptop",
+    "enabled": true,
+    "preferred": false
+  }
+]

@@ -61,6 +61,12 @@ const TotpEnrollPage = ({ returnTo, events }) => {
     verify(code);
   };
 
+  const foot = (
+    <Link to="/complete-onboarding/choose-2fa-method" className="auth-link auth-link-muted">
+      {t('onboarding.phone.chooseOther')}
+    </Link>
+  );
+
   return (
     <OnboardingFrame
       state={state}
@@ -70,11 +76,7 @@ const TotpEnrollPage = ({ returnTo, events }) => {
       title={t('onboarding.qr.title')}
       subtitle={t('onboarding.qr.scan')}
       problem={problem}
-      foot={
-        <Link to="/complete-onboarding/choose-2fa-method" className="auth-link auth-link-muted">
-          {t('onboarding.phone.chooseOther')}
-        </Link>
-      }
+      foot={foot}
     >
       {enrollment ? (
         <form className="auth-form" onSubmit={submit} noValidate>

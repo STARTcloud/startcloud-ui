@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "timezone": { "type": "string", "pattern": "^(?:UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$" },
+    "region": { "type": "string", "pattern": "^[A-Z]{2}$|^(EU|EEA|UK)$" }
+  },
+  "forms": {
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "timezone": { "$ref": "#/$defs/timezone" },
+        "region": { "$ref": "#/$defs/region" },
+        "ciba_channel": { "type": "string", "enum": ["PUSH", "EMAIL", "SMS"] },
+        "ciba_user_code": { "type": "string", "minLength": 4, "maxLength": 64 },
+        "sign_in_notices": {
+          "type": "object",
+          "properties": {
+            "when": { "type": "string", "enum": ["off", "new", "all"] },
+            "channels": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["email", "inbox", "push"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}
