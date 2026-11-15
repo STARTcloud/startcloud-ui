@@ -5,26 +5,20 @@ import { useTranslation } from 'react-i18next';
 import SectionCard, { foldsShape } from '../../../../components/common/SectionCard';
 import { errorKeys } from '../../../../components/common/StepUpDialog';
 import { useNotify } from '../../../../contexts/NoticeContext';
-
-const download = codes => {
-  const blob = new Blob([`${codes.join('\n')}\n`], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'backup-codes.txt';
-  link.click();
-  URL.revokeObjectURL(url);
-};
+import { useStatus } from '../../../../contexts/StatusContext';
+import { backupCodesFileName } from '../../../../utils/backupCodes';
+import { downloadText } from '../../../certs/utils/download';
 
 /**
  * The Recovery section of the Security tab: the backup-codes count badge,
  * warning at zero, Generate or Regenerate over `POST /api/user/backup-codes`,
  * stepped up, and the codes drawn once with Download shown only while
- * they are on screen.
+ * they are on screen, the file saved under the site, `email` and the day.
  */
-const RecoverySection = ({ account, guard, folds }) => {
+const RecoverySection = ({ account, email, guard, folds }) => {
   const { t } = useTranslation();
   const notify = useNotify();
+  const status = useStatus();
   const [remaining, setRemaining] = useState(null);
   const [codes, setCodes] = useState([]);
 
@@ -86,7 +80,13 @@ const RecoverySection = ({ account, guard, folds }) => {
           <button
             type="button"
             className="btn btn-sm btn-outline-secondary"
-            onClick={() => download(codes)}
+            onClick={() =>
+              downloadText(
+                `${codes.join('\n')}\n`,
+                'text/plain',
+                backupCodesFileName(status?.brand?.name, email)
+              )
+            }
           >
             {t('profile.security.recovery.download')}
           </button>
@@ -106,6 +106,7 @@ RecoverySection.propTypes = {
       generate: PropTypes.func.isRequired,
     }).isRequired,
   }).isRequired,
+  email: PropTypes.string.isRequired,
   guard: PropTypes.func.isRequired,
   folds: foldsShape.isRequired,
 };

@@ -5,35 +5,28 @@ import { useTranslation } from 'react-i18next';
 import { AuthAlert } from '../../../components/common/AuthShell';
 import CopyButton from '../../../components/common/CopyButton';
 import FieldError from '../../../components/common/FieldError';
+import { useStatus } from '../../../contexts/StatusContext';
 import { useProblemReporter } from '../../../hooks/useProblemReporter';
 import { returnToShape } from '../../../utils/auth';
+import { backupCodesFileName } from '../../../utils/backupCodes';
+import { downloadText } from '../../certs/utils/download';
 import { backupCodes, confirmBackupCodes } from '../api/onboarding';
 import { useOnboarding, useStepAction } from '../useOnboarding';
 
 import OnboardingFrame from './OnboardingFrame';
 
-const download = codes => {
-  const blob = new Blob([`${codes.join('\n')}\n`], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = 'backup-codes.txt';
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-};
-
 /**
  * `/complete-onboarding/backup-codes`: the warning, the codes from
  * `POST /api/auth/tfa/backup-codes` in a two-column monospace grid, "Copy
- * all codes", "Download as text file", the "I have saved my backup codes"
+ * all codes", "Download as text file" saved under the site, the person's
+ * email and the day, the "I have saved my backup codes"
  * check, and an enabled Continue that refuses with an inline error while
  * the box is unticked, then posts the confirm and follows `next`.
  */
 const BackupCodesPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const report = useProblemReporter();
+  const status = useStatus();
   const { state } = useOnboarding();
   const { run, busy, problem, setProblem } = useStepAction(returnTo, events);
   const [codes, setCodes] = useState([]);
@@ -99,7 +92,13 @@ const BackupCodesPage = ({ returnTo, events }) => {
             <button
               type="button"
               className="auth-btn auth-btn-secondary auth-btn-small"
-              onClick={() => download(codes)}
+              onClick={() =>
+                downloadText(
+                  `${codes.join('\n')}\n`,
+                  'text/plain',
+                  backupCodesFileName(status?.brand?.name, state?.account?.email)
+                )
+              }
             >
               {t('onboarding.codes.download')}
             </button>

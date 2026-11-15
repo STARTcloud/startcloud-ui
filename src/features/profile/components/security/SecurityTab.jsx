@@ -84,7 +84,12 @@ const SecurityTab = ({ account, profile, guard, focusEmail, onSaved, onDeleted }
         />
       ) : null}
       {account.backupCodes ? (
-        <RecoverySection account={account} guard={guard} folds={folds} />
+        <RecoverySection
+          account={account}
+          email={profile.email || ''}
+          guard={guard}
+          folds={folds}
+        />
       ) : null}
       {account.deletion ? (
         <DeleteAccountSection
