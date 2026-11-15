@@ -1,0 +1,5 @@
+{
+  "sign_in": { "armed": true, "wait_seconds": 240 },
+  "tfa": { "SMS": "clear", "APP": "locked", "BACKUP_CODE": "armed" },
+  "banned": false
+}

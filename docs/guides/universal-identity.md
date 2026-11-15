@@ -57,8 +57,11 @@ OIDC interstitials; the signed-in pages; admin, health and errors.
 - **GET is the page, POST is the action.** Every page GET on the issuer is
   `permitAll` and answers `index.html`; authorization lives on `/api/*`,
   on the POST actions and on the protocol endpoints, and the SPA sends an
-  anonymous visitor to `/login` with the page kept under `intended_url`,
-  so the server's security configuration neither gates nor redirects a
+  anonymous visitor to `/login` with the page kept under `intended_url`
+  on every page but the auth paths: on the sign-in, onboarding and
+  interstitial routes, `/activate` excepted, on `/org/invite`, which
+  posts its token signed in or not, and on `/error` the page itself
+  draws, so the server's security configuration neither gates nor redirects a
   page GET, because a
   `403` on `/admin/users` or a `302` on `/activate` would otherwise answer
   a request for `index.html`. Where the SPA route and the server action
@@ -593,7 +596,8 @@ glyph draws from the issuer's own period and no number of its own.
 The answer is the one source for the choice of a method. `sms` lists the
 account's phones and is `[]` while SMS is unavailable on the site, `app`
 its authenticator apps; `passkey`, `backup_codes` and `email` are true
-while this session can use that method; `locked` may hold `EMAIL`. The
+while this session can use that method; `locked` names the methods the
+lockout has disabled, under the rule of `locked` below. The
 emailed code is the last resort: `email` is true only while the site
 allows it, the server can send mail, the account's email is verified,
 this sign-in did not itself come through the mailbox, and the account
@@ -627,8 +631,54 @@ and the page offers those methods at once with no second read:
 }
 ```
 
+A route of the code step asked for a method the lockout has disabled
+answers `409` `locked` with the method in `method` and the same five
+members, the methods the account can use in the session; `sms` lists
+every phone that can be texted. It is answered by
+`POST /api/auth/tfa/send`, `POST /authenticator-method`,
+`POST /authenticator`, `POST /api/auth/tfa/email/send` and
+`POST /api/auth/tfa/email/verify`; the form posts redirect with
+`?error=locked`. The code step offers the members at once, the phones in
+`sms` included, the method `locked` names drawn as locked beside them,
+with no second read:
+
+```json
+{
+  "type": "https://auth.startcloud.com/probs/method-locked",
+  "title": "This method is locked.",
+  "status": 409,
+  "code": "locked",
+  "method": "APP",
+  "sms": [{ "id": 12, "label": "Work phone", "masked": "+1******4242" }],
+  "app": [],
+  "passkey": false,
+  "backup_codes": true,
+  "email": false
+}
+```
+
+The rule of `locked`, in `GET /api/auth/tfa/methods` and in the `tfa`
+object of `GET /api/user` alike:
+
+- A method is named in `locked` while the lockout has disabled it, the
+  state that lasts until the method is enrolled again or an operator
+  unlocks it.
+- `APP` and `SMS` are named as soon as the lockout has disabled one of
+  the account's apps or phones. The disabled app or phone is absent from
+  `app` or `sms`; the others stay listed, so `locked` may name `APP` while
+  `app` still holds a row.
+- A method inside the wait that follows wrong codes is never named in
+  `locked`. It stays offered, its code answers `429` `code` with
+  `wait_seconds`, and `GET /api/auth/tfa` answers the same `wait_seconds`.
+
+The code step, the profile's Two-factor section and the admin Rate limits
+dialog draw a method as locked from `locked` and still offer every app
+and phone the answer lists beside it, the picker drawing one disabled
+card per method `locked` names after the enabled ones; a method inside a
+wait is drawn with its countdown from `wait_seconds`, never as locked.
+
 `/authenticator` and `/authenticator-method` draw `?error=<code>` as the
-problem of that code. A suspended account is refused `403`
+problem of that code, `locked` among them. A suspended account is refused `403`
 `account_suspended` by `POST /login/webauthn`, `POST /authenticator` and
 the account-linking decision, and a redirecting flow lands on
 `/login?error=account_suspended`; a session open when its account is
@@ -643,21 +693,21 @@ A `200` carries `next`; a failure is `application/problem+json` with
 `type` under `https://auth.startcloud.com/probs/`, `status`, `code`, and
 `wait_seconds` where the step is throttled.
 
-| Action                | Request                                                                                                                                                                                                                                                                                                                                                        | `200`                                                                                                                        | Failure                                                                                                                                                                                                                                                                                                                                                                                               |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| password sign-in      | `POST /login`, form-encoded `username`, `password`, `remember-me`                                                                                                                                                                                                                                                                                              | `{ "next": "/" }`, `{ "next": "/authenticator" }`, `{ "next": "/complete-onboarding" }` or the saved `/oauth2/authorize` URL | `401` `authentication`, `code: bad_credentials` for a wrong password and for a disabled or locked account alike, the account's state told by mail, because a distinct code tells a caller which addresses exist; `429` with `wait_seconds` from the brute-force gate. `tos_session_expired` and `registration_disabled` reach the page as `?error=` from other flows, never as an answer to this POST |
-| magic-link request    | `POST /login/magic/request`, JSON `{ "email", "resend" }`                                                                                                                                                                                                                                                                                                      | `202 { "sent": true }` always                                                                                                | `400` `bad-request` with `errors[]` on `/email` when the address is missing or malformed; `429` `code: quota` with `wait_seconds` beyond the per-address and per-caller limit the server keeps, because a `202` that always sends is a mail cannon otherwise                                                                                                                                          |
-| magic-link consume    | the page at `/login/magic` reads `email` and `token` from the mail's URL once, replaces the location with `/login/magic`, and posts `POST /login/magic`, JSON `{ "email", "token" }`; the GET of that URL is the SPA and consumes nothing, so a scanner's prefetch cannot burn the link                                                                        | `{ "next": "/" \| "/authenticator" \| "/complete-onboarding" \| the saved request }`                                         | `403` `code: magic_link_invalid` or `magic_link_account_disabled`, drawn on the page with a link to request another                                                                                                                                                                                                                                                                                   |
-| bootstrap sign-in     | the page at `/login/bootstrap` reads `email`, `token` and `return` from the seeded link once, replaces the location with `/login/bootstrap`, and posts `POST /login/bootstrap`, JSON `{ "email", "token", "return" }`, the server validating `return` before answering it as `next`; the GET of that URL is the SPA and consumes nothing                       | `{ "next": "…" }`                                                                                                            | `403` `code: bootstrap_invalid` or `bootstrap_account_disabled`, drawn on the page with "Sign in another way"; `429` `throttled` with `wait_seconds`                                                                                                                                                                                                                                                  |
-| passkey sign-in       | `POST /webauthn/authenticate/options` then `POST /login/webauthn`, JSON                                                                                                                                                                                                                                                                                        | `{ "next": "…" }`                                                                                                            | `401` `authentication`, `code: passkey`                                                                                                                                                                                                                                                                                                                                                               |
-| federated sign-in     | `GET /oauth2/authorization/{id}`, a top-level navigation                                                                                                                                                                                                                                                                                                       | the provider's flow, back through the callback to `next`                                                                     | the page at `/login?error=<code>`                                                                                                                                                                                                                                                                                                                                                                     |
-| second factor, send   | `POST /api/auth/tfa/send`, no body; the page calls it on mount only while `GET /api/auth/tfa` answers `sent: false` and `wait_seconds: 0`, and the server answers a repeat inside the code's window with `200` without sending again, because a reload, a double mount or an attacker holding the password must not pump messages                              | the `GET /api/auth/tfa` shape                                                                                                | `409` `method-locked`, `code: locked` with the locked method, so the page goes to the picker; `429` `throttled` with `wait_seconds` beyond the per-target limit                                                                                                                                                                                                                                       |
-| second factor, verify | `POST /authenticator`, form-encoded `code`, `tfa_method`                                                                                                                                                                                                                                                                                                       | `{ "next": "…" }` from the saved request or `/`                                                                              | `403` `authentication`, `code` one of `invalid`, `expired`, the session being live; `409` `method-locked`, `code: locked` when the method's lockout closed it; `429` `throttled` with `wait_seconds` while the gate is armed                                                                                                                                                                          |
-| second factor, resend | `POST /resend-tfa`, no body                                                                                                                                                                                                                                                                                                                                    | `{ "sent": true }`                                                                                                           | `409` `code: not_set_up`, `503` `code: send_failed` with `Retry-After` (a `502` names a gateway fault, RFC 9110 §15.6.3, and the sender is not one), `429` `throttled` with `wait_seconds`                                                                                                                                                                                                            |
-| second factor, pick   | `POST /authenticator-method`, form-encoded `tfa_method`, `authenticator_id`                                                                                                                                                                                                                                                                                    | the `GET /api/auth/tfa` shape; the page navigates to `/authenticator?method=<method>`                                        | `409` `code` one of `not_set_up`, `locked`; `503` `send_failed`                                                                                                                                                                                                                                                                                                                                       |
-| cancel                | `POST /auth-cancel`, no body, the CSRF header; the Cancel link posts it and follows `next`, because the cancel clears the parked request and a GET must not; from the consent page's "Not you? Sign out" the same one request also ends the session, the server answering `next` as the client's `redirect_uri` with `error=access_denied` (RFC 6749 §4.1.2.1) | `{ "next": "<the client's cancel URL, its redirect_uri with error=access_denied, or />" }`                                   | none                                                                                                                                                                                                                                                                                                                                                                                                  |
-| recovery request      | `POST /passwordRecovery`, JSON `{ "email" }`                                                                                                                                                                                                                                                                                                                   | `202 { "sent": true }` always                                                                                                | `422` with `errors[]` on `/email`, a rule failure being never a `400`; `429` `throttled` with `wait_seconds`                                                                                                                                                                                                                                                                                          |
-| reset                 | `POST /passwordReset`, JSON `{ "email", "token", "password" }`; the server binds the token to the address it issued it for and ignores a posted `email` that differs, so the token is the only thing that proves the request                                                                                                                                   | `{ "next": "/login?reset=complete" }`                                                                                        | `422` with `errors[]` on `/password` (`minLength`, `maxLength`, `blocklist`); `403` `code: reset_invalid` when the token is unknown or expired                                                                                                                                                                                                                                                        |
+| Action                | Request                                                                                                                                                                                                                                                                                                                                                        | `200`                                                                                                                                    | Failure                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| password sign-in      | `POST /login`, form-encoded `username`, `password`, `remember-me`                                                                                                                                                                                                                                                                                              | `{ "next": "/" }`, `{ "next": "/authenticator" }`, `{ "next": "/complete-onboarding" }` or the saved `/oauth2/authorize` URL             | `401` `authentication`, `code: bad_credentials` for a wrong password and for a disabled or locked account alike, the account's state told by mail, because a distinct code tells a caller which addresses exist; `429` with `wait_seconds` from the brute-force gate. `tos_session_expired` and `registration_disabled` reach the page as `?error=` from other flows, never as an answer to this POST |
+| magic-link request    | `POST /login/magic/request`, JSON `{ "email", "resend" }`                                                                                                                                                                                                                                                                                                      | `202 { "sent": true }` always                                                                                                            | `400` `bad-request` with `errors[]` on `/email` when the address is missing or malformed; `429` `code: quota` with `wait_seconds` beyond the per-address and per-caller limit the server keeps, because a `202` that always sends is a mail cannon otherwise                                                                                                                                          |
+| magic-link consume    | the page at `/login/magic` reads `email` and `token` from the mail's URL once, replaces the location with `/login/magic`, and posts `POST /login/magic`, JSON `{ "email", "token" }`; the GET of that URL is the SPA and consumes nothing, so a scanner's prefetch cannot burn the link                                                                        | `{ "next": "/authenticator" }` or `{ "next": "/complete-onboarding" }` while a step is owed, else the one destination of the order below | `403` `code: magic_link_invalid` or `magic_link_account_disabled`, drawn on the page with a link to request another                                                                                                                                                                                                                                                                                   |
+| bootstrap sign-in     | the page at `/login/bootstrap` reads `email`, `token` and `return` from the seeded link once, replaces the location with `/login/bootstrap`, and posts `POST /login/bootstrap`, JSON `{ "email", "token", "return" }`, the server validating `return` before answering it as `next`; the GET of that URL is the SPA and consumes nothing                       | `{ "next": "…" }`                                                                                                                        | `403` `code: bootstrap_invalid` or `bootstrap_account_disabled`, drawn on the page with "Sign in another way"; `429` `throttled` with `wait_seconds`                                                                                                                                                                                                                                                  |
+| passkey sign-in       | `POST /webauthn/authenticate/options` then `POST /login/webauthn`, JSON                                                                                                                                                                                                                                                                                        | `{ "next": "…" }`                                                                                                                        | `401` `authentication`, `code: passkey`                                                                                                                                                                                                                                                                                                                                                               |
+| federated sign-in     | `GET /oauth2/authorization/{id}`, a top-level navigation                                                                                                                                                                                                                                                                                                       | the provider's flow, back through the callback to `next`                                                                                 | the page at `/login?error=<code>`                                                                                                                                                                                                                                                                                                                                                                     |
+| second factor, send   | `POST /api/auth/tfa/send`, no body; the page calls it on mount only while `GET /api/auth/tfa` answers `sent: false` and `wait_seconds: 0`, and the server answers a repeat inside the code's window with `200` without sending again, because a reload, a double mount or an attacker holding the password must not pump messages                              | the `GET /api/auth/tfa` shape                                                                                                            | `409` `method-locked`, `code: locked` with the method in `method` and `sms`, `app`, `passkey`, `backup_codes` and `email` beside it, the page offering them at once; `429` `throttled` with `wait_seconds` beyond the per-target limit                                                                                                                                                                |
+| second factor, verify | `POST /authenticator`, form-encoded `code`, `tfa_method`                                                                                                                                                                                                                                                                                                       | `{ "next": "…" }`, the one destination of the order below                                                                                | `403` `authentication`, `code` one of `invalid`, `expired`, the session being live; `409` `method-locked`, `code: locked` when the method's lockout closed it, with the method in `method` and `sms`, `app`, `passkey`, `backup_codes` and `email` beside it; `429` `throttled` with `wait_seconds` while the gate is armed                                                                           |
+| second factor, resend | `POST /resend-tfa`, no body                                                                                                                                                                                                                                                                                                                                    | `{ "sent": true }`                                                                                                                       | `409` `code: not_set_up`, `503` `code: send_failed` with `Retry-After` and `sms`, `app`, `passkey`, `backup_codes` and `email` beside `code` (a `502` names a gateway fault, RFC 9110 §15.6.3, and the sender is not one), `429` `throttled` with `wait_seconds`                                                                                                                                      |
+| second factor, pick   | `POST /authenticator-method`, form-encoded `tfa_method`, `authenticator_id`                                                                                                                                                                                                                                                                                    | the `GET /api/auth/tfa` shape; the page navigates to `/authenticator?method=<method>`                                                    | `409` `code` one of `not_set_up`, `locked`; `503` `send_failed`; `locked` and `send_failed` carry `sms`, `app`, `passkey`, `backup_codes` and `email` beside `code`, the page offering them at once                                                                                                                                                                                                   |
+| cancel                | `POST /auth-cancel`, no body, the CSRF header; the Cancel link posts it and follows `next`, because the cancel clears the parked request and a GET must not; from the consent page's "Not you? Sign out" the same one request also ends the session, the server answering `next` as the client's `redirect_uri` with `error=access_denied` (RFC 6749 §4.1.2.1) | `{ "next": "<the client's cancel URL, its redirect_uri with error=access_denied, or />" }`                                               | none                                                                                                                                                                                                                                                                                                                                                                                                  |
+| recovery request      | `POST /passwordRecovery`, JSON `{ "email" }`                                                                                                                                                                                                                                                                                                                   | `202 { "sent": true }` always                                                                                                            | `422` with `errors[]` on `/email`, a rule failure being never a `400`; `429` `throttled` with `wait_seconds`                                                                                                                                                                                                                                                                                          |
+| reset                 | `POST /passwordReset`, JSON `{ "email", "token", "password" }`; the server binds the token to the address it issued it for and ignores a posted `email` that differs, so the token is the only thing that proves the request                                                                                                                                   | `{ "next": "/login?reset=complete" }`                                                                                                    | `422` with `errors[]` on `/password` (`minLength`, `maxLength`, `blocklist`); `403` `code: reset_invalid` when the token is unknown or expired                                                                                                                                                                                                                                                        |
 
 `code` is the vocabulary the page translates from (`auth:errors.<code>`);
 a `code` the page does not know paints `auth:errors.authenticationFailed`.
@@ -672,6 +722,44 @@ sign-in would have answered, the saved `/oauth2/authorize`,
 `/authenticator`, `/complete-onboarding` or `/`, because the site's terms
 are owed at every sign-in and a person must never reach a page of the
 site past a document they have not signed.
+
+Every route that completes a sign-in or an onboarding answers one
+destination as `next`, the first of these that applies:
+
+1. `/oauth2/accept-terms`, while the site owes the person a document.
+2. The request the session saved. A sign-in replays any saved request;
+   the end of an onboarding replays an authorize request or an invitation
+   page and drops any other.
+3. The place a gate of the session turned the person away from: the
+   authorize request, or `/activate?user_code=<the same code>`.
+4. The authorize request a registration started from in another browser
+   session, answered as the client's sign-in start URL, else the client's
+   home URL.
+5. `/`.
+
+The routes are `POST /authenticator`, `POST /api/auth/tfa/email/verify`,
+`POST /login/webauthn`, `POST /login/magic`, `POST /registration/verify`,
+every onboarding step that is the last one owed, `GET /api/auth/onboarding`
+when a released phone step leaves none owed, and `POST /org/invite`. An
+emailed sign-in link and a verification link with nothing owed land on the
+place a gate parked, as the code step and the passkey step do. Whatever
+the landing reads is consumed, so a later sign-in of the session replays
+nothing. `next` is a path of this origin, an absolute URL of this origin,
+or an absolute URL of a client:
+
+```json
+{ "next": "/activate?user_code=ABCD-EFGH" }
+```
+
+```json
+{
+  "next": "https://auth.example.com/oauth2/authorize?response_type=code&client_id=web01&state=af0ifjsldkj"
+}
+```
+
+Every page that follows `next` from those routes follows a path inside
+the app with the router and an absolute URL as a top-level navigation,
+and assumes neither the dashboard nor the step that comes after.
 
 ### What the sign-in pages draw
 
@@ -765,15 +853,18 @@ session contract's sign-in page) by the states the issuer has:
   and sets `window.location` otherwise (a saved `/oauth2/authorize`, an
   absolute URL). A path is accepted only when it matches `^/(?![/\\])`,
   because `/\evil.com` passes a "starts with one slash" test and a browser
-  resolves it as `//evil.com`; an absolute `next` is followed only when its
-  origin is the serving origin, the four exceptions being the front-channel
+  resolves it as `//evil.com`; an absolute `next` of another origin is
+  followed only where the server validated it before answering: the
+  `next` of every route that completes a sign-in or an onboarding, a
+  client's URL validated against its registered URIs, the front-channel
   page's `continuation`, the logout-cancel `next`, the provider
   authorization URL the integrations link route answers, and the `next` of
-  a cancel or deny answer (`POST /auth-cancel`, the consent deny), each of
-  which the server validated before answering: the first two and the
-  fourth against the parked request's client, its registered redirect
-  URIs and its login-cancel-redirect-uris in the server's configuration,
-  the third against the provider's configured authorization endpoint.
+  a cancel or deny answer (`POST /auth-cancel`, the consent deny), the
+  last four validated against the parked request's client, its registered
+  redirect URIs and its login-cancel-redirect-uris in the server's
+  configuration, or against the provider's configured authorization
+  endpoint; any other absolute `next` lands on the consumed return path
+  or home.
 
 **TfaCodePage** at `/authenticator`: the subhead names the method and
 target ("We sent a code to {{target}}", "Enter the code from the
@@ -901,9 +992,9 @@ site requires it and the account lacks it. The chain is entered from the verific
 link (`GET /registration/verify`), the magic-link consume, the federated
 callback (`/provider-registration/continue`), a password sign-in of an
 account still owing a password, or an `/oauth2/authorize`
-from a client that requires an organization. It ends by resuming the
-saved `/oauth2/authorize`, the pending authorize URL through third-party
-initiated login, an `/org/invite/` link, or `/`.
+from a client that requires an organization. It ends at the one
+destination every completed sign-in or onboarding answers as `next`, in
+the order the sign-in group fixes.
 
 Today two gates redirect a pending user: the MVC interceptor on every page
 GET and the authorize filter on `/oauth2/authorize`. With the SPA owning
@@ -1362,7 +1453,7 @@ to decide, or the resume URL); a failure is the problem body with `code`.
 | verify the link        | the page at `/registration/verify` posts `POST /registration/verify`, JSON `{ "email", "token" }`; the GET is the SPA and consumes nothing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `403` `link_invalid`, drawn on the page with "Send a new link"                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | name                   | `POST /complete-onboarding/name`, JSON `{ "given_name", "family_name" }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `422` `required` on `/given_name`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | send the phone code    | `POST /complete-onboarding/send-phone-code`, JSON `{ "mobile_number" }` (E.164)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `422` on `/mobile_number`; `503` `send_failed`; `429` `throttled` with `wait_seconds`                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| resend the email code  | `POST /complete-onboarding/email-verification/resend`, no body, answering `200 { "resend_after_seconds" }` for the Resend countdown, so a person whose code never arrived has a way forward                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `429` `throttled` with `wait_seconds`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| send the email code    | `POST /complete-onboarding/email-verification/resend`, no body, posted once as the step is drawn and once per press of Resend; its four answers and the rules of the send are written below                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `401` `session_expired` while the session holds no pending account or the account is suspended; `503` `send_failed` with `Retry-After: 30`, drawn on the step with Resend live and the code entry withdrawn until a send answers `200`                                                                                                                                                                                                                                                                                       |
 | verify the phone       | `POST /complete-onboarding/phone-setup`, JSON `{ "mobile_number", "code" }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `403` `invalid_code`, `expired`; a miss counts under the second-factor gate and `429` with `wait_seconds` follows its ladder                                                                                                                                                                                                                                                                                                                                                                                                 |
 | password               | `POST /complete-onboarding/password`, JSON `{ "password" }`; the confirmation is the page's `equals` rule and never travels                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `422` on `/password` with `minLength`, `maxLength`, `blocklist`                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | email code             | `POST /complete-onboarding/email-verification`, JSON `{ "code" }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `403` `invalid_code`, `expired`; a miss counts under the second-factor gate and `429` with `wait_seconds` follows its ladder, the same ladder as every other code on the issuer                                                                                                                                                                                                                                                                                                                                              |
@@ -1376,11 +1467,47 @@ to decide, or the resume URL); a failure is the problem body with `code`.
 | read an older version  | `GET /api/auth/terms/versions/{version}`, read-only, the latest revision of the pending copy's version named by `version`, answering `{ "version", "published_at", "fields_version", "anchor_key", "content_html", "fields" }` for the version list's dialog, drawn with its anchors read-only; the page never posts it as an acceptance                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `404` `not_found` for a version the pending copy never had                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | any step, session gone | any of the above                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `401` `session_expired`; the page sends the visitor to `/login?error=session_expired`                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
-Every step follows the `next` its answer carries wherever it leads,
+`POST /complete-onboarding/email-verification/resend` is the one route
+that mints and mails the onboarding email code; the password step mails
+none and `GET /api/auth/onboarding` mails none, so the email step posts
+it once when it is drawn and once for each press of Resend. With
+`Accept: application/json` it answers:
+
+| Status | Body                                  | When                                                                                                                                                                      |
+| ------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 200    | `{ "resend_after_seconds": 30 }`      | a code is minted and mailed                                                                                                                                               |
+| 200    | `{ "resend_after_seconds": 17 }`      | the post arrives inside the thirty seconds that follow a mailed code that is still valid: nothing is minted, nothing is mailed, and the number is the seconds that remain |
+| 401    | code `session_expired`                | the session holds no pending account, or the account is suspended                                                                                                         |
+| 503    | code `send_failed`, `Retry-After: 30` | the mail could not be sent                                                                                                                                                |
+
+```json
+{
+  "type": "https://auth.startcloud.com/probs/send-failed",
+  "title": "The code could not be sent.",
+  "status": 503,
+  "code": "send_failed"
+}
+```
+
+A code has six digits and lasts ten minutes. A send that fails replaces
+the code mailed before it, so no mailed code is valid until a send
+answers `200`, and the next post sends at once;
+`POST /complete-onboarding/email-verification` answers `401`
+`session_expired` while the session holds no code. The email step counts
+Resend down from `resend_after_seconds` and the moment the answer
+arrived, whatever the number is; it draws the notice that a code was
+sent again only after a press of Resend, never for the post it makes
+when it is drawn; on `503` `send_failed` it draws its own message,
+leaves Resend live and withdraws the code entry until a send answers
+`200`.
+
+Every step follows the `next` its answer carries wherever it leads, a
+path with the router and an absolute URL as a top-level navigation,
 because the password, email-code and backup-codes steps answer an
-earlier owed step and `POST /complete-onboarding/backup-codes/confirm`
+earlier owed step, `POST /complete-onboarding/backup-codes/confirm`
 answers `/complete-onboarding/choose-2fa-method` when nothing was
-enrolled. `phone.purpose` is `verify` while the session owes the phone
+enrolled, and the last step owed answers the one destination of the
+sign-in group's order. `phone.purpose` is `verify` while the session owes the phone
 step and `tfa` otherwise, and the phone step's heading, helper and
 consent follow it. `GET /api/auth/onboarding` carries no `tfa.passkey`
 member; the Passkey option reads the `passkey` sub flag of `tfa`. With
@@ -1437,7 +1564,7 @@ approves no device code: `POST /oauth2/device_verification` answers
   which would land an anonymous person on `/` and bounce them to
   `/login`; `?resend` draws the re-sent notice.
 - **OnboardingHub** at `/complete-onboarding` reads the state and
-  navigates to `next` unless `next` is itself: then it draws the password
+  follows `next` wherever it leads unless `next` is itself: then it draws the password
   step: "Welcome, {{first_name}}." or "Welcome." when the account has no
   first name yet, `PasswordField` with its reveal, the hint from
   `/api/rules`, "Generate a passphrase for me" (four EFF words joined by
@@ -1478,9 +1605,13 @@ approves no device code: `POST /oauth2/device_verification` answers
   because a person who cannot receive a text has no other step and must
   be told rather than left; a site that wants the least data never shows
   the step, since the requirement is the site's own flag.
-- **EmailCodeStep**: "A verification code has been sent to
-  {{email}}", `CodeInput`, "Resend" under a `Countdown` from the resend
-  route's answer, the gate's countdown in the danger alert.
+- **EmailCodeStep**: the send route posted once as the page is drawn,
+  then "A verification code has been sent to {{email}}", `CodeInput`,
+  Verify and "Resend" under a `Countdown` from the answer's
+  `resend_after_seconds` and its arrival, the notice that a code was sent
+  again only after a press of Resend, the `send_failed` message with the
+  code entry withdrawn and Resend live, the gate's countdown in the
+  danger alert.
 - **TfaEnrollChoiceStep**: `OptionList` with Authenticator app
   (recommended), SMS while `sms` is a sub flag of `tfa` (the verified
   number line when `tfa.verified_phone`, the risk notice when
@@ -1974,7 +2105,7 @@ answer JSON or a problem body, the browser paths (`/user/profile`,
 | `/user/organizations`            | OrganizationsPage: the memberships under the one view toggle, list or cards, Create a team (a name is required) while `teams` is a sub flag of `org-console` and a "Find an organization" link to the directory, no code form; a row or card opens the console for that organization                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `cookie`, `org-console`                                        |
 | `/organizations/discover`        | the shared DiscoveryPage of the pages contract over the issuer's `organizations` adapter: every organization open to discovery with its `access_mode`, `invite`, `request` or `private`, Request to join on a `request` one, no action on the others, because joining is the organization's choice of door and never a code a person types; the page and the Discover row draw on the `discover` token alone, as the pages and navbar contracts gate them, so the issuer advertises it while its directory is on                                                                                                                                                                                                                                                                  | `cookie`, `discover`                                           |
 | `/org-console`                   | the shared OrgConsolePage over the active organization, grown by the issuer's fields; its crumbs are the Organizations row's child, Account, Organizations, then the active organization's name as the last crumb, plain text, the route's `crumbParent` being `/user/organizations`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `cookie`, `org-console`; `invitations` for its Invitations tab |
-| `/org/invite/:token`             | InvitePage: reads the mail's token from the path once, replaces the location with `/org/invite`, posts `POST /org/invite`, JSON `{ "token" }`, and follows `next`, `/user/organizations` with the membership made, or `/login` with the page kept under `intended_url` for an anonymous visitor; a `403` `forbidden` with `code` `invite_invalid` draws the invalid state, whose link to ask for a new invitation leads to `/user/organizations`                                                                                                                                                                                                                                                                                                                                  | `cookie`, `invitations`                                        |
+| `/org/invite/:token`             | OrgInvitePage, drawn signed in or not: reads the mail's token from the path once, replaces the location with `/org/invite`, posts `POST /org/invite`, JSON `{ "token" }`, and follows `next` wherever it leads, the answers written below; a `403` `invite_invalid`, `invite_wrong_account` or `suspended` draws its own message with a link to ask for a new invitation, which leads to `/user/organizations`                                                                                                                                                                                                                                                                                                                                                                    | `cookie`, `invitations`                                        |
 | `/user/applications`             | ApplicationsPage: the estate's own applications the person authorized, each with its sessions, its granted scopes and Revoke; always on the issuer, because every issuer holds registered clients and a person must be able to see and end what they granted                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `cookie`                                                       |
 | `/user/terms`                    | UserTermsPage: the terms and policies the person accepted across the estate's applications, each with View                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `cookie`, `policies`                                           |
 | `/user/integrations`             | IntegrationsPage: third-party services alone, the external tools connected through the issuer, never an application the estate controls; drawn only while `GET /api/user/integrations` answers a `services` member, so an estate that connects none draws no page and no row                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `cookie`, `integrations`                                       |
@@ -1982,6 +2113,21 @@ answer JSON or a problem body, the browser paths (`/user/profile`,
 
 `user`, `org`, `org-console` and `notifications` join the reserved first
 segments (`org-console`, `profile` and `organizations` already are).
+
+`POST /org/invite` with `{ "token": "…" }` answers `200` with `next`:
+
+| `next`                                                                   | When                                                                                  |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `/login`                                                                 | nobody is signed in; the invitation page is kept as the request the sign-in resumes   |
+| `/user/organizations`                                                    | the join is made and the session owes no onboarding                                   |
+| an onboarding step, for example `/complete-onboarding/choose-2fa-method` | the join settles the organization step and another step is owed                       |
+| the destination of the sign-in group's order                             | the join settles the last owed step: the onboarding ends and the session is signed in |
+| `/login?error=account_suspended`                                         | the onboarding the join ends belongs to a suspended account                           |
+
+Its refusals are `403` with code `invite_invalid`, `invite_wrong_account`
+or `suspended`. The page follows every `next` as the sign-in group fixes,
+a path with the router and an authorize request or a client's URL as a
+top-level navigation.
 
 ### What the UI backend answers for the signed-in pages
 
@@ -2711,8 +2857,8 @@ row of the column and a destination lives in the column or the menu,
 never both, Preferences being the one named exception because the
 avatar is the one control on every page.
 The column and the app section are hidden on every route of the
-sign-in, onboarding and interstitial groups and on `/error`, where the
-page is the whole screen. On a `backend` UI backend the profile feature
+sign-in, onboarding and interstitial groups, on `/org/invite` and on
+`/error`, where the page is the whole screen. On a `backend` UI backend the profile feature
 exports the Account group with the Profile row at `/profile` and its
 children alone, drawn after the catalog's group, because there a
 person's pages are one row beside the collections.
@@ -2745,6 +2891,21 @@ Every read is session or Bearer with `ROLE_ADMIN`; a paged list answers
 | `GET /api/admin/email-templates/{kind}/history?site=&locale=`, `GET /api/admin/email-templates/{kind}/history/{version}/{revision}?site=&locale=` | the copy's history, the default copy unless `site` and `locale` name one: the first answers `{ kind, site, locale, versions: [{ version, revisions: [{ revision, published_by, published_at, current }] }] }`, versions and revisions newest first, `current` true on the live revision alone; the second answers one revision, `{ version, revision, published_by, published_at, subject, body }`, `body` the raw HTML, `404` `not_found` for a version or revision the copy never had                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `GET /api/admin/dcr/clients`                                                                                                                      |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `GET /api/config/<name>`, `GET /api/config/<name>/schema`, `GET /api/config/restart-status`                                                       | the config contract's section 3 answers, `<name>` a member of `status.config`; `restart-status` is `{ restart_required, requires_restart, last_modified_by, last_modified_time }`, read once when the stream connects, every change after riding the `admin` topic's `restart-required` event                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+
+`GET /api/admin/rate-limit/{user_id}` answers each method under the rule
+of `locked` the sign-in group fixes: `locked` while the lockout has
+disabled the method, `armed` while a code for the method or for one of
+its apps or phones is inside the wait, `clear` otherwise; the Rate limits
+dialog draws each word as it is and counts the sign-in gate down from
+`wait_seconds` and the answer's arrival:
+
+```json
+{
+  "sign_in": { "armed": false, "wait_seconds": 0 },
+  "tfa": { "SMS": "clear", "APP": "locked", "BACKUP_CODE": "armed" },
+  "banned": false
+}
+```
 
 ### What the admin pages send and what comes back
 

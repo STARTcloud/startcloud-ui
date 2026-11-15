@@ -1848,9 +1848,25 @@
         <strong>The link itself</strong> lands on <code>/login/magic</code>, an SPA route: the page
         reads <code>email</code> and <code>token</code> from the mail's URL once, replaces the
         location, and posts <code>POST /login/magic { email, token }</code>, following
-        <code>next</code> to <code>/</code>, <code>/authenticator</code>,
-        <code>/complete-onboarding</code> or the saved <code>/oauth2/authorize</code>; the GET
-        consumes nothing, so a mail scanner's prefetch cannot burn the link (RFC 9110 §9.2.1).
+        <code>next</code> wherever it leads, a path in-router and an absolute URL, the issuer's own
+        or a client's, as a top-level navigation; the GET consumes nothing, so a mail scanner's
+        prefetch cannot burn the link (RFC 9110 §9.2.1).
+      </div>
+      <div class="callout">
+        <strong>Where a sign-in ends.</strong> Every route that completes a sign-in or an onboarding
+        answers one destination as <code>next</code>, the first that applies:
+        <code>/oauth2/accept-terms</code> while a document is owed; the request the session saved, a
+        sign-in replaying any and the end of an onboarding replaying an authorize request or an
+        invitation page alone; the place a gate turned the person away from, the authorize request
+        or <code>/activate?user_code=</code> with the same code; the authorize request a
+        registration started from in another browser, as the client's sign-in start URL, else its
+        home URL; <code>/</code>. The routes are <code>POST /authenticator</code>,
+        <code>POST /api/auth/tfa/email/verify</code>, <code>POST /login/webauthn</code>,
+        <code>POST /login/magic</code>, <code>POST /registration/verify</code>, the last onboarding
+        step owed, <code>GET /api/auth/onboarding</code> when a released phone step leaves none
+        owed, and <code>POST /org/invite</code>; whatever the landing reads is consumed. Every page
+        that follows such a <code>next</code> follows a path with the router and an absolute URL as
+        a top-level navigation, and assumes neither the dashboard nor the step after.
       </div>
     </div>
   </div>
@@ -1986,9 +2002,18 @@
         state; <code>503 send_failed</code> and <code>409 sms_unavailable</code> carry
         <code>sms</code>, <code>app</code>, <code>passkey</code>, <code>backup_codes</code> and
         <code>email</code> beside <code>code</code>, so the page offers the other methods at once
-        with no second read. The emailed code is the last resort, offered only while the site allows
-        it, mail can be sent, the address is verified, the sign-in did not come through the mailbox
-        and the account has no app, no phone that can be texted and no passkey the site offers:
+        with no second read; <code>409 locked</code>, answered by the send, the pick, the code post
+        and the emailed code's send and verify, carries the same five members with the method in
+        <code>method</code>, <code>sms</code> listing every phone that can be texted, and the page
+        offers them at once, the locked method drawn as one more disabled card beside the enabled
+        ones. <code>locked</code> in the methods answer follows one rule: a method is named while
+        the lockout has disabled it, <code>APP</code> and <code>SMS</code> as soon as one app or
+        phone is disabled, that one absent from its list and the others still listed and offered,
+        and a method inside the wait that follows wrong codes is never named, its code answering
+        <code>429 code</code> with <code>wait_seconds</code>, which the code step draws as a
+        countdown. The emailed code is the last resort, offered only while the site allows it, mail
+        can be sent, the address is verified, the sign-in did not come through the mailbox and the
+        account has no app, no phone that can be texted and no passkey the site offers:
         <code>POST /api/auth/tfa/email/send</code> answers the code page's state with
         <code>method: "EMAIL"</code> and <code>target.masked</code>, or
         <code>429 email_code_send</code> with <code>wait_seconds</code>, <code>409 locked</code> or
@@ -2252,6 +2277,42 @@
             <span class="k">"status"</span>: 403, <span class="k">"code"</span>:
             <span class="s">"invalid"</span> }
           </div>
+          <h2>POST /api/auth/tfa/send · 409 · a method the lockout disabled</h2>
+          <div class="payload">
+            <span class="st">HTTP/1.1 409 Conflict</span>
+            Content-Type: application/problem+json {
+            <span class="k">"type"</span>:
+            <span class="s">"https://auth.startcloud.com/probs/method-locked"</span>,
+            <span class="k">"title"</span>: <span class="s">"This method is locked."</span>,
+            <span class="k">"status"</span>: 409, <span class="k">"code"</span>:
+            <span class="s">"locked"</span>, <span class="k">"method"</span>:
+            <span class="s">"APP"</span>, <span class="k">"sms"</span>: [ {
+            <span class="k">"id"</span>: 12, <span class="k">"label"</span>:
+            <span class="s">"Work phone"</span>, <span class="k">"masked"</span>:
+            <span class="s">"+1******4242"</span> } ], <span class="k">"app"</span>: [],
+            <span class="k">"passkey"</span>: false, <span class="k">"backup_codes"</span>: true,
+            <span class="k">"email"</span>: false }
+          </div>
+          <h2>POST /authenticator · 200 · where the sign-in ends</h2>
+          <div class="payload">
+            <span class="st">HTTP/1.1 200 OK</span> Content-Type: application/json {
+            <span class="k">"next"</span>: <span class="s">"/activate?user_code=ABCD-EFGH"</span> }
+            { <span class="k">"next"</span>:
+            <span class="s"
+              >"https://auth.example.com/oauth2/authorize?response_type=code&amp;client_id=web01&amp;state=af0ifjsldkj"</span
+            >
+            }
+          </div>
+          <h2>POST /complete-onboarding/email-verification/resend · 503 · the mail not sent</h2>
+          <div class="payload">
+            <span class="st">HTTP/1.1 503 Service Unavailable</span>
+            Retry-After: 30 Content-Type: application/problem+json {
+            <span class="k">"type"</span>:
+            <span class="s">"https://auth.startcloud.com/probs/send-failed"</span>,
+            <span class="k">"title"</span>: <span class="s">"The code could not be sent."</span>,
+            <span class="k">"status"</span>: 503, <span class="k">"code"</span>:
+            <span class="s">"send_failed"</span> }
+          </div>
         </div>
         <div class="spec-col">
           <h2>What the page does with each</h2>
@@ -2262,8 +2323,9 @@
               >in-router when <code>next</code> is a page of this or the pages contract, the
               consumed <code>intended_url</code> first when <code>next</code> is <code>/</code>;
               <code>window.location</code> otherwise (a saved <code>/oauth2/authorize</code>, an
-              absolute URL), and only when the path matches <code>^/(?![/\\])</code> or the origin
-              is the serving origin</span
+              absolute URL), a path only when it matches <code>^/(?![/\\])</code>, an absolute URL
+              of another origin only from a route that completes a sign-in or an onboarding, the
+              server having validated it against the client's registered URIs</span
             >
             <span class="c k">202 sent</span
             ><span class="c"
@@ -2294,7 +2356,10 @@
             <span class="c k">403 reset_invalid</span
             ><span class="c">the form replaced by the alert and "Request a new link"</span>
             <span class="c k">409 locked</span
-            ><span class="c">the picker, with the locked method disabled and last</span>
+            ><span class="c"
+              >the picker from the five members the answer carries, no second read, the locked
+              method one disabled card after the enabled ones</span
+            >
             <span class="c k">5xx, 0</span
             ><span class="c"
               >one danger card through <code>notify</code> from <code>messageKey</code> alone, the
@@ -2451,9 +2516,10 @@
         <strong>The link</strong> lands on <code>/registration/verify</code>, an SPA route: the page
         reads <code>email</code> and <code>token</code> once, replaces the location, posts
         <code>POST /registration/verify { email, token }</code> and follows <code>next</code> into
-        the chain; a bad token draws the invalid state with "Send a new link". The account it mints
-        is a <code>ROLE_ONBOARDING</code> principal admitted to the onboarding routes and nothing
-        else.
+        the chain, or, with nothing owed, to the destination every completed sign-in answers, the
+        place a gate parked or a client's URL as a top-level navigation; a bad token draws the
+        invalid state with "Send a new link". The account it mints is a
+        <code>ROLE_ONBOARDING</code> principal admitted to the onboarding routes and nothing else.
       </div>
       <div class="callout changed">
         <strong>Changed: a taken address is not told.</strong>
@@ -2658,6 +2724,20 @@
         is <code>/activate</code> with a <code>user_code</code> every step draws the device code's
         client name and time left from <code>GET /api/auth/device?user_code=</code>, and a session
         that owes a step approves no device code.
+      </div>
+      <div class="callout">
+        <strong>The email step's one send.</strong>
+        <code>POST /complete-onboarding/email-verification/resend</code> is the one route that mints
+        and mails the code; the password step and the state read mail none, so the step posts it
+        once as it is drawn and once per press of Resend, answering
+        <code>200 { "resend_after_seconds": 30 }</code>, or <code>17</code> inside the thirty
+        seconds after a code that is still valid, nothing mailed;
+        <code>401 session_expired</code> sends the visitor to sign in;
+        <code>503 send_failed</code> with <code>Retry-After</code>
+        draws its own message, leaves Resend live and withdraws the code entry until a send answers
+        <code>200</code>, because a failed send replaces the code mailed before it. Resend counts
+        down from the number and the answer's arrival, and the notice that a code was sent again
+        draws only after a press of Resend.
       </div>
       <div class="callout">
         <strong>The phone step</strong> exists only on a site whose flag requires it, so a site that
@@ -3647,8 +3727,9 @@
               </div>
               <span class="a-hint"
                 >the last method's Remove is disabled with "Remove another method first" as its
-                tooltip; a locked method draws a notice with "Re-enroll now"; the app enrolls inline
-                here with the QR, the setup key, the code and a label; Disable two-factor is
+                tooltip; a method <code>locked</code> names draws a notice with "Re-enroll now"
+                while every app and phone the methods list still holds stays listed; the app enrolls
+                inline here with the QR, the setup key, the code and a label; Disable two-factor is
                 disabled with a notice saying the site requires it while <code>tfa.required</code>;
                 a prompt to add an authenticator app or a passkey draws while
                 <code>tfa.sms_only</code>; Add phone number and the phone rows draw while
@@ -3931,7 +4012,14 @@
         person with no membership sees the empty state and no row,
         <code>GET /api/user/organizations</code> answering
         <code>{ "organizations": [], "personal_to_team_enabled": false }</code>; no sign-up makes a
-        personal organization.
+        personal organization. An invitation link lands on <code>/org/invite/:token</code>, drawn
+        signed in or not, which posts <code>POST /org/invite { token }</code> and follows
+        <code>next</code> wherever it leads: <code>/login</code> for nobody signed in, the server
+        keeping the page as the request the sign-in resumes, <code>/user/organizations</code> with
+        the join made, the onboarding step the join leaves owed, the destination of a sign-in when
+        it settles the last step, or <code>/login?error=account_suspended</code>; its refusals are
+        <code>403</code> <code>invite_invalid</code>, <code>invite_wrong_account</code> and
+        <code>suspended</code>, each drawn with the way to ask for a new invitation.
       </div>
       <div class="callout">
         <strong>Integrations</strong> reads one <code>GET /api/user/integrations</code>; linking
@@ -4126,7 +4214,7 @@
         inside the shared admin feature; the row reads Inbox because the menu's Notifications row
         opens the modal, and the admin row reads "All organizations" with its own glyph so two rows
         never share one word; the column and the app section are hidden on the sign-in, onboarding,
-        interstitial and error routes.
+        interstitial and error routes and on <code>/org/invite</code>.
       </div>
       <div class="callout">
         <strong>The issuer's home.</strong> <code>/</code> lands on the profile for a signed-in
@@ -6001,7 +6089,11 @@ Prominic.NET, Inc. provides the Conductor platform to {{full_name}} …</textare
         <code>{ sign_in: { armed, wait_seconds }, tfa: { SMS, APP, BACKUP_CODE }, banned }</code>,
         with Unlock sign-in, Unlock a method, Ban and Unban over the four
         <code>POST /api/admin/rate-limit/{user_id}/…</code> routes; today those routes have no page
-        at all.
+        at all. Each method is answered under the rule of <code>locked</code>:
+        <code>locked</code> while the lockout has disabled it, <code>armed</code> while a code for
+        it or for one of its apps or phones is inside the wait, <code>clear</code> otherwise; the
+        dialog draws each word as it is and counts the sign-in gate down from
+        <code>wait_seconds</code> and the answer's arrival.
       </div>
       <div class="callout">
         <strong>Terms</strong> is the Terms of Service tab of <code>admin/config.html</code> as a

@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/forbidden",
+  "title": "This organization is suspended.",
+  "status": 403,
+  "code": "suspended"
+}

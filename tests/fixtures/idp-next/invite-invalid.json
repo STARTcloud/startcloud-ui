@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/forbidden",
+  "title": "This invitation is not valid.",
+  "status": 403,
+  "code": "invite_invalid"
+}

@@ -1,0 +1,12 @@
+{
+  "type": "https://auth.startcloud.com/probs/method-locked",
+  "title": "This method is locked.",
+  "status": 409,
+  "code": "locked",
+  "method": "APP",
+  "sms": [{ "id": 12, "label": "Work phone", "masked": "+1******4242" }],
+  "app": [],
+  "passkey": false,
+  "backup_codes": true,
+  "email": false
+}

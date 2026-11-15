@@ -58,18 +58,21 @@ export const isPagePath = target => {
 };
 
 /**
- * Follow the `next` a sign-in step answered: a path is accepted only when it
+ * Follow the `next` a sign-in step answered, wherever it leads, assuming
+ * neither the dashboard nor a step after: a path is accepted only when it
  * matches `^/(?![/\\])`, `/` yields to the consumed `intended_url`, a page
- * path navigates in-router and any other path is a top-level navigation;
- * an absolute URL is followed only when its origin is the serving origin,
- * or when the caller marks it `trusted` because the server validated it
- * against the client's registered URIs; anything else lands on the
- * consumed return path or home. A step that established a session hands
- * the bus as `events`, and `login` is emitted on it only where the page
- * stays in-router and awaited before the page moves, so the bus's handler
- * has loaded and adopted the session under the page it lands on, and a
- * page the browser is about to leave never redraws as a signed-in one
- * while the top-level navigation is under way.
+ * path navigates in-router and any other path, `/oauth2/authorize` among
+ * them, is a top-level navigation; an absolute URL is followed as a
+ * top-level navigation when its origin is the serving origin, or when the
+ * caller marks it `trusted` because the server validated it against the
+ * client's registered URIs, as every route that completes a sign-in or an
+ * onboarding does; anything else lands on the consumed return path or
+ * home. A step that established a session hands the bus as `events`, and
+ * `login` is emitted on it only where the page stays in-router and
+ * awaited before the page moves, so the bus's handler has loaded and
+ * adopted the session under the page it lands on, and a page the browser
+ * is about to leave never redraws as a signed-in one while the top-level
+ * navigation is under way.
  *
  * @param {Object} options - The step's answer and the router's side
  * @param {string} options.next - The answered `next`

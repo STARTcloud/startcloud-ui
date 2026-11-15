@@ -437,7 +437,7 @@ const useLoginActions = ({
   const report = useProblemReporter();
 
   const follow = useCallback(
-    next => followNext({ next, navigate, returnTo, events }),
+    next => followNext({ next, navigate, returnTo, trusted: true, events }),
     [events, navigate, returnTo]
   );
 
@@ -519,10 +519,12 @@ const useLoginActions = ({
  * methods answer; a person whose adopted session (`account`) is live is
  * sent away, except on `?stepup`, where the session is live by design and
  * the form is what the parked request is waiting for. Every answer that
- * signs the person in is followed through `followNext` with the bus as
- * `events`, so `login` is emitted only where the page stays in-router and
- * the still-open form never redraws as the profile while the browser
- * leaves for the authorization endpoint.
+ * signs the person in is followed through `followNext` wherever its
+ * `next` leads, a path in-router and an absolute URL, the server's own or
+ * a client's, as a top-level navigation, with the bus as `events`, so
+ * `login` is emitted only where the page stays in-router and the
+ * still-open form never redraws as the profile while the browser leaves
+ * for the authorization endpoint.
  */
 const CookieLogin = ({ session, events, account, returnTo, auth, appName }) => {
   const { t } = useTranslation(['auth', 'shared']);

@@ -38,7 +38,7 @@ const TfaEnrollChoiceStep = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth', 'shared']);
   const { state } = useOnboarding();
   const status = useStatus();
-  const { run, busy, problem, setProblem } = useStepAction(returnTo);
+  const { run, busy, problem, setProblem } = useStepAction(returnTo, events);
   const [method, setMethod] = useState('APP');
   const [name, setName] = useState('');
   const [registering, setRegistering] = useState(false);

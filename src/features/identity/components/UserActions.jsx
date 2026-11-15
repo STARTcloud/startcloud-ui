@@ -229,7 +229,7 @@ export const RowActions = ({ user, adapter, onAction, viewer = null }) => {
       {items.length > 0 || canDelete ? (
         <RowMenu label={t('admin.users.more')}>
           {items.map(([kind, labelKey]) => (
-            <Dropdown.Item key={kind} onClick={() => onAction(kind, user)}>
+            <Dropdown.Item key={kind} data-action={kind} onClick={() => onAction(kind, user)}>
               {t(labelKey)}
             </Dropdown.Item>
           ))}

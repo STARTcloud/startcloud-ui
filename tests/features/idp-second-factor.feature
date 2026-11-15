@@ -197,12 +197,14 @@ Feature: the second factor everywhere: sub flags of `tfa`, the code step's other
     Then I see "An emailed code is not available for this sign-in. Choose another method."
     And the page links to "/authenticator-method"
 
-  Scenario: the emailed code: a `409` `locked` from the send route moves to the choice
+  Scenario: the emailed code: a `409` `locked` from the send route hands the five members to the choice, the emailed code drawn as locked and no second read
     Given the host answers the idp-second-factor/email-send-locked fixture
     When I open "/authenticator?tfa_method=EMAIL"
     Then the host was sent POST to "/api/auth/tfa/email/send"
     And the path is "/authenticator-method"
-    And the host was sent GET to "/api/auth/tfa/methods"
+    And the page offers 2 options
+    And the option "Email me a code" is disabled
+    And the host was sent GET to "/api/auth/tfa/methods" 0 times
 
   Scenario: the emailed code: a state the server resolved to EMAIL is sent through the email route and draws the masked address, the code entry and Resend
     Given the host answers the idp-second-factor/resolved-email fixture
@@ -219,6 +221,82 @@ Feature: the second factor everywhere: sub flags of `tfa`, the code step's other
     When I open "/authenticator-method"
     Then the option "Email me a code" is disabled
     And the page offers 2 options
+
+  Scenario: locked: a `409` `locked` from the send route hands the five members to the choice, the phones in `sms` included, the locked method drawn as locked and no second read
+    Given the host answers the idp-locked fixture
+    When I open "/authenticator?tfa_method=APP"
+    Then the host was sent POST to "/api/auth/tfa/send"
+    And the path is "/authenticator-method"
+    And the page draws 1 danger alerts
+    And the page offers 3 options
+    And the option valued "APP" is disabled
+    And the option valued "SMS:12" is offered
+    And the host was sent GET to "/api/auth/tfa/methods" 0 times
+
+  Scenario: locked: a `409` `locked` from the emailed code's verify hands the five members to the choice
+    Given the host answers the idp-locked fixture
+    When I open "/authenticator?tfa_method=EMAIL"
+    Then the host was sent POST to "/api/auth/tfa/email/send"
+    When I type the code "123456"
+    And I submit the code
+    Then the host was sent POST to "/api/auth/tfa/email/verify"
+    And the path is "/authenticator-method"
+    And the page offers 3 options
+    And the option valued "APP" is disabled
+    And the host was sent GET to "/api/auth/tfa/methods" 0 times
+
+  Scenario: locked: a refused code at `POST /authenticator` carrying `locked` hands the five members to the choice
+    Given the issuer answers POST "/authenticator" from the idp-locked fixture with "409 locked.json"
+    When I open "/authenticator"
+    And I type the code "123456"
+    And I submit the code
+    Then the path is "/authenticator-method"
+    And the page offers 3 options
+    And the option valued "APP" is disabled
+    And the host was sent GET to "/api/auth/tfa/methods" 0 times
+
+  Scenario: locked: the choice draws APP as locked from `GET /api/auth/tfa/methods` and still offers the app and the phone it lists
+    Given the host answers the idp-locked fixture
+    When I open "/authenticator-method"
+    Then the host was sent GET to "/api/auth/tfa/methods"
+    And the page offers 4 options
+    And the option valued "APP" is disabled
+    And the option valued "APP:11" is offered
+    And the option valued "SMS:12" is offered
+
+  Scenario: locked: `?error=locked` draws its own message on the choice page and on the code page
+    When I open "/authenticator-method?error=locked"
+    Then the page draws 1 danger alerts
+    When I open "/authenticator?error=locked"
+    Then the page draws 1 danger alerts
+
+  Scenario: locked: a method inside a wait draws its countdown from `wait_seconds` and is never drawn as locked
+    Given the host answers the idp-second-factor/throttled fixture
+    When I open "/authenticator"
+    Then the host was sent GET to "/api/auth/tfa"
+    And the page draws a countdown
+    When I open "/authenticator-method"
+    Then the page offers 3 options
+    And the page offers no disabled option
+
+  Scenario: locked: the profile's Two-factor section draws APP as locked from `locked` and still lists the app and the phone
+    Given the host answers the idp-locked fixture
+    When I open "/user/profile/security"
+    Then the host was sent GET to "/api/user/tfa/methods"
+    And the Two-factor section draws 1 locked notices
+    And the Two-factor section lists 2 method rows
+
+  Scenario: locked: the admin Rate limits dialog draws each method as the answer names it and counts the sign-in gate down
+    Given the host answers the idp-suspension fixture
+    And the host answers the idp-locked/admin fixture
+    When I open "/admin/users"
+    And I open the menu of the suspension row "mark@m4kr.net"
+    And I press the "rateLimits" action of the suspension row "mark@m4kr.net"
+    Then the host was sent GET to "/api/admin/rate-limit/42"
+    And the open dialog draws 1 badges toned "bg-danger"
+    And the open dialog draws 2 badges toned "bg-warning"
+    And the open dialog draws 1 badges toned "bg-success"
+    And the page draws a countdown
 
   Scenario: the countdown's colour: a guessing gate's countdown is the danger alert's colour
     Given the host answers the idp-second-factor/throttled fixture

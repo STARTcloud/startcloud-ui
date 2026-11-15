@@ -1,0 +1,16 @@
+[
+  {
+    "id": 11,
+    "type": "APP",
+    "label": "Phone app",
+    "display": "Phone app",
+    "preferred": true
+  },
+  {
+    "id": 12,
+    "type": "SMS",
+    "label": "Work phone",
+    "display": "+1******4242",
+    "preferred": false
+  }
+]

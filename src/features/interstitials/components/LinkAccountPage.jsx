@@ -19,7 +19,7 @@ const FIELD_CODES = ['bad_password', 'invalid_code'];
  * provider, the current password while `proof` is `password` and the
  * mailed code while it is `code`, "Link {{provider}} Account" posting the
  * proof, awaiting `login` on the bus so the session is re-read and adopted,
- * and following `next`, Cancel declining, and the fine print; nothing
+ * and following `next` wherever it leads, Cancel declining, and the fine print; nothing
  * pending draws the danger alert with a link to sign in.
  */
 const LinkAccountPage = ({ returnTo, events }) => {
@@ -63,7 +63,7 @@ const LinkAccountPage = ({ returnTo, events }) => {
         if (onSuccess) {
           await onSuccess();
         }
-        return followNext({ next: result?.next, navigate, returnTo });
+        return followNext({ next: result?.next, navigate, returnTo, trusted: true });
       })
       .catch(error => {
         setBusy(false);

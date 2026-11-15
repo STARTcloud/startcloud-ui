@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
+import { useCountdown } from '../../../components/common/Countdown';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { RATE_LIMIT } from '../utils/examples';
 
@@ -11,6 +12,7 @@ import { adminUserShape } from './UsersDialogs';
 
 const METHODS = ['SMS', 'APP', 'BACKUP_CODE'];
 const TONES = { locked: 'bg-danger', armed: 'bg-warning text-dark', clear: 'bg-success' };
+const METHOD_WORDS = { locked: 'locked', armed: 'armedMethod', clear: 'clear' };
 
 const Row = ({ label, children }) => (
   <div className="d-flex justify-content-between align-items-center py-1 border-bottom">
@@ -28,14 +30,19 @@ const useRateLimit = (rateLimit, user) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [state, setState] = useState(null);
+  const [since, setSince] = useState(0);
 
   const load = useCallback(() => {
     rateLimit
       .read(user.id)
-      .then(setState)
+      .then(answer => {
+        setState(answer);
+        setSince(Date.now());
+      })
       .catch(error => {
         notify('danger', t(error.messageKey || 'errors.request'));
         setState(error.status === 404 ? RATE_LIMIT : null);
+        setSince(Date.now());
       });
   }, [notify, rateLimit, t, user.id]);
 
@@ -43,28 +50,40 @@ const useRateLimit = (rateLimit, user) => {
     load();
   }, [load]);
 
-  return { state, load };
+  return { state, since, load };
 };
 
-const Gates = ({ state }) => {
+const SignInGate = ({ signIn, since }) => {
+  const { t } = useTranslation();
+  const remaining = useCountdown(signIn.armed ? signIn.wait_seconds || 0 : 0, since);
+  if (!signIn.armed || remaining === 0) {
+    return <span className={`badge ${TONES.clear}`}>{t('admin.users.rateLimits.clear')}</span>;
+  }
+  return (
+    <span className={`badge ${TONES.armed}`} role="timer" aria-live="off">
+      {t('admin.users.rateLimits.armed', { seconds: remaining })}
+    </span>
+  );
+};
+
+SignInGate.propTypes = {
+  signIn: PropTypes.shape({ armed: PropTypes.bool, wait_seconds: PropTypes.number }).isRequired,
+  since: PropTypes.number.isRequired,
+};
+
+const Gates = ({ state, since }) => {
   const { t } = useTranslation();
   const signIn = state.sign_in || {};
   const tfa = state.tfa || {};
   return (
     <div>
       <Row label={t('admin.users.rateLimits.signIn')}>
-        {signIn.armed ? (
-          <span className={`badge ${TONES.armed}`}>
-            {t('admin.users.rateLimits.armed', { seconds: signIn.wait_seconds || 0 })}
-          </span>
-        ) : (
-          <span className={`badge ${TONES.clear}`}>{t('admin.users.rateLimits.clear')}</span>
-        )}
+        <SignInGate signIn={signIn} since={since} />
       </Row>
       {METHODS.map(name => (
         <Row key={name} label={t('admin.users.rateLimits.method', { method: name })}>
           <span className={`badge ${TONES[tfa[name]] || 'bg-secondary'}`}>
-            {t(`admin.users.rateLimits.${tfa[name] || 'clear'}`)}
+            {t(`admin.users.rateLimits.${METHOD_WORDS[tfa[name]] || 'clear'}`)}
           </span>
         </Row>
       ))}
@@ -83,18 +102,23 @@ Gates.propTypes = {
     tfa: PropTypes.object,
     banned: PropTypes.bool,
   }).isRequired,
+  since: PropTypes.number.isRequired,
 };
 
 /**
- * The Rate limits dialog of a Users row: the sign-in gate, each
- * second-factor method's state and the ban flag from the adapter's
- * `rateLimit.read`, with Unlock sign-in, Unlock a method, Ban and Unban
- * over its four calls, the dialog re-reading after each; mounted per user.
+ * The Rate limits dialog of a Users row: the sign-in gate, armed drawn as
+ * a countdown from its `wait_seconds` and the moment the answer arrived
+ * and clear at zero, each second-factor method's state as the answer
+ * names it, `locked` while the lockout disabled the method, `armed` while
+ * a code of it is inside the wait and `clear` otherwise, and the ban flag
+ * from the adapter's `rateLimit.read`, with Unlock sign-in, Unlock a
+ * method, Ban and Unban over its four calls, the dialog re-reading after
+ * each; mounted per user.
  */
 const RateLimitsDialog = ({ rateLimit, user, onClose }) => {
   const { t } = useTranslation();
   const notify = useNotify();
-  const { state, load } = useRateLimit(rateLimit, user);
+  const { state, since, load } = useRateLimit(rateLimit, user);
   const [method, setMethod] = useState(METHODS[0]);
   const [busy, setBusy] = useState(false);
 
@@ -117,7 +141,7 @@ const RateLimitsDialog = ({ rateLimit, user, onClose }) => {
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {state ? <Gates state={state} /> : <AdminLoading />}
+        {state ? <Gates state={state} since={since} /> : <AdminLoading />}
         <div className="d-flex align-items-center gap-2 mt-3">
           <label className="form-label mb-0" htmlFor="rate-limit-method">
             {t('admin.users.rateLimits.unlockMethod')}

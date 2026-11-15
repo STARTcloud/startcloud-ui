@@ -1357,7 +1357,7 @@ const signInRoutes = ({ status, cookie, account }) => {
     {
       path: '/registration/verify',
       open: local,
-      element: <VerifyLinkPage returnTo={returnTo} />,
+      element: <VerifyLinkPage returnTo={returnTo} events={events} />,
       token: 'local-accounts',
     },
   ]);
@@ -1586,7 +1586,7 @@ const signedInRoutes = ({ status, cookie, account, globalAdmin, notifications, t
     {
       path: '/org/invite/:token?',
       open: cookie && hasFeature(status, 'invitations'),
-      element: <OrgInvitePage returnTo={returnTo} />,
+      element: <OrgInvitePage returnTo={returnTo} events={events} />,
       token: 'invitations',
     },
     {

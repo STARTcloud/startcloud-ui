@@ -11,7 +11,14 @@ import { followNext } from '../../../lib/next';
 import { cancelSignIn } from '../../../lib/signin';
 import { returnToShape } from '../../../utils/auth';
 import { pickTfaMethod, tfaMethods } from '../api/tfa';
-import { buildOptions, membersOf, parseKey, preferredKey, queryProblemOf } from '../utils/methods';
+import {
+  buildOptions,
+  membersOf,
+  parseKey,
+  preferredKey,
+  queryProblemOf,
+  withMembers,
+} from '../utils/methods';
 
 const EMAIL = 'EMAIL';
 
@@ -19,17 +26,18 @@ const codePath = tfaMethod => `/authenticator?tfa_method=${encodeURIComponent(tf
 
 /**
  * `/authenticator-method`: the radio cards of every second-factor method
- * the account can use now, the enabled ones first and a locked one last
- * and disabled, the preferred checked or else the first enabled, Continue
- * posting the choice and moving to `/authenticator?tfa_method=`, the
- * emailed code moving there without a post since the code page sends it,
- * and Cancel posting `/auth-cancel`. The cards come from
+ * the account can use now, the enabled ones first and one disabled card
+ * per method `locked` names last, every phone and app listed still
+ * offered beside it, the preferred checked or else the first enabled,
+ * Continue posting the choice and moving to `/authenticator?tfa_method=`,
+ * the emailed code moving there without a post since the code page sends
+ * it, and Cancel posting `/auth-cancel`. The cards come from
  * `GET /api/auth/tfa/methods`, or, when the code page arrives with the
- * methods a refused send carried in router state, from those with no
- * request, the router state cleared once it is read so a reload asks the
- * route again; a refused choice that carries them redraws the cards from them.
- * `?error=<code>` and the refusal the code page handed over draw the
- * problem alert.
+ * methods a refused send or a `locked` refusal carried in router state,
+ * from those with no request, the router state cleared once it is read so
+ * a reload asks the route again; a refused choice that carries them
+ * redraws the cards from them. `?error=<code>`, `locked` among them, and
+ * the refusal the code page handed over draw the problem alert.
  */
 const TfaMethodPage = ({ returnTo }) => {
   const { t } = useTranslation(['auth', 'shared']);
@@ -81,7 +89,7 @@ const TfaMethodPage = ({ returnTo }) => {
     const members = membersOf(error);
     setBusy(false);
     if (members) {
-      setAnswer(previous => ({ ...previous, ...members }));
+      setAnswer(previous => withMembers(previous, members));
     }
     setProblem(report(error));
   };

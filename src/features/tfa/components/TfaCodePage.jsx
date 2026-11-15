@@ -84,7 +84,7 @@ const sendOwed = data => {
   return SENT_METHODS.includes(data.method) ? sendTfa : null;
 };
 
-const useTfaState = ({ method, search, onLocked, onHandOver }) => {
+const useTfaState = ({ method, search, onHandOver }) => {
   const report = useProblemReporter();
   const [state, setState] = useState(null);
   const [loadedAt, setLoadedAt] = useState(0);
@@ -106,10 +106,6 @@ const useTfaState = ({ method, search, onLocked, onHandOver }) => {
 
   const fail = useCallback(
     error => {
-      if (error.code === 'locked') {
-        onLocked();
-        return;
-      }
       const members = membersOf(error);
       if (members) {
         onHandOver(members, problemOf(error));
@@ -124,7 +120,7 @@ const useTfaState = ({ method, search, onLocked, onHandOver }) => {
       }
       setProblem(report(error));
     },
-    [onHandOver, onLocked, report]
+    [onHandOver, report]
   );
 
   useEffect(() => {
@@ -248,9 +244,13 @@ CodeEntry.propTypes = {
  * answer the page's state with the masked address, verified at
  * `POST /api/auth/tfa/email/verify` and sent again through the send
  * route, whose `429` `email_code_send` restarts the Resend countdown from
- * its `wait_seconds` and blocks no entry. A `send_failed` or
- * `sms_unavailable` refusal moves to the picker with the methods it
- * carried, so the person chooses another with no further request.
+ * its `wait_seconds` and blocks no entry. A `send_failed`,
+ * `sms_unavailable` or `locked` refusal moves to the picker with the
+ * methods it carried, the phones in `sms` included and the method
+ * `locked` names drawn as locked, so the person chooses another with no
+ * further request; a `429` `code` with `wait_seconds` draws its countdown
+ * here and names nothing locked. Every `next` is followed wherever it
+ * leads, a path in-router and an absolute URL as a top-level navigation.
  */
 const TfaCodePage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth', 'shared']);
@@ -260,7 +260,6 @@ const TfaCodePage = ({ returnTo, events }) => {
     () => new URLSearchParams(location.search).get('tfa_method') || '',
     [location.search]
   );
-  const onLocked = useCallback(() => navigate(METHOD_PAGE, { replace: true }), [navigate]);
   const onHandOver = useCallback(
     (methods, refusal) =>
       navigate(METHOD_PAGE, { replace: true, state: { methods, problem: refusal } }),
@@ -269,7 +268,6 @@ const TfaCodePage = ({ returnTo, events }) => {
   const { state, loadedAt, skew, problem, setProblem, adopt, fail } = useTfaState({
     method,
     search: location.search,
-    onLocked,
     onHandOver,
   });
   const [code, setCode] = useState('');
@@ -282,7 +280,7 @@ const TfaCodePage = ({ returnTo, events }) => {
     document.title = t('tfa.title');
   }, [t]);
 
-  const follow = next => followNext({ next, navigate, returnTo, events });
+  const follow = next => followNext({ next, navigate, returnTo, trusted: true, events });
 
   const failed = error => {
     setBusy(false);

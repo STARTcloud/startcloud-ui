@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -21,10 +21,12 @@ const invalidProblem = code => ({ code, status: 0, wait: 0, since: 0 });
  * The page an emailed single-use link lands on: reads the link once through
  * `read` (`email` and `token` from the URL by default), replaces the
  * location with `path` so the token never sits in history, posts the body
- * through `consume` and follows `next`, the bus handed along as `events`
- * where the link signs the person in; a refused token draws the danger
- * alert from its `code` (or `invalidCode` when the parameters are missing)
- * with one link to request another.
+ * through `consume` exactly once per visit and follows `next` wherever it leads, a path in-router
+ * and an absolute URL, the server's own or a client's, as a top-level
+ * navigation, the bus handed along as `events` so the session is re-read
+ * where the link signs the person in and the page stays in-router; a
+ * refused token draws the danger alert from its `code` (or `invalidCode`
+ * when the parameters are missing) with one link to request another.
  */
 const LinkConsumePage = ({
   path,
@@ -33,7 +35,7 @@ const LinkConsumePage = ({
   title,
   invalidCode,
   another,
-  events = null,
+  events,
   read = readOnce,
 }) => {
   const { t } = useTranslation(['auth', 'shared']);
@@ -41,18 +43,23 @@ const LinkConsumePage = ({
   const report = useProblemReporter();
   const [{ body, complete }] = useState(read);
   const [problem, setProblem] = useState(() => (complete ? null : invalidProblem(invalidCode)));
+  const started = useRef(false);
 
   useEffect(() => {
     document.title = title;
   }, [title]);
 
   useEffect(() => {
+    if (started.current) {
+      return;
+    }
+    started.current = true;
     navigate(path, { replace: true });
     if (!complete) {
       return;
     }
     consume(body)
-      .then(answer => followNext({ next: answer?.next, navigate, returnTo, events }))
+      .then(answer => followNext({ next: answer?.next, navigate, returnTo, trusted: true, events }))
       .catch(error => setProblem(report(error) || invalidProblem(invalidCode)));
   }, [body, complete, consume, events, invalidCode, navigate, path, report, returnTo]);
 
@@ -82,7 +89,7 @@ LinkConsumePage.propTypes = {
     to: PropTypes.string.isRequired,
     label: PropTypes.string.isRequired,
   }).isRequired,
-  events: PropTypes.shape({ emit: PropTypes.func.isRequired }),
+  events: PropTypes.shape({ emit: PropTypes.func.isRequired }).isRequired,
   read: PropTypes.func,
 };
 

@@ -1,0 +1,6 @@
+{
+  "method": "APP",
+  "target": { "label": "Phone app" },
+  "sent": false,
+  "can_change_method": true
+}

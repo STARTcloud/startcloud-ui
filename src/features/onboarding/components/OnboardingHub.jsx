@@ -22,8 +22,8 @@ const SCHEMA = {
 const LABELS = { password: 'auth:onboarding.password', confirm: 'auth:onboarding.confirm' };
 
 /**
- * `/complete-onboarding`: reads the state and navigates to `next` unless
- * `next` is itself, then draws the password step: "Welcome, {{name}}.",
+ * `/complete-onboarding`: reads the state and follows `next` wherever it
+ * leads unless `next` is itself, then draws the password step: "Welcome, {{name}}.",
  * the password with its reveal and the passphrase generator, the
  * confirmation as the page's `equals` rule, a hidden username field
  * carrying the address, and one Continue; the "choose a password" subhead
@@ -34,7 +34,7 @@ const OnboardingHub = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const navigate = useNavigate();
   const { state } = useOnboarding();
-  const { run, busy, problem } = useStepAction(returnTo);
+  const { run, busy, problem } = useStepAction(returnTo, events);
   const [values, setValues] = useState({ password: '', confirm: '' });
   const [revealed, setRevealed] = useState(false);
   const rules = useFormRules({ formKey: 'password', schema: SCHEMA, values, labels: LABELS });
@@ -46,9 +46,9 @@ const OnboardingHub = ({ returnTo, events }) => {
 
   useEffect(() => {
     if (state && !here) {
-      followNext({ next: state.next, navigate, returnTo });
+      followNext({ next: state.next, navigate, returnTo, trusted: true, events });
     }
-  }, [here, navigate, returnTo, state]);
+  }, [events, here, navigate, returnTo, state]);
 
   const submit = event => {
     event.preventDefault();

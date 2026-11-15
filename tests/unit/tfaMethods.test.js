@@ -7,6 +7,7 @@ import {
   parseKey,
   preferredKey,
   queryProblemOf,
+  withMembers,
 } from '../../src/features/tfa/utils/methods.js';
 
 const t = (key, values) => (values?.label ? `${key}:${values.label}` : key);
@@ -75,6 +76,37 @@ describe('buildOptions', () => {
     const members = { sms: [], app: [], passkey: false, backup_codes: true, email: true };
     expect(keysOf(buildOptions(members, EVERY, t))).toEqual(['BACKUP_CODE', 'EMAIL']);
   });
+
+  it('keeps every listed app and phone enabled and draws a locked method as its own disabled card last', () => {
+    const answer = { ...ANSWER, locked: ['APP'] };
+    const options = buildOptions(answer, EVERY, t);
+    expect(keysOf(options)).toEqual(['SMS:12', 'APP:11', 'PASSKEY', 'BACKUP_CODE', 'EMAIL', 'APP']);
+    expect(options[1].disabled).toBeUndefined();
+    expect(options.at(-1)).toMatchObject({
+      method: 'APP',
+      label: 'shared:profile.security.tfa.app',
+      help: 'tfa.method.locked',
+      disabled: true,
+    });
+  });
+
+  it('draws a locked phone card only while sms is listed, and a locked passkey or backup code whatever its member says', () => {
+    const answer = {
+      ...ANSWER,
+      passkey: false,
+      backup_codes: false,
+      locked: ['SMS', 'PASSKEY', 'BACKUP_CODE'],
+    };
+    expect(keysOf(buildOptions(answer, EVERY, t))).toEqual([
+      'SMS:12',
+      'APP:11',
+      'EMAIL',
+      'SMS',
+      'PASSKEY',
+      'BACKUP_CODE',
+    ]);
+    expect(keysOf(buildOptions(answer, statusOf(['app']), t))).toEqual(['APP:11', 'BACKUP_CODE']);
+  });
 });
 
 describe('preferredKey', () => {
@@ -103,7 +135,7 @@ describe('membersOf', () => {
     },
   });
 
-  it('answers the five members of send_failed and of sms_unavailable', () => {
+  it('answers the five members of send_failed and of sms_unavailable, no locked list', () => {
     const members = {
       sms: [],
       app: [{ id: 11, label: 'Phone app' }],
@@ -115,9 +147,24 @@ describe('membersOf', () => {
     expect(membersOf(refusal('sms_unavailable'))).toEqual(members);
   });
 
+  it('answers the five members of locked with the method it names as the one locked', () => {
+    const locked = refusal('locked');
+    locked.data.method = 'APP';
+    locked.data.sms = [{ id: 12, label: 'Work phone', masked: '+1******4242' }];
+    expect(membersOf(locked)).toEqual({
+      sms: [{ id: 12, label: 'Work phone', masked: '+1******4242' }],
+      app: [{ id: 11, label: 'Phone app' }],
+      passkey: false,
+      backup_codes: false,
+      email: true,
+      locked: ['APP'],
+    });
+  });
+
   it('answers null for a refusal that carries no members', () => {
     expect(membersOf({ code: 'send_failed', data: { status: 503 } })).toBeNull();
     expect(membersOf({ code: 'send_failed', data: null })).toBeNull();
+    expect(membersOf({ code: 'locked', data: { status: 409, method: 'APP' } })).toBeNull();
   });
 
   it('answers null for any other failure', () => {
@@ -127,10 +174,29 @@ describe('membersOf', () => {
   });
 });
 
+describe('withMembers', () => {
+  it('keeps what the read named as locked and adds what the refusal closed', () => {
+    const held = { ...ANSWER, locked: ['EMAIL'] };
+    const members = { sms: [], app: [], passkey: false, backup_codes: true, email: false };
+    expect(withMembers(held, members).locked).toEqual(['EMAIL']);
+    expect(withMembers(held, { ...members, locked: ['APP'] }).locked).toEqual(['EMAIL', 'APP']);
+    expect(withMembers(null, { ...members, locked: ['APP'] })).toEqual({
+      ...members,
+      locked: ['APP'],
+    });
+  });
+});
+
 describe('queryProblemOf', () => {
   it('answers the problem of an ?error= query', () => {
     expect(queryProblemOf('?error=sms_unavailable')).toEqual({
       code: 'sms_unavailable',
+      status: 0,
+      wait: 0,
+      since: 0,
+    });
+    expect(queryProblemOf('?error=locked')).toEqual({
+      code: 'locked',
       status: 0,
       wait: 0,
       since: 0,

@@ -35,7 +35,7 @@ const BackupCodesPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const report = useProblemReporter();
   const { state } = useOnboarding();
-  const { run, busy, problem, setProblem } = useStepAction(returnTo);
+  const { run, busy, problem, setProblem } = useStepAction(returnTo, events);
   const [codes, setCodes] = useState([]);
   const [saved, setSaved] = useState(false);
   const [refused, setRefused] = useState(false);

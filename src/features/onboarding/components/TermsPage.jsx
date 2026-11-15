@@ -704,7 +704,7 @@ const useAccept = ({ returnTo, events, state, setProblem, reload, setBusy, setAn
           reload();
           return;
         }
-        followNext({ next, navigate, returnTo, events });
+        followNext({ next, navigate, returnTo, trusted: true, events });
       })
       .catch(error => {
         setBusy(false);
@@ -983,8 +983,9 @@ const subtitleOf = (state, collecting, t, status) => {
  * input; the subtitle names the site for a site-scope acceptance and the
  * client otherwise. Decline posts `/auth-cancel`; a `next` that is this
  * route again swaps the document, moves focus to the heading and
- * announces the step, and any other `next` is followed with the session
- * bus as `events`, so the page it lands on in-router draws signed in.
+ * announces the step, and any other `next` is followed wherever it
+ * leads, a client's URL as a top-level navigation, with the session bus
+ * as `events`, so the page it lands on in-router draws signed in.
  */
 const TermsPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth', 'shared']);

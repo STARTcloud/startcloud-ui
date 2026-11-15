@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/forbidden",
+  "title": "This invitation was sent to another address.",
+  "status": 403,
+  "code": "invite_wrong_account"
+}

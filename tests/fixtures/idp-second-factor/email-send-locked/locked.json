@@ -1,7 +1,12 @@
 {
-  "type": "https://auth.startcloud.com/probs/conflict",
+  "type": "https://auth.startcloud.com/probs/method-locked",
   "title": "This method is locked.",
   "status": 409,
   "code": "locked",
-  "method": "EMAIL"
+  "method": "EMAIL",
+  "sms": [],
+  "app": [{ "id": 11, "label": "Phone app" }],
+  "passkey": false,
+  "backup_codes": false,
+  "email": false
 }

@@ -954,6 +954,7 @@
         "title": "Rate limits · {{user}}",
         "signIn": "Sign-in gate",
         "armed": "armed · {{seconds}}s",
+        "armedMethod": "armed",
         "clear": "clear",
         "locked": "locked",
         "method": "Second factor · {{method}}",

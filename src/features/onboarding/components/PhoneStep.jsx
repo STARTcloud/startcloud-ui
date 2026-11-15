@@ -154,8 +154,8 @@ ConsentLine.propTypes = {
   policies: PolicyLinks.propTypes.policies,
 };
 
-const usePhoneStep = returnTo => {
-  const { run, busy, problem } = useStepAction(returnTo);
+const usePhoneStep = (returnTo, events) => {
+  const { run, busy, problem } = useStepAction(returnTo, events);
   const [values, setValues] = useState({ mobile_number: '', code: '' });
   const [sent, setSent] = useState({ to: '', at: 0 });
   const rules = useFormRules({ schema: SCHEMA, values, labels: LABELS, idPrefix: 'phone' });
@@ -276,7 +276,8 @@ PhoneForm.propTypes = {
  * code section with "Number changed. Send a new code." and Verify
  * disabled; the policy links and, for a `tfa` step, "Choose a different
  * method" beside the frame's Cancel. Without the sub flag the page draws
- * no form: it follows the state's own `next`, and where `next` is this
+ * no form: it follows the state's own `next` wherever it leads, the place
+ * a gate parked or a client's URL included, and where `next` is this
  * page itself it draws the `sms_unavailable` problem in the frame's alert
  * above the foot's links.
  */
@@ -286,7 +287,7 @@ const PhoneStep = ({ returnTo, events }) => {
   const status = useStatus();
   const navigate = useNavigate();
   const country = useGeoCountry();
-  const step = usePhoneStep(returnTo);
+  const step = usePhoneStep(returnTo, events);
   const offered = hasFeature(status, 'tfa', 'sms');
   const next = state?.next || '';
   const stuck = !offered && next.split(/[?#]/)[0] === PHONE_PATH;
@@ -299,9 +300,9 @@ const PhoneStep = ({ returnTo, events }) => {
 
   useEffect(() => {
     if (!offered && !stuck && next) {
-      followNext({ next, navigate, returnTo });
+      followNext({ next, navigate, returnTo, trusted: true, events });
     }
-  }, [offered, stuck, next, navigate, returnTo]);
+  }, [events, offered, stuck, next, navigate, returnTo]);
 
   return (
     <OnboardingFrame

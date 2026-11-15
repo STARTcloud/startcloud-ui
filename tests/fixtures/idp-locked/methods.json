@@ -1,0 +1,10 @@
+{
+  "sms": [{ "id": 12, "label": "Work phone", "masked": "+1******4242" }],
+  "app": [{ "id": 11, "label": "Phone app" }],
+  "passkey": false,
+  "backup_codes": true,
+  "email": false,
+  "locked": ["APP"],
+  "preferred": { "method": "APP", "authenticator_id": 13 },
+  "sms_risk_notice": false
+}

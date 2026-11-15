@@ -25,7 +25,7 @@ const LABELS = { team_name: 'auth:onboarding.team.name' };
 const TeamNameStep = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const { state } = useOnboarding();
-  const { run, busy, problem } = useStepAction(returnTo);
+  const { run, busy, problem } = useStepAction(returnTo, events);
   const [values, setValues] = useState({ team_name: '' });
   const rules = useFormRules({ schema: SCHEMA, values, labels: LABELS, idPrefix: 'team' });
   const requiredBy = state?.org?.required_by_client || '';

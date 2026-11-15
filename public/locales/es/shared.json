@@ -954,6 +954,7 @@
         "title": "Límites de intentos · {{user}}",
         "signIn": "Bloqueo de inicio de sesión",
         "armed": "activo · {{seconds}}s",
+        "armedMethod": "activo",
         "clear": "libre",
         "locked": "bloqueado",
         "method": "Segundo factor · {{method}}",

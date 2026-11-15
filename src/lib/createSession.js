@@ -26,6 +26,7 @@ const COOKIE_AUTH_PATHS = [
   '/continue',
   '/link-account-consent',
   '/link-account',
+  '/org/invite',
   '/error',
 ];
 
@@ -36,8 +37,9 @@ const COOKIE_AUTH_PATHS = [
  * auth path, `cookie` is the identity provider's own session on the
  * serving origin with `/login` as the sign-in page and every reserved
  * segment of the identity contract's sign-in, onboarding and interstitial
- * groups plus `/error` as the auth paths, all but `/activate`, the page a
- * sign-in returns to with the device's code, which joins them as a bare
+ * groups plus `/org/invite`, the page an invitation link lands on signed
+ * in or not, and `/error` as the auth paths, all but `/activate`, the page
+ * a sign-in returns to with the device's code, which joins them as a bare
  * path, drawn without the column and the app section, the session handed
  * the same helper so a pending gate keeps the page it interrupted, `none`
  * is no session at all,

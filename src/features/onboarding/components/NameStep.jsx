@@ -31,7 +31,7 @@ const LABELS = {
 const NameStep = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const { state } = useOnboarding();
-  const { run, busy, problem } = useStepAction(returnTo);
+  const { run, busy, problem } = useStepAction(returnTo, events);
   const [values, setValues] = useState({ given_name: '', family_name: '' });
   const rules = useFormRules({ formKey: 'name', schema: SCHEMA, values, labels: LABELS });
 

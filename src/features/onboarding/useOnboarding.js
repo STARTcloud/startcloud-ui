@@ -99,13 +99,18 @@ export const useOnboarding = () => {
 
 /**
  * How a step page runs its one action: the problem cleared, the button
- * busy, `next` followed on success, a `401` sent to sign in, a `422`
- * painted through `rules` and a problem `code` kept for the alert.
+ * busy, `next` followed on success through `followNext` wherever it
+ * leads, a path in-router and an absolute URL, the server's own or a
+ * client's, as a top-level navigation, the bus handed along so the
+ * session is re-read where the last step ends in-router; a `401` sent to
+ * sign in, a `422` painted through `rules` and a problem `code` kept for
+ * the alert.
  *
  * @param {Object} returnTo - The helper from `createReturnTo`
+ * @param {{ emit: Function }} events - The session bus
  * @returns {{ run: Function, busy: boolean, problem: Object|null, setProblem: Function }}
  */
-export const useStepAction = returnTo => {
+export const useStepAction = (returnTo, events) => {
   const navigate = useNavigate();
   const report = useProblemReporter();
   const [busy, setBusy] = useState(false);
@@ -122,7 +127,7 @@ export const useStepAction = returnTo => {
             onAnswer(answer);
             return answer;
           }
-          followNext({ next: answer?.next, navigate, returnTo });
+          followNext({ next: answer?.next, navigate, returnTo, trusted: true, events });
           return answer;
         })
         .catch(error => {
@@ -135,7 +140,7 @@ export const useStepAction = returnTo => {
           return null;
         });
     },
-    [navigate, report, returnTo]
+    [events, navigate, report, returnTo]
   );
 
   return { run, busy, problem, setProblem };

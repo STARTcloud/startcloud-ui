@@ -29,7 +29,7 @@ const AccountTypeStep = ({ returnTo, events }) => {
   const navigate = useNavigate();
   const { state } = useOnboarding();
   const status = useStatus();
-  const { run, busy, problem } = useStepAction(returnTo);
+  const { run, busy, problem } = useStepAction(returnTo, events);
   const offered = hasFeature(status, 'org-console', 'teams');
   const next = state?.next || '';
   const requiredBy = state?.org?.required_by_client || '';
@@ -40,9 +40,9 @@ const AccountTypeStep = ({ returnTo, events }) => {
 
   useEffect(() => {
     if (!offered && next) {
-      followNext({ next, navigate, returnTo });
+      followNext({ next, navigate, returnTo, trusted: true, events });
     }
-  }, [offered, next, navigate, returnTo]);
+  }, [events, offered, next, navigate, returnTo]);
 
   useEffect(() => {
     if (offered && requiredBy) {

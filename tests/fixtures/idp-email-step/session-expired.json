@@ -1,0 +1,6 @@
+{
+  "type": "https://auth.startcloud.com/probs/authentication",
+  "title": "The session has expired.",
+  "status": 401,
+  "code": "session_expired"
+}

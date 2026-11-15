@@ -24,7 +24,7 @@ const TotpEnrollPage = ({ returnTo, events }) => {
   const { t } = useTranslation(['auth']);
   const report = useProblemReporter();
   const { state } = useOnboarding();
-  const { run, busy, problem, setProblem } = useStepAction(returnTo);
+  const { run, busy, problem, setProblem } = useStepAction(returnTo, events);
   const [enrollment, setEnrollment] = useState(null);
   const [code, setCode] = useState('');
 
