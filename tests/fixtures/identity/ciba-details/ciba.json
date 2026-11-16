@@ -1,8 +1,6 @@
 {
   "client_name": "monitor SSH",
-  "scopes": [
-    { "id": "openid", "label": "openid", "description": "Authenticate your identity" }
-  ],
+  "scopes": [{ "id": "openid", "label": "openid", "description": "Authenticate your identity" }],
   "authorization_details": [
     {
       "type": "pam_sign_in",
