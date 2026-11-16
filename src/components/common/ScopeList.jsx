@@ -64,40 +64,76 @@ ScopeRow.propTypes = {
 
 const DETAIL_LISTS = ['locations', 'actions', 'datatypes', 'privileges'];
 const DETAIL_MEMBERS = new Set(['type', 'description', 'identifier', ...DETAIL_LISTS]);
+const LEAD_FIELDS = 2;
+const LONG_VALUE = 24;
+const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/u;
+
+const instantText = value => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  const sameDay = date.toDateString() === new Date().toDateString();
+  return date.toLocaleString(undefined, {
+    ...(sameDay ? {} : { month: 'short', day: 'numeric' }),
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
 
 const fieldText = value => {
   if (Array.isArray(value)) {
     return value.map(fieldText).join(', ');
+  }
+  if (typeof value === 'string' && INSTANT.test(value)) {
+    return instantText(value);
   }
   return typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
 };
 
 const detailFields = detail => Object.entries(detail).filter(([name]) => !DETAIL_MEMBERS.has(name));
 
+const fieldClass = (index, text, large) =>
+  [
+    'scope-row-field',
+    large && index < LEAD_FIELDS ? 'scope-row-field-lead' : '',
+    large && text.length > LONG_VALUE ? 'scope-row-field-long' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
 /**
  * One authorization-details row: the description as the label with the
  * machine `type` in a tooltip, every other member the detail carries as
  * one labelled line, its label from `consent.detail.field.<name>` or the
- * member's own name, and the locations, actions, data types, identifier
- * and privileges each only when present; `large` draws the row as the
- * centre of a page, the values large and the labels muted.
+ * member's own name, an RFC 3339 instant drawn as a local time, and the
+ * locations, actions, data types, identifier and privileges each only
+ * when present; `large` draws the row as the centre of a page, each
+ * field a line with its label at the left and its value at the right,
+ * the first two fields large, a long value on its own line, and no
+ * description heading.
  */
 export const DetailRow = ({ detail, large = false }) => {
   const { t } = useTranslation(['auth']);
   return (
     <div className={large ? 'scope-row scope-row-large' : 'scope-row'}>
       <span>
-        <span className="scope-row-label" title={detail.type}>
-          {detail.description || detail.type}
-        </span>
-        {detailFields(detail).map(([name, value]) => (
-          <span key={name} className="scope-row-field">
-            <span className="scope-row-field-label">
-              {t([`consent.detail.field.${name}`], { defaultValue: name })}
-            </span>
-            <span className="scope-row-value">{fieldText(value)}</span>
+        {large ? null : (
+          <span className="scope-row-label" title={detail.type}>
+            {detail.description || detail.type}
           </span>
-        ))}
+        )}
+        {detailFields(detail).map(([name, value], index) => {
+          const text = fieldText(value);
+          return (
+            <span key={name} className={fieldClass(index, text, large)}>
+              <span className="scope-row-field-label">
+                {t([`consent.detail.field.${name}`], { defaultValue: name })}
+              </span>
+              <span className="scope-row-value">{text}</span>
+            </span>
+          );
+        })}
         {DETAIL_LISTS.filter(key => detail[key]?.length > 0).map(key => (
           <span key={key} className="scope-row-help">
             {t(`consent.detail.${key}`, { value: detail[key].join(', ') })}

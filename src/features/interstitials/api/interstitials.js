@@ -10,11 +10,14 @@ export const deviceCode = userCode =>
   client.get('/api/auth/device', { ...SESSION, params: { user_code: userCode }, expected: [404] });
 
 export const ciba = token =>
-  client.get('/api/auth/ciba', { headers: { ...JSON_ACCEPT, 'X-Ciba-Token': token } });
+  client.get('/api/auth/ciba', {
+    ...OPTIONAL,
+    headers: { ...JSON_ACCEPT, 'X-Ciba-Token': token },
+  });
 
-export const cibaApprove = token => client.post('/ciba/approve', { token }, SESSION);
+export const cibaApprove = token => client.post('/ciba/approve', { token }, OPTIONAL);
 
-export const cibaDeny = token => client.post('/ciba/deny', { token }, SESSION);
+export const cibaDeny = token => client.post('/ciba/deny', { token }, OPTIONAL);
 
 export const logoutConfirmState = () => client.get('/api/auth/logout/confirm', SESSION);
 

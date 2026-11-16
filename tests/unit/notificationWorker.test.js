@@ -158,7 +158,7 @@ describe('notificationclick', () => {
 describe('push', () => {
   const payload = {
     title: 'Sign-in request',
-    body: 'monitor SSH is asking to sign you in on another device.',
+    body: 'monitor SSH wants to sign you in.',
     tag: 'ciba-7f3a',
     requireInteraction: true,
     navigate: NAVIGATE,

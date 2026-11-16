@@ -2142,18 +2142,34 @@ false never reaches this page at all.
   tab closes itself once drawn, and "Device connected", "You can close
   this window and return to your device." stand for a browser that
   refuses the close.
-- **CibaApprovePage**: "Sign-in request", "{{client}} is asking to sign
-  you in on another device.", the lead line "Approve only if you started
-  this", then the request's facts: every field of each authorization
-  detail beyond `type`, `description` and the RFC 9396 members drawn as
-  one labelled line, the label from `consent.detail.field.<name>` and the
-  field's own name where no key exists, with no branch for any one type,
-  the details the centre of the page and the scope list not drawn while
-  the request carries any, and `binding_message` in the same block above
-  the scope rows while it carries none, since a fact is read and never
-  typed; Approve and Deny; after the answer the page draws "Sign-in
-  approved" or "Sign-in denied" in place, and the problem `code` draws
-  "Sign-in request unavailable" with the reason.
+- **CibaApprovePage**: the client's logo in the circle while the answer
+  carries an `https:` `client_logo` and the host's mark otherwise, a
+  failing client logo swapped once to that mark, "Sign-in request", the
+  client's name,
+  then the request's facts as one card at the centre of the page: every
+  field of each authorization detail beyond `type`, `description` and
+  the RFC 9396 members drawn as one line, its label at the left from
+  `consent.detail.field.<name>` and the field's own name where no key
+  exists, its value at the right, the first two fields large, a long
+  value on its own line in monospace, an RFC 3339 instant as a local
+  time, with no branch for any one type; while the request carries no
+  detail the card holds the question the page builds, "Do you want to
+  allow {{client}} to sign you in?"; `binding_message` draws under the
+  card as a critical notice only while the client sends one, because the
+  module's own words reach the page only when it has something urgent to
+  say; no scope list, a sign-in request being nothing to grant; Deny and
+  Approve side by side, "Approve only if you started this." under them;
+  after the answer the page draws "Sign-in approved" or "Sign-in denied"
+  in place; the page keeps the token in `sessionStorage` until the
+  request is read, so a reload before that still names the request; a
+  `401` on the read or the decision sends the person to sign in with
+  `/ciba/approve?token=` as the return path, so the sign-in lands them
+  back on the same request with no second click on the mail or the
+  toast; `not_found`, `expired` and `wrong_user` alone draw "Sign-in
+  request unavailable" with the reason, and any other failure is a danger
+  notice with the page kept. The auth shell's buttons and cards take their corner
+  radius from `--auth-radius`, a brand's `--brand-radius` where it sets
+  one.
 - **LogoutConfirmPage**: "Sign out?", "You are about to sign out of
   {{client}} and of every app that uses this sign-in.", because
   confirming ends the SSO session and not one app's, the client's
@@ -2215,7 +2231,7 @@ the issuer offers, `detail.locations`, `detail.actions`,
 `detail.datatypes`, `detail.identifier`, `detail.privileges`,
 `detail.field.<name>` one per registered field of a detail type, `user`,
 `host`, `remote_host` and `service` among them); `device.*` (`title`, `subhead`, `code`, `continue`,
-`connected`, `close`, `mismatch`); `ciba.*` (`title`, `subhead`,
+`connected`, `close`, `mismatch`); `ciba.*` (`title`, `allow`,
 `started`, `approved`, `denied`, `unavailable`, `reason.not_found`,
 `reason.expired`, `reason.wrong_user`); `logout.*` (`title`, `subhead`,
 `default`, `confirm`, `cancel`, `signingOut`, `notifying`, `continue`,

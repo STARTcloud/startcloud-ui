@@ -1494,7 +1494,7 @@ const interstitialRoutes = ({ status, cookie, account }) => {
       <DeviceActivatePage account={account} returnTo={returnTo} session={session} />
     ),
     row('/activated', open, <DeviceActivatedPage />),
-    row('/ciba/approve', signedIn, <CibaApprovePage />),
+    row('/ciba/approve', signedIn, <CibaApprovePage account={account} returnTo={returnTo} />),
     row('/connect/logout/confirm', signedIn, <LogoutConfirmPage returnTo={returnTo} />),
     row('/connect/logout/frontchannel', open, <FrontChannelLogoutPage returnTo={returnTo} />),
     row('/oauth2/code', open, <CodeDisplayPage />),

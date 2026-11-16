@@ -52,11 +52,12 @@ Feature: identity contract
     Then the host was sent GET to "/api/auth/ciba"
     And the path is "/ciba/approve"
     And I see "Sign-in request"
-    And I see "Conductor is asking to sign you in on another device."
+    And I see "Conductor"
+    And I see "Do you want to allow Conductor to sign you in?"
     And I see "Approve only if you started this"
     And I see "WDJB-MJHT"
-    And I see "This application will be able to:"
-    And I see "Authenticate your identity"
+    And I do not see "This application will be able to:"
+    And I do not see "Authenticate your identity"
     And I see "Approve"
     And I see "Deny"
 
@@ -64,9 +65,10 @@ Feature: identity contract
     Given the host answers the identity/ciba-details fixture
     When I open "/ciba/approve?token=ciba-token"
     Then the host was sent GET to "/api/auth/ciba"
-    And I see "monitor SSH is asking to sign you in on another device."
+    And I see "monitor SSH"
     And I see "Approve only if you started this"
-    And I see "Sign in to a machine"
+    And I do not see "Sign in to a machine"
+    And I do not see "Do you want to allow"
     And I see "Account"
     And I see "prominic"
     And I see "Machine"
@@ -75,10 +77,27 @@ Feature: identity contract
     And I see "203.0.113.7"
     And I see "Service"
     And I see "sshd"
+    And I see "Remote user"
+    And I see "Terminal"
+    And I see "When"
+    And I do not see "2026-11-15T23:10:44Z"
+    And I see "fingerprint"
+    And I see "SHA256:k9Qf"
     And I do not see "This application will be able to:"
     And I do not see "WDJB-MJHT"
     And I see "Approve"
     And I see "Deny"
+
+  Scenario: the interstitials: the CIBA page sends a visitor to sign in with the request's token as the return path
+    Given the host answers the identity-signed-out fixture
+    When I open "/ciba/approve?token=ciba-token"
+    Then the path is "/login?returnTo=%2Fciba%2Fapprove%3Ftoken%3Dciba-token"
+
+  Scenario: the interstitials: the CIBA page sends a person whose session has ended to sign in and back to the same request
+    Given the host answers the identity/ciba-expired-session fixture
+    When I open "/ciba/approve?token=ciba-token"
+    Then the host was sent GET to "/api/auth/ciba"
+    And the path is "/login?returnTo=%2Fciba%2Fapprove%3Ftoken%3Dciba-token"
 
   Scenario: the interstitials: the logout confirmation reads GET /api/auth/logout/confirm
     When I open "/connect/logout/confirm"

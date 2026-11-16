@@ -76,7 +76,21 @@ describe('DetailRow', () => {
     expect(markup).not.toContain('scope-row-field');
   });
 
-  it('draws the row as the centre of a page when large', () => {
-    expect(render({ detail: DETAIL, large: true })).toContain('class="scope-row scope-row-large"');
+  it('draws the row as the centre of a page when large: no heading, the first two fields lead', () => {
+    const markup = render({ detail: DETAIL, large: true });
+    expect(markup).toContain('class="scope-row scope-row-large"');
+    expect(markup).not.toContain('scope-row-label');
+    expect(markup.match(/scope-row-field-lead/gu)).toHaveLength(2);
+    expect(markup).not.toContain('scope-row-field-long');
+  });
+
+  it('puts a long value on its own line and draws an instant as a local time', () => {
+    const markup = render({
+      detail: { type: 'pam_sudo', command: 'systemctl restart haproxy && journalctl -fu haproxy', at: '2026-11-15T23:10:44Z' },
+      large: true,
+    });
+    expect(markup).toContain('scope-row-field-long');
+    expect(markup).not.toContain('2026-11-15T23:10:44Z');
+    expect(markup).toMatch(/:10/u);
   });
 });

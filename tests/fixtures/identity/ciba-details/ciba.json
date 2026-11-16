@@ -1,6 +1,5 @@
 {
   "client_name": "monitor SSH",
-  "binding_message": "WDJB-MJHT",
   "scopes": [
     { "id": "openid", "label": "openid", "description": "Authenticate your identity" }
   ],
@@ -11,7 +10,11 @@
       "user": "prominic",
       "host": "host-1162.example",
       "remote_host": "203.0.113.7",
-      "service": "sshd"
+      "remote_user": "prominic",
+      "tty": "ssh",
+      "service": "sshd",
+      "at": "2026-11-15T23:10:44Z",
+      "fingerprint": "SHA256:k9Qf"
     }
   ]
 }

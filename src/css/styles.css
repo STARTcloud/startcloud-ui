@@ -2752,6 +2752,7 @@ details.meter .tier-badge {
   --auth-soft: var(--bs-secondary-bg);
   --auth-accent: var(--brand-primary, var(--bs-primary));
   --auth-accent-fg: var(--brand-on-primary, #ffffff);
+  --auth-radius: var(--brand-radius, 12px);
   --auth-accent-hover: color-mix(in srgb, var(--auth-accent) 85%, black);
   --auth-danger: var(--bs-danger);
   --auth-danger-bg: rgba(var(--bs-danger-rgb), 0.1);
@@ -2915,7 +2916,7 @@ details.meter .tier-badge {
 .auth-btn {
   appearance: none;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--auth-radius);
   padding: 14px 18px;
   font: inherit;
   font-size: 15px;
@@ -3180,6 +3181,12 @@ details.meter .tier-badge {
 .auth-icon-circle.success {
   background: var(--auth-success-bg);
   color: var(--auth-success);
+}
+
+.auth-icon-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .auth-check {
@@ -3837,30 +3844,97 @@ details.meter .tier-badge {
 }
 
 .scope-row-large {
-  padding: 16px 18px;
+  padding: 2px 16px;
+  border-radius: var(--auth-radius);
+  text-align: left;
 }
 
 .scope-row-large > span {
+  width: 100%;
   min-width: 0;
-  gap: 10px;
-}
-
-.scope-row-large .scope-row-label,
-.scope-row-large .scope-row-field-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--auth-ink-3);
-}
-
-.scope-row-large .scope-row-field {
-  flex-direction: column;
   gap: 0;
 }
 
+.scope-row-large .scope-row-field {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--auth-line);
+  font-size: 13px;
+  min-width: 0;
+}
+
+.scope-row-large .scope-row-field:last-child {
+  border-bottom: 0;
+}
+
+.scope-row-large .scope-row-field-label {
+  flex: 0 0 auto;
+  font-weight: 400;
+  color: var(--auth-ink-3);
+}
+
 .scope-row-large .scope-row-value {
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1.3;
+  color: var(--auth-ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.scope-row-large .scope-row-field-lead .scope-row-value {
+  font-size: 19px;
+}
+
+.scope-row-large .scope-row-field-long {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.scope-row-large .scope-row-field-long .scope-row-value {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  word-break: break-all;
+}
+
+.scope-row-ask {
+  display: block;
+  padding: 14px 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--auth-ink);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.auth-critical {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--auth-warning, #e0a106) 55%, transparent);
+  border-radius: var(--auth-radius);
+  background: color-mix(in srgb, var(--auth-warning, #e0a106) 12%, transparent);
+  color: var(--auth-ink);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+  word-break: break-word;
+}
+
+.auth-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.auth-actions .auth-btn {
+  flex: 1 1 0;
 }
 
 .iti {
