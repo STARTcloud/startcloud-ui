@@ -2143,7 +2143,8 @@ false never reaches this page at all.
   this window and return to your device." stand for a browser that
   refuses the close.
 - **CibaApprovePage**: the client's logo in the circle while the answer
-  carries an `https:` `client_logo` and the host's mark otherwise, a
+  carries a `client_logo` that is an `https:` URL or a path of the serving
+  origin, the client's `icon_url`, and the host's mark otherwise, a
   failing client logo swapped once to that mark, "Sign-in request", the
   client's name,
   then the request's facts as one card at the centre of the page: every

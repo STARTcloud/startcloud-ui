@@ -18,6 +18,10 @@ import { ciba as fetchCiba, cibaApprove, cibaDeny } from '../api/interstitials';
 const REASONS = ['not_found', 'expired', 'wrong_user'];
 const TOKEN_KEY = 'ciba_token';
 const PATH = '/ciba/approve';
+const OWN_PATH = /^\/(?![/\\])/u;
+
+const logoOf = value =>
+  httpsUrl(value) || (typeof value === 'string' && OWN_PATH.test(value) ? value : '');
 
 const readToken = () => {
   const fromUrl = new URLSearchParams(window.location.search).get('token') || '';
@@ -34,9 +38,9 @@ const requestPath = token => `${PATH}?token=${encodeURIComponent(token)}`;
 
 /**
  * The circle over the page: the client's own logo while the answer carries
- * an `https:` `client_logo`, the host's mark otherwise, the chosen theme's
- * while one carries a mark, and a client logo that fails to load swapped
- * once to the host's mark.
+ * a `client_logo` that is an `https:` URL or a path of the serving origin,
+ * the host's mark otherwise, the chosen theme's while one carries a mark,
+ * and a client logo that fails to load swapped once to the host's mark.
  */
 const ClientIcon = ({ logo }) => {
   const { brand } = useStatus();
@@ -215,7 +219,7 @@ const CibaApprovePage = ({ account, returnTo }) => {
     <AuthShell
       title={t('ciba.title')}
       subtitle={answer ? answer.client_name : ''}
-      icon={<ClientIcon logo={httpsUrl(answer?.client_logo)} />}
+      icon={<ClientIcon logo={logoOf(answer?.client_logo)} />}
     >
       {!answer ? <AuthSpinner label={t('shared:loading')} /> : null}
       {answer ? (
