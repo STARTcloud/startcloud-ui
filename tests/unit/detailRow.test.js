@@ -86,7 +86,11 @@ describe('DetailRow', () => {
 
   it('puts a long value on its own line and draws an instant as a local time', () => {
     const markup = render({
-      detail: { type: 'pam_sudo', command: 'systemctl restart haproxy && journalctl -fu haproxy', at: '2026-11-15T23:10:44Z' },
+      detail: {
+        type: 'pam_sudo',
+        command: 'systemctl restart haproxy && journalctl -fu haproxy',
+        at: '2026-11-15T23:10:44Z',
+      },
       large: true,
     });
     expect(markup).toContain('scope-row-field-long');

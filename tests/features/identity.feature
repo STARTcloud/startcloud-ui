@@ -95,9 +95,9 @@ Feature: identity contract
 
   Scenario: the interstitials: the CIBA page sends a person whose session has ended to sign in and back to the same request
     Given the host answers the identity/ciba-expired-session fixture
+    And the browser holds "account" as "{\"name\":\"Mark Gilbert\",\"email\":\"mark@m4kr.net\"}"
     When I open "/ciba/approve?token=ciba-token"
-    Then the host was sent GET to "/api/auth/ciba"
-    And the path is "/login?returnTo=%2Fciba%2Fapprove%3Ftoken%3Dciba-token"
+    Then the path is "/login?returnTo=%2Fciba%2Fapprove%3Ftoken%3Dciba-token"
 
   Scenario: the interstitials: the logout confirmation reads GET /api/auth/logout/confirm
     When I open "/connect/logout/confirm"

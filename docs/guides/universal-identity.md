@@ -2161,8 +2161,9 @@ false never reaches this page at all.
   say; no scope list, a sign-in request being nothing to grant; Deny and
   Approve side by side, "Approve only if you started this." under them;
   after the answer the page draws "Sign-in approved" or "Sign-in denied"
-  in place; the page keeps the token in `sessionStorage` until the
-  request is read, so a reload before that still names the request; a
+  in place; the page keeps the token in the URL and in `sessionStorage`
+  until the request is read, so a reload or a sign-in before that still
+  names the request, and replaces the location with the bare path after; a
   `401` on the read or the decision sends the person to sign in with
   `/ciba/approve?token=` as the return path, so the sign-in lands them
   back on the same request with no second click on the mail or the

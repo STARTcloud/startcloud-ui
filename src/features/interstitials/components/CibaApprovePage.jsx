@@ -104,10 +104,10 @@ CibaRequest.propTypes = {
 };
 
 /**
- * `/ciba/approve`: reads the token from the URL once, keeps it in
- * `sessionStorage` until the request is read so a reload before that
- * still names the request, replaces the location with the bare path and
- * sends the token in the `X-Ciba-Token` header; draws the client's logo
+ * `/ciba/approve`: reads the token from the URL once, keeps it in the URL
+ * and in `sessionStorage` until the request is read so a reload or a
+ * sign-in before that still names the request, then replaces the location
+ * with the bare path; sends the token in the `X-Ciba-Token` header; draws the client's logo
  * or the host's mark, "Sign-in request", the client's name, the request's
  * facts, Deny and Approve side by side and "Approve only if you started
  * this." under them, then "Sign-in approved" or "Sign-in denied" in place;
@@ -167,7 +167,6 @@ const CibaApprovePage = ({ account, returnTo }) => {
     if (!signedIn) {
       return undefined;
     }
-    navigate(PATH, { replace: true });
     let active = true;
     if (!token) {
       return undefined;
@@ -176,6 +175,7 @@ const CibaApprovePage = ({ account, returnTo }) => {
       .then(result => {
         if (active) {
           forgetToken();
+          navigate(PATH, { replace: true });
           setAnswer(result);
         }
       })
