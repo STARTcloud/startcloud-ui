@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.63.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.62.0...v0.63.0) (2026-11-16)
+
+
+### Features
+
+* buttons on a toast and a sign-in request's own facts on the approval page ([040f567](https://github.com/STARTcloud/startcloud-ui/commit/040f567575f652b278b37291036a15a0b86327ed))
+* preferences for a local account on a backend host ([0678006](https://github.com/STARTcloud/startcloud-ui/commit/06780064aa93b3ce01175901e845c41dc56b09f7))
+* several accounts on one browser ([c86cac9](https://github.com/STARTcloud/startcloud-ui/commit/c86cac995bc5ea3b85e0755884df8f85db2b3c86))
+* template families on the templates page ([4229638](https://github.com/STARTcloud/startcloud-ui/commit/42296388199decc554bf51f909834de4089e1be2))
+* the push worker lets a navigation reach the server, the deploy target and the server's own account controls ([fed3979](https://github.com/STARTcloud/startcloud-ui/commit/fed39796504ab4be5ef88a68d7a9ec197b303a38))
+
+
+### Bug Fixes
+
+* backup codes download under the site, the person and the day ([f0f695c](https://github.com/STARTcloud/startcloud-ui/commit/f0f695c4cbab4790d782cd0b15564c3367c6bbe6))
+* the approval page keeps the request's token in the URL until the request is read ([f94729e](https://github.com/STARTcloud/startcloud-ui/commit/f94729ebaf166aeb1e1b6626dd7eb5444641738b))
+* the approval page takes a client logo that is a path of the serving origin ([6cdc897](https://github.com/STARTcloud/startcloud-ui/commit/6cdc897c5019eb672d0d3d2e6ca7ba7e4df0169b))
+* the CIBA details fixture in Prettier's shape ([48b6c39](https://github.com/STARTcloud/startcloud-ui/commit/48b6c397e90819ec8b0776c9fef0410147c0ad58))
+
 ## [0.62.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.61.0...v0.62.0) (2026-11-15)
 
 
