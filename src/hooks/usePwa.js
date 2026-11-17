@@ -4,6 +4,31 @@ import { register } from 'register-service-worker';
 
 import { useNotify } from '../contexts/NoticeContext';
 
+const XSRF_COOKIES = ['__Host-XSRF-TOKEN', 'XSRF-TOKEN'];
+
+const cookieValue = name =>
+  document.cookie
+    .split('; ')
+    .filter(entry => entry.startsWith(`${name}=`))
+    .map(entry => decodeURIComponent(entry.slice(name.length + 1)))[0] || '';
+
+const xsrfToken = () => XSRF_COOKIES.map(cookieValue).find(Boolean) || '';
+
+/**
+ * Hands the XSRF token to a worker, `{ type: 'xsrf', token }`, so a
+ * notification button pressed with no page open can still send its
+ * request with the header on a browser whose workers cannot read cookies;
+ * nothing is posted while there is no worker or no token.
+ *
+ * @param {ServiceWorker|null|undefined} worker - The worker to tell
+ * @param {string} token - The XSRF token the page reads from its cookie
+ */
+export const tellWorkerToken = (worker, token) => {
+  if (worker && token) {
+    worker.postMessage({ type: 'xsrf', token });
+  }
+};
+
 /**
  * The one service worker URL of the build, the app name in its query; the
  * build stamps its version into the file, so each release is a new worker
@@ -34,7 +59,10 @@ export const askWorkerVersion = worker =>
   });
 
 /**
- * Registers the build's service worker at scope `/` in production and, when
+ * Registers the build's service worker at scope `/` in production, hands
+ * the active worker the page's XSRF token once the registration is ready
+ * and again whenever a new worker takes the page, through
+ * `tellWorkerToken`, and, when
  * a new worker is installed while one already controls the page, raises the
  * sticky "A new version is available" banner with a Reload action, asks the
  * new worker its version through `askWorkerVersion` and, once it answers,
@@ -68,10 +96,15 @@ export const usePwa = ({ app, offline, launchHref }) => {
 
   useEffect(() => {
     if (!import.meta.env.PROD) {
-      return;
+      return undefined;
     }
+    const onController = () => tellWorkerToken(navigator.serviceWorker.controller, xsrfToken());
+    navigator.serviceWorker?.addEventListener('controllerchange', onController);
     register(serviceWorkerUrl(app), {
       registrationOptions: { scope: '/' },
+      ready(registration) {
+        tellWorkerToken(registration.active, xsrfToken());
+      },
       updated(registration) {
         const banner = text =>
           notify('info', text, {
@@ -91,5 +124,6 @@ export const usePwa = ({ app, offline, launchHref }) => {
         }
       },
     });
+    return () => navigator.serviceWorker?.removeEventListener('controllerchange', onController);
   }, [app, notify, t]);
 };

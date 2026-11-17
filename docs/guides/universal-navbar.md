@@ -2809,11 +2809,15 @@ Each test answers through an in-app notice card, "Test sent." or
   with its words in the person's language, of which the worker draws no
   more than `Notification.maxActions`, and `data.actions`, one entry per
   button keyed by its `action`, either `{ method, url, body }`, a JSON
-  request the worker sends with no page open to a path of its own origin
-  alone, with the session cookie and `X-XSRF-TOKEN` from the
-  `__Host-XSRF-TOKEN` or `XSRF-TOKEN` cookie, succeeding only on a `2xx`
+  request the worker sends first, on every press, with no page open, to
+  a path of its own origin alone, with the session cookie and
+  `X-XSRF-TOKEN` from the `__Host-XSRF-TOKEN` or `XSRF-TOKEN` cookie
+  where the worker can read cookies and otherwise from the token the page
+  handed it (`{ type: 'xsrf', token }`, posted when the registration is
+  ready and when a new worker takes the page, kept in the build's cache),
+  the header left out while neither holds one, succeeding only on a `2xx`
   answer that carries `status`, or `{ navigate }`, a page the press
-  opens; a press whose request cannot be sent, lacks the cookie or
+  opens; a press whose request throws or
   answers anything else, a press with no entry and a click on the body
   focus an open tab of the app and move it to the payload's `navigate`,
   opening a window only while no tab is open, and the worker knows no

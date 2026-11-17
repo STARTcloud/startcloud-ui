@@ -22,9 +22,21 @@ const DATA = {
 const answer = (status, body) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
+const cacheWith = kept => {
+  const entries = new Map(Object.entries(kept));
+  const cache = {
+    put: vi.fn((key, response) => response.text().then(text => entries.set(key, text))),
+    match: vi.fn(key =>
+      Promise.resolve(entries.has(key) ? new Response(entries.get(key)) : undefined)
+    ),
+  };
+  return { entries, caches: { open: vi.fn(() => Promise.resolve(cache)) } };
+};
+
 const workerWith = ({
   cookies = { 'XSRF-TOKEN': 'xsrf-1' },
   cookieStore = true,
+  kept = {},
   response = () => Promise.resolve(answer(200, { status: 'approved' })),
   tabs = true,
   maxActions = 2,
@@ -50,8 +62,9 @@ const workerWith = ({
     Notification: maxActions === null ? {} : { maxActions },
   };
   const send = vi.fn(response);
-  vm.runInNewContext(SOURCE, { self: scope, caches: {}, fetch: send, URL, Response, Headers });
-  return { listeners, scope, send, tab };
+  const { entries, caches } = cacheWith(kept);
+  vm.runInNewContext(SOURCE, { self: scope, caches, fetch: send, URL, Response, Headers });
+  return { listeners, scope, send, tab, entries };
 };
 
 const dispatch = async (worker, type, event) => {
@@ -108,18 +121,28 @@ describe('notificationclick', () => {
     expect(worker.tab.navigate).toHaveBeenCalledWith(NAVIGATE);
   });
 
-  it('follows the notice navigate without fetching while the XSRF cookie is missing', async () => {
-    const worker = workerWith({ cookies: {} });
+  it('sends the request without the header while no token is held anywhere, the page opening on the refusal', async () => {
+    const worker = workerWith({
+      cookies: {},
+      response: () => Promise.resolve(answer(403, { error: 'csrf' })),
+    });
     await click(worker, 'approve');
-    expect(worker.send).not.toHaveBeenCalled();
+    expect(worker.send).toHaveBeenCalledTimes(1);
+    expect(worker.send.mock.calls[0][1].headers).toEqual({ 'Content-Type': 'application/json' });
     expect(worker.tab.navigate).toHaveBeenCalledWith(NAVIGATE);
   });
 
-  it('follows the notice navigate without fetching while the cookie store is missing', async () => {
-    const worker = workerWith({ cookieStore: false });
+  it('sends with the token the page handed it while the cookie store is missing, and stays put on a 2xx status', async () => {
+    const worker = workerWith({ cookieStore: false, kept: { '/__xsrf': 'kept-1' } });
     await click(worker, 'approve');
-    expect(worker.send).not.toHaveBeenCalled();
-    expect(worker.tab.navigate).toHaveBeenCalledWith(NAVIGATE);
+    expect(worker.send.mock.calls[0][1].headers['X-XSRF-TOKEN']).toBe('kept-1');
+    expect(worker.tab.navigate).not.toHaveBeenCalled();
+  });
+
+  it('prefers the cookie over the kept token while both are there', async () => {
+    const worker = workerWith({ kept: { '/__xsrf': 'kept-1' } });
+    await click(worker, 'approve');
+    expect(worker.send.mock.calls[0][1].headers['X-XSRF-TOKEN']).toBe('xsrf-1');
   });
 
   it('never sends a url of another origin and follows the notice navigate', async () => {
@@ -152,6 +175,16 @@ describe('notificationclick', () => {
     expect(worker.send).not.toHaveBeenCalled();
     expect(worker.tab.navigate).toHaveBeenNthCalledWith(1, NAVIGATE);
     expect(worker.tab.navigate).toHaveBeenNthCalledWith(2, NAVIGATE);
+  });
+});
+
+describe('message', () => {
+  it('keeps the token an xsrf message carries for the next press', async () => {
+    const worker = workerWith({ cookieStore: false });
+    await dispatch(worker, 'message', { data: { type: 'xsrf', token: 'page-1' } });
+    expect(worker.entries.get('/__xsrf')).toBe('page-1');
+    await click(worker, 'approve');
+    expect(worker.send.mock.calls[0][1].headers['X-XSRF-TOKEN']).toBe('page-1');
   });
 });
 

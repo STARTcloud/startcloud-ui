@@ -29,12 +29,26 @@ self.addEventListener('activate', event => {
   );
 });
 
+const TOKEN_KEY = '/__xsrf';
+
+const keepToken = token =>
+  caches
+    .open(CACHE_NAME)
+    .then(cache => cache.put(TOKEN_KEY, new Response(String(token || ''))))
+    .catch(() => undefined);
+
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
   if (event.data?.type === 'version') {
     event.ports[0]?.postMessage({ version: VERSION });
+  }
+  if (event.data?.type === 'xsrf') {
+    const kept = keepToken(event.data.token);
+    if (typeof event.waitUntil === 'function') {
+      event.waitUntil(kept);
+    }
   }
 });
 
@@ -136,26 +150,43 @@ const ownPath = url =>
   !url.startsWith('//') &&
   new URL(url, self.location.origin).origin === self.location.origin;
 
-const xsrfToken = () =>
-  Promise.all(XSRF_COOKIES.map(name => self.cookieStore.get(name))).then(
-    cookies => cookies.find(cookie => cookie?.value)?.value || ''
-  );
+const cookieToken = () => {
+  if (!self.cookieStore) {
+    return Promise.resolve('');
+  }
+  return Promise.all(XSRF_COOKIES.map(name => self.cookieStore.get(name)))
+    .then(cookies => cookies.find(cookie => cookie?.value)?.value || '')
+    .catch(() => '');
+};
+
+const keptToken = () =>
+  Promise.resolve()
+    .then(() => caches.open(CACHE_NAME))
+    .then(cache => cache.match(TOKEN_KEY))
+    .then(hit => (hit ? hit.text() : ''))
+    .catch(() => '');
+
+const xsrfToken = () => cookieToken().then(token => token || keptToken());
 
 const answered = response =>
   response.ok ? response.json().then(answer => Boolean(answer?.status)) : false;
+
+const headersWith = token => ({
+  'Content-Type': 'application/json',
+  ...(token ? { 'X-XSRF-TOKEN': token } : {}),
+});
 
 const send = (entry, token) =>
   fetch(entry.url, {
     method: entry.method,
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+    headers: headersWith(token),
     body: JSON.stringify(entry.body),
   }).then(answered);
 
 const request = entry =>
-  Promise.resolve()
-    .then(xsrfToken)
-    .then(token => (token ? send(entry, token) : false))
+  xsrfToken()
+    .then(token => send(entry, token))
     .catch(() => false);
 
 const sendOrOpen = (entry, fallback) => {
