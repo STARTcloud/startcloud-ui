@@ -49,22 +49,39 @@ Feature: identity contract, what the browser knows of a person saved to their ac
     And the host was not sent GET to "/api/user/preferences"
     And the host was not sent PATCH to "/api/user/preferences"
 
-  Scenario: the preferences page draws the locale and the clock as choices beside the time zone, the device's mode and motion as read-only facts, and Save sends the changed clock through PATCH /api/user/preferences
+  Scenario: the preferences page draws the mode, the motion and the clock as tiles, the approval channels as tick tiles greyed where the host cannot deliver, no device fact, and Save sends the changed clock and channels through one PATCH /api/user/preferences
     Given the host answers the idp-preferences/same fixture
     When I open "/user/profile/preferences"
     Then the profile page draws the editable preferences
+    And the profile tiles "profile-preferences-mode" offer "auto, light, dark"
+    And the profile tiles "profile-preferences-mode" read "dark"
+    And the profile tiles "profile-preferences-motion" offer "auto, reduce"
+    And the profile tiles "profile-preferences-motion" read "auto"
     And the page field "profile-preferences/locale" reads "en-GB"
-    And the page field "profile-preferences/hour_cycle" reads "h23"
-    And the page draws the panel "device-facts"
-    And the device fact "device_mode" is read-only
-    And the device fact "device_motion" is read-only
-    When I pick "h12" in the profile select "profile-preferences/hour_cycle"
+    And the profile tiles "profile-preferences/hour_cycle" read "h23"
+    And the profile tiles "profile-preferences/ciba_channels" offer "in_app, push, email, sms"
+    And the profile tiles "profile-preferences/ciba_channels" read "in_app"
+    And the profile tiles "profile-preferences/ciba_channels" grey "push"
+    And the profile tiles "profile-preferences/ciba_channels" offer "sms" freely
+    And the page draws no panel "device-facts"
+    And the profile page draws no field "profile-preferences-device_mode"
+    When I pick "h12" in the profile tiles "profile-preferences/hour_cycle"
+    And I pick "email" in the profile tiles "profile-preferences/ciba_channels"
     And I press the page's "save-preferences" action
     Then the host was sent PATCH to "/api/user/preferences" carrying "hour_cycle" as "h12"
+    And the host was sent PATCH to "/api/user/preferences" carrying "in_app,email" at "/ciba_channels"
     And the host was sent PATCH to "/api/user/preferences" carrying no "locale"
     And the host was sent PATCH to "/api/user/preferences" carrying no "timezone"
     And the host was sent PATCH to "/api/user/preferences" 1 times
     And the page raised 1 success notice
+
+  Scenario: the preferences page's Save sends nothing while nothing differs and still draws the saved notice
+    Given the host answers the idp-preferences/same fixture
+    When I open "/user/profile/preferences"
+    Then the profile page draws the editable preferences
+    When I press the page's "save-preferences" action
+    Then the page raised 1 success notice
+    And the host was not sent PATCH to "/api/user/preferences"
 
   Scenario: the sessions list draws each row's browser and system from the row, never from the user agent, and writes its times in the account's time zone, locale and clock
     Given the host answers the idp-preferences/same fixture

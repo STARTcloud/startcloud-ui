@@ -18,7 +18,11 @@
         "locale": { "$ref": "#/$defs/languageTag" },
         "hour_cycle": { "type": "string", "enum": ["h12", "h23"] },
         "region": { "$ref": "#/$defs/region" },
-        "ciba_channel": { "type": "string", "enum": ["PUSH", "EMAIL", "SMS"] },
+        "ciba_channels": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["in_app", "push", "email", "sms"] }
+        },
         "ciba_user_code": { "type": "string", "minLength": 4, "maxLength": 64 }
       }
     }

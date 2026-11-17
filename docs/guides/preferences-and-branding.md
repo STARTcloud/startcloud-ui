@@ -98,8 +98,8 @@ answers the themes it offers as `brand.themes` in its status payload
 (`[{ name, css, label }]`, the navbar contract's status row), the shared
 UI completes each row by name from the build's own
 `public/themes/themes.json`, the manifest the generator writes from every
-pack's YAML with the pack's `label`, `description`, `brand` and `logo`,
-before it boots, so a host names which themes it offers and the pack
+pack's YAML with the pack's `label`, `description`, `brand`, `logo`,
+`primary` and `surfaces`, before it boots, so a host names which themes it offers and the pack
 supplies its own words and mark, and while a person chose a pack whose
 row carries a `logo` that mark is the chrome's mark, the favicon, the
 About mark and the console placeholder in place of `brand.logo_url`, and
@@ -392,9 +392,14 @@ Content-Type: application/json
   clears it. Every key is optional.
 - Two more members are writable beside the three above, the identity
   provider's sign-in approval settings the shared Preferences tab saves
-  through the same call: `ciba_channel`, one of `PUSH`, `EMAIL` or `SMS`
-  (`SMS` only while a verified mobile number exists), and `ciba_user_code`,
-  the approval PIN, `null` clearing it; the PIN is never read back.
+  through the same call: `ciba_channels`, a list of the channel words
+  `in_app`, `push`, `email` and `sms` without repeats (`sms` only while a
+  verified mobile number exists, `push` only while the host lists it under
+  `notifications`), `null` returning the account to `in_app`, and
+  `ciba_user_code`, the approval PIN, `null` clearing it; the PIN is never
+  read back. The host lists the channels it can deliver as the sub flags
+  of `notifications` in its status, `{ "notifications": ["in_app", "email", "sms"] }`,
+  and the page draws a channel it does not list greyed and unpickable.
 - `mode` is `light`, `dark` or `auto`, the person's mode, `null` clearing
   it so they follow the operating system's; read back as
   `preferences.mode`.
@@ -416,7 +421,7 @@ Content-Type: application/json
 - Validation: well-formed BCP 47 with no length cap, since RFC 5646 §2.1
   sets none and `ca-ES-valencia` is a registered fourteen-character tag;
   `light|dark|auto` for `mode`; a known IANA zone id; a country code or
-  named set for `region`; `PUSH|EMAIL|SMS`. A violation
+  named set for `region`; the four channel words for `ciba_channels`. A violation
   answers the validation contract's `422` problem body with a pointer per
   failing member, never a `400 { "error" }`, so the shared form paints it
   inline.
@@ -430,9 +435,9 @@ Content-Type: application/json
 - `GET` on the same path returns the twelve members the identity
   provider stores: `language`, `mode`, `theme`, `motion`, `timezone`,
   `locale`, `hour_cycle`, `region`, `device_mode`, `device_motion`,
-  `ciba_channel` and `ciba_user_code_set`, the last two the sign-in
-  approval channel and whether an approval PIN is set, every member the
-  account holds none of `null`.
+  `ciba_channels` and `ciba_user_code_set`, the last two the sign-in
+  approval channels and whether an approval PIN is set, every member the
+  account holds none of `null`, `ciba_channels` `["in_app"]`.
 - The shared Preferences tab sends `timezone`, `locale` and `hour_cycle`
   only when the person chose one that differs from the stored value; the
   value it detects and preselects while none is stored is never written
@@ -460,17 +465,27 @@ New local signups seed `language` from the request locale.
 ## The Preferences section
 
 The Preferences section at `/user/profile/preferences` on the identity
-provider and `/profile/preferences` on a UI backend is one General card,
-the language, the mode, the motion, the theme, the time zone, the locale,
-the hour cycle, the region, the sign-in approval channel and the PIN of
-the write path above, with the device's mode and motion as read-only
-facts under them while the record carries them, and
-under it one card a feature of the host, named for that feature, each a
-browser preference kept in the browser alone and never sent to a host,
-the Hosts card's account field alone excepted, drawn editable under a
-read-only record too; every card is one form
-ending in one Save preferences, a primary submit at the form's bottom
-left, because a person who learned one card's Save has learned them all:
+provider and `/profile/preferences` on a UI backend is one General card
+drawn as sections, a heading and a lead at the left and the controls at
+the right: Appearance, the mode as three tiles (System, Light, Dark), the
+motion as two (Follow this device, Reduced) and a preview card per
+offered theme beside Follow this site, each painted from the manifest
+row's `primary` and `surfaces`, every pick written through at once;
+Language and time, the language, the time zone, the region, the locale
+and the hour cycle as two tiles; Sign-in approval, the four channels as
+tick tiles saved as `ciba_channels`, a channel the host cannot deliver
+greyed, and the PIN; Sign-in notices, When as four tiles (Never, New
+devices, Every sign-in, Site default) and Sent to as the tick tiles Email,
+In-app and Push, dimmed under Site default; the device's mode and motion
+are never drawn, because a device reported them and no person chose
+them. Under it one card a feature of the host, named for that feature,
+each a browser preference kept in the browser alone and never sent to a
+host, the Hosts card's account field alone excepted, drawn editable under
+a read-only record too; every card is one form ending in one Save
+preferences, a primary submit at the form's foot, because a person who
+learned one card's Save has learned them all; a choice is drawn as tiles,
+a label over a native radio with the accent outline as the one mark of
+the picked one, wherever the choice has few words:
 
 | Card         | Host lists                                                                          | Field                                                                                     | Browser key   | Read by                                                                                                                                                                                                                                                    |
 | ------------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -535,11 +550,14 @@ the pack's own word, toward its brand and never brighter than its link,
 never Bootstrap's blue, and a new pack is one YAML copied from any other
 with every value swapped. Beside the packs the generator writes
 `public/themes/themes.json`, one row per pack, `name`, `css`, `label`,
-`description`, `brand` and `logo`, the manifest the shared UI reads at
-boot to complete every theme a host names in `brand.themes` and to paint
-the default `startcloud` when the host names none, so the Theme menu
-shows a pack's own name and mark and no host, no script and no page
-carries a pack's words. The variables reach colors, one mark and one face;
+`description`, `brand`, `logo`, `primary` and `surfaces` (the `light` and
+`dark` `body-bg`, `tertiary-bg`, `border-color` and `secondary-color`),
+the manifest the shared UI reads at boot to complete every theme a host
+names in `brand.themes` and to paint the default `startcloud` when the
+host names none, so the Theme cards show a pack's own name, mark and
+colours and no host, no script and no page carries a pack's words; a
+pack dropped into the directory reaches the UI through the same
+generator run, and a row without colours draws its name alone. The variables reach colors, one mark and one face;
 a pack that needs more names `rules`, a stylesheet in its own directory the
 generator appends to the pack's stylesheet nested under
 `[data-brand='<pack>']`, so every selector it holds is scoped to that pack

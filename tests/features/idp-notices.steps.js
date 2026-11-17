@@ -7,13 +7,15 @@ const { When, Then } = createBdd(test);
 const WHEN_ID = 'profile-preferences/sign_in_notices/when';
 const CHANNELS_ID = 'profile-preferences/sign_in_notices/channels';
 
-const cardOf = page => page.locator('#sign-in-notices');
+const sectionOf = page => page.locator('#sign-in-notices');
 
-const whenOf = page => cardOf(page).locator(`[id="${WHEN_ID}"]`);
+const whenOf = page => sectionOf(page).locator(`[data-tiles="${WHEN_ID}"]`);
 
-const channelOf = (page, channel) => cardOf(page).locator(`[data-channel="${channel}"]`);
+const channelsOf = page => sectionOf(page).locator(`[data-tiles="${CHANNELS_ID}"]`);
 
-const actionOf = (page, action) => cardOf(page).locator(`[data-action="${action}"]`);
+const channelOf = (page, channel) => channelsOf(page).locator(`input[data-value="${channel}"]`);
+
+const formOf = page => page.locator('form[data-panel="preferences"]');
 
 const noteOf = (page, note) => page.locator(`[data-note="${note}"]`);
 
@@ -26,24 +28,28 @@ const choicesOf = async select => {
   return values.join(', ');
 };
 
-When('I choose {string} in the sign-in notices select', async ({ page }, value) => {
-  await whenOf(page).selectOption(value);
+const pickedOf = tiles =>
+  tiles.locator('input:checked').evaluateAll(inputs => inputs.map(input => input.dataset.value));
+
+const offeredOf = tiles =>
+  tiles.locator('input').evaluateAll(inputs => inputs.map(input => input.dataset.value));
+
+When('I pick {string} in the sign-in notices when tiles', async ({ page }, value) => {
+  await whenOf(page).locator(`label:has(input[data-value="${value}"])`).click();
 });
 
 When('I turn on the sign-in notices channel {string}', async ({ page }, channel) => {
-  await channelOf(page, channel).check();
+  await expect(channelOf(page, channel)).not.toBeChecked();
+  await channelsOf(page).locator(`label:has(input[data-value="${channel}"])`).click();
 });
 
 When('I turn off the sign-in notices channel {string}', async ({ page }, channel) => {
-  await channelOf(page, channel).uncheck();
+  await expect(channelOf(page, channel)).toBeChecked();
+  await channelsOf(page).locator(`label:has(input[data-value="${channel}"])`).click();
 });
 
-When("I press the sign-in notices card's {string} action", async ({ page }, action) => {
-  await actionOf(page, action).click();
-});
-
-When('I follow the sign-in notices summary to its last problem', async ({ page }) => {
-  await cardOf(page).locator('.form-error-summary a').last().click();
+When('I follow the preferences summary to its last problem', async ({ page }) => {
+  await formOf(page).locator('.form-error-summary a').last().click();
 });
 
 When('I press Remove on the user record method {string}', async ({ page }, text) => {
@@ -62,27 +68,27 @@ When('I type {string} into the setting at {string}', async ({ page }, text, poin
   await settingOf(page, pointer).fill(text);
 });
 
-Then('the sign-in notices card draws', async ({ page }) => {
-  await expect(cardOf(page)).toBeVisible();
+Then('the sign-in notices section draws', async ({ page }) => {
+  await expect(sectionOf(page)).toBeVisible();
 });
 
-Then('no sign-in notices card draws', async ({ page }) => {
+Then('no sign-in notices section draws', async ({ page }) => {
   await expect(page.locator('[data-action="save-preferences"]')).toBeVisible();
-  await expect(cardOf(page)).toHaveCount(0);
+  await expect(sectionOf(page)).toHaveCount(0);
 });
 
-Then('the sign-in notices card follows the General card', async ({ page }) => {
-  const cards = page.locator('.tab-pane > .card');
-  await expect(cards.first().locator('[data-action="save-preferences"]')).toBeVisible();
-  await expect(cards.nth(1)).toHaveAttribute('id', 'sign-in-notices');
+Then('the sign-in notices section sits in the General card', async ({ page }) => {
+  const card = page.locator('.tab-pane > .card').first();
+  await expect(card.locator('[data-action="save-preferences"]')).toBeVisible();
+  await expect(card.locator('#sign-in-notices')).toBeVisible();
 });
 
-Then('the sign-in notices select reads {string}', async ({ page }, value) => {
-  await expect(whenOf(page)).toHaveValue(value);
+Then('the sign-in notices when tiles read {string}', async ({ page }, value) => {
+  await expect.poll(() => pickedOf(whenOf(page)).then(list => list.join(', '))).toBe(value);
 });
 
-Then('the sign-in notices select offers {string}', async ({ page }, values) => {
-  await expect.poll(() => choicesOf(whenOf(page))).toBe(values);
+Then('the sign-in notices when tiles offer {string}', async ({ page }, values) => {
+  await expect.poll(() => offeredOf(whenOf(page)).then(list => list.join(', '))).toBe(values);
 });
 
 Then('the sign-in notices channel {string} is on', async ({ page }, channel) => {
@@ -93,58 +99,55 @@ Then('the sign-in notices channel {string} is off', async ({ page }, channel) =>
   await expect(channelOf(page, channel)).not.toBeChecked();
 });
 
-Then('the sign-in notices card carries the default badge', async ({ page }) => {
-  await expect(cardOf(page).locator('[data-badge="sign-in-notices-default"]')).toBeVisible();
+Then('the sign-in notices channels are dimmed', async ({ page }) => {
+  await expect(channelsOf(page)).toHaveClass(/pref-tiles-dim/);
+  await expect(channelOf(page, 'email')).toBeDisabled();
 });
 
-Then('the sign-in notices card carries no default badge', async ({ page }) => {
-  await expect(actionOf(page, 'save-sign-in-notices')).toBeVisible();
-  await expect(cardOf(page).locator('[data-badge="sign-in-notices-default"]')).toHaveCount(0);
+Then('the sign-in notices section carries the default badge', async ({ page }) => {
+  await expect(sectionOf(page).locator('[data-badge="sign-in-notices-default"]')).toBeVisible();
 });
 
-Then('the sign-in notices card offers the {string} action', async ({ page }, action) => {
-  await expect(actionOf(page, action)).toBeVisible();
-});
-
-Then('the sign-in notices card offers no {string} action', async ({ page }, action) => {
-  await expect(actionOf(page, 'save-sign-in-notices')).toBeVisible();
-  await expect(actionOf(page, action)).toHaveCount(0);
-});
-
-Then('the sign-in notices select names an error', async ({ page }) => {
-  await expect(whenOf(page)).toHaveAttribute('aria-invalid', 'true');
-  await expect(whenOf(page)).toHaveAttribute('aria-errormessage', `${WHEN_ID}-error`);
-  await expect(cardOf(page).locator(`[id="${WHEN_ID}-error"]`)).toBeVisible();
-});
-
-Then('the sign-in notices select names no error', async ({ page }) => {
+Then('the sign-in notices section carries no default badge', async ({ page }) => {
   await expect(whenOf(page)).toBeVisible();
-  await expect(whenOf(page)).not.toHaveAttribute('aria-invalid');
+  await expect(sectionOf(page).locator('[data-badge="sign-in-notices-default"]')).toHaveCount(0);
+});
+
+Then('the sign-in notices when tiles name an error', async ({ page }) => {
+  const first = whenOf(page).locator('input').first();
+  await expect(first).toHaveAttribute('aria-invalid', 'true');
+  await expect(first).toHaveAttribute('aria-errormessage', `${WHEN_ID}-error`);
+  await expect(sectionOf(page).locator(`[id="${WHEN_ID}-error"]`)).toBeVisible();
+});
+
+Then('the sign-in notices when tiles name no error', async ({ page }) => {
+  await expect(whenOf(page)).toBeVisible();
+  await expect(whenOf(page).locator('input').first()).not.toHaveAttribute('aria-invalid');
 });
 
 Then('the sign-in notices channels name an error', async ({ page }) => {
   await expect(channelOf(page, 'email')).toHaveAttribute('aria-invalid', 'true');
-  await expect(channelOf(page, 'inbox')).toHaveAttribute('aria-invalid', 'true');
+  await expect(channelOf(page, 'in_app')).toHaveAttribute('aria-invalid', 'true');
   await expect(channelOf(page, 'push')).toHaveAttribute('aria-invalid', 'true');
   await expect(channelOf(page, 'email')).toHaveAttribute(
     'aria-errormessage',
     `${CHANNELS_ID}-error`
   );
-  await expect(cardOf(page).locator(`[id="${CHANNELS_ID}-error"]`)).toBeVisible();
+  await expect(sectionOf(page).locator(`[id="${CHANNELS_ID}-error"]`)).toBeVisible();
 });
 
 Then('the sign-in notices channels name no error', async ({ page }) => {
-  await expect(channelOf(page, 'email')).toBeVisible();
+  await expect(channelOf(page, 'email')).toBeAttached();
   await expect(channelOf(page, 'email')).not.toHaveAttribute('aria-invalid');
 });
 
-Then('the sign-in notices summary lists {int} problem(s)', async ({ page }, count) => {
-  await expect(cardOf(page).locator('.form-error-summary li')).toHaveCount(count);
+Then('the preferences summary lists {int} problem(s)', async ({ page }, count) => {
+  await expect(formOf(page).locator('.form-error-summary li')).toHaveCount(count);
 });
 
-Then('the sign-in notices summary links to no control', async ({ page }) => {
-  await expect(cardOf(page).locator('.form-error-summary li')).toHaveCount(1);
-  await expect(cardOf(page).locator('.form-error-summary a')).toHaveCount(0);
+Then('the preferences summary links to no control', async ({ page }) => {
+  await expect(formOf(page).locator('.form-error-summary li')).toHaveCount(1);
+  await expect(formOf(page).locator('.form-error-summary a')).toHaveCount(0);
 });
 
 Then('the sign-in notices channel {string} holds the focus', async ({ page }, channel) => {

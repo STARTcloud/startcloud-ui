@@ -413,6 +413,13 @@ const writePack = (pack, css) => {
   fs.writeFileSync(path.join(THEMES_DIR, pack, `${pack}.css`), css);
 };
 
+const SWATCH_KEYS = ['body-bg', 'tertiary-bg', 'border-color', 'secondary-color'];
+
+const swatchOf = (source, variant) => {
+  const surfaces = surfacesOf(source, variant);
+  return Object.fromEntries(SWATCH_KEYS.map(key => [key, String(surfaces[key]).toLowerCase()]));
+};
+
 const manifestEntry = (pack, source) => ({
   name: pack,
   css: `/themes/${pack}/${pack}.css`,
@@ -420,6 +427,8 @@ const manifestEntry = (pack, source) => ({
   description: source.description,
   brand: source.brand,
   logo: logoUrlOf(pack, source.logo),
+  primary: source.primary.toLowerCase(),
+  surfaces: Object.fromEntries(VARIANTS.map(variant => [variant, swatchOf(source, variant)])),
 });
 
 const writeManifest = entries => {
@@ -433,8 +442,10 @@ const writeManifest = entries => {
  * estate is ever versioned by a hash, in its name or in its query, and
  * one public/themes/themes.json beside them, the manifest every host
  * reads to answer `brand.themes`: one entry per pack, `name`, `css`,
- * `label`, `description`, `brand` and `logo`, so a pack's own words and
- * mark reach the profile's Theme select and no host echoes the bare name.
+ * `label`, `description`, `brand`, `logo`, `primary` and `surfaces`, the
+ * last the `light` and `dark` `body-bg`, `tertiary-bg`, `border-color`
+ * and `secondary-color`, so a pack's own words, mark and colours reach
+ * the profile's Theme cards and no host echoes the bare name.
  *
  * Every pack names the same keys, the one shape, and a pack missing one
  * is refused: `label` and `description` (the pack's own words), `brand`

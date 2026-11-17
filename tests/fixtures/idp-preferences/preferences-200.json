@@ -10,7 +10,7 @@
     "region": "US",
     "device_mode": "light",
     "device_motion": "auto",
-    "ciba_channel": "PUSH",
+    "ciba_channels": ["in_app"],
     "ciba_user_code_set": false
   }
 }

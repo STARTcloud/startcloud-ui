@@ -56,7 +56,7 @@
     "motion": null,
     "timezone": "America/Chicago",
     "region": null,
-    "ciba_channel": "PUSH",
+    "ciba_channels": ["in_app"],
     "ciba_user_code_set": false,
     "sign_in_notices": { "when": "all", "channels": ["email", "push"] }
   },

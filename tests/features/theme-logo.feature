@@ -34,7 +34,7 @@ Feature: theme logo
   Scenario: Theme logo: clearing the theme returns the mark and the favicon to brand.logo_url
     When I open "/user/profile/preferences"
     Then the chrome's mark is "/brand/shi/mark.svg"
-    When I pick "" in the profile select "profile-preferences-theme"
+    When I pick "" in the profile tiles "profile-preferences-theme"
     Then the host was sent PATCH to "/api/user/preferences" carrying null at "/theme"
     And the document carries "data-brand" as "startcloud"
     And the chrome's mark is "/brand/startcloud/mark.svg"

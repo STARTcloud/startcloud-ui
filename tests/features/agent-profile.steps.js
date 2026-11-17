@@ -76,8 +76,36 @@ Then('the push switch stays off with its feedback', async ({ page }) => {
   await expect(modalOf(page).locator('#push-switch')).not.toBeChecked();
 });
 
+const tilesOf = (page, id) => recordOf(page).locator(`[data-tiles="${id}"]`);
+
+const pickedOf = tiles =>
+  tiles.locator('input:checked').evaluateAll(inputs => inputs.map(input => input.dataset.value));
+
+const offeredOf = tiles =>
+  tiles.locator('input').evaluateAll(inputs => inputs.map(input => input.dataset.value));
+
 When('I pick {string} in the profile select {string}', async ({ page }, value, id) => {
   await recordOf(page).locator(`[id="${id}"]`).selectOption(value);
+});
+
+When('I pick {string} in the profile tiles {string}', async ({ page }, value, id) => {
+  await tilesOf(page, id).locator(`label:has(input[data-value="${value}"])`).click();
+});
+
+Then('the profile tiles {string} read {string}', async ({ page }, id, values) => {
+  await expect.poll(() => pickedOf(tilesOf(page, id)).then(list => list.join(', '))).toBe(values);
+});
+
+Then('the profile tiles {string} offer {string}', async ({ page }, id, values) => {
+  await expect.poll(() => offeredOf(tilesOf(page, id)).then(list => list.join(', '))).toBe(values);
+});
+
+Then('the profile tiles {string} grey {string}', async ({ page }, id, value) => {
+  await expect(tilesOf(page, id).locator(`input[data-value="${value}"]`)).toBeDisabled();
+});
+
+Then('the profile tiles {string} offer {string} freely', async ({ page }, id, value) => {
+  await expect(tilesOf(page, id).locator(`input[data-value="${value}"]`)).toBeEnabled();
 });
 
 Then('the browser kept {string} as {string}', async ({ page }, key, value) => {

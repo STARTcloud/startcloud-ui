@@ -8,6 +8,8 @@ const cardOf = page => page.locator('#hyperweaver-service');
 
 const fieldOf = (page, field) => cardOf(page).locator(`[data-field="${field}"]`);
 
+const targetsOf = page => cardOf(page).locator('[data-tiles$="/deploy_target"]');
+
 When('I type {string} into the Hyperweaver field {string}', async ({ page }, text, field) => {
   await fieldOf(page, field).fill(text);
 });
@@ -17,7 +19,7 @@ When("I press the Hyperweaver card's {string} action", async ({ page }, action) 
 });
 
 When('I pick the Hyperweaver deploy target {string}', async ({ page }, value) => {
-  await fieldOf(page, 'deploy-target').selectOption(value);
+  await targetsOf(page).locator(`label:has(input[data-value="${value}"])`).click();
 });
 
 When('I follow the link to {string}', async ({ page }, pathname) => {
@@ -33,12 +35,22 @@ Then('no Hyperweaver card draws', async ({ page }) => {
   await expect(cardOf(page)).toHaveCount(0);
 });
 
-Then('the Hyperweaver servers table lists {int} rows', async ({ page }, count) => {
-  await expect(cardOf(page).locator('tbody tr')).toHaveCount(count);
+Then('the Hyperweaver servers list {int} rows', async ({ page }, count) => {
+  await expect(cardOf(page).locator('[data-action="save"], .pref-empty').first()).toBeVisible();
+  await expect(cardOf(page).locator('[data-row="server"]')).toHaveCount(count);
+});
+
+Then('the Hyperweaver server {string} is the default', async ({ page }, text) => {
+  await expect(
+    cardOf(page)
+      .locator('[data-row="server"]')
+      .filter({ hasText: text })
+      .locator('[data-badge="server-default"]')
+  ).toBeVisible();
 });
 
 Then('the Hyperweaver deploy target reads {string}', async ({ page }, value) => {
-  await expect(fieldOf(page, 'deploy-target')).toHaveValue(value);
+  await expect(targetsOf(page).locator('input:checked')).toHaveAttribute('data-value', value);
 });
 
 Then('the Hyperweaver field {string} is invalid', async ({ page }, field) => {

@@ -35,7 +35,7 @@ Feature: agent-profile
     And I see "person@example.com"
     When I open "/profile/preferences"
     Then the profile page draws the editable preferences
-    When I pick "dark" in the profile select "profile-preferences-mode"
+    When I pick "dark" in the profile tiles "profile-preferences-mode"
     Then the browser kept "mode" as "dark"
     And the host was not sent PATCH to "/api/user/preferences"
 
@@ -88,13 +88,13 @@ Feature: agent-profile
     And the chrome draws the sidebar row "Profile"
     And the chrome draws the sidebar row "Preferences"
     And the profile page draws the editable preferences
-    When I pick "dark" in the profile select "profile-preferences-mode"
+    When I pick "dark" in the profile tiles "profile-preferences-mode"
     Then the browser kept "mode" as "dark"
     And the host was not sent PATCH to "/api/user/preferences"
-    When I pick "shi" in the profile select "profile-preferences-theme"
+    When I pick "shi" in the profile tiles "profile-preferences-theme"
     Then the browser kept "theme" as "shi"
     And the host was sent PUT to "/api/config/app" carrying "true" at "/ui/shi_mode"
-    When I pick "" in the profile select "profile-preferences-theme"
+    When I pick "" in the profile tiles "profile-preferences-theme"
     Then the host was sent PUT to "/api/config/app" carrying "false" at "/ui/shi_mode"
     And the host was sent PUT to "/api/config/app" 2 times
     And the host was not sent PATCH to "/api/user/preferences"

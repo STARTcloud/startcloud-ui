@@ -5,7 +5,22 @@
     "label": "Hyperweaver",
     "description": "Hyperweaver's orange and yellow on square corners, the hypervisor console's own look.",
     "brand": "hyperweaver",
-    "logo": "/brand/hyperweaver/mark.svg"
+    "logo": "/brand/hyperweaver/mark.svg",
+    "primary": "#ff6600",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#212529",
+        "tertiary-bg": "#2b3035",
+        "border-color": "#495057",
+        "secondary-color": "#adb5bd"
+      }
+    }
   },
   {
     "name": "lcars",
@@ -13,7 +28,22 @@
     "label": "LCARS",
     "description": "Black or space-white ground with blue, peach and gold bars, set in Antonio, the Starfleet console look.",
     "brand": "startcloud",
-    "logo": "/brand/startcloud/mark.svg"
+    "logo": "/brand/startcloud/mark.svg",
+    "primary": "#4d80f0",
+    "surfaces": {
+      "light": {
+        "body-bg": "#f5f6fa",
+        "tertiary-bg": "#e6e9f2",
+        "border-color": "#b9c2d6",
+        "secondary-color": "#4b5570"
+      },
+      "dark": {
+        "body-bg": "#000000",
+        "tertiary-bg": "#111111",
+        "border-color": "#2c2c33",
+        "secondary-color": "#8f97b0"
+      }
+    }
   },
   {
     "name": "m4kr",
@@ -21,7 +51,22 @@
     "label": "M4kr.net",
     "description": "M4kr's teal on cool slate, the machined block letters as the mark.",
     "brand": "m4kr",
-    "logo": "/brand/m4kr/mark.svg"
+    "logo": "/brand/m4kr/mark.svg",
+    "primary": "#0f766e",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#0f1719",
+        "tertiary-bg": "#162124",
+        "border-color": "#2d4045",
+        "secondary-color": "#9bb0b4"
+      }
+    }
   },
   {
     "name": "moonshinedev",
@@ -29,7 +74,22 @@
     "label": "Moonshine.dev",
     "description": "Moonshine's green on neutral grays, set in IBM Plex Sans.",
     "brand": "moonshinedev",
-    "logo": "/brand/moonshinedev/mark.svg"
+    "logo": "/brand/moonshinedev/mark.svg",
+    "primary": "#1f9d57",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#23272b",
+        "tertiary-bg": "#2b3034",
+        "border-color": "#41484e",
+        "secondary-color": "#9aa1a8"
+      }
+    }
   },
   {
     "name": "nomadservices",
@@ -37,7 +97,22 @@
     "label": "Nomad.Services",
     "description": "Nomad's violet on purple-black, set in IBM Plex Sans.",
     "brand": "nomadservices",
-    "logo": "/brand/nomadservices/mark.svg"
+    "logo": "/brand/nomadservices/mark.svg",
+    "primary": "#6c5ce7",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#0e0c1f",
+        "tertiary-bg": "#15142a",
+        "border-color": "#2a2a4a",
+        "secondary-color": "#a0a0b8"
+      }
+    }
   },
   {
     "name": "philotic",
@@ -45,7 +120,22 @@
     "label": "Philotic.cloud",
     "description": "Philotic's amber phi on warm stone, set in a monospace face.",
     "brand": "philotic",
-    "logo": "/brand/philotic/mark.svg"
+    "logo": "/brand/philotic/mark.svg",
+    "primary": "#ff9800",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#1c1917",
+        "tertiary-bg": "#262220",
+        "border-color": "#45403b",
+        "secondary-color": "#b3aca4"
+      }
+    }
   },
   {
     "name": "prominic",
@@ -53,7 +143,22 @@
     "label": "Prominic.NET",
     "description": "Maroon on OCR-A, Prominic.NET's own look.",
     "brand": "prominic",
-    "logo": "/brand/prominic/mark.svg"
+    "logo": "/brand/prominic/mark.svg",
+    "primary": "#67142c",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#212529",
+        "tertiary-bg": "#2b3035",
+        "border-color": "#495057",
+        "secondary-color": "#adb5bd"
+      }
+    }
   },
   {
     "name": "shi",
@@ -61,7 +166,22 @@
     "label": "Super.Human.Installer",
     "description": "The STARTcloud look with the Super.Human.Installer gem.",
     "brand": "startcloud",
-    "logo": "/brand/shi/mark.svg"
+    "logo": "/brand/shi/mark.svg",
+    "primary": "#0d6efd",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#1a1d20",
+        "tertiary-bg": "#2b3035",
+        "border-color": "#4d565e",
+        "secondary-color": "#adb5bd"
+      }
+    }
   },
   {
     "name": "shp",
@@ -69,7 +189,22 @@
     "label": "Super.Human.Portal",
     "description": "Super.Human.Portal's purple on slate, the portal's own dark ground.",
     "brand": "startcloud",
-    "logo": "/brand/shp/mark.svg"
+    "logo": "/brand/shp/mark.svg",
+    "primary": "#764ca3",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#020617",
+        "tertiary-bg": "#0f172a",
+        "border-color": "#1e293b",
+        "secondary-color": "#94a3b8"
+      }
+    }
   },
   {
     "name": "startcloud",
@@ -77,7 +212,22 @@
     "label": "STARTcloud",
     "description": "STARTcloud's blue on the chrome's own faces.",
     "brand": "startcloud",
-    "logo": "/brand/startcloud/mark.svg"
+    "logo": "/brand/startcloud/mark.svg",
+    "primary": "#0d6efd",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#1a1d20",
+        "tertiary-bg": "#2b3035",
+        "border-color": "#4d565e",
+        "secondary-color": "#adb5bd"
+      }
+    }
   },
   {
     "name": "switchboard",
@@ -85,7 +235,22 @@
     "label": "SwitchBoard Cloud",
     "description": "SwitchBoard's sky blue set in Poppins.",
     "brand": "switchboard",
-    "logo": "/brand/switchboard/mark.svg"
+    "logo": "/brand/switchboard/mark.svg",
+    "primary": "#24ade3",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#212529",
+        "tertiary-bg": "#2b3035",
+        "border-color": "#495057",
+        "secondary-color": "#adb5bd"
+      }
+    }
   },
   {
     "name": "vcc",
@@ -93,6 +258,21 @@
     "label": "VCC",
     "description": "VCC's blue and gray on the chrome's own faces.",
     "brand": "vcc",
-    "logo": "/brand/vcc/mark.svg"
+    "logo": "/brand/vcc/mark.svg",
+    "primary": "#003d75",
+    "surfaces": {
+      "light": {
+        "body-bg": "#ffffff",
+        "tertiary-bg": "#f8f9fa",
+        "border-color": "#dee2e6",
+        "secondary-color": "#495057"
+      },
+      "dark": {
+        "body-bg": "#212529",
+        "tertiary-bg": "#2b3035",
+        "border-color": "#495057",
+        "secondary-color": "#adb5bd"
+      }
+    }
   }
 ]

@@ -28,11 +28,9 @@ Then(
   }
 );
 
-Then('the device fact {string} is read-only', async ({ page }, member) => {
-  const field = page.locator(`[data-panel="device-facts"] #profile-preferences-${member}`);
-  await expect(field).toBeVisible();
-  await expect(field).toHaveAttribute('readonly', '');
-  await expect(field).not.toHaveValue('');
+Then('the page draws no panel {string}', async ({ page }, panel) => {
+  await expect(page.locator('[data-action="save-preferences"]')).toBeVisible();
+  await expect(page.locator(`[data-panel="${panel}"]`)).toHaveCount(0);
 });
 
 Then('the sessions list writes the time {string}', async ({ page }, text) => {

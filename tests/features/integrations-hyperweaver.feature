@@ -3,13 +3,14 @@ Feature: integrations hyperweaver
   Background:
     Given the host answers the integrations-hyperweaver fixture
 
-  Scenario: Hyperweaver: the Preferences section draws the card with two servers and the target under the Preferences card
+  Scenario: Hyperweaver: the Preferences section draws the card with two server rows, the default badged, and the deploy target tiles under the Preferences card
     When I open "/user/profile/preferences"
     Then the Hyperweaver card draws
-    And the Hyperweaver servers table lists 2 rows
+    And the Hyperweaver servers list 2 rows
     And I see "https://hw.example.com"
     And I see "https://lab.example.com:8443"
     And I see "Office"
+    And the Hyperweaver server "Office" is the default
     And the Hyperweaver deploy target reads "local"
     And the host was sent GET to "/api/user" 2 times
 
@@ -17,7 +18,7 @@ Feature: integrations hyperweaver
     Given the host answers the integrations-hyperweaver-unconnected fixture
     When I open "/user/profile/preferences"
     Then the Hyperweaver card draws
-    And the Hyperweaver servers table lists 0 rows
+    And the Hyperweaver servers list 0 rows
     When I type "https://new.example.com" into the Hyperweaver field "origin"
     And I type "Home" into the Hyperweaver field "label"
     And I press the Hyperweaver card's "server-add" action
@@ -88,7 +89,7 @@ Feature: integrations hyperweaver
     When I follow the link to "/user/integrations/hyperweaver"
     Then the path is "/user/integrations/hyperweaver"
     And the Hyperweaver card draws
-    And the Hyperweaver servers table lists 2 rows
+    And the Hyperweaver servers list 2 rows
     And the host was sent GET to "/api/user/integrations"
 
   Scenario: Hyperweaver: a person with no services sees no card and no Integrations row

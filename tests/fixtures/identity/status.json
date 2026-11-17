@@ -23,7 +23,7 @@
     "search",
     "inbox",
     "admin",
-    "notifications",
+    { "notifications": ["in_app", "email", "sms"] },
     "health",
     "events",
     "footer"

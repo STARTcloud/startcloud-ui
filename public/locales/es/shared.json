@@ -748,26 +748,43 @@
     "preferences": {
       "title": "Preferencias",
       "general": "General",
+      "sections": {
+        "appearance": {
+          "title": "Apariencia",
+          "lead": "Cómo ves cada host del entorno. El modo, el movimiento y el tema se guardan al elegirlos, los mismos valores que escriben los controles de la cabecera."
+        },
+        "languageTime": {
+          "title": "Idioma y hora",
+          "lead": "Lo que lees y cómo se te escriben las horas y las fechas, en los correos, en los toasts y en cada página. Se guarda con el botón de abajo."
+        },
+        "approval": {
+          "title": "Aprobación de inicio de sesión",
+          "lead": "Dónde te llega una solicitud de inicio de sesión cuando una aplicación pide iniciar tu sesión en otro dispositivo."
+        },
+        "deploy": {
+          "title": "Destino del Deploy"
+        }
+      },
       "language": "Idioma",
       "languageHint": "Se guarda al cambiarlo, el mismo valor que escribe el globo de la cabecera.",
       "mode": {
         "label": "Modo",
         "light": "Claro",
         "dark": "Oscuro",
-        "auto": "SO"
+        "auto": "Sistema"
       },
       "motion": {
         "label": "Movimiento",
         "auto": "Seguir este dispositivo",
         "reduce": "Reducido"
       },
-      "modeHint": "Se guarda al cambiarlo, el mismo valor que escribe el botón de modo.",
-      "motionHint": "Reducido desactiva las animaciones y transiciones de todos los temas para ti, en todos los hosts, y te sigue al iniciar sesión.",
+      "modeHint": "Sistema sigue tu sistema operativo. Se guarda al elegirlo, el mismo valor que escribe el botón de modo de la cabecera.",
+      "motionHint": "Pasa el cursor sobre un mosaico para verlo. Reducido desactiva para ti las animaciones y transiciones de todos los temas, en todos los hosts.",
       "theme": {
         "label": "Tema",
         "follow": "Seguir este sitio"
       },
-      "themeHint": "Se guarda al cambiarlo y se aplica al momento; esta página es el único lugar donde se elige el tema.",
+      "themeHint": "Cada tarjeta muestra los colores propios del paquete. La página se repinta al elegir uno.",
       "timezone": "Zona horaria",
       "timezoneHint": "La zona detectada se preselecciona mientras no haya ninguna establecida.",
       "region": "Región",
@@ -779,13 +796,19 @@
         "uk": "Reino Unido"
       },
       "channel": {
-        "label": "Canal de aprobación de inicio de sesión",
-        "PUSH": "Notificación en la aplicación",
-        "EMAIL": "Correo electrónico",
-        "SMS": "SMS"
+        "label": "Canales",
+        "in_app": "En la aplicación",
+        "push": "Push",
+        "email": "Correo electrónico",
+        "sms": "SMS"
       },
-      "channelHint": "Cómo se te avisa cuando una aplicación pide iniciar tu sesión en otro dispositivo.",
-      "channelSmsHint": "El SMS necesita un número de móvil verificado.",
+      "channelOff": {
+        "in_app": "Este sitio no puede entregar avisos en la aplicación.",
+        "push": "Push queda atenuado hasta que se conecte un servicio push.",
+        "email": "Este sitio no envía correo.",
+        "sms": "El SMS necesita un número de móvil verificado."
+      },
+      "channelHint": "Una solicitud de inicio de sesión se envía por cada canal que elijas. En la aplicación es la campana y el toast de este sitio.",
       "pin": "PIN de aprobación de inicio de sesión",
       "pinHint": "PIN opcional que una aplicación debe presentar antes de que una solicitud de inicio de sesión te llegue.",
       "pinPlaceholder": "De 4 a 64 caracteres",
@@ -797,24 +820,28 @@
       "saved": "Preferencias guardadas.",
       "signInNotices": {
         "title": "Avisos de inicio de sesión",
+        "lead": "Un aviso para ti cuando alguien inicia sesión en esta cuenta, o aprueba un código de dispositivo o una solicitud de inicio de sesión de una aplicación.",
         "followingDefault": "Siguiendo el valor predeterminado del sitio",
-        "useDefault": "Usar el valor predeterminado del sitio",
-        "useDefaultTitle": "¿Usar el valor predeterminado del sitio?",
-        "useDefaultBody": "Se borra la elección hecha aquí y los avisos de inicio de sesión siguen el valor predeterminado del sitio.",
         "when": {
           "label": "Cuándo se envía un aviso",
           "off": "Nunca",
           "new": "Solo desde un dispositivo o lugar nuevo",
-          "all": "Siempre"
+          "all": "Siempre",
+          "default": "Predeterminado del sitio"
         },
-        "whenHint": "Se envía un aviso cuando se completa un inicio de sesión en esta cuenta y cuando se aprueba un código de dispositivo o una solicitud de inicio de sesión de una aplicación.",
+        "whenHint": {
+          "off": "Sin avisos. Un último correo te avisa de que están desactivados.",
+          "new": "Un inicio de sesión desde un dispositivo que no has usado antes, un código de dispositivo o una solicitud de una aplicación.",
+          "all": "Cada inicio de sesión completado, de un dispositivo conocido o no.",
+          "default": "El sitio decide cuándo y dónde se te avisa. Elige otro mosaico para decidir tú."
+        },
         "channels": {
-          "label": "Dónde se envía un aviso",
+          "label": "Enviado a",
           "email": "Correo electrónico",
-          "inbox": "Bandeja de entrada",
+          "in_app": "En la aplicación",
           "push": "Notificación push"
         },
-        "channelsHint": "Desactivar los avisos, o quitar el correo, envía un correo a la cuenta."
+        "channelsHint": "Quitar el correo envía un último correo a la cuenta."
       },
       "locale": "Formato de fecha y número",
       "localeHint": "Cómo se escriben las fechas y los números, el orden de la fecha entre ellos.",
@@ -823,16 +850,7 @@
         "h12": "12 horas (1:00 p. m.)",
         "h23": "24 horas (13:00)"
       },
-      "hourCycleHint": "El reloj en que se escriben las horas.",
-      "deviceMode": {
-        "label": "Modo del dispositivo"
-      },
-      "deviceMotion": {
-        "label": "Movimiento del dispositivo",
-        "auto": "Movimiento completo",
-        "reduce": "Movimiento reducido"
-      },
-      "notReported": "No indicado"
+      "hourCycleHint": "El reloj en que se escriben las horas."
     },
     "favorites": {
       "title": "Favoritos",
@@ -4471,6 +4489,7 @@
       "label": "Etiqueta",
       "default": "Predeterminado",
       "makeDefault": "Hacer de {{origin}} el servidor predeterminado",
+      "setDefault": "Hacer predeterminado",
       "remove": "Quitar",
       "addServer": "Agregar servidor",
       "none": "Aún no hay servidores. Agrega el servidor Hyperweaver que debe recibir tus Deploy.",

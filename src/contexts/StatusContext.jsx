@@ -34,9 +34,10 @@ const DEFAULT_THEME = 'startcloud';
 /**
  * The build's theme manifest, `public/themes/themes.json`, written by the
  * theme generator from every theme's YAML: one row per theme, `name`,
- * `css`, `label`, `description`, `brand` and `logo`; an empty list when
- * the file is missing or malformed, so a host without themes boots as it
- * did.
+ * `css`, `label`, `description`, `brand`, `logo`, `primary` and
+ * `surfaces`, the `light` and `dark` colours the Theme cards paint their
+ * previews with; an empty list when the file is missing or malformed, so
+ * a host without themes boots as it did.
  *
  * @returns {Promise<Array<Object>>} The rows
  */
@@ -119,6 +120,8 @@ export const statusShape = PropTypes.shape({
         description: PropTypes.string,
         brand: PropTypes.string,
         logo: PropTypes.string,
+        primary: PropTypes.string,
+        surfaces: PropTypes.objectOf(PropTypes.objectOf(PropTypes.string)),
       })
     ),
   }),

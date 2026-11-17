@@ -10,7 +10,11 @@
       "properties": {
         "timezone": { "$ref": "#/$defs/timezone" },
         "region": { "$ref": "#/$defs/region" },
-        "ciba_channel": { "type": "string", "enum": ["PUSH", "EMAIL", "SMS"] },
+        "ciba_channels": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["in_app", "push", "email", "sms"] }
+        },
         "ciba_user_code": { "type": "string", "minLength": 4, "maxLength": 64 },
         "sign_in_notices": {
           "type": "object",
@@ -18,7 +22,7 @@
             "when": { "type": "string", "enum": ["off", "new", "all"] },
             "channels": {
               "type": "array",
-              "items": { "type": "string", "enum": ["email", "inbox", "push"] }
+              "items": { "type": "string", "enum": ["email", "in_app", "push"] }
             }
           }
         }

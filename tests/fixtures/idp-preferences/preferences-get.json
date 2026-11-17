@@ -9,6 +9,6 @@
   "region": null,
   "device_mode": null,
   "device_motion": null,
-  "ciba_channel": "PUSH",
+  "ciba_channels": ["in_app"],
   "ciba_user_code_set": false
 }

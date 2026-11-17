@@ -2417,9 +2417,9 @@ top-level navigation.
     "motion": null,
     "timezone": "America/Chicago",
     "region": null,
-    "ciba_channel": "PUSH",
+    "ciba_channels": ["in_app"],
     "ciba_user_code_set": false,
-    "sign_in_notices": { "when": "new", "channels": ["email", "inbox"], "default": true }
+    "sign_in_notices": { "when": "new", "channels": ["email", "in_app"], "default": true }
   },
   "favorite_apps": [
     {
@@ -2504,9 +2504,10 @@ and the acceptance of an invitation into one answer `403` `suspended`,
 and a suspended organization is absent from discovery.
 
 `preferences.sign_in_notices` is `{ when, channels, default? }`: `when`
-one of `off`, `new` and `all`, `channels` any of `email`, `inbox` and
-`push`, each once, `default: true` present only while the person follows
-the site's default and never sent on a write. A write through
+one of `off`, `new` and `all`, `channels` any of `email`, `in_app` and
+`push`, each once, the channel words of the preferences contract,
+`default: true` present only while the person follows the site's default
+and never sent on a write. A write through
 `PATCH /api/user/preferences` or `PATCH /api/admin/users/{id}/preferences`
 sends only the members that changed, a member left out keeping its
 value, and `"sign_in_notices": null` returns the person to the site's
@@ -2516,7 +2517,7 @@ default.
 | ------ | --------------------------- | ---------- | ---------------------------------------- | ----------------------------------------------- |
 | 422    | `/sign_in_notices`          | `type`     | `{ "type": "object" }`                   | not an object or null                           |
 | 422    | `/sign_in_notices/when`     | `enum`     | `{ "enum": ["off", "new", "all"] }`      | another value                                   |
-| 422    | `/sign_in_notices/channels` | `enum`     | `{ "enum": ["email", "inbox", "push"] }` | an unknown or repeated channel, or not an array |
+| 422    | `/sign_in_notices/channels` | `enum`     | `{ "enum": ["email", "in_app", "push"] }` | an unknown or repeated channel, or not an array |
 | 422    | `/sign_in_notices/channels` | `minItems` | `{ "minItems": 1 }`                      | no channel while notices are sent               |
 
 An inbox notification of a notice has type SECURITY, the rendered
@@ -2602,7 +2603,7 @@ replays inside its window and a guessing run meets `429` with
 | backup codes               | `POST /api/user/backup-codes`, stepped up, answers `{ codes }`, once                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | sessions                   | `DELETE /api/user/sessions/{id}`, `DELETE /api/user/sessions`, stepped up; the second answers `{ "next": "/login" }` when it ended the caller's own session too, and the page says so before asking                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | favorites                  | `PUT /api/user/favorites` with the whole ordered list as `[{ client_id, custom_label, order }]`; the server answers the enriched entries from the client's own registration, so a `home_url` or `icon_url` the page sends is ignored                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| preferences                | `PATCH /api/user/preferences` with `language`, `mode`, `theme`, `motion`, `timezone`, `locale`, `hour_cycle`, `region`, `device_mode`, `device_motion`, `ciba_channel`, `ciba_user_code` and `sign_in_notices`, the preferences contract's write path naming each; `mode` `light`, `dark` or `auto`, `null` clearing it so the person follows the operating system's; `theme` a bare theme name the site offers in `brand.themes` or `null` to follow the site's own, `422` `enum` at `/theme` for any other; `region` the person's legal region, a two-letter ISO 3166-1 code or one of `EU`, `EEA`, `UK`, `null` clearing it, the value the terms page's region button writes and the terms and policy copies resolve to first (`422` `enum` on `/region` otherwise); `ciba_user_code` a string that sets the approval PIN and `null` that clears it, never read back, `ciba_user_code_set` being the read's word for it; its `400 { error }` becoming `422` with pointers                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| preferences                | `PATCH /api/user/preferences` with `language`, `mode`, `theme`, `motion`, `timezone`, `locale`, `hour_cycle`, `region`, `device_mode`, `device_motion`, `ciba_channels`, `ciba_user_code` and `sign_in_notices`, the preferences contract's write path naming each; `mode` `light`, `dark` or `auto`, `null` clearing it so the person follows the operating system's; `theme` a bare theme name the site offers in `brand.themes` or `null` to follow the site's own, `422` `enum` at `/theme` for any other; `region` the person's legal region, a two-letter ISO 3166-1 code or one of `EU`, `EEA`, `UK`, `null` clearing it, the value the terms page's region button writes and the terms and policy copies resolve to first (`422` `enum` on `/region` otherwise); `ciba_user_code` a string that sets the approval PIN and `null` that clears it, never read back, `ciba_user_code_set` being the read's word for it; its `400 { error }` becoming `422` with pointers                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | delete the account         | `POST /api/user/deletion` `{ email_confirmation }`, stepped up (`422` on `/email_confirmation`, `409` `sole_owner` with `teams: [{ uuid, name }]`, the teams only this account owns); the server invalidates every session of the account before answering `{ next: "/login" }`, and the page drops its cache and navigates there                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | organizations              | `POST /api/user/organizations` `{ name }` (`422` `required` on `/name`); per organization `PATCH …/{uuid}` (name, the profile fields, `access_mode` as `invite`, `request` or `private`, `default_role` as `MEMBER`, `ADMIN` or `GUEST`, `422` `enum` on either), `POST …/{uuid}/convert` `{ name }`, `POST …/{uuid}/invite-code` (regenerate), `POST …/{uuid}/invites` `{ email, role }` (`role` one of `ADMIN`, `MEMBER` and `GUEST`, the `invitation` form of `/api/rules`, an owner or an admin inviting a guest, an owner alone an admin), `DELETE …/{uuid}/invites/{id}`, `POST …/{uuid}/invites/{id}/resend` (no body, `can_manage` alone, answering `204` after the invitation mail is sent again, `429` `throttled` with `wait_seconds` on a repeat inside the mail's own sixty-second resend window, `404` `not_found` for an invitation that is accepted or not the organization's), `PUT …/{uuid}/members/{user_id}/role` `{ role }` (`409` `last_owner` when it would leave the team without one), `DELETE …/{uuid}/members/{user_id}`, `POST …/{uuid}/leave`, `DELETE …/{uuid}`, `PUT /api/user/primary-organization` `{ uuid }`; a refusal from the service (`Not a member`, `Insufficient organization role`, `Only the owner can invite admins`, managed rows) is `403` with `code`; no join-by-code route, because a code a person types is a secret that leaks and a door the organization never chose |
 | join requests              | `POST /api/organization/{org}/requests` `{ message }` on a `request` organization, answering `201` with the request and notifying the organization's admins through the inbox (`409` `already_member`, `409` `already_requested`, `403` `not_open` on an `invite` or `private` one); `POST …/requests/{id}/approve` `{ assigned_role }` and `POST …/requests/{id}/deny`, `can_manage` alone, each answering `204`, the approve making the membership at the assigned role and the deny recording nothing but the answer; BoxVault's routes on the same paths, sent through the adapter's `join`, `approveRequest` and `denyRequest`, so the shared DiscoveryPage and the console's Join requests tab need no issuer branch; an `invite` organization is joined from the invitation mail's link alone, `/org/invite/:token` above                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -2703,25 +2704,34 @@ replays inside its window and a guessing run meets `429` with
     exactly what is destroyed. Every action the server steps up opens the
     `StepUpDialog` (password, or an authenticator or backup code), which
     arms the window and retries the same call.
-  - **Preferences** at `/user/profile/preferences`: language and mode as selects that
-    write through on change, the same values the chrome's buttons write,
-    through the same shared `useTheme` and `i18n` the chrome reads, since
-    one build has one theme hook and a page reaches it as the header
-    does, never through a router prop, so a change here is a change
-    there and nothing is lost by leaving;
-    the mode select offers Light, Dark and OS and no second "not chosen"
-    value, and a Theme select while the site offers themes, "Follow this
-    site" or one of them; time zone (the `Intl` zone list, the
-    detected zone preselected when unset), locale (the chosen, the
-    detected and the UI's languages, the detected one preselected when
-    unset) and clock (12-hour or 24-hour, the detected one preselected
-    when unset), the device's mode and motion as read-only facts while
-    the record carries `device_mode` and `device_motion`, sign-in
-    approval channel (PUSH, EMAIL, SMS while a verified number exists),
-    the approval PIN with a status line, "A PIN is set · Clear" or "No
-    PIN · Set", and one Save for the zone, the locale, the clock, the
-    region, the channel and the PIN, the preferences contract's first-load
-    save filling the empty members before the person ever opens the page.
+  - **Preferences** at `/user/profile/preferences`: one General card
+    drawn as sections, a heading and a lead at the left and the controls
+    at the right. Appearance: the mode as three tiles, System, Light and
+    Dark, and the motion as two, Follow this device and Reduced, each a
+    label over a native radio that writes through on a pick, the same
+    values the chrome's buttons write, through the same shared `useTheme`
+    and `useMotion` the chrome reads, since one build has one theme hook
+    and a page reaches it as the header does, never through a router
+    prop, so a change here is a change there and nothing is lost by
+    leaving; and while the site offers themes a preview card per theme
+    beside Follow this site, painted from the manifest row's colours,
+    written through on a pick the same way. Language and time: the
+    language select writing through the shared `i18n`, time zone (the
+    `Intl` zone list, the detected zone preselected when unset), region,
+    locale (the chosen, the detected and the UI's languages, the detected
+    one preselected when unset) and the clock as two tiles, 12-hour or
+    24-hour, the detected one preselected when unset. Sign-in approval:
+    the four channels In-app, Push, Email and SMS as tick tiles saved as
+    `ciba_channels`, a channel the status does not list under
+    `notifications` greyed, SMS greyed too while no verified number
+    exists, and the approval PIN with a status line, "A PIN is set ·
+    Clear" or "No PIN · Set". Sign-in notices, the section of group 4's
+    `sign_in_notices` below. Deploy target while the host carries the
+    row. One Save at the card's foot for the zone, the locale, the clock,
+    the region, the channels, the notices and the PIN, sending nothing
+    while nothing differs, the preferences contract's first-load save
+    filling the empty members before the person ever opens the page; the
+    device's mode and motion are never drawn.
   - **Favorites** at `/user/profile/favorites`: the ordered list with drag handles and Remove, a
     select column whose header cell is a real checkbox, the select-all for
     the list, and while rows are picked the section's action pane reads
@@ -2910,9 +2920,9 @@ page's one scroll region rather than being clipped by either.
 `none`, `generate`, `download`, `regenerate`; `delete.*` with `title`,
 `confirmEmail`, `understand`, `destroys`, `soleOwner`, `button`),
 `stepUp.*` (`title`, `body`, `password`, `code`, `usePassword`,
-`useCode`, `confirm`), `preferences.*` (`language`, `mode`, `mode.light`,
-`mode.dark`, `mode.auto`, `theme`, `theme.follow`, `timezone`, `timezoneHint`, `channel`,
-`channel.*`, `pin`, `pinSet`, `pinNone`, `set`, `clear`, `save`),
+`useCode`, `confirm`), `preferences.*` (`sections.*`, `language`, `mode`, `mode.light`,
+`mode.dark`, `mode.auto`, `motion.*`, `theme`, `theme.follow`, `timezone`, `timezoneHint`, `locale`, `hourCycle.*`, `channel`,
+`channel.in_app`, `channel.push`, `channel.email`, `channel.sms`, `channelOff.*`, `pin`, `pinSet`, `pinNone`, `set`, `clear`, `save`, `signInNotices.*`),
 `favorites.*` (`title`, `available`, `add`, `remove`), `sessions.*`
 (`title`, `signOut`, `revokeAll`, `revokeAllBody`, `authorized`,
 `lastActive`); `organizations.*` gains `create`, `name`, `find`,
@@ -3419,9 +3429,10 @@ nothing else, so a fresh install sends mail with no configuration and
     mobile as one plain field through the phone `PUT`, the email through
     a dialog over the email `PUT`), a Preferences card drawing the shared
     preferences section with the record's language, mode, theme and motion
-    as fields saved with the rest over the preferences `PATCH`, never the viewer's
-    own, with the sign-in notices card over `preferences.sign_in_notices`
-    under the same rules as the person's own, a Two-factor card listing
+    as tiles and a select saved with the rest over the preferences `PATCH`,
+    never the viewer's own, with the sign-in notices section over
+    `preferences.sign_in_notices` under the same rules as the person's
+    own, a Two-factor card listing
     the record's methods as the Security section lists them, Remove on
     the SMS and APP rows alone, the prompt to add an authenticator app or
     a passkey while `profile.tfa.sms_only` is true, and a confirm before
@@ -3438,7 +3449,7 @@ nothing else, so a fresh install sends mail with no configuration and
     through `PATCH /api/admin/users/{id}`, its address, email and phone
     through `PUT …/address`, `PUT …/email` and `PUT …/phone`, its
     preferences (language, mode, theme, motion, timezone, region,
-    ciba_channel) through `PATCH …/preferences` under the preferences
+    ciba_channels, sign_in_notices) through `PATCH …/preferences` under the preferences
     form's rules, reads its second-factor methods through
     `GET …/tfa/methods` (the rows `GET /api/user/tfa/methods` answers,
     passkeys included, a read with no step-up) and removes an SMS or APP

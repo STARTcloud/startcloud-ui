@@ -748,26 +748,43 @@
     "preferences": {
       "title": "Preferences",
       "general": "General",
+      "sections": {
+        "appearance": {
+          "title": "Appearance",
+          "lead": "How every host of the estate looks for you. Mode, motion and theme are saved as you pick them, the same values the header's controls write."
+        },
+        "languageTime": {
+          "title": "Language and time",
+          "lead": "What you read and how times and dates are written to you, in mails, on toasts and on every page. Saved with the button below."
+        },
+        "approval": {
+          "title": "Sign-in approval",
+          "lead": "Where a sign-in request reaches you when an application asks to sign you in on another device."
+        },
+        "deploy": {
+          "title": "Deploy target"
+        }
+      },
       "language": "Language",
       "languageHint": "Saved as you change it, the same value the globe in the header writes.",
       "mode": {
         "label": "Mode",
         "light": "Light",
         "dark": "Dark",
-        "auto": "OS"
+        "auto": "System"
       },
       "motion": {
         "label": "Motion",
         "auto": "Follow this device",
         "reduce": "Reduced"
       },
-      "modeHint": "Saved as you change it, the same value the mode button writes.",
-      "motionHint": "Reduced turns off the animations and transitions of every theme for you, on every host, and follows you when you sign in.",
+      "modeHint": "System follows your operating system. Saved as you pick it, the same value the header's mode button writes.",
+      "motionHint": "Hover a tile to see it. Reduced turns off every theme's animations and transitions for you, on every host.",
       "theme": {
         "label": "Theme",
         "follow": "Follow this site"
       },
-      "themeHint": "Saved as you change it and painted at once; this page is the one place the theme is chosen.",
+      "themeHint": "Each card is the pack's own colours. The page repaints when you pick one.",
       "timezone": "Time zone",
       "timezoneHint": "The detected zone is preselected while none is set.",
       "region": "Region",
@@ -779,13 +796,19 @@
         "uk": "United Kingdom"
       },
       "channel": {
-        "label": "Sign-in approval channel",
-        "PUSH": "In-app notification",
-        "EMAIL": "Email",
-        "SMS": "SMS"
+        "label": "Channels",
+        "in_app": "In-app",
+        "push": "Push",
+        "email": "Email",
+        "sms": "SMS"
       },
-      "channelHint": "How you are notified when an application asks to sign you in on another device.",
-      "channelSmsHint": "SMS needs a verified mobile number.",
+      "channelOff": {
+        "in_app": "This site cannot deliver in-app notices.",
+        "push": "Push is greyed until a push service is connected.",
+        "email": "This site does not send mail.",
+        "sms": "SMS needs a verified mobile number."
+      },
+      "channelHint": "A sign-in request is sent on every channel you pick. In-app is the bell and the toast of this site.",
       "pin": "Sign-in approval PIN",
       "pinHint": "Optional PIN an application must present before a sign-in request reaches you.",
       "pinPlaceholder": "4–64 characters",
@@ -797,24 +820,28 @@
       "saved": "Preferences saved.",
       "signInNotices": {
         "title": "Sign-in notices",
+        "lead": "A note to you when someone signs in to this account, or approves a device code or an application's sign-in request.",
         "followingDefault": "Following the site's default",
-        "useDefault": "Use the site's default",
-        "useDefaultTitle": "Use the site's default?",
-        "useDefaultBody": "The choice made here is cleared and sign-in notices follow the site's default.",
         "when": {
           "label": "When a notice is sent",
           "off": "Never",
           "new": "Only from a new device or place",
-          "all": "Every time"
+          "all": "Every time",
+          "default": "Site default"
         },
-        "whenHint": "A notice is sent when a sign-in to this account completes and when a device code or an application's sign-in request is approved.",
+        "whenHint": {
+          "off": "No notices. One last email tells you they are off.",
+          "new": "A sign-in from a device you have not used before, a device code, or an application's request.",
+          "all": "Each completed sign-in, known device or not.",
+          "default": "The site decides when and where you are told. Pick another tile to choose yourself."
+        },
         "channels": {
-          "label": "Where a notice is sent",
+          "label": "Sent to",
           "email": "Email",
-          "inbox": "Inbox",
+          "in_app": "In-app",
           "push": "Push notification"
         },
-        "channelsHint": "Turning notices off, or taking email out, sends one email to the account."
+        "channelsHint": "Taking email out sends one last email to the account."
       },
       "locale": "Date and number format",
       "localeHint": "How dates and numbers are written, the order of the date among them.",
@@ -823,16 +850,7 @@
         "h12": "12-hour (1:00 PM)",
         "h23": "24-hour (13:00)"
       },
-      "hourCycleHint": "The clock times are written on.",
-      "deviceMode": {
-        "label": "Device mode"
-      },
-      "deviceMotion": {
-        "label": "Device motion",
-        "auto": "Full motion",
-        "reduce": "Reduced motion"
-      },
-      "notReported": "Not reported"
+      "hourCycleHint": "The clock times are written on."
     },
     "favorites": {
       "title": "Favorites",
@@ -4471,6 +4489,7 @@
       "label": "Label",
       "default": "Default",
       "makeDefault": "Make {{origin}} the default server",
+      "setDefault": "Make default",
       "remove": "Remove",
       "addServer": "Add server",
       "none": "No servers yet. Add the Hyperweaver server that should receive your deploys.",

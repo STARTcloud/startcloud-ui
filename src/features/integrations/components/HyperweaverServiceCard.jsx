@@ -7,7 +7,7 @@ import Field from '../../../components/common/Field';
 import FormErrorSummary from '../../../components/common/FormErrorSummary';
 import SectionCard from '../../../components/common/SectionCard';
 import { errorKeys } from '../../../components/common/StepUpDialog';
-import SubTable from '../../../components/common/SubTable';
+import Tiles from '../../../components/common/Tiles';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
@@ -19,8 +19,6 @@ export const SERVICE = 'hyperweaver';
 const FORM_KEY = 'integration-hyperweaver';
 const PREFS_KEY = 'table_prefs_integrations_hyperweaver';
 const LOCAL = 'local';
-const NO_SORT = [];
-const NO_HIDDEN = new Set();
 const EMPTY_TYPED = { origin: '', label: '' };
 const LABELS = {
   servers: 'integrations.hyperweaver.servers',
@@ -89,74 +87,118 @@ const withDefault = servers =>
     ? servers
     : servers.map((row, index) => ({ ...row, default: index === 0 }));
 
-const DefaultRadio = ({ row, ctx }) => (
-  <input
-    type="radio"
-    className="form-check-input"
-    name="hyperweaver-default"
-    checked={row.default}
-    disabled={ctx.readOnly}
-    onChange={() => ctx.onDefault(row.origin)}
-    aria-label={ctx.t('integrations.hyperweaver.makeDefault', { origin: row.origin })}
-    data-action="server-default"
-  />
-);
-
-DefaultRadio.propTypes = {
-  row: PropTypes.shape({ origin: PropTypes.string.isRequired, default: PropTypes.bool.isRequired })
-    .isRequired,
-  ctx: PropTypes.shape({
-    t: PropTypes.func.isRequired,
-    readOnly: PropTypes.bool.isRequired,
-    onDefault: PropTypes.func.isRequired,
-  }).isRequired,
-};
-
-const COLUMNS = [
-  {
-    key: 'origin',
-    kind: 'text',
-    labelKey: 'integrations.hyperweaver.origin',
-    value: row => row.origin,
-  },
-  {
-    key: 'label',
-    kind: 'text',
-    labelKey: 'integrations.hyperweaver.label',
-    value: row => row.label,
-  },
-  {
-    key: 'default',
-    kind: 'word',
-    labelKey: 'integrations.hyperweaver.default',
-    value: row => (row.default ? 'default' : ''),
-    render: (row, ctx) => <DefaultRadio row={row} ctx={ctx} />,
-  },
-];
-
-const ServerActions = ({ row, readOnly, busy, onRemove }) => {
+const ServerRow = ({ row, readOnly, busy, onDefault, onRemove }) => {
   const { t } = useTranslation();
-  if (readOnly) {
-    return null;
-  }
   return (
-    <button
-      type="button"
-      className="btn btn-sm btn-outline-danger"
-      disabled={busy}
-      onClick={() => onRemove(row.origin)}
-      data-action="server-remove"
-    >
-      {t('integrations.hyperweaver.remove')}
-    </button>
+    <div className="pref-row" data-row="server">
+      <div className="pref-row-text">
+        <span className="pref-row-name">{row.label || row.origin}</span>
+        {row.label ? <span className="pref-row-sub">{row.origin}</span> : null}
+      </div>
+      {row.default ? (
+        <span className="badge bg-primary" data-badge="server-default">
+          {t('integrations.hyperweaver.default')}
+        </span>
+      ) : null}
+      {readOnly || row.default ? null : (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          disabled={busy}
+          onClick={() => onDefault(row.origin)}
+          aria-label={t('integrations.hyperweaver.makeDefault', { origin: row.origin })}
+          data-action="server-default"
+        >
+          {t('integrations.hyperweaver.setDefault')}
+        </button>
+      )}
+      {readOnly ? null : (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-danger"
+          disabled={busy}
+          onClick={() => onRemove(row.origin)}
+          data-action="server-remove"
+        >
+          {t('integrations.hyperweaver.remove')}
+        </button>
+      )}
+    </div>
   );
 };
 
-ServerActions.propTypes = {
-  row: PropTypes.shape({ origin: PropTypes.string.isRequired }).isRequired,
+ServerRow.propTypes = {
+  row: PropTypes.shape({
+    origin: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    default: PropTypes.bool.isRequired,
+  }).isRequired,
   readOnly: PropTypes.bool.isRequired,
   busy: PropTypes.bool.isRequired,
+  onDefault: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
+};
+
+const ServerRows = ({ servers, readOnly, busy, onDefault, onRemove }) => {
+  const { t } = useTranslation();
+  if (servers.length === 0) {
+    return <div className="pref-empty">{t('integrations.hyperweaver.none')}</div>;
+  }
+  return (
+    <div className="pref-rows" data-panel="hyperweaver-servers">
+      {servers.map(row => (
+        <ServerRow
+          key={row.origin}
+          row={row}
+          readOnly={readOnly}
+          busy={busy}
+          onDefault={onDefault}
+          onRemove={onRemove}
+        />
+      ))}
+    </div>
+  );
+};
+
+ServerRows.propTypes = {
+  servers: PropTypes.arrayOf(PropTypes.object).isRequired,
+  readOnly: PropTypes.bool.isRequired,
+  busy: PropTypes.bool.isRequired,
+  onDefault: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
+};
+
+const DeployTargetTiles = ({ rules, servers, target, readOnly, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <Tiles
+      id={rules.idFor('deploy_target')}
+      label={t('integrations.hyperweaver.deployTarget')}
+      hint={t('integrations.hyperweaver.deployTargetHint')}
+      error={rules.errors.deploy_target || ''}
+      dim={readOnly}
+      className="pref-tiles-words"
+      options={[
+        { value: LOCAL, label: t('integrations.hyperweaver.local') },
+        ...servers.map(row => ({
+          value: row.origin,
+          label: row.label || row.origin,
+          sub: row.label ? row.origin : '',
+        })),
+      ]}
+      value={target}
+      onChange={onChange}
+      onBlur={() => rules.onBlur('deploy_target')}
+    />
+  );
+};
+
+DeployTargetTiles.propTypes = {
+  rules: PropTypes.object.isRequired,
+  servers: PropTypes.arrayOf(PropTypes.object).isRequired,
+  target: PropTypes.string.isRequired,
+  readOnly: PropTypes.bool.isRequired,
+  onChange: PropTypes.func.isRequired,
 };
 
 const TextField = ({ id, label, value, error, onChange, onBlur, field }) => (
@@ -349,11 +391,11 @@ DisconnectButton.propTypes = {
  * The Hyperweaver connected service of the identity contract, one
  * `SectionCard` titled Hyperweaver drawn from the `hyperweaver` row of
  * the person's services: the status badge and the row's `error_message`
- * as the Integrations page draws them, the servers in the one `SubTable`
- * (origin, label, the default picked by radio, Remove on each row), Add
- * server with an origin and a label, the deploy target as a select of
- * `local` and the listed origins, Save preferences at the form's foot and
- * Disconnect. Every write is one
+ * as the Integrations page draws them, the servers as rows (the label
+ * over the origin, the Default badge on the default, Make default on the
+ * others, Remove on each), Add server with an origin and a label, the
+ * deploy target as tiles, This computer and one per server, Save
+ * preferences at the form's foot and Disconnect. Every write is one
  * request in the issuer's own shape: Add server sends
  * `POST /api/user/integrations/hyperweaver/connect` `{ origin, label }`
  * while the person is not yet connected (no `hyperweaver` row) and
@@ -378,13 +420,11 @@ const HyperweaverServiceCard = ({
   readOnly = false,
   className = 'mb-3',
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const folds = useFolds(PREFS_KEY);
   const [confirming, setConfirming] = useState(false);
   const form = useHyperweaverForm({ integrations, service, onSaved });
   const { draft, rules, busy } = form;
-  const ctx = { t, language: i18n.language, readOnly, onDefault: form.setDefault };
-  const targetName = 'deploy_target';
   const actions =
     service && !readOnly ? (
       <DisconnectButton busy={busy} onClick={() => setConfirming(true)} />
@@ -408,17 +448,12 @@ const HyperweaverServiceCard = ({
         ) : null}
         <form onSubmit={form.submit} noValidate>
           <FormErrorSummary errors={rules.summary} />
-          <SubTable
-            columns={COLUMNS}
-            rows={draft.servers}
-            rowKey={row => row.origin}
-            RowActions={ServerActions}
-            actionsProps={{ readOnly, busy, onRemove: form.removeServer }}
-            sort={NO_SORT}
-            onSort={() => {}}
-            hiddenColumns={NO_HIDDEN}
-            ctx={ctx}
-            emptyText={t('integrations.hyperweaver.none')}
+          <ServerRows
+            servers={draft.servers}
+            readOnly={readOnly}
+            busy={busy}
+            onDefault={form.setDefault}
+            onRemove={form.removeServer}
           />
           {rules.errors.servers ? (
             <p className="text-danger small mt-2" role="alert">
@@ -426,35 +461,13 @@ const HyperweaverServiceCard = ({
             </p>
           ) : null}
           {readOnly ? null : <AddServerRow form={form} />}
-          <div className="row">
-            <div className="col-md-5">
-              <Field
-                id={rules.idFor(targetName)}
-                label={t('integrations.hyperweaver.deployTarget')}
-                hint={t('integrations.hyperweaver.deployTargetHint')}
-                error={rules.errors[targetName] || ''}
-              >
-                {aria => (
-                  <select
-                    {...aria}
-                    className="form-select"
-                    value={draft.deploy_target}
-                    disabled={readOnly}
-                    onChange={event => form.setTarget(event.target.value)}
-                    onBlur={() => rules.onBlur(targetName)}
-                    data-field="deploy-target"
-                  >
-                    <option value={LOCAL}>{t('integrations.hyperweaver.local')}</option>
-                    {draft.servers.map(row => (
-                      <option key={row.origin} value={row.origin}>
-                        {row.label ? `${row.label} · ${row.origin}` : row.origin}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-            </div>
-          </div>
+          <DeployTargetTiles
+            rules={rules}
+            servers={draft.servers}
+            target={draft.deploy_target}
+            readOnly={readOnly}
+            onChange={form.setTarget}
+          />
           {readOnly || !service ? null : (
             <button type="submit" className="btn btn-primary" disabled={busy} data-action="save">
               {t('profile.preferences.save')}

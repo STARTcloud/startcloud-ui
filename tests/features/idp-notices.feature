@@ -4,137 +4,140 @@ Feature: identity contract, sign-in notices, the email kinds, the outbound proxy
     Given the host answers the identity fixture
     And the host answers the idp-notices fixture
 
-  Scenario: sign-in notices: the preferences page reads `preferences.sign_in_notices` from GET /api/user and offers the three choices of `when`, the three channels as switches and the state "following the site's default"
+  Scenario: sign-in notices: the preferences page reads `preferences.sign_in_notices` from GET /api/user and draws it as a section of the General card, When as four tiles with Site default picked, Sent to as the tick tiles Email, In-app and Push dimmed under the site's choice, and the badge "following the site's default"
     When I open "/user/profile/preferences"
     Then the host was sent GET to "/api/user"
-    And the sign-in notices card draws
-    And the sign-in notices card follows the General card
-    And the sign-in notices select offers "off, new, all"
-    And the sign-in notices select reads "new"
+    And the sign-in notices section draws
+    And the sign-in notices section sits in the General card
+    And the sign-in notices when tiles offer "off, new, all, default"
+    And the sign-in notices when tiles read "default"
     And the sign-in notices channel "email" is on
-    And the sign-in notices channel "inbox" is on
+    And the sign-in notices channel "in_app" is on
     And the sign-in notices channel "push" is off
-    And the sign-in notices card carries the default badge
+    And the sign-in notices channels are dimmed
+    And the sign-in notices section carries the default badge
     And I see "Following the site's default"
-    And the sign-in notices card offers no "sign-in-notices-default" action
 
-  Scenario: sign-in notices: a record that carries no `sign_in_notices` draws no card
+  Scenario: sign-in notices: a record that carries no `sign_in_notices` draws no section
     Given the host answers the idp-notices/absent fixture
     When I open "/user/profile/preferences"
-    Then no sign-in notices card draws
+    Then no sign-in notices section draws
 
-  Scenario: sign-in notices: a write sends `when` alone when only it changed, and never `default`
+  Scenario: sign-in notices: a choice over a following record sends `when` and `channels` whole, and never `default`
     When I open "/user/profile/preferences"
-    And I choose "all" in the sign-in notices select
-    And I press the sign-in notices card's "save-sign-in-notices" action
+    And I pick "all" in the sign-in notices when tiles
+    And I press the page's "save-preferences" action
     Then the host was sent PATCH to "/api/user/preferences" carrying "all" at "/sign_in_notices/when"
-    And the host was sent PATCH to "/api/user/preferences" carrying nothing at "/sign_in_notices/channels"
+    And the host was sent PATCH to "/api/user/preferences" carrying "email,in_app" at "/sign_in_notices/channels"
     And the host was sent PATCH to "/api/user/preferences" carrying nothing at "/sign_in_notices/default"
     And the host was sent PATCH to "/api/user/preferences" 1 times
 
-  Scenario: sign-in notices: a write sends `channels` alone when only they changed, each switch moving by itself
+  Scenario: sign-in notices: a choice over a chosen record sends `channels` alone when only they changed, each tile moving by itself
+    Given the host answers the idp-notices/chosen fixture
     When I open "/user/profile/preferences"
-    And I turn on the sign-in notices channel "push"
-    And I turn off the sign-in notices channel "inbox"
+    Then the sign-in notices when tiles read "all"
+    When I turn on the sign-in notices channel "in_app"
+    And I turn off the sign-in notices channel "push"
     Then the sign-in notices channel "email" is on
-    When I press the sign-in notices card's "save-sign-in-notices" action
-    Then the host was sent PATCH to "/api/user/preferences" carrying "email,push" at "/sign_in_notices/channels"
+    When I press the page's "save-preferences" action
+    Then the host was sent PATCH to "/api/user/preferences" carrying "email,in_app" at "/sign_in_notices/channels"
     And the host was sent PATCH to "/api/user/preferences" carrying nothing at "/sign_in_notices/when"
     And the host was sent PATCH to "/api/user/preferences" carrying nothing at "/sign_in_notices/default"
 
-  Scenario: sign-in notices: a write sends both `when` and `channels` when both changed
-    When I open "/user/profile/preferences"
-    And I choose "off" in the sign-in notices select
-    And I turn off the sign-in notices channel "email"
-    And I press the sign-in notices card's "save-sign-in-notices" action
-    Then the host was sent PATCH to "/api/user/preferences" carrying "off" at "/sign_in_notices/when"
-    And the host was sent PATCH to "/api/user/preferences" carrying "inbox" at "/sign_in_notices/channels"
-    And the host was sent PATCH to "/api/user/preferences" carrying nothing at "/sign_in_notices/default"
-
-  Scenario: sign-in notices: Save on an unchanged card sends nothing, draws the saved notice and leaves the person following the site's default
-    When I open "/user/profile/preferences"
-    And I press the sign-in notices card's "save-sign-in-notices" action
-    Then the page raised 1 success notice
-    And the host was not sent PATCH to "/api/user/preferences"
-    And the sign-in notices card carries the default badge
-
-  Scenario: sign-in notices: a person with a choice of their own sees no default state and returns to the site's default behind a plain confirmation that sends `"sign_in_notices": null`
+  Scenario: sign-in notices: a choice over a chosen record sends `when` alone when only it changed
     Given the host answers the idp-notices/chosen fixture
     When I open "/user/profile/preferences"
-    Then the sign-in notices select reads "all"
+    And I pick "off" in the sign-in notices when tiles
+    And I press the page's "save-preferences" action
+    Then the host was sent PATCH to "/api/user/preferences" carrying "off" at "/sign_in_notices/when"
+    And the host was sent PATCH to "/api/user/preferences" carrying nothing at "/sign_in_notices/channels"
+    And the host was sent PATCH to "/api/user/preferences" carrying nothing at "/sign_in_notices/default"
+
+  Scenario: sign-in notices: Save on an unchanged page sends nothing, draws the saved notice and leaves the person following the site's default
+    When I open "/user/profile/preferences"
+    And I press the page's "save-preferences" action
+    Then the page raised 1 success notice
+    And the host was not sent PATCH to "/api/user/preferences"
+    And the sign-in notices section carries the default badge
+
+  Scenario: sign-in notices: a person with a choice of their own sees no default badge and returns to the site's default by picking the Site default tile, Save sending `"sign_in_notices": null`
+    Given the host answers the idp-notices/chosen fixture
+    When I open "/user/profile/preferences"
+    Then the sign-in notices when tiles read "all"
     And the sign-in notices channel "push" is on
-    And the sign-in notices channel "inbox" is off
-    And the sign-in notices card carries no default badge
-    And the sign-in notices card offers the "sign-in-notices-default" action
-    When I press the sign-in notices card's "sign-in-notices-default" action
-    Then the host was not sent PATCH to "/api/user/preferences"
-    When I confirm the open plain dialog
+    And the sign-in notices channel "in_app" is off
+    And the sign-in notices section carries no default badge
+    When I pick "default" in the sign-in notices when tiles
+    Then the sign-in notices channels are dimmed
+    And the host was not sent PATCH to "/api/user/preferences"
+    When I press the page's "save-preferences" action
     Then the host was sent PATCH to "/api/user/preferences" carrying null at "/sign_in_notices"
     And the host was sent PATCH to "/api/user/preferences" 1 times
 
-  Scenario: sign-in notices: the `422` `enum` at `/sign_in_notices/when` is drawn on the select and the `422` `minItems` at `/sign_in_notices/channels` on the switches, each cleared when its value changes
+  Scenario: sign-in notices: the `422` `enum` at `/sign_in_notices/when` is drawn on the When tiles and the `422` `minItems` at `/sign_in_notices/channels` on the Sent to tiles, each cleared when its value changes
     Given the host refuses the next PATCH to "/api/user/preferences"
     When I open "/user/profile/preferences"
-    And I choose "all" in the sign-in notices select
-    And I press the sign-in notices card's "save-sign-in-notices" action
+    And I pick "all" in the sign-in notices when tiles
+    And I press the page's "save-preferences" action
     Then the host was sent PATCH to "/api/user/preferences" 1 times
     And the host was sent GET to "/api/rules"
-    And the sign-in notices select names an error
+    And the sign-in notices when tiles name an error
     And the sign-in notices channels name an error
-    And the sign-in notices summary lists 2 problems
-    When I follow the sign-in notices summary to its last problem
+    And the preferences summary lists 2 problems
+    When I follow the preferences summary to its last problem
     Then the sign-in notices channel "email" holds the focus
-    When I choose "off" in the sign-in notices select
-    Then the sign-in notices select names no error
+    When I pick "off" in the sign-in notices when tiles
+    Then the sign-in notices when tiles name no error
     When I turn on the sign-in notices channel "push"
     Then the sign-in notices channels name no error
 
-  Scenario: sign-in notices: the `422` `enum` at `/sign_in_notices/channels` is drawn on the switches alone
+  Scenario: sign-in notices: the `422` `enum` at `/sign_in_notices/channels` is drawn on the Sent to tiles alone
     Given the host answers the idp-notices/refused-channels fixture
     When I open "/user/profile/preferences"
+    And I pick "new" in the sign-in notices when tiles
     And I turn on the sign-in notices channel "push"
-    And I press the sign-in notices card's "save-sign-in-notices" action
+    And I press the page's "save-preferences" action
     Then the sign-in notices channels name an error
-    And the sign-in notices select names no error
-    And the sign-in notices summary lists 1 problem
+    And the sign-in notices when tiles name no error
+    And the preferences summary lists 1 problem
 
-  Scenario: sign-in notices: the `422` `type` at `/sign_in_notices` is listed in the card's summary, the pointer naming no single control
+  Scenario: sign-in notices: the `422` `type` at `/sign_in_notices` is listed in the form's summary, the pointer naming no single control
     Given the host answers the idp-notices/refused-type fixture
     When I open "/user/profile/preferences"
-    And I choose "all" in the sign-in notices select
-    And I press the sign-in notices card's "save-sign-in-notices" action
-    Then the sign-in notices summary links to no control
-    And the sign-in notices select names no error
+    And I pick "all" in the sign-in notices when tiles
+    And I press the page's "save-preferences" action
+    Then the preferences summary links to no control
+    And the sign-in notices when tiles name no error
     And the sign-in notices channels name no error
 
-  Scenario: sign-in notices: the admin user editor shows the same member in the same card and writes it through PATCH /api/admin/users/{id}/preferences
+  Scenario: sign-in notices: the admin user editor shows the same member in the same section and writes it through PATCH /api/admin/users/{id}/preferences
     When I open "/admin/users/43"
-    Then the sign-in notices card draws
-    And the sign-in notices select reads "new"
+    Then the sign-in notices section draws
+    And the sign-in notices when tiles read "default"
     And the sign-in notices channel "email" is on
     And the sign-in notices channel "push" is off
-    And the sign-in notices card carries the default badge
-    When I choose "all" in the sign-in notices select
+    And the sign-in notices section carries the default badge
+    When I pick "all" in the sign-in notices when tiles
     And I turn on the sign-in notices channel "push"
-    And I press the sign-in notices card's "save-sign-in-notices" action
+    And I press the page's "save-preferences" action
     Then the host was sent PATCH to "/api/admin/users/43/preferences" carrying "all" at "/sign_in_notices/when"
-    And the host was sent PATCH to "/api/admin/users/43/preferences" carrying "email,inbox,push" at "/sign_in_notices/channels"
+    And the host was sent PATCH to "/api/admin/users/43/preferences" carrying "email,in_app,push" at "/sign_in_notices/channels"
     And the host was sent PATCH to "/api/admin/users/43/preferences" carrying nothing at "/sign_in_notices/default"
 
   Scenario: sign-in notices: the admin user editor draws a refusal on the control its pointer names
     Given the host refuses the next PATCH to "/api/admin/users/43/preferences"
     When I open "/admin/users/43"
-    And I choose "all" in the sign-in notices select
-    And I press the sign-in notices card's "save-sign-in-notices" action
-    Then the sign-in notices select names an error
+    And I pick "all" in the sign-in notices when tiles
+    And I press the page's "save-preferences" action
+    Then the sign-in notices when tiles name an error
     And the sign-in notices channels name an error
 
   Scenario: sign-in notices: the admin user editor returns a person to the site's default with `"sign_in_notices": null`
     Given the host answers the idp-notices/chosen fixture
     When I open "/admin/users/43"
-    Then the sign-in notices card carries no default badge
-    When I press the sign-in notices card's "sign-in-notices-default" action
-    And I confirm the open plain dialog
+    Then the sign-in notices section carries no default badge
+    When I pick "default" in the sign-in notices when tiles
+    And I press the page's "save-preferences" action
     Then the host was sent PATCH to "/api/admin/users/43/preferences" carrying null at "/sign_in_notices"
 
   Scenario: email templates: the four sign-in notice kinds and the sign-in email code draw their own labels and their tokens

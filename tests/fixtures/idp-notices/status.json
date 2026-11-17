@@ -21,7 +21,7 @@
     "search",
     "inbox",
     "admin",
-    "notifications",
+    { "notifications": ["in_app", "push", "email", "sms"] },
     "health",
     "events",
     "footer",
