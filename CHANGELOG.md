@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.63.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.63.0...v0.63.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* random fix to bump stuff? ([9c1c88d](https://github.com/STARTcloud/startcloud-ui/commit/9c1c88df7dd4b638049c32e1596a85f4cb65714b))
+
 ## [0.63.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.62.0...v0.63.0) (2026-11-16)
 
 
