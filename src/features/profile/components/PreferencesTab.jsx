@@ -9,6 +9,7 @@ import { errorKeys } from '../../../components/common/StepUpDialog';
 import Tiles from '../../../components/common/Tiles';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useCssVar } from '../../../hooks/useCssVar';
 import { useFolds } from '../../../hooks/useFolds';
 import { useFormRules } from '../../../hooks/useFormRules';
 import { MOTION_VALUES, useMotion } from '../../../hooks/useMotion';
@@ -148,7 +149,9 @@ export const noticesPatchOf = (choice, stored) => {
     return stored.following ? null : { [NOTICES]: null };
   }
   if (stored.following) {
-    return { [NOTICES]: { when: choice.when, channels: inOrder(NOTICE_CHANNELS, choice.channels) } };
+    return {
+      [NOTICES]: { when: choice.when, channels: inOrder(NOTICE_CHANNELS, choice.channels) },
+    };
   }
   return signInNoticesPatch(choice, stored);
 };
@@ -384,19 +387,27 @@ const MotionGlyph = () => (
   </span>
 );
 
-const ThemeSwatch = ({ swatch }) => (
-  <span className={`pref-swatch${swatch ? '' : ' pref-swatch-plain'}`} style={swatch || undefined}>
-    <span className="pref-swatch-bar">
-      <span className="pref-swatch-mark" />
+const ThemeSwatch = ({ swatch }) => {
+  const box = useRef(null);
+  useCssVar(box, '--pref-accent', swatch?.['--pref-accent'] || null);
+  useCssVar(box, '--pref-page', swatch?.['--pref-page'] || null);
+  useCssVar(box, '--pref-bar', swatch?.['--pref-bar'] || null);
+  useCssVar(box, '--pref-line', swatch?.['--pref-line'] || null);
+  useCssVar(box, '--pref-text', swatch?.['--pref-text'] || null);
+  return (
+    <span ref={box} className={`pref-swatch${swatch ? '' : ' pref-swatch-plain'}`}>
+      <span className="pref-swatch-bar">
+        <span className="pref-swatch-mark" />
+      </span>
+      <span className="pref-swatch-page">
+        <i />
+        <i />
+        <i />
+        <span className="pref-swatch-btn" />
+      </span>
     </span>
-    <span className="pref-swatch-page">
-      <i />
-      <i />
-      <i />
-      <span className="pref-swatch-btn" />
-    </span>
-  </span>
-);
+  );
+};
 
 ThemeSwatch.propTypes = {
   swatch: PropTypes.object,
@@ -1155,7 +1166,9 @@ const NoticesSection = ({ rules, notices, following, onWhen, onChannels }) => {
             : t(`profile.preferences.channelOff.${channel}`),
         }))}
         value={notices.channels}
-        onChange={channel => onChannels(inOrder(NOTICE_CHANNELS, toggled(notices.channels, channel)))}
+        onChange={channel =>
+          onChannels(inOrder(NOTICE_CHANNELS, toggled(notices.channels, channel)))
+        }
         onBlur={() => rules.onBlur(NOTICES_CHANNELS)}
       />
     </Section>
@@ -1200,7 +1213,7 @@ const noticeValues = (notices, stored) => {
 };
 
 const usePreferencesForm = ({ profile, own, languages }) => {
-  const preferences = profile.preferences || {};
+  const preferences = useMemo(() => profile.preferences || {}, [profile.preferences]);
   const stored = signInNoticesOf(preferences);
   const schema = useMemo(() => schemaFor(preferences, own), [preferences, own]);
   const [settings, setSettings] = useState(() => settingsOf(preferences));

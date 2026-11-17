@@ -73,7 +73,7 @@ describe('preferencesPatch', () => {
     notices: { when: 'default', channels: ['email', 'in_app'] },
   };
 
-  it('is empty while nothing differs on the person\'s own record', () => {
+  it("is empty while nothing differs on the person's own record", () => {
     expect(
       preferencesPatch({ settings, preferences, pin: '', clearPin: false, own: true })
     ).toEqual({});
@@ -101,7 +101,7 @@ describe('preferencesPatch', () => {
     ).toBeNull();
   });
 
-  it('carries the language, mode, theme and motion of another person\'s record and no PIN', () => {
+  it("carries the language, mode, theme and motion of another person's record and no PIN", () => {
     expect(
       preferencesPatch({ settings, preferences, pin: '1234', clearPin: false, own: false })
     ).toEqual({ language: 'en', mode: 'dark', theme: null, motion: null });
@@ -145,7 +145,7 @@ describe('themeSwatchOf', () => {
     });
   });
 
-  it('answers null while the row lacks the accent or the mode\'s surfaces', () => {
+  it("answers null while the row lacks the accent or the mode's surfaces", () => {
     expect(themeSwatchOf(theme, 'light')).toBeNull();
     expect(themeSwatchOf({ name: 'shi' }, 'dark')).toBeNull();
   });

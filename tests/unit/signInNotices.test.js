@@ -24,10 +24,10 @@ describe('signInNoticesOf', () => {
   });
 
   it('answers when, the channels in the drawn order and following from `default`', () => {
-    const held = { sign_in_notices: { when: 'new', channels: ['inbox', 'email'], default: true } };
+    const held = { sign_in_notices: { when: 'new', channels: ['in_app', 'email'], default: true } };
     expect(signInNoticesOf(held)).toEqual({
       when: 'new',
-      channels: ['email', 'inbox'],
+      channels: ['email', 'in_app'],
       following: true,
     });
     expect(signInNoticesOf({ sign_in_notices: { when: 'all', channels: ['push'] } })).toEqual({
@@ -39,10 +39,10 @@ describe('signInNoticesOf', () => {
 });
 
 describe('signInNoticesPatch', () => {
-  const stored = { when: 'new', channels: ['email', 'inbox'] };
+  const stored = { when: 'new', channels: ['email', 'in_app'] };
 
   it('sends `when` alone when only it differs from the record', () => {
-    expect(signInNoticesPatch({ when: 'all', channels: ['email', 'inbox'] }, stored)).toEqual({
+    expect(signInNoticesPatch({ when: 'all', channels: ['email', 'in_app'] }, stored)).toEqual({
       sign_in_notices: { when: 'all' },
     });
   });
@@ -60,7 +60,7 @@ describe('signInNoticesPatch', () => {
   });
 
   it('answers null when neither differs, whatever the order of the channels', () => {
-    expect(signInNoticesPatch({ when: 'new', channels: ['inbox', 'email'] }, stored)).toBeNull();
+    expect(signInNoticesPatch({ when: 'new', channels: ['in_app', 'email'] }, stored)).toBeNull();
   });
 
   it('never sends `default`', () => {
