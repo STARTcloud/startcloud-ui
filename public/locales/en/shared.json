@@ -815,7 +815,24 @@
           "push": "Push notification"
         },
         "channelsHint": "Turning notices off, or taking email out, sends one email to the account."
-      }
+      },
+      "locale": "Date and number format",
+      "localeHint": "How dates and numbers are written, the order of the date among them.",
+      "hourCycle": {
+        "label": "Clock",
+        "h12": "12-hour (1:00 PM)",
+        "h23": "24-hour (13:00)"
+      },
+      "hourCycleHint": "The clock times are written on.",
+      "deviceMode": {
+        "label": "Device mode"
+      },
+      "deviceMotion": {
+        "label": "Device motion",
+        "auto": "Full motion",
+        "reduce": "Reduced motion"
+      },
+      "notReported": "Not reported"
     },
     "favorites": {
       "title": "Favorites",

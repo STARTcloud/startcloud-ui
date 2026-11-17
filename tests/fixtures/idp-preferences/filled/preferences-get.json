@@ -1,0 +1,14 @@
+{
+  "language": "es",
+  "mode": "dark",
+  "theme": null,
+  "motion": null,
+  "timezone": "Europe/Berlin",
+  "locale": "es-ES",
+  "hour_cycle": "h23",
+  "region": "DE",
+  "device_mode": "dark",
+  "device_motion": "auto",
+  "ciba_channel": "PUSH",
+  "ciba_user_code_set": false
+}

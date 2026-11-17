@@ -12,29 +12,27 @@ import { useArrivalQuery } from '../../../hooks/useArrival';
 import { useClientFilters } from '../../../hooks/useClientFilters';
 import { useNavbarSearchBinding } from '../../../hooks/useSearchBinding';
 import { log } from '../../../lib/logger';
+import { clockShape, formatInstant } from '../../../utils/clock';
 import { formatRelativeTime } from '../../../utils/relativeTime';
 
 const SAFE_PATH = /^\/(?![/\\])/;
 
-const absoluteTime = (value, language) => {
-  const time = new Date(value);
-  return Number.isNaN(time.getTime()) ? '' : time.toLocaleString(language);
-};
-
-const deviceOf = userAgent => {
-  const agent = String(userAgent || '');
-  const browser = ['Edg', 'Chrome', 'Firefox', 'Safari'].find(name => agent.includes(name)) || '';
-  const os = ['Windows', 'Android', 'iPhone', 'iPad', 'Mac OS', 'Linux'].find(name =>
-    agent.includes(name)
-  );
-  return [browser, os].filter(Boolean).join(' · ') || agent;
-};
+/**
+ * The device line of a session row: the row's `browser` and `system`
+ * joined by a dot, whichever the server named, the raw `user_agent` while
+ * it named neither, empty while the row carries nothing.
+ *
+ * @param {{ browser?: string, system?: string, user_agent?: string }} row - The session row
+ * @returns {string} The device line
+ */
+export const deviceOf = row =>
+  [row.browser, row.system].filter(Boolean).join(' · ') || row.user_agent || '';
 
 const matches = (row, needle) =>
   [
     row.client_name || '',
     row.client_id || '',
-    deviceOf(row.user_agent),
+    deviceOf(row),
     row.location || '',
     row.ip_address || '',
   ].some(text => text.toLowerCase().includes(needle));
@@ -56,23 +54,23 @@ const FILTER_GROUPS = [
   },
 ];
 
-const SessionSubline = ({ row }) => {
+const SessionSubline = ({ row, clock }) => {
   const { t, i18n } = useTranslation();
+  const language = clock.locale || i18n.language;
   return (
     <>
       <span className="d-block">
-        {deviceOf(row.user_agent)}
+        {deviceOf(row)}
         {row.location || row.ip_address ? ' · ' : null}
         {row.location}
         {row.ip_address ? ` (${row.ip_address})` : null}
       </span>
-      <span className="d-block" title={absoluteTime(row.authorized_at, i18n.language)}>
-        {t('profile.sessions.authorized')} {formatRelativeTime(row.authorized_at, i18n.language)}
+      <span className="d-block" title={formatInstant(row.authorized_at, clock, i18n.language)}>
+        {t('profile.sessions.authorized')} {formatRelativeTime(row.authorized_at, language)}
       </span>
       {row.last_accessed_at ? (
-        <span className="d-block" title={absoluteTime(row.last_accessed_at, i18n.language)}>
-          {t('profile.sessions.lastActive')}{' '}
-          {formatRelativeTime(row.last_accessed_at, i18n.language)}
+        <span className="d-block" title={formatInstant(row.last_accessed_at, clock, i18n.language)}>
+          {t('profile.sessions.lastActive')} {formatRelativeTime(row.last_accessed_at, language)}
         </span>
       ) : null}
     </>
@@ -82,12 +80,15 @@ const SessionSubline = ({ row }) => {
 SessionSubline.propTypes = {
   row: PropTypes.shape({
     current: PropTypes.bool,
+    browser: PropTypes.string,
+    system: PropTypes.string,
     user_agent: PropTypes.string,
     location: PropTypes.string,
     ip_address: PropTypes.string,
     authorized_at: PropTypes.string,
     last_accessed_at: PropTypes.string,
   }).isRequired,
+  clock: clockShape.isRequired,
 };
 
 const CurrentBadge = ({ row }) => {
@@ -118,8 +119,12 @@ SignOutButton.propTypes = {
 
 /**
  * The Sessions tab of the identity contract: the active sessions with
- * their client, device, location and address, the authorized time with
- * its absolute time in the tooltip, the caller's own row badged "This
+ * their client, device (the row's `browser` and `system`, the raw
+ * `user_agent` while the server named neither), location and address,
+ * the authorized time with its absolute time in the tooltip, each time
+ * written on the account's `clock`, its `timezone`, `locale` and
+ * `hour_cycle`, the browser's own while the account holds none, the
+ * caller's own row badged "This
  * session", Sign out per row and Revoke all sessions behind a plain
  * confirm that says this browser is signed out too; the other rows' Sign out and
  * the revoke-all are stepped up, the current row's Sign out is the plain
@@ -131,7 +136,7 @@ SignOutButton.propTypes = {
  * arrived with, and the Client and This session `toggle` groups
  * narrowing the rows client-side, Clear filters keeping the query.
  */
-const SessionsTab = ({ account, guard, onSignedOut }) => {
+const SessionsTab = ({ account, guard, onSignedOut, clock }) => {
   const { t } = useTranslation();
   const notify = useNotify();
   const [rows, setRows] = useState([]);
@@ -259,7 +264,7 @@ const SessionsTab = ({ account, guard, onSignedOut }) => {
             icon={<FaDesktop aria-hidden />}
             label={row.client_name || row.client_id || t('profile.sessions.unknownClient')}
             badges={<CurrentBadge row={row} />}
-            subline={<SessionSubline row={row} />}
+            subline={<SessionSubline row={row} clock={clock} />}
             actions={<SignOutButton row={row} onClick={onSignOut} />}
           />
         ))}
@@ -286,6 +291,7 @@ SessionsTab.propTypes = {
   }).isRequired,
   guard: PropTypes.func.isRequired,
   onSignedOut: PropTypes.func.isRequired,
+  clock: clockShape.isRequired,
 };
 
 export default SessionsTab;

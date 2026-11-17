@@ -42,6 +42,7 @@ export {
   verifyTfaApp,
   verifyTfaSms,
 } from './api/account';
+export { browserFactsApi } from './api/browserFacts';
 export {
   cancelRequest,
   changeEmail,

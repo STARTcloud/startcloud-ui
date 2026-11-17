@@ -14,6 +14,7 @@ import { useFormRules } from '../../../hooks/useFormRules';
 import { MOTION_VALUES, useMotion } from '../../../hooks/useMotion';
 import { useTheme } from '../../../hooks/useTheme';
 import { loadCountries } from '../../../lib/countries';
+import { detectedHourCycle, detectedLocale, detectedZone } from '../../../utils/browserFacts';
 import {
   HyperweaverServiceCard,
   hyperweaverServiceOf,
@@ -26,9 +27,17 @@ const PREFS_KEY = 'table_prefs_profile_preferences';
 const MODES = ['light', 'dark', 'auto'];
 const CHANNELS = ['PUSH', 'EMAIL', 'SMS'];
 const REGION_SETS = ['EU', 'EEA', 'UK'];
+const HOUR_CYCLES = ['h12', 'h23'];
+const DEVICE_FACTS = ['device_mode', 'device_motion'];
+const DEVICE_LABELS = {
+  device_mode: 'profile.preferences.deviceMode.label',
+  device_motion: 'profile.preferences.deviceMotion.label',
+};
 const RECORD_SCHEMA = {
   properties: {
     timezone: { $ref: '#/$defs/timezone' },
+    locale: { $ref: '#/$defs/languageTag' },
+    hour_cycle: { type: 'string', enum: HOUR_CYCLES },
     region: { $ref: '#/$defs/region' },
     ciba_channel: { type: 'string', enum: CHANNELS },
   },
@@ -38,6 +47,8 @@ const SCHEMA = {
 };
 const LABELS = {
   timezone: 'profile.preferences.timezone',
+  locale: 'profile.preferences.locale',
+  hour_cycle: 'profile.preferences.hourCycle.label',
   region: 'profile.preferences.region',
   ciba_channel: 'profile.preferences.channel.label',
   ciba_user_code: 'profile.preferences.pin',
@@ -120,14 +131,6 @@ const timeZones = () => {
   }
 };
 
-const detectedZone = () => {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-  } catch {
-    return '';
-  }
-};
-
 const languageName = code => {
   try {
     return new Intl.DisplayNames([code], { type: 'language' }).of(code) || code;
@@ -136,21 +139,48 @@ const languageName = code => {
   }
 };
 
+const localeName = (code, language) => {
+  try {
+    return new Intl.DisplayNames([language], { type: 'language' }).of(code) || code;
+  } catch {
+    return code;
+  }
+};
+
+/**
+ * The locales the Locale select offers: the chosen one, the detected one
+ * and every language the UI ships, each once, the empty entries dropped.
+ *
+ * @param {string} chosen - The locale the record or the person holds
+ * @param {string} detected - The browser's locale
+ * @param {string[]} languages - The UI's supported languages
+ * @returns {string[]} The locales in the order drawn
+ */
+export const localeChoicesOf = (chosen, detected, languages) => [
+  ...new Set([chosen, detected, ...languages].filter(Boolean)),
+];
+
 const settingsOf = preferences => ({
   language: preferences?.language || '',
   mode: preferences?.mode || 'auto',
   theme: preferences?.theme || '',
   motion: preferences?.motion || 'auto',
   timezone: preferences?.timezone || '',
+  locale: preferences?.locale || '',
+  hour_cycle: preferences?.hour_cycle || '',
   region: preferences?.region || '',
   ciba_channel: preferences?.ciba_channel || 'PUSH',
 });
 
+const CLOCK_MEMBERS = ['timezone', 'locale', 'hour_cycle'];
+
 const patchOf = ({ settings, preferences, pin, clearPin, own }) => {
   const patch = 'ciba_channel' in preferences ? { ciba_channel: settings.ciba_channel } : {};
-  if (settings.timezone && settings.timezone !== (preferences.timezone || '')) {
-    patch.timezone = settings.timezone;
-  }
+  CLOCK_MEMBERS.forEach(member => {
+    if (settings[member] && settings[member] !== (preferences[member] || '')) {
+      patch[member] = settings[member];
+    }
+  });
   if (settings.region !== (preferences.region || '')) {
     patch.region = settings.region || null;
   }
@@ -261,6 +291,103 @@ ZoneSelect.propTypes = {
   zones: PropTypes.arrayOf(PropTypes.string).isRequired,
   zone: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
+};
+
+const LocaleSelect = ({ rules, locales, locale, onChange }) => {
+  const { t, i18n } = useTranslation();
+  return (
+    <SelectField
+      id={rules.idFor('locale')}
+      label={t('profile.preferences.locale')}
+      hint={t('profile.preferences.localeHint')}
+      error={rules.errors.locale || ''}
+      value={locale}
+      onChange={event => onChange(event.target.value)}
+      onBlur={() => rules.onBlur('locale')}
+    >
+      {locales.map(code => (
+        <option key={code} value={code}>
+          {localeName(code, i18n.language)}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+LocaleSelect.propTypes = {
+  rules: PropTypes.object.isRequired,
+  locales: PropTypes.arrayOf(PropTypes.string).isRequired,
+  locale: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+const HourCycleSelect = ({ rules, hourCycle, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <SelectField
+      id={rules.idFor('hour_cycle')}
+      label={t('profile.preferences.hourCycle.label')}
+      hint={t('profile.preferences.hourCycleHint')}
+      error={rules.errors.hour_cycle || ''}
+      value={hourCycle}
+      onChange={event => onChange(event.target.value)}
+      onBlur={() => rules.onBlur('hour_cycle')}
+    >
+      {HOUR_CYCLES.map(cycle => (
+        <option key={cycle} value={cycle}>
+          {t(`profile.preferences.hourCycle.${cycle}`)}
+        </option>
+      ))}
+    </SelectField>
+  );
+};
+
+HourCycleSelect.propTypes = {
+  rules: PropTypes.object.isRequired,
+  hourCycle: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+const hourCycleText = (value, t) =>
+  value ? t(`profile.preferences.hourCycle.${value}`) : t('profile.preferences.notReported');
+
+const deviceFactText = (member, value, t) => {
+  if (!value) {
+    return t('profile.preferences.notReported');
+  }
+  return member === 'device_mode'
+    ? t(`profile.preferences.mode.${value}`)
+    : t(`profile.preferences.deviceMotion.${value}`);
+};
+
+/**
+ * The device's facts the record carries, `device_mode` and
+ * `device_motion`, each drawn read-only while the record carries it,
+ * because they are what a device reported and never the person's choice.
+ */
+const DeviceFacts = ({ preferences }) => {
+  const { t } = useTranslation();
+  const members = DEVICE_FACTS.filter(member => member in preferences);
+  if (members.length === 0) {
+    return null;
+  }
+  return (
+    <div className="row" data-panel="device-facts">
+      {members.map(member => (
+        <div key={member} className="col-md-3">
+          <ReadOnlyField
+            id={`profile-preferences-${member}`}
+            label={t(DEVICE_LABELS[member])}
+            value={deviceFactText(member, preferences[member], t)}
+          />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+DeviceFacts.propTypes = {
+  preferences: PropTypes.object.isRequired,
 };
 
 const RegionSelect = ({ rules, region, countries, onChange }) => {
@@ -541,6 +668,24 @@ const ReadOnlyPreferences = ({ account, profile, folds, after = null }) => {
     ...('timezone' in preferences
       ? [['timezone', t('profile.preferences.timezone'), preferences.timezone || detectedZone()]]
       : []),
+    ...('locale' in preferences
+      ? [
+          [
+            'locale',
+            t('profile.preferences.locale'),
+            localeName(preferences.locale || detectedLocale(), i18n.language),
+          ],
+        ]
+      : []),
+    ...('hour_cycle' in preferences
+      ? [
+          [
+            'hour_cycle',
+            t('profile.preferences.hourCycle.label'),
+            hourCycleText(preferences.hour_cycle || detectedHourCycle(), t),
+          ],
+        ]
+      : []),
     ...('region' in preferences
       ? [
           [
@@ -572,6 +717,7 @@ const ReadOnlyPreferences = ({ account, profile, folds, after = null }) => {
             </div>
           ) : null}
         </div>
+        <DeviceFacts preferences={preferences} />
       </SectionCard>
       {after}
     </div>
@@ -586,6 +732,101 @@ ReadOnlyPreferences.propTypes = {
     toggle: PropTypes.func.isRequired,
   }).isRequired,
   after: PropTypes.node,
+};
+
+/**
+ * The second row of the editable card: the theme while the host offers
+ * themes, and the time zone, the locale, the hour cycle and the region
+ * each while the record carries its member; nothing while none draws.
+ */
+const ClockRow = ({ own, theme, settings, rules, clock, lists, onTheme, onSet }) => {
+  const { themes } = useTheme();
+  const fields = {
+    timezone: 'timezone' in settings.preferences,
+    locale: 'locale' in settings.preferences,
+    hour_cycle: 'hour_cycle' in settings.preferences,
+    region: 'region' in settings.preferences,
+  };
+  if (themes.length === 0 && !Object.values(fields).some(Boolean)) {
+    return null;
+  }
+  return (
+    <div className="row">
+      {themes.length > 0 ? (
+        <div className="col-md-3">
+          <ThemeSelect
+            own={own}
+            theme={theme}
+            themes={themes}
+            recordTheme={settings.theme}
+            onChange={onTheme}
+          />
+        </div>
+      ) : null}
+      {fields.timezone ? (
+        <div className="col-md-3">
+          <ZoneSelect
+            rules={rules}
+            zones={lists.zones}
+            zone={clock.zone}
+            onChange={value => onSet('timezone', value)}
+          />
+        </div>
+      ) : null}
+      {fields.locale ? (
+        <div className="col-md-3">
+          <LocaleSelect
+            rules={rules}
+            locales={lists.locales}
+            locale={clock.locale}
+            onChange={value => onSet('locale', value)}
+          />
+        </div>
+      ) : null}
+      {fields.hour_cycle ? (
+        <div className="col-md-3">
+          <HourCycleSelect
+            rules={rules}
+            hourCycle={clock.hourCycle}
+            onChange={value => onSet('hour_cycle', value)}
+          />
+        </div>
+      ) : null}
+      {fields.region ? (
+        <div className="col-md-3">
+          <RegionSelect
+            rules={rules}
+            region={settings.region}
+            countries={lists.countries}
+            onChange={value => onSet('region', value)}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+ClockRow.propTypes = {
+  own: PropTypes.bool.isRequired,
+  theme: PropTypes.string.isRequired,
+  settings: PropTypes.shape({
+    preferences: PropTypes.object.isRequired,
+    theme: PropTypes.string.isRequired,
+    region: PropTypes.string.isRequired,
+  }).isRequired,
+  rules: PropTypes.object.isRequired,
+  clock: PropTypes.shape({
+    zone: PropTypes.string.isRequired,
+    locale: PropTypes.string.isRequired,
+    hourCycle: PropTypes.string.isRequired,
+  }).isRequired,
+  lists: PropTypes.shape({
+    zones: PropTypes.arrayOf(PropTypes.string).isRequired,
+    locales: PropTypes.arrayOf(PropTypes.string).isRequired,
+    countries: PropTypes.array.isRequired,
+  }).isRequired,
+  onTheme: PropTypes.func.isRequired,
+  onSet: PropTypes.func.isRequired,
 };
 
 const PinField = ({ rules, pin, pinSet, pinRef, onPin, onSet, onClear }) => {
@@ -643,7 +884,7 @@ PinField.propTypes = {
 const EditablePreferences = ({ account, profile, session, folds, onSaved, after = null }) => {
   const { t, i18n } = useTranslation();
   const notify = useNotify();
-  const { mode, setMode, theme, themes, setTheme } = useTheme();
+  const { mode, setMode, theme, setTheme } = useTheme();
   const { motion, setMotion } = useMotion();
   const own = session !== null;
   const languages = supportedLanguages(i18n);
@@ -653,8 +894,18 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
   const [clearPin, setClearPin] = useState(false);
   const pinRef = useRef(null);
   const zones = useMemo(() => timeZones(), []);
-  const [detected] = useState(detectedZone);
-  const zone = settings.timezone || detected;
+  const [detected] = useState(() => ({
+    zone: detectedZone(),
+    locale: detectedLocale(),
+    hourCycle: detectedHourCycle(),
+  }));
+  const zone = settings.timezone || detected.zone;
+  const locale = settings.locale || detected.locale;
+  const hourCycle = settings.hour_cycle || detected.hourCycle;
+  const locales = useMemo(
+    () => localeChoicesOf(locale, detected.locale, languages),
+    [locale, detected.locale, languages]
+  );
   const [countries, setCountries] = useState([]);
   useEffect(() => {
     let active = true;
@@ -673,11 +924,13 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
   const values = useMemo(
     () => ({
       timezone: zone,
+      locale,
+      hour_cycle: hourCycle,
       region: settings.region,
       ciba_channel: settings.ciba_channel,
       ...(own ? { ciba_user_code: pin } : {}),
     }),
-    [zone, settings.region, settings.ciba_channel, pin, own]
+    [zone, locale, hourCycle, settings.region, settings.ciba_channel, pin, own]
   );
   const rules = useFormRules({
     formKey: 'preferences',
@@ -753,8 +1006,6 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
   };
 
   const pinSet = Boolean(preferences.ciba_user_code_set) && !clearPin;
-  const zoneField = 'timezone' in preferences;
-  const regionField = 'region' in preferences;
   const channelField = 'ciba_channel' in preferences;
   const pinField = own && 'ciba_user_code_set' in preferences;
 
@@ -794,41 +1045,16 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
               </div>
             ) : null}
           </div>
-          {themes.length > 0 || zoneField || regionField ? (
-            <div className="row">
-              {themes.length > 0 ? (
-                <div className="col-md-3">
-                  <ThemeSelect
-                    own={own}
-                    theme={theme}
-                    themes={themes}
-                    recordTheme={settings.theme}
-                    onChange={changeTheme}
-                  />
-                </div>
-              ) : null}
-              {zoneField ? (
-                <div className="col-md-3">
-                  <ZoneSelect
-                    rules={rules}
-                    zones={zones}
-                    zone={zone}
-                    onChange={value => set('timezone', value)}
-                  />
-                </div>
-              ) : null}
-              {regionField ? (
-                <div className="col-md-3">
-                  <RegionSelect
-                    rules={rules}
-                    region={settings.region}
-                    countries={countries}
-                    onChange={value => set('region', value)}
-                  />
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+          <ClockRow
+            own={own}
+            theme={theme}
+            settings={{ preferences, theme: settings.theme, region: settings.region }}
+            rules={rules}
+            clock={{ zone, locale, hourCycle }}
+            lists={{ zones, locales, countries }}
+            onTheme={changeTheme}
+            onSet={set}
+          />
           {channelField || pinField ? (
             <div className="row">
               {channelField ? (
@@ -856,6 +1082,7 @@ const EditablePreferences = ({ account, profile, session, folds, onSaved, after 
               ) : null}
             </div>
           ) : null}
+          <DeviceFacts preferences={preferences} />
           <button type="submit" className="btn btn-primary" data-action="save-preferences">
             {t('profile.preferences.save')}
           </button>
@@ -1110,7 +1337,11 @@ SignInNoticesCard.propTypes = {
  * on the next row a Theme select while the host offers themes, "Follow
  * this site" or one of them, writing through on change as the mode does,
  * the theme following saved as a cleared value, the time zone from the `Intl` list
- * with the detected zone preselected while none is set, and region as a
+ * with the detected zone preselected while none is set, the locale, the
+ * form dates and numbers are written in, from the chosen, the detected
+ * and the UI's languages with the detected one preselected while none is
+ * set, the hour cycle as 12-hour or 24-hour with the detected one
+ * preselected while none is set, and region as a
  * select of the two-letter country list plus `EU`, `EEA` and `UK`, the
  * legal region the terms and policy variants resolve to, blank clearing
  * it; on the next row the sign-in approval channel
@@ -1119,13 +1350,17 @@ SignInNoticesCard.propTypes = {
  * and Clear buttons beside it, "A PIN is set" drawn as muted text above the
  * field while one is stored; time zone, region, channel and PIN saved together by
  * one Save preferences through `PATCH /api/user/preferences`, the time
- * zone and the region in the patch only when they differ from the stored
- * value, so a detected preselection is never written, while the rules
- * evaluate the zone and region the selects hold; the page remounts it
- * with every re-read of the record. The time zone, the region, the
- * approval channel and the PIN each draw only while the record's
- * `preferences` carries its member, `timezone`, `region`, `ciba_channel`
- * and `ciba_user_code_set`, because a control the host stores nothing
+ * zone, the locale, the hour cycle and the region in the patch only when
+ * they differ from the stored value, so a detected preselection is never
+ * written, while the rules evaluate the values the selects hold; the
+ * device's mode and motion, `device_mode` and `device_motion`, draw as
+ * read-only facts under the selects while the record carries them,
+ * because a device reported them and no person chose them; the page
+ * remounts it with every re-read of the record. The time zone, the
+ * locale, the hour cycle, the region, the approval channel and the PIN
+ * each draw only while the record's `preferences` carries its member,
+ * `timezone`, `locale`, `hour_cycle`, `region`, `ciba_channel` and
+ * `ciba_user_code_set`, because a control the host stores nothing
  * for writes nowhere: the identity provider's record carries every one,
  * an `apikey` host's record the time zone alone and a `backend` host's
  * local account none, its section the language, mode, theme and motion

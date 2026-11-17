@@ -755,8 +755,10 @@ origin, events })` and `createReturnTo` with `/login` and the identity
   adapter's memberships while the UI backend advertises
   `private-catalogs`, the mode, theme and language write-through, the
   event stream of the events contract while the UI backend advertises
-  `events` (`useSessionKeepalive`, no timer of any kind), and the account
-  state into `AppShell`.
+  `events` (`useSessionKeepalive`, no timer of any kind), the
+  preferences contract's first-load save of the browser's facts on a
+  `cookie` or `idp` host (`useBrowserFacts`, once per session, through the
+  hub client), and the account state into `AppShell`.
 - The router builds the `auth` adapter and the `/login`, `/register`,
   `/invite/:token` and `/auth/callback` routes while the UI backend's
   first `auth` token is `backend`, and the `account` adapter and the

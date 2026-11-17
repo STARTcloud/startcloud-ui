@@ -815,7 +815,24 @@
           "push": "Notificación push"
         },
         "channelsHint": "Desactivar los avisos, o quitar el correo, envía un correo a la cuenta."
-      }
+      },
+      "locale": "Formato de fecha y número",
+      "localeHint": "Cómo se escriben las fechas y los números, el orden de la fecha entre ellos.",
+      "hourCycle": {
+        "label": "Reloj",
+        "h12": "12 horas (1:00 p. m.)",
+        "h23": "24 horas (13:00)"
+      },
+      "hourCycleHint": "El reloj en que se escriben las horas.",
+      "deviceMode": {
+        "label": "Modo del dispositivo"
+      },
+      "deviceMotion": {
+        "label": "Movimiento del dispositivo",
+        "auto": "Movimiento completo",
+        "reduce": "Movimiento reducido"
+      },
+      "notReported": "No indicado"
     },
     "favorites": {
       "title": "Favoritos",

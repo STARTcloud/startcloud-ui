@@ -33,12 +33,13 @@ import {
   createPushAdapter,
   hasNotificationsScope,
 } from '../features/notifications';
-import { menuFavorites } from '../features/profile';
+import { browserFactsApi, menuFavorites } from '../features/profile';
 import { useAppSearch } from '../features/search';
 import { setupApi } from '../features/setup';
 import { useAccountAvatar } from '../hooks/useAccountAvatar';
 import { useAccountPreferences } from '../hooks/useAccountPreferences';
 import { useActiveOrganization } from '../hooks/useActiveOrganization';
+import { useBrowserFacts } from '../hooks/useBrowserFacts';
 import { useFavicon } from '../hooks/useFavicon';
 import { useMotion } from '../hooks/useMotion';
 import { usePwa } from '../hooks/usePwa';
@@ -77,6 +78,26 @@ const persistMode = mode => session.savePreferences({ mode });
 const SHI_THEME = 'shi';
 
 const AGENT_ROLE = 'hyperweaver-agent';
+
+const ISSUER_SESSIONS = ['cookie', 'idp'];
+
+/**
+ * Whether the browser's facts are saved to the account on this load: a
+ * session the identity provider made, the `cookie` or `idp` host's,
+ * confirmed by `load()`, for a person who is not guest-only.
+ *
+ * @param {Object} options - The host and the session
+ * @param {Object} options.status - The payload from `probeStatus`
+ * @param {boolean} options.loaded - Whether `load()` has answered
+ * @param {Object|null} options.user - The session's user
+ * @param {Array<Object>} options.memberships - The session's memberships
+ * @returns {boolean} Whether the hook runs
+ */
+const savesBrowserFacts = ({ status, loaded, user, memberships }) =>
+  ISSUER_SESSIONS.includes(authMethod(status)) &&
+  loaded &&
+  Boolean(user) &&
+  !guestOnly(memberships);
 
 /**
  * The link the offline banner starts the agent with: `hwa://open` on a
@@ -281,6 +302,10 @@ const App = ({ getSupportedLanguages }) => {
     setMotionPreference: setMotion,
   });
   useSessionKeepalive({ user, loaded, reload });
+  useBrowserFacts({
+    enabled: savesBrowserFacts({ status, loaded, user, memberships }),
+    api: browserFactsApi,
+  });
   useEffect(() => {
     if (!returnTo.onAuthPage(location.pathname)) {
       readDeferredFavorites();

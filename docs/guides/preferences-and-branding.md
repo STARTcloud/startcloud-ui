@@ -420,13 +420,36 @@ Content-Type: application/json
   answers the validation contract's `422` problem body with a pointer per
   failing member, never a `400 { "error" }`, so the shared form paints it
   inline.
-- `GET` on the same path returns the eight members the identity provider
-  stores: `language`, `mode`, `theme`, `motion`, `timezone`, `region`,
+- `locale`, `hour_cycle`, `device_mode` and `device_motion` are writable
+  beside `timezone`: `locale` a BCP 47 tag, the form dates and numbers
+  are written in; `hour_cycle` `h12` or `h23`, the clock times are
+  written on; `device_mode` `light` or `dark` and `device_motion` `auto`
+  or `reduce`, what the device last signed in from reported, never the
+  person's choice, so `mode` and `motion` stay the person's own and the
+  painted mode and motion never read the two `device_` members.
+- `GET` on the same path returns the twelve members the identity
+  provider stores: `language`, `mode`, `theme`, `motion`, `timezone`,
+  `locale`, `hour_cycle`, `region`, `device_mode`, `device_motion`,
   `ciba_channel` and `ciba_user_code_set`, the last two the sign-in
-  approval channel and whether an approval PIN is set.
-- The shared Preferences tab sends `timezone` only when the person chose
-  one that differs from the stored value; the zone it detects and
-  preselects while none is stored is never written on its own.
+  approval channel and whether an approval PIN is set, every member the
+  account holds none of `null`.
+- The shared Preferences tab sends `timezone`, `locale` and `hour_cycle`
+  only when the person chose one that differs from the stored value; the
+  value it detects and preselects while none is stored is never written
+  by Save on its own.
+- On the first signed-in load of a session on a host whose session the
+  identity provider made, the `cookie` and `idp` hosts, the UI reads
+  `GET /api/user/preferences` and sends one `PATCH` carrying
+  `timezone`, `language`, `locale`, `hour_cycle` and `region` where the
+  account holds `null`, the browser's `Intl` zone, the UI's language, the
+  browser's `Intl` locale and hour cycle (`h11` read as `h12`, `h24` as
+  `h23`) and the country `GET /api/public/geo/country` answers, and
+  `device_mode` and `device_motion` where the device's `prefers-color-scheme`
+  and `prefers-reduced-motion` differ from the account's; nothing is sent
+  when nothing is yielded, a held member is never overwritten, a failed
+  read or save changes nothing on screen, and a guest-only account is sent
+  nothing, because the server writes every mail and record on the
+  account's clock and an account made through the API holds none.
 - A successful write triggers the SCIM push, so subscribing apps converge
   without polling.
 
@@ -438,8 +461,10 @@ New local signups seed `language` from the request locale.
 
 The Preferences section at `/user/profile/preferences` on the identity
 provider and `/profile/preferences` on a UI backend is one General card,
-the language, the mode, the motion, the theme, the time zone, the region,
-the sign-in approval channel and the PIN of the write path above, and
+the language, the mode, the motion, the theme, the time zone, the locale,
+the hour cycle, the region, the sign-in approval channel and the PIN of
+the write path above, with the device's mode and motion as read-only
+facts under them while the record carries them, and
 under it one card a feature of the host, named for that feature, each a
 browser preference kept in the browser alone and never sent to a host,
 the Hosts card's account field alone excepted, drawn editable under a

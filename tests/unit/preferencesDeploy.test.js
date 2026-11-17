@@ -13,7 +13,7 @@ vi.mock('../../src/features/integrations/index.js', () => ({
   integrationsShape: () => null,
 }));
 
-const { deployChoiceOf, deployChoicesOf } =
+const { deployChoiceOf, deployChoicesOf, localeChoicesOf } =
   await import('../../src/features/profile/components/PreferencesTab.jsx');
 
 const ORIGIN = 'https://hw.example.com';
@@ -45,5 +45,13 @@ describe('deployChoicesOf', () => {
       ORIGIN,
       'https://other.example.com',
     ]);
+  });
+});
+
+describe('localeChoicesOf', () => {
+  it('offers the chosen, the detected and the UI languages once each, empties dropped', () => {
+    expect(localeChoicesOf('en-GB', 'en-US', ['en', 'es'])).toEqual(['en-GB', 'en-US', 'en', 'es']);
+    expect(localeChoicesOf('en', 'en', ['en', 'es'])).toEqual(['en', 'es']);
+    expect(localeChoicesOf('', '', ['en'])).toEqual(['en']);
   });
 });

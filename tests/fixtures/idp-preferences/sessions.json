@@ -1,0 +1,28 @@
+[
+  {
+    "id": "s1",
+    "current": true,
+    "client_id": "conductor",
+    "client_name": "Conductor",
+    "browser": "Firefox",
+    "system": "Windows",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) Gecko/20100101 Firefox/153.0",
+    "ip_address": "203.0.113.7",
+    "location": "Austin, US",
+    "authorized_at": "2026-09-06T12:02:00Z",
+    "last_accessed_at": "2026-09-06T14:06:00Z"
+  },
+  {
+    "id": "s2",
+    "current": false,
+    "client_id": "boxvault",
+    "client_name": "BoxVault",
+    "browser": "Safari",
+    "system": "macOS",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 Safari/605.1.15",
+    "ip_address": "198.51.100.2",
+    "location": "Chicago, US",
+    "authorized_at": "2026-09-03T08:15:00Z",
+    "last_accessed_at": null
+  }
+]

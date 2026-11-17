@@ -10,6 +10,7 @@ import { useNotify } from '../../../contexts/NoticeContext';
 import { isPendingGate } from '../../../lib/gates';
 import { log } from '../../../lib/logger';
 import { returnToShape } from '../../../utils/auth';
+import { clockOf } from '../../../utils/clock';
 import { userDisplayName, userSecondaryLine } from '../../../utils/identity';
 import { routeNameOf } from '../../../utils/membership';
 import { PROFILE_ROUTE_SECTIONS, accountShape, sectionPath, sectionsFor } from '../sections';
@@ -68,7 +69,14 @@ const ActiveSection = ({
     return <FavoritesTab account={account} />;
   }
   if (active === 'sessions') {
-    return <SessionsTab account={account} guard={guard} onSignedOut={page.signedOut} />;
+    return (
+      <SessionsTab
+        account={account}
+        guard={guard}
+        onSignedOut={page.signedOut}
+        clock={clockOf(profile.preferences)}
+      />
+    );
   }
   if (active === 'organizations') {
     return (
