@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.64.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.63.1...v0.64.0) (2026-11-17)
+
+
+### Features
+
+* the browser's time zone, locale, clock, country and device facts are saved to the account on the first signed-in load, chosen on the Preferences page and read on the Sessions list ([180855f](https://github.com/STARTcloud/startcloud-ui/commit/180855fcdd2c7f68c7a1b479ad19462d7daede8d))
+
 ## [0.63.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.63.0...v0.63.1) (2026-11-17)
 
 
