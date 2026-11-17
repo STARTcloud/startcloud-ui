@@ -7117,7 +7117,7 @@ button.hw-bay:focus-visible {
   cursor: not-allowed;
 }
 
-.pref-tile:focus-within {
+.pref-tile:has(.pref-tile-input:focus-visible) {
   box-shadow: 0 0 0 0.25rem var(--brand-focus-ring);
 }
 
