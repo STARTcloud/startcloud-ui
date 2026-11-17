@@ -118,7 +118,7 @@ A host is a backend that serves this build and answers `GET /api/status`. Nothin
 
 The routes `/login`, `/register`, `/profile`, `/invite/:token` and `/auth/callback` exist only for `backend`; `/callback/` only for `idp`. A deep link to a route the host lacks renders a not-available page naming the missing token. `/search?q=` exists on every host.
 
-The VDI Health Monitor answers `role: "vdi-health"` with `brand.logo_url: "/brand/vdi-health/mark.svg"`, `auth: []` or `["idp"]`, `collections: []`, `config: ["app"]`, `events: { "path": "/api/events", "topics": ["fleet"] }` and the tokens `health`, `events` and `fleet` (plus `admin` under `idp`).
+For example the VDI Health Monitor answers `role: "vdi-health"` with `brand.logo_url: "/brand/vdi-health/mark.svg"`, `auth: []` or `["idp"]`, `collections: []`, `config: ["app"]`, `events: { "path": "/api/events", "topics": ["fleet"] }` and the tokens `health`, `events` and `fleet` (plus `admin` under `idp`).
 
 ## Layout
 
