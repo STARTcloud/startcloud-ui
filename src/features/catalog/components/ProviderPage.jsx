@@ -9,6 +9,7 @@ import SignInPlacard from '../../../components/common/SignInPlacard';
 import SubTable from '../../../components/common/SubTable';
 import { useNotify } from '../../../contexts/NoticeContext';
 import { useStatus } from '../../../contexts/StatusContext';
+import { useArrival } from '../../../hooks/useArrival';
 import { useDetailSearch } from '../../../hooks/useDetailSearch';
 import { useSelection } from '../../../hooks/useSelection';
 import { hostSort } from '../../../utils/capabilities';
@@ -26,8 +27,9 @@ const rowIdOf = name => `architecture-${name}`;
  * carry architectures directly: the header, then the architectures table,
  * one file per row, opening on the host's `sorts` for the level, else by
  * name ascending, with the picked-state pane in its heading; a route that
- * names an architecture in its fifth part brings that row into view once,
- * marking nothing. The slots receive the version row as `parent`, read
+ * names a file in its fifth part, by its key or its file name, brings that
+ * row into view and opens the file's download once, and a hash naming a
+ * row's key brings that row into view, marking nothing. The slots receive the version row as `parent`, read
  * from the item summary's versions, so a provider's visibility step stays
  * within its version's width.
  */
@@ -40,6 +42,7 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
   const [editor, setEditor] = useState(null);
   const [form, setForm] = useState(null);
   const scrolledFor = useRef('');
+  const downloadedFor = useRef('');
   const key = `${org}/${name}/${version}/${provider}/${nonce}`;
   const ready = data.key === key;
   const { item, entry } = data;
@@ -66,6 +69,7 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
     defaultSort: hostSort(status, collection.key, 'architectures') || DEFAULT_SORT,
   });
   const selection = useSelection(search.rows, { keyOf: row => row.name, labelOf: row => row.name });
+  const arrival = useArrival(search.rows);
 
   useEffect(() => {
     let mounted = true;
@@ -93,15 +97,28 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
   }, [provider, name]);
 
   useEffect(() => {
-    if (!ready || !architecture || scrolledFor.current === key) {
+    if (!ready || !architecture || !entry) {
       return;
     }
-    const row = document.getElementById(rowIdOf(architecture));
-    if (row) {
-      scrolledFor.current = key;
-      row.scrollIntoView({ block: 'center' });
+    const file = (entry.architectures || []).find(
+      row => row.name === architecture || row.fileName === architecture
+    );
+    if (!file) {
+      return;
     }
-  }, [ready, architecture, key]);
+    if (scrolledFor.current !== key) {
+      const row = document.getElementById(rowIdOf(file.name));
+      if (row) {
+        scrolledFor.current = key;
+        row.scrollIntoView({ block: 'center' });
+      }
+    }
+    const address = `${org}/${name}/${version}/${provider}/${architecture}`;
+    if (file.downloadUrl && downloadedFor.current !== address) {
+      downloadedFor.current = address;
+      window.location.assign(file.downloadUrl);
+    }
+  }, [ready, architecture, key, entry, org, name, version, provider]);
 
   const { ProviderActions, ArchitecturesActions, ArchitectureRowActions } = collection.slots;
 
@@ -168,6 +185,7 @@ const ProviderPage = ({ collection, org, name, version, provider, context, archi
           rows={search.rows}
           rowKey={row => row.name}
           rowId={row => rowIdOf(row.name)}
+          rowRef={arrival.ref}
           LeadActions={DownloadAction}
           RowActions={manage ? ArchitectureRowActions : null}
           actionsProps={slotProps}

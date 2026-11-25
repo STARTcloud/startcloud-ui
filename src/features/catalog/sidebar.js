@@ -2,7 +2,7 @@ import { FaBuilding, FaCube, FaFile, FaMicrochip, FaServer, FaTag, FaUser } from
 
 import { hasFeature } from '../../utils/capabilities';
 import { isGlobalAdmin } from '../../utils/permissions';
-import { architecturePath, itemPath, providerPath, versionPath } from '../../utils/routes';
+import { itemPath, providerPath, versionPath } from '../../utils/routes';
 
 import { useCatalogTree } from './hooks/useCatalogTree';
 
@@ -30,14 +30,8 @@ export const sidebar = (status, account, collections) => {
 
 const collectionPathOf = (row, collection) => {
   if (row.architecture && row.provider && collection.leafIsFile) {
-    return architecturePath(
-      collection,
-      row.org,
-      row.name,
-      row.version,
-      row.provider,
-      row.architecture
-    );
+    const patch = providerPath(collection, row.org, row.name, row.version, row.provider);
+    return `${patch}#${encodeURIComponent(row.architecture)}`;
   }
   if (row.provider && collection.hasProviders) {
     return providerPath(collection, row.org, row.name, row.version, row.provider);
@@ -91,7 +85,8 @@ const iconOf = (fallback, collections) => row =>
  * The catalog feature's search kinds while the backend mounts a
  * collection: organization, item, version, provider, architecture,
  * artifact and user, a row of a collection routed to the deepest page of
- * that collection it names.
+ * that collection it names, a file of a file-leaf collection to its patch
+ * page with the file's key as the hash.
  *
  * @param {Object} status - The payload from `probeStatus`
  * @param {Array<Object>} collections - The host's mounted collection definitions
