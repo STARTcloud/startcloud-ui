@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.64.1](https://github.com/STARTcloud/startcloud-ui/compare/v0.64.0...v0.64.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* a file address downloads its file for a signed-in person, and a file in the search results opens its patch page at the row ([1c02cd1](https://github.com/STARTcloud/startcloud-ui/commit/1c02cd1a6a8f3f5ef7378eb08bbcb95932347a45))
+* a toast button sends its request on the first press in every browser, the worker taking the XSRF token from the cookie store where it has one and from the token the page hands it otherwise, the header left out while neither holds one, and opening the page only on a refusal ([e4fcfab](https://github.com/STARTcloud/startcloud-ui/commit/e4fcfab2014de5f4fd5192c9326f91f60bd6002d))
+* the Theme cards paint their preview through CSS custom properties set on the element, the preferences form memoises the record it reads, and the sign-in notices test names the in_app channel ([3a56ca4](https://github.com/STARTcloud/startcloud-ui/commit/3a56ca47885e407f928f19fbfc2c75046754b88d))
+
 ## [0.64.0](https://github.com/STARTcloud/startcloud-ui/compare/v0.63.1...v0.64.0) (2026-11-17)
 
 
